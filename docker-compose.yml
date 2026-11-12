@@ -1,0 +1,4 @@
+# Convenience entry point so that plain `docker compose up -d db` works from the repository root
+# (and picks up .env). The definition lives in docker/compose.yaml, the path used by SPEC §4.6.
+include:
+  - docker/compose.yaml

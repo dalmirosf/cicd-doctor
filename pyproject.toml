@@ -1,0 +1,81 @@
+[project]
+name = "cicd-doctor"
+version = "0.1.0"
+description = "GitHub App that explains why a GitHub Actions workflow run failed."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi>=0.115",
+    "pydantic>=2.9",
+    "uvicorn>=0.32",
+]
+
+[project.scripts]
+cicd-doctor = "cicd_doctor.app.cli:main"
+
+[dependency-groups]
+dev = [
+    "httpx2>=2.0",  # backend of FastAPI's TestClient (Starlette deprecated plain httpx there)
+    "mypy>=1.13",
+    "pre-commit>=4.0",
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.8",
+]
+
+[build-system]
+requires = ["uv_build>=0.13.7,<0.14.0"]
+build-backend = "uv_build"
+
+# --- ruff (lint + format) -----------------------------------------------------------------
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+src = ["src", "tests"]
+# ruff 0.17 also formats code blocks inside Markdown; SPEC.md and DECISIONS.md are hand-written.
+extend-exclude = ["*.md"]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "F",    # pyflakes
+    "W",    # pycodestyle warnings
+    "I",    # isort
+    "N",    # pep8-naming
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+    "C4",   # flake8-comprehensions
+    "SIM",  # flake8-simplify
+    "PT",   # flake8-pytest-style
+    "ASYNC",
+    "RUF",
+]
+
+[tool.ruff.format]
+line-ending = "lf"
+
+# --- mypy (strict, SPEC D-29) -------------------------------------------------------------
+[tool.mypy]
+strict = true
+plugins = ["pydantic.mypy"]
+mypy_path = "src"
+files = ["src", "tests"]
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
+
+# --- pytest -------------------------------------------------------------------------------
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers --strict-config"
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+markers = [
+    "unit: pure logic, no IO (applied automatically to tests/unit)",
+    "contract: shared port contract suites, in-memory adapters only (tests/contract)",
+    "integration: needs a real Postgres (tests/integration)",
+    "e2e: replayed deliveries through API + worker + fakes (tests/e2e)",
+    "live: calls real external services, on demand only",
+]

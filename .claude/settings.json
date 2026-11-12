@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run python .claude/hooks/post_edit.py",
+            "timeout": 180,
+            "statusMessage": "Running ruff and fast tests..."
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,33 @@
+# Local development stack (SPEC §4.4, §4.6).
+#
+# Postgres is the only service: it is also the job queue (D-05, SKIP LOCKED), so there is no
+# Redis or broker. The API and worker run on the host with `uv run` until the Dockerfile
+# arrives in P5.
+#
+# Run from the repository root so that `.env` is picked up:  docker compose up -d db
+# Passwords below are development defaults; the port is bound to loopback only.
+name: cicd-doctor
+
+services:
+  db:
+    image: pgvector/pgvector:pg17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-cicd}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cicd}
+      POSTGRES_DB: ${POSTGRES_DB:-cicd_doctor}
+    ports:
+      # Host port 5433, not 5432: a native Postgres on Windows often owns 5432 already.
+      - "127.0.0.1:${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cicd} -d ${POSTGRES_DB:-cicd_doctor}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+volumes:
+  pgdata:

@@ -1,0 +1,28 @@
+# Fast local gate (SPEC §12, D-29): ruff + the unit/contract tests. A failing hook blocks the commit.
+# The full suite (types, integration, e2e) runs in CI.
+#
+# Hooks are `local` and run through `uv run`, so they use the exact tool versions from uv.lock.
+# Install once with:  uv run pre-commit install
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff check
+        entry: uv run ruff check --fix --exit-non-zero-on-fix
+        language: system
+        types_or: [python, pyi]
+        require_serial: true
+
+      - id: ruff-format
+        name: ruff format
+        entry: uv run ruff format
+        language: system
+        types_or: [python, pyi]
+        require_serial: true
+
+      - id: pytest-fast
+        name: pytest (unit + contract)
+        entry: uv run pytest -m "unit or contract" -x -q
+        language: system
+        pass_filenames: false
+        always_run: true
