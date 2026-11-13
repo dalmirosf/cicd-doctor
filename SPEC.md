@@ -18,7 +18,7 @@ A deterministic rule-based diagnoser runs on every failure. It is the baseline f
 - Memory of past failures per repository: exact-signature cache, vector similarity (pgvector), flaky detection (resolved by re-run of the same commit), and fix-commit tracking (resolved by a new commit).
 - Fix **suggestions** as text and, when the target lines are in the PR diff, as GitHub "suggested changes".
 - An eval harness that compares the LLM diagnoser against the rule baseline on a lab repo with known failures and on real public failures with known fixes.
-- Local development on Windows (uv + Docker Compose + smee.io). Production deployment on Google Cloud (Cloud Run, Cloud SQL, Artifact Registry, Secret Manager) via Terraform and GitHub Actions CD.
+- Local development on Windows (uv + Docker Compose + smee.io). Production deployment on AWS (ECS Fargate, RDS for PostgreSQL, ECR, Secrets Manager, CloudWatch Logs) via Terraform and GitHub Actions CD (D-46).
 
 ### 1.2 Non-goals (what CICD Doctor does NOT do)
 
@@ -161,7 +161,7 @@ cicd-doctor/
 ├── evals/                       # cases/, runner/, reports/, baseline.json
 ├── lab/                         # source of the lab repo (workflows that fail on purpose)
 ├── docker/                      # compose.yaml, initdb/01-extensions.sql; Dockerfile (P5)
-├── infra/terraform/             # GCP + GitHub provider (P5)
+├── infra/terraform/             # AWS + GitHub provider (P5)
 ├── .github/workflows/           # ci.yml, evals.yml (P4), cd.yml (P5)
 ├── SPEC.md · DECISIONS.md · README.md
 └── pyproject.toml · uv.lock · .pre-commit-config.yaml · .env.example · docker-compose.yml (D-41)
@@ -226,11 +226,11 @@ class Clock(Protocol):
 |---|---|---|
 | API | `cicd-doctor api` (uvicorn, FastAPI; `api/main.py`) | `/webhooks/github` (P1), `/health` (process up; exists since P0, D-40), `/readyz` (DB reachable; P1, name settled then, D-40). Body limit 25 MB. |
 | Worker | `cicd-doctor worker` (P1; the command does not exist yet) | N concurrent asyncio consumers (default 4); wakes on `LISTEN jobs_new`, polls every 5 s as fallback; runs use cases; schedules the purge job daily. |
-| Postgres 17 + pgvector | Compose locally (`pgvector/pgvector:pg17`, host port 5433, D-38, D-41); Cloud SQL in prod | Queue, deliveries, failures, diagnoses, publications, usage ledger, embeddings. |
+| Postgres 17 + pgvector | Compose locally (`pgvector/pgvector:pg17`, host port 5433, D-38, D-41); RDS for PostgreSQL in prod (D-46) | Queue, deliveries, failures, diagnoses, publications, usage ledger, embeddings. |
 
 ### 4.5 Configuration
 
-Settings come from the environment (`pydantic-settings`; `.env` locally, Secret Manager in prod). `.env.example` is committed, `.env` is not. Until P1 only the `POSTGRES_*` variables are read (by Docker Compose); the rest of the table is the contract that the app starts reading in P1.
+Settings come from the environment (`pydantic-settings`; `.env` locally, AWS Secrets Manager in prod). `.env.example` is committed, `.env` is not. Until P1 only the `POSTGRES_*` variables are read (by Docker Compose); the rest of the table is the contract that the app starts reading in P1.
 
 | Variable | Default | Notes |
 |---|---|---|
@@ -268,7 +268,7 @@ uv run pre-commit install       # once per clone: enables the commit gate (§12)
 
 In P0 only the database, `GET /health` and the tests exist; the migration, the worker and the webhook relay start working in P1.
 
-The **dev GitHub App** points its webhook URL at the smee channel; the **prod GitHub App** points at the Cloud Run URL (D-30).
+The **dev GitHub App** points its webhook URL at the smee channel; the **prod GitHub App** points at the public HTTPS endpoint of the API in AWS (D-30, D-46).
 
 ---
 
@@ -818,7 +818,7 @@ Evaluated in order; the first match decides:
 - All LLM text is treated as plain text: HTML is escaped, and markdown control sequences at line start (`#`, `>`, `|`, `-`, `*`) are escaped.
 - Code spans and fences use a fence longer than the longest backtick run in the content.
 - `@mentions` are neutralized (`@` followed by a zero-width joiner), and `#123` references are wrapped in code.
-- URLs are rendered as inline code (not clickable) unless the host is on an allowlist (`github.com`, `docs.github.com`, `docs.python.org`, `pypi.org`, `docs.docker.com`, `registry.terraform.io`, `cloud.google.com`). Images are never rendered.
+- URLs are rendered as inline code (not clickable) unless the host is on an allowlist (`github.com`, `docs.github.com`, `docs.python.org`, `pypi.org`, `docs.docker.com`, `registry.terraform.io`, `docs.aws.amazon.com`). Images are never rendered.
 - A second redaction pass runs, and each field is capped at its maximum length.
 
 ### 9.6 GitHub App permissions
@@ -835,7 +835,7 @@ Evaluated in order; the first match decides:
 
 Subscribed events: `workflow_run`, `issue_comment` (P3). Installation events are delivered by default. P3 verifies that `issue_comment` events on PRs are delivered with the Pull requests permission; if not, add **Issues: read** and record it in DECISIONS.md.
 
-Installation tokens are requested with `repository_ids: [repo_id]` and only the permissions the use case needs (for example, `{actions: read, checks: write, pull_requests: write}` for diagnosis). They are cached in memory until 5 minutes before expiry. The app private key and webhook secret live in Secret Manager (prod) or `.env` (dev, git-ignored).
+Installation tokens are requested with `repository_ids: [repo_id]` and only the permissions the use case needs (for example, `{actions: read, checks: write, pull_requests: write}` for diagnosis). They are cached in memory until 5 minutes before expiry. The app private key and webhook secret live in AWS Secrets Manager (prod) or `.env` (dev, git-ignored).
 
 **CICD Doctor Fixer (P6, separate app, opt-in):** Contents write, Pull requests write, Metadata read; no webhook events (it is driven by CICD Doctor's queue through an internal API).
 
@@ -882,14 +882,14 @@ A rule has: `id`, `ecosystem`, one or more regex `patterns` (compiled, anchored 
 | DOCKER-AUTH | `denied: requested access to the resource is denied`, `unauthorized: authentication required` | config_or_secrets | 0.85 |
 | DOCKER-HUB-LIMIT | `toomanyrequests: You have reached your pull rate limit` | network | 0.90 |
 | DOCKER-RUN-FAIL | `failed to solve: process .* did not complete successfully: exit code: (?P<code>\d+)` | infra_or_deploy | 0.50 |
-| **Terraform / GCP** | | | |
+| **Terraform / AWS** | | | |
 | TF-LOCK | `Error acquiring the state lock` | infra_or_deploy | 0.90 |
 | TF-CONFIG | `Error: (Unsupported argument|Missing required argument|Invalid reference|Reference to undeclared)` | config_or_secrets | 0.85 |
 | TF-INIT | `Error: Failed to query available provider packages`, `Inconsistent dependency lock file` | dependency | 0.80 |
-| GCP-PERMISSION | `Error 403`, `PERMISSION_DENIED`, `does not have .* permission` | config_or_secrets | 0.80 |
-| GCP-API-DISABLED | `SERVICE_DISABLED`, `has not been used in project .* or it is disabled` | config_or_secrets | 0.90 |
-| GCP-AUTH | `google-github-actions/auth` failure, `unable to generate access token`, `Workload Identity Pool` errors | config_or_secrets | 0.85 |
-| GCP-CONFLICT | `Error 409: .* already exists` | infra_or_deploy | 0.75 |
+| AWS-ACCESS-DENIED | `AccessDenied`, `UnauthorizedOperation`, `is not authorized to perform: (?P<action>\S+)` | config_or_secrets | 0.85 |
+| AWS-CREDENTIALS | `Unable to locate credentials`, `Could not load credentials`, `The security token included in the request is invalid`, `ExpiredToken` | config_or_secrets | 0.85 |
+| AWS-OIDC | `Could not assume role with OIDC`, `Not authorized to perform sts:AssumeRoleWithWebIdentity`, `aws-actions/configure-aws-credentials` failure | config_or_secrets | 0.90 |
+| AWS-CONFLICT | `AlreadyExists`, `EntityAlreadyExists`, `BucketAlreadyOwnedByYou`, `ResourceAlreadyExistsException` | infra_or_deploy | 0.75 |
 
 The rules never output `flaky`: flakiness is a property of the history, not of one log (D-15). Rule matches are passed to the LLM as trusted hints (D-14).
 
@@ -923,7 +923,7 @@ flaky: false
 tags: [python, uv]
 ```
 
-- **Lab repo** (`lab/`, published as `cicd-doctor-lab`): `workflow_dispatch` workflows that fail on purpose with known causes. There are at least 20 cases covering all 8 categories (at least 2 each), for example: undeclared import, broken assertion, uv resolution conflict, misspelled secret name / missing `with:` input, unresolvable host, `timeout-minutes: 1` + sleep, memory hog → 137, Dockerfile `COPY` of a missing file, private base image without login, Terraform `validate` error, GCP API disabled, a random-failure test (flaky, run 10 times), and ruff/mypy gates. Created manually for P1; managed by the Terraform GitHub provider from P5.
+- **Lab repo** (`lab/`, published as `cicd-doctor-lab`): `workflow_dispatch` workflows that fail on purpose with known causes. There are at least 20 cases covering all 8 categories (at least 2 each), for example: undeclared import, broken assertion, uv resolution conflict, misspelled secret name / missing `with:` input, unresolvable host, `timeout-minutes: 1` + sleep, memory hog → 137, Dockerfile `COPY` of a missing file, private base image without login, Terraform `validate` error, AWS `AccessDenied` (missing IAM permission), a random-failure test (flaky, run 10 times), and ruff/mypy gates. Created manually for P1; managed by the Terraform GitHub provider from P5.
 - **Public cases:** at least 30 real failures from public repositories, each with the commit that fixed it (found by pairing a failed run with the first green run on the same branch). Licenses are respected: only log excerpts and short diff summaries are stored.
 - **Injection suite:** at least 10 lab logs that echo adversarial text (instructions to change the category, insert links or mentions, reveal the prompt, emit fake evidence, close the `untrusted_log` tag).
 - **Redaction corpus:** synthetic fake secrets of every pattern in §9.2, plus look-alikes that must **not** be redacted (SHAs, UUIDs).
@@ -1044,13 +1044,13 @@ Scope: FR-22 complete.
 - [ ] The README contains the rules vs LLM comparison table, average cost and latency. NFR-03 (≤ USD 0.01 average) is met or the deviation is documented.
 
 ### P5 — Deploy and observability
-Scope: Docker, Terraform on GCP, CD, prod app, Langfuse.
+Scope: Docker, Terraform on AWS, CD, prod app, Langfuse.
 - [ ] One multi-stage Dockerfile (non-root user, fastembed model baked into the image) runs both `api` and `worker`. `docker compose up` runs the full stack locally.
-- [ ] `terraform apply` on a fresh GCP project creates Artifact Registry, Cloud Run API service, worker (Cloud Run worker pool, or a service with min-instances=1), Cloud SQL Postgres with `vector` enabled, Secret Manager secrets, service accounts with least-privilege IAM, and Workload Identity Federation for GitHub Actions. A second `terraform plan` shows no changes.
+- [ ] `terraform apply` on a fresh AWS account creates ECR, an ECS cluster on Fargate with the API service (behind an Application Load Balancer) and the worker service (desired count 1), RDS for PostgreSQL 17 with `vector` enabled, Secrets Manager secrets, least-privilege IAM task and execution roles, and the GitHub OIDC provider with a deploy role for GitHub Actions. A second `terraform plan` shows no changes.
 - [ ] The Terraform GitHub provider creates and configures the `cicd-doctor-lab` repo from `lab/`.
-- [ ] A merge to `main` → CD builds, pushes and deploys new revisions with no long-lived service-account keys, and runs migrations as a Cloud Run job before the traffic switch.
-- [ ] The prod GitHub App webhook targets Cloud Run. The P1c acceptance flow passes against prod.
-- [ ] Cloud Logging shows JSON logs where one diagnosis can be followed end to end by `delivery_id`. Langfuse shows one trace per LLM call with tokens, cost, latency and prompt version, and with no unredacted secret (spot-checked with a planted fake token).
+- [ ] A merge to `main` → CD builds, pushes to ECR and deploys new task definitions with no long-lived AWS access keys (GitHub OIDC), and runs migrations as a one-off ECS task before the services are updated.
+- [ ] The prod GitHub App webhook targets the API's public HTTPS endpoint on AWS. The P1c acceptance flow passes against prod.
+- [ ] CloudWatch Logs shows JSON logs where one diagnosis can be followed end to end by `delivery_id`. Langfuse shows one trace per LLM call with tokens, cost, latency and prompt version, and with no unredacted secret (spot-checked with a planted fake token).
 
 ### P6 — Optional extras
 - [ ] **CICD Doctor Fixer**: a separate app; opens PRs only for allowlisted, low-risk fix types (add a missing dependency declaration for a known import→package mapping, raise `timeout-minutes` within a bound, fix an `actions/*` version typo). Off unless installed **and** `fixer: enabled: true`. PRs are labeled `cicd-doctor-fix` and never auto-merged. It never runs code.
@@ -1063,7 +1063,7 @@ Scope: Docker, Terraform on GCP, CD, prod app, Langfuse.
 - Exact OpenAI model ID and price table → P1 mini-eval (D-07).
 - Whether lint and type-check failures deserve their own category → after the P4 evals (D-13).
 - `issue_comment` delivery with Pull requests vs Issues permission → P3 (D-21).
-- Cloud Run worker pool vs a min-instances service → at P5 deploy time (D-31).
+- HTTPS entry for the API: Application Load Balancer + ACM certificate (needs a domain) vs App Runner (HTTPS URL without a domain); and Secrets Manager vs SSM Parameter Store for secrets → at P5 deploy time (D-46).
 - Alembic baseline migration: not part of the P0 skeleton, so `uv run alembic upgrade head` does not exist yet → P1a (§13).
 - CI on a pull request: CI has run green on a push to `main` only → confirm on the first pull request (P0 criterion in §13).
 - fastembed on Python 3.13: confirmed on the dev machine (Windows 11, CPython 3.13.7, fastembed 0.9.1, onnxruntime 1.31.1), tried in a throwaway environment without adding it as a dependency. It installs, loads the model in about 7.5 s including the first download, and returns 384-d float32 vectors that are L2-normalised and deterministic, at about 1.6 ms per embedding after the load. Still open: confirm on Linux (CI or the P5 Docker image) before relying on it, and pin 3.12 (recording it in DECISIONS.md) if that fails. Also, fastembed serves `BAAI/bge-small-en-v1.5` from the Qdrant ONNX build `Qdrant/bge-small-en-v1.5-onnx-Q` (`model_optimized.onnx`, 67 MB), not from the original weights, so check in P2 that the `SIMILAR_MIN_SCORE` of 0.85 is calibrated against that build (D-08).
