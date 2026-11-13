@@ -19,9 +19,21 @@ FORBIDDEN_INTERNAL = (
     f"{PACKAGE}.api",
     f"{PACKAGE}.worker",
 )
-# IO / framework libraries that ``core`` must stay free of (D-02). Pydantic is allowed (D-03).
+# IO / framework libraries that ``core`` must stay free of (D-02, D-50). Pydantic is allowed
+# (D-03); pydantic_settings is not, because it reads the environment and ``.env``.
 FORBIDDEN_EXTERNAL = frozenset(
-    {"fastapi", "starlette", "uvicorn", "httpx", "sqlalchemy", "psycopg", "openai", "fastembed"}
+    {
+        "fastapi",
+        "starlette",
+        "uvicorn",
+        "httpx",
+        "sqlalchemy",
+        "psycopg",
+        "alembic",
+        "pydantic_settings",
+        "openai",
+        "fastembed",
+    }
 )
 
 
@@ -89,6 +101,8 @@ def test_core_does_not_import_adapters_or_io_libraries() -> None:
         ("import fastapi", "imports fastapi"),
         ("from httpx import Client", "imports httpx"),
         ("from sqlalchemy.ext.asyncio import AsyncSession", "imports sqlalchemy.ext.asyncio"),
+        ("from alembic import op", "imports alembic"),
+        ("from pydantic_settings import BaseSettings", "imports pydantic_settings"),
     ],
 )
 def test_checker_detects_forbidden_imports(tmp_path: Path, source: str, expected: str) -> None:
