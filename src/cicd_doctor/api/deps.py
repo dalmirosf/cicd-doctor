@@ -2,6 +2,7 @@
 
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
+from datetime import timedelta
 
 from fastapi import Request
 
@@ -16,6 +17,8 @@ class ApiDependencies:
     ready: Callable[[], Awaitable[bool]]  # readiness: the database answers
     clock: Clock
     max_attempts: int = 5  # for the jobs the webhook enqueues (JOB_MAX_ATTEMPTS)
+    # Answer 503 well before GitHub gives up on the delivery after 10 s (NFR-01, D-56).
+    enqueue_timeout: timedelta = timedelta(seconds=5)
 
 
 def get_dependencies(request: Request) -> ApiDependencies:

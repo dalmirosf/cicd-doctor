@@ -9,8 +9,10 @@ in this order, and nothing is written before the last one:
 4. ``ping``                         → 200, nothing stored
 5. routing: no job for this event   → 204, nothing stored; a handled event missing a field → 400
 6. delivery + job, one transaction  → 202, or 200 for a duplicate; 503 if the database is down
+   or does not answer within ``enqueue_timeout`` (5 s, below GitHub's 10 s)
 """
 
+import asyncio
 import json
 import logging
 from typing import Literal
@@ -118,9 +120,11 @@ async def github_webhook(request: Request) -> Response:
         installation_id=installation_id(payload),
     )
     try:
-        created = await deps.queue.enqueue(job, delivery)
-    except TransientError as exc:
-        logger.error("webhook %s %s not stored: %s", delivery_id, label, exc)
+        async with asyncio.timeout(deps.enqueue_timeout.total_seconds()):
+            created = await deps.queue.enqueue(job, delivery)
+    except (TransientError, TimeoutError) as exc:
+        # If the commit went through after all, a redelivery is a harmless duplicate (D-06).
+        logger.error("webhook %s %s not stored: %s", delivery_id, label, type(exc).__name__)
         return _error(503, "database unavailable, redeliver later")
     if not created:
         logger.info("webhook %s %s: duplicate", delivery_id, label)

@@ -1,5 +1,7 @@
 """``POST /webhooks/github`` with an in-memory queue: every status code of SPEC §8 (D-56)."""
 
+import asyncio
+from dataclasses import replace
 from datetime import timedelta
 from typing import Any
 from uuid import uuid4
@@ -252,6 +254,25 @@ def test_a_handled_event_missing_a_field_is_400(api: Harness) -> None:
 class UnavailableQueue(InMemoryJobQueue):
     async def enqueue(self, job: NewJob, delivery: Delivery | None) -> bool:
         raise TransientError("database unavailable: OperationalError")
+
+
+class HangingQueue(InMemoryJobQueue):
+    async def enqueue(self, job: NewJob, delivery: Delivery | None) -> bool:
+        await asyncio.sleep(60)
+        return True
+
+
+def test_a_database_that_does_not_answer_in_time_is_503() -> None:
+    """GitHub gives up after 10 s, so the webhook answers first (NFR-01)."""
+    deps = replace(
+        memory_dependencies(queue=HangingQueue()), enqueue_timeout=timedelta(seconds=0.2)
+    )
+    client = TestClient(create_app(deps))
+    body = encode(load("workflow_run_completed_failure"))
+
+    response = client.post(URL, content=body, headers=headers("workflow_run", body))
+
+    assert response.status_code == 503
 
 
 def test_a_database_outage_is_503_so_the_delivery_can_be_redelivered() -> None:
