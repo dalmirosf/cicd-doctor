@@ -63,7 +63,7 @@ line-ending = "lf"
 strict = true
 plugins = ["pydantic.mypy"]
 mypy_path = "src"
-files = ["src", "tests"]
+files = ["src", "tests", "scripts"]
 
 [tool.pydantic-mypy]
 init_forbid_extra = true
