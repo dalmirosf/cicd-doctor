@@ -1,6 +1,6 @@
 # CICD Doctor — Specification
 
-> Status: draft v1 · Last updated: 2026-11-13 (aligned with P1a-1, the Postgres queue and the worker; see D-47 to D-52)
+> Status: draft v1 · Last updated: 2026-11-13 (aligned with P1a-2, the webhook and readiness; see D-53 to D-56)
 > Companion document: [DECISIONS.md](DECISIONS.md) (every decision below with its rationale, referenced as `D-NN`).
 
 ---
@@ -42,7 +42,7 @@ Each requirement is delivered in the phase noted in brackets (see §13).
 |---|---|---|
 | FR-01 | Expose `POST /webhooks/github`; verify `X-Hub-Signature-256` (HMAC-SHA256, constant-time, against the current and the previous secret during rotation) on the raw body before parsing; reject with 401 otherwise. | P1 |
 | FR-02 | Persist `X-GitHub-Delivery` and enqueue the job in the same DB transaction; a duplicate delivery is a 200 no-op. Respond 202 after enqueueing. Unhandled events and actions → 204. `ping` → 200. | P1 |
-| FR-03 | Track installations and repositories from `installation` and `installation_repositories` events. | P1 |
+| FR-03 | Track installations and repositories from `installation` and `installation_repositories` events (applied by the worker through a `sync_installation` job, D-54). | P1 |
 | FR-04 | For `workflow_run.completed` with conclusion `failure` or `timed_out`, enqueue a `diagnose_run` job with dedupe key `diagnose:{run_id}:{run_attempt}`. | P1 |
 | FR-05 | A worker leases jobs from the Postgres queue (`FOR UPDATE SKIP LOCKED`), with lease expiry, bounded retries with backoff, and a dead state (§8). | P1 |
 | FR-06 | List the jobs of the failing run attempt; select up to 3 failed jobs (earliest completion first) and, for each, the failed step. | P1 |
@@ -147,19 +147,20 @@ cicd-doctor/
 │   │   ├── policy.py            # LLM allowed? (fork, config, budget, cache)
 │   │   ├── outcomes.py          # flaky / fix-commit state machine
 │   │   ├── render.py            # check run + comment markdown, output sanitization
-│   │   └── usecases/            # diagnose_failed_run.py, record_run_outcome.py, explain_command.py
+│   │   └── usecases/            # track_installation.py; diagnose_failed_run.py, record_run_outcome.py, explain_command.py later
 │   ├── adapters/
 │   │   ├── clock.py             # SystemClock, FakeClock
-│   │   ├── github/              # webhook router, app auth (JWT + installation tokens), logs, reporter, config
+│   │   ├── github/              # webhooks.py (signature, event → job); app auth (JWT + installation tokens), logs, reporter, config later
 │   │   ├── llm/openai_client.py
 │   │   ├── embeddings/fastembed_embedder.py
 │   │   ├── wakeup.py            # fan-out wake-up shared by the queue adapters
-│   │   ├── postgres/            # queue.py, migrations/ (Alembic, D-50); store.py, ledger.py later
-│   │   └── memory/              # store.py, embedder.py (FakeEmbedder), queue.py; ledger, fake LLM, fake log source later
-│   ├── api/                     # main.py: FastAPI app, GET /health (D-40); webhook router in P1
-│   ├── worker/                  # runner.py: the job consumer (D-49)
+│   │   ├── postgres/            # engine.py, queue.py, installations.py, migrations/ (Alembic, D-50); store.py, ledger.py later
+│   │   └── memory/              # store.py, embedder.py (FakeEmbedder), queue.py, installations.py; ledger, fake LLM, fake log source later
+│   ├── api/                     # main.py (create_app, GET /health, GET /ready), webhooks.py (POST /webhooks/github), deps.py (D-55)
+│   ├── worker/                  # runner.py: the job consumer (D-49); handlers.py: job → use case
 │   └── app/                     # composition root (D-39): cli.py, settings.py, container.py
-├── tests/                       # unit/, contract/, integration/ (conftest.py, pg.py, factories.py, scenarios.py); adapters/, e2e/, fixtures/ later
+├── scripts/                     # load_webhooks.py (NFR-01 load test)
+├── tests/                       # unit/, contract/, integration/, fixtures/webhooks/ (conftest.py, pg.py, factories.py, scenarios.py, webhooks.py); adapters/, e2e/ later
 ├── evals/                       # cases/, runner/, reports/, baseline.json
 ├── lab/                         # source of the lab repo (workflows that fail on purpose)
 ├── docker/                      # compose.yaml, initdb/01-extensions.sql; Dockerfile (P5)
@@ -171,7 +172,14 @@ cicd-doctor/
     alembic.ini                  # migrations live in adapters/postgres/migrations (D-50)
 ```
 
-Implemented as of P1a-1: `core/` has `models.py`, `ports.py`, `errors.py` and `retry.py`; `adapters/` has `clock.py`, `wakeup.py`, the in-memory `FailureStore`, `FakeEmbedder` and `JobQueue`, and in `postgres/` the `PostgresJobQueue` and the initial migration with the whole §6 schema; `api/` serves `GET /health`; `worker/` has the consumer; `app/` has the CLI (`api`, `worker`), the settings and the composition root, where every job kind still has a placeholder handler (D-49). The `logs/`, `rules/`, `diagnosis/` and `usecases/` packages under `core/`, and the `github/`, `llm/` and `embeddings/` packages under `adapters/`, exist as empty placeholders. Everything else in the tree arrives in the phase that owns it (§13).
+Implemented as of P1a-2:
+- `core/` has `models.py`, `ports.py`, `errors.py`, `retry.py` and the use case `usecases/track_installation.py`.
+- `adapters/` has `clock.py`, `wakeup.py` and `github/webhooks.py`; in `memory/`, the `FailureStore`, `FakeEmbedder`, `JobQueue` and `InstallationStore`; in `postgres/`, the `PostgresJobQueue`, the `PostgresInstallationStore` and migrations `0001` (the whole §6 schema) and `0002`.
+- `api/` serves `GET /health`, `GET /ready` and `POST /webhooks/github`.
+- `worker/` has the consumer and the `sync_installation` handler; every other job kind still has a placeholder handler (D-49).
+- `app/` has the CLI (`api`, `worker`), the settings and the composition root.
+
+The `logs/`, `rules/` and `diagnosis/` packages under `core/`, and the `llm/` and `embeddings/` packages under `adapters/`, exist as empty placeholders. Everything else in the tree arrives in the phase that owns it (§13).
 
 ### 4.3 Ports
 
@@ -214,6 +222,13 @@ class JobQueue(Protocol):      # a lease is (job.id, job.attempts); False = that
     async def fail(self, job: Job, error: str, dead: bool) -> bool: ...
     async def wait_for_jobs(self, max_wait: timedelta) -> bool: ...   # LISTEN jobs_new; callers still poll
 
+class InstallationStore(Protocol):     # FR-03, D-54; upserts only
+    async def save_installation(self, installation: Installation) -> None: ...
+    async def save_repositories(self, repositories: Sequence[Repository]) -> None: ...   # None default_branch keeps the stored one
+    async def remove_repositories(self, repo_ids: Sequence[int], removed_at: datetime) -> None: ...
+    async def installation(self, installation_id: int) -> Installation | None: ...
+    async def repository(self, repo_id: int) -> Repository | None: ...
+
 class RepoConfigSource(Protocol):
     async def load(self, repo: RepoRef) -> RepoConfig: ...   # default branch only; defaults if absent
 
@@ -229,7 +244,7 @@ class Clock(Protocol):
 
 | Component | Process | Responsibilities |
 |---|---|---|
-| API | `cicd-doctor api` (uvicorn, FastAPI; `api/main.py`) | `/webhooks/github` (P1), `/health` (process up; exists since P0, D-40), `/readyz` (DB reachable; P1, name settled then, D-40). Body limit 25 MB. |
+| API | `cicd-doctor api` (uvicorn factory `cicd_doctor.app.container:create_api` on a selector event loop, D-55; `api/`) | `POST /webhooks/github` (§7.1 step 1, D-56), `GET /health` (process up, D-40), `GET /ready` (the database answers `SELECT 1` within 2 s, D-53). Body limit 25 MB. |
 | Worker | `cicd-doctor worker` (`worker/runner.py`, wired in `app/container.py`) | N concurrent asyncio consumers (default 4); wakes on `LISTEN jobs_new`, polls every 5 s as fallback; extends each lease every `lease / 3` while a job runs; drains running jobs for 30 s on SIGTERM or Ctrl+C (D-49); runs use cases (placeholder handlers until they exist); schedules the purge job daily (P2). |
 | Postgres 17 + pgvector | Compose locally (`pgvector/pgvector:pg17`, host port 5433, D-38, D-41); RDS for PostgreSQL in prod (D-46) | Queue, deliveries, failures, diagnoses, publications, usage ledger, embeddings. |
 
@@ -267,12 +282,13 @@ docker compose up -d db         # from the repo root; same as: docker compose -f
 uv run alembic upgrade head     # creates the §6 schema
 uv run cicd-doctor api          # terminal 1, http://localhost:8000 (GET /health)
 uv run cicd-doctor worker       # terminal 2 (placeholder handlers until the use cases exist)
-npx smee-client --url https://smee.io/<dev-channel> --target http://localhost:8000/webhooks/github   # terminal 3, from P1c
+npx smee-client --url https://smee.io/<dev-channel> --target http://127.0.0.1:8000/webhooks/github   # terminal 3 (127.0.0.1, D-52)
+uv run python scripts/load_webhooks.py --cleanup   # NFR-01 load test against the running API
 uv run pytest                   # integration tests are skipped while the database is down
 uv run pre-commit install       # once per clone: enables the commit gate (§12)
 ```
 
-As of P1a-1 the database, the migration, `GET /health`, the worker and the tests work; the webhook relay starts working with the webhook endpoint (P1c).
+As of P1a-2 the database, the migrations, the API (`/health`, `/ready`, `/webhooks/github`), the worker, the smee relay and the tests work. A failing run becomes a `diagnose_run` job, which the worker still completes with a placeholder handler until P1c.
 
 The **dev GitHub App** points its webhook URL at the smee channel; the **prod GitHub App** points at the public HTTPS endpoint of the API in AWS (D-30, D-46).
 
@@ -399,6 +415,8 @@ The ports in §4.3 refer to types that §5 does not define. They exist in `core/
 | `CommentTarget`, `CommentRef` | `Reporter` | Target: run + PR number. Ref: installation, repository, comment id |
 | `PublicationKey`, `Publication` | `FailureStore.publication`, `save_publication` | Key: `check` (repo, run) or `comment` (repo, PR, workflow), validated per kind. Publication: key, GitHub id, run id, attempt. A publication is newer when its `(run_id, attempt)` pair is larger; the contract test fixes this ordering |
 | `Delivery`, `NewJob`, `Job` | `JobQueue` | The columns of `webhook_deliveries` and `jobs` |
+| `DiagnoseRunPayload`, `InstallationEvent` (+ `InstallationAction`) | job payloads (D-56) | `diagnose_run`: `RunRef`, conclusion, `completed_at`, default branch, `private`. `sync_installation`: action, installation, repositories added, ids removed, time received. Key: `diagnose_dedupe_key(run_id, attempt)` |
+| `Installation`, `Repository` | `InstallationStore` (D-54) | The columns of `installations` and `repositories` |
 | `RepoRef`, `RepoConfig` | `RepoConfigSource` | `RepoConfig` has `comment`, `llm` and `ignore_workflows`, and rejects unknown keys (D-26) |
 | `Reservation` | `UsageLedger` | Installation, UTC day, estimated cost |
 
@@ -434,7 +452,7 @@ CREATE TABLE repositories (
     installation_id bigint NOT NULL REFERENCES installations(id),
     full_name       text    NOT NULL,
     private         boolean NOT NULL,
-    default_branch  text    NOT NULL,
+    default_branch  text,                              -- nullable since migration 0002 (D-54)
     removed_at      timestamptz,
     created_at      timestamptz NOT NULL DEFAULT now()
 );
@@ -450,7 +468,7 @@ CREATE TABLE webhook_deliveries (
 
 CREATE TABLE jobs (
     id           bigserial PRIMARY KEY,
-    kind         text   NOT NULL,                      -- diagnose_run | record_outcome | explain | purge
+    kind         text   NOT NULL,                      -- diagnose_run | record_outcome | explain | purge | sync_installation
     payload      jsonb  NOT NULL,
     dedupe_key   text   UNIQUE,                        -- e.g. 'diagnose:{run_id}:{attempt}'
     delivery_id  uuid   REFERENCES webhook_deliveries(delivery_id) ON DELETE SET NULL,
@@ -751,10 +769,11 @@ The embedding (P2) is computed on `canonical`, so the exact match and the simila
 
 | Where | Error | Handling |
 |---|---|---|
-| Webhook | Bad or missing signature | 401, nothing stored. |
+| Webhook | Bad or missing signature | 401, nothing stored. No webhook secret configured: 503 and an ERROR log. |
 | Webhook | Duplicate delivery id | 200, no-op. |
-| Webhook | Body > 25 MB or invalid JSON | 413 / 400. |
-| Webhook | DB unavailable | 503. GitHub does **not** auto-retry failed deliveries, so failed deliveries are visible in the app's "Advanced → Recent deliveries" and can be redelivered manually. Documented in the runbook. |
+| Webhook | Body > 25 MB or invalid JSON | 413 / 400. Also 400: missing `X-GitHub-Event`, missing or non-UUID `X-GitHub-Delivery`, a body that is not a JSON object, or a handled event without a field it needs (the message names fields, never values). |
+| Webhook | `ping` / event or action CICD Doctor does not act on | 200 / 204, nothing stored (D-56). |
+| Webhook | DB unavailable, or no answer within 5 s | 503 (the 5 s bound keeps the answer under GitHub's 10 s, D-56). GitHub does **not** auto-retry failed deliveries, so failed deliveries are visible in the app's "Advanced → Recent deliveries" and can be redelivered manually. Documented in the runbook. |
 | Worker | GitHub 5xx, network error, timeout, DB error | `TransientError` → retry with exponential backoff + full jitter: base 30 s, ×4, capped at 30 min (≈30 s, 2 min, 8 min, 30 min). |
 | Worker | GitHub 429 / secondary rate limit / `x-ratelimit-remaining: 0` | Transient. `run_after` = `Retry-After` or `x-ratelimit-reset`, whichever applies. |
 | Worker | GitHub 401 (token expired) | Refresh the installation token once, then treat as transient. |
@@ -977,8 +996,8 @@ Variants: `rules`, `llm` (no hints), `llm+hints` (production behavior in P1), `l
 |---|---|---|---|
 | Unit | Pure `core/`: noise filters, slicing, windowing, token budget, redaction, normalization/signature, each rule (positive and negative), policy, render/sanitization, outcome state machine, use cases with in-memory adapters + fake LLM | pytest, hypothesis (normalization idempotence, redaction never leaks pattern-shaped secrets), golden files for excerpts and rendered markdown | pre-commit + CI |
 | Contract | One shared test suite for `FailureStore`, `JobQueue` and `UsageLedger`, run against both the in-memory and the Postgres adapters (today: `JobQueue` on both, `FailureStore` on memory) | pytest parametrized fixtures; the Postgres parameter is marked `integration` (D-51) | memory in pre-commit; both in CI |
-| Adapter | GitHub client (JWT, token scoping, pagination, redirect without auth, Range tail, rate-limit headers, comment upsert by marker), OpenAI client (schema, retries, repair), fastembed (dims, determinism) | respx with recorded responses, recorded webhook payloads | CI |
-| Integration | API + worker + real Postgres: migrations, idempotency, lease expiry after a killed worker process, heartbeats, concurrent workers (no double processing), NOTIFY wake-ups, newer-attempt guard, budget under concurrency | Compose / CI service container `pgvector/pgvector:pg17`; own `<db>_test` databases; skipped locally when Postgres is down, failing in CI (D-51) | CI (`-m integration`), and locally with Compose up |
+| Adapter | GitHub client (JWT, token scoping, pagination, redirect without auth, Range tail, rate-limit headers, comment upsert by marker), OpenAI client (schema, retries, repair), fastembed (dims, determinism); webhook signature and routing (unit tests today) | respx with recorded responses; synthetic webhook payloads in `tests/fixtures/webhooks/` (D-56) | CI |
+| Integration | API + worker + real Postgres: migrations, webhook (401 with no rows, delivery idempotency, 503 and `/ready` with the database unreachable), installation events through the worker, idempotency, lease expiry after a killed worker process, heartbeats, concurrent workers (no double processing), NOTIFY wake-ups, newer-attempt guard, budget under concurrency | Compose / CI service container `pgvector/pgvector:pg17`; own `<db>_test` databases; skipped locally when Postgres is down, failing in CI (D-51) | CI (`-m integration`), and locally with Compose up |
 | E2E (offline) | Replay a recorded `workflow_run` delivery through the API → worker → fake GitHub (respx) and assert the exact check run and comment calls | pytest | CI |
 | Live smoke | Dev app + lab repo; a few OpenAI calls | manual / `-m live` | On demand |
 
@@ -1012,9 +1031,9 @@ Scope: FR-01…FR-14 and the FR-22 skeleton. Live on the dev app via smee.
 
 *P1a — Ingestion and queue*
 - [x] `uv run alembic upgrade head` creates the §6 schema on the Compose database (the empty baseline moved here from P0). Checked by hand on Compose and by `tests/integration/test_migrations.py`; CI also runs it on an empty database.
-- [ ] A missing or wrong signature returns 401 and no DB rows are created (test).
-- [ ] The same delivery posted 3 times creates exactly 1 `webhook_deliveries` row and 1 job (test). The queue half holds already (`JobQueue` contract suite); the endpoint is still missing.
-- [ ] Load script: 100 deliveries → p99 acknowledgement < 1 s on the dev machine.
+- [x] A missing or wrong signature returns 401 and no DB rows are created (test: `tests/integration/test_webhook_postgres.py`).
+- [x] The same delivery posted 3 times creates exactly 1 `webhook_deliveries` row and 1 job (test: same file, through the endpoint).
+- [x] Load script: 100 deliveries → p99 acknowledgement < 1 s on the dev machine (`scripts/load_webhooks.py`: p99 109 to 139 ms over three runs, 10 concurrent, Windows 11 + Compose; all 202).
 - [x] A worker killed mid-job (lease 2 s in the test) → the job is re-leased and completes once (`tests/integration/test_worker_crash.py`: a real worker process is killed).
 - [ ] … and exactly one check run is created for it (integration test with the fake reporter). Needs the diagnose handler and the publication guard (P1c).
 - [x] A job failing with a transient error is retried with increasing `run_after`. After the max attempts it is `dead` (test with a fake clock, on the in-memory and the Postgres queue).

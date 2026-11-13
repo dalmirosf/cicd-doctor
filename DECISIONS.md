@@ -69,6 +69,10 @@ New decisions are appended. A superseded decision is marked `Superseded by D-NN`
 | D-50 | Migrations are hand-written SQL; Alembic lives in the Postgres adapter | Proposed |
 | D-51 | Postgres tests: own databases, "integration wins", skip locally, fail in CI | Proposed |
 | D-52 | Windows: selector event loop for psycopg async, and `127.0.0.1` instead of `localhost` | Proposed |
+| D-53 | The readiness endpoint is `GET /ready` | Author request |
+| D-54 | Installation events are applied by the worker through a `sync_installation` job | Author request + Proposed |
+| D-55 | The API receives its dependencies; uvicorn starts it from the composition root | Proposed |
+| D-56 | Webhook request policy: check order, what is stored, timeouts, normalised payloads | Proposed |
 
 ---
 
@@ -405,6 +409,7 @@ In every case, the sticky comment is edited to show the resolution.
 **Why:** The API and the worker are inbound adapters in the hexagon (SPEC §4.1), so they sit beside `adapters/` instead of inside the composition root. `app/` keeps a single job: building the object graph. The author asked for these folders in the Phase 0 request.
 **Alternatives:** The original layout (`app/api.py`, `app/worker.py`), which mixes entry points with wiring.
 **Consequences:** uvicorn targets `cicd_doctor.api.main:app`. `app/settings.py` and `app/container.py` arrive in P1. D-02 still holds: `app/` is the composition root.
+**Amended by D-55:** uvicorn now starts the factory `cicd_doctor.app.container:create_api`.
 
 ## D-40 — The liveness endpoint is `GET /health`
 **Origin:** P0 request
@@ -412,6 +417,7 @@ In every case, the sticky comment is edited to show the resolution.
 **Why:** The author asked for `/health` in the Phase 0 request, and one plain name is enough for a liveness check.
 **Alternatives:** `/healthz` (a common convention, but nothing in this project depends on it); serving both names (two URLs for one check).
 **Consequences:** Health probes in P5 (Compose, Cloud Run) must use `/health`. The readiness endpoint, still called `/readyz` in the spec, is named when it is built in P1 so that the pair stays consistent.
+**Amended by D-53:** the readiness endpoint is `GET /ready`.
 
 ## D-41 — Compose lives in `docker/compose.yaml`, included by a root `docker-compose.yml`
 **Origin:** P0 request
@@ -523,3 +529,43 @@ In every case, the sticky comment is edited to show the resolution.
 **Why:** psycopg 3.3 refuses the Proactor event loop that Windows uses by default (checked: `InterfaceError`). On the author's machine `localhost` resolved to `::1` first, and the connection to Docker's port 5433 hung there: 5 s with a timeout, forever without one. `127.0.0.1` connected in about 30 ms, and Compose publishes the port on `127.0.0.1` only (D-38).
 **Alternatives:** Setting `WindowsSelectorEventLoopPolicy` globally (deprecated since Python 3.14); asyncpg (no such issue, but D-28 chose psycopg and Alembic would need a second driver); keeping `localhost` and relying on the timeout (a 5 s stall on every connection).
 **Consequences:** asyncio subprocesses are not available on Windows under the selector loop, so the crash test uses `subprocess.Popen`. A developer whose `.env` was copied before this change must switch `localhost` to `127.0.0.1` there too.
+**Amended by D-55:** the API runs on the selector loop as well, because uvicorn picks Proactor on Windows unless it reloads.
+
+## D-53 — The readiness endpoint is `GET /ready`
+**Origin:** Author request (chosen when the endpoint was built, as D-40 planned)
+**Decision:** The API answers `GET /ready` with `{"status": "ready"}` (200) when the database answers `SELECT 1` within 2 s, and `{"status": "unavailable"}` (503) otherwise. This replaces the `/readyz` name in SPEC §4.4. `PostgresJobQueue.ping()` does the check; it is not part of the `JobQueue` port.
+**Why:** `/health` and `/ready` form a consistent pair without the Kubernetes-style `z`, which D-40 asked for. Liveness stays free of dependencies, so a database outage makes the API not ready instead of dead.
+**Alternatives:** `/readyz` (the name first written in the spec; mismatched with `/health`); folding the database check into `/health` (a restart loop when the database is down).
+**Consequences:** The P5 ALB health check uses `/health`; a readiness probe, where one exists, uses `/ready`. Amends D-40.
+
+## D-54 — Installation events are applied by the worker through a `sync_installation` job
+**Origin:** Author request (the worker instead of the request path) + Proposed (the details)
+**Decision:**
+- The webhook turns `installation` (`created`, `deleted`, `suspend`, `unsuspend`) and `installation_repositories` (`added`, `removed`) into a `sync_installation` job, enqueued with the delivery in one transaction, like every other job. `new_permissions_accepted` and other actions are ignored (204).
+- The job payload is an `InstallationEvent`: the action, the installation's id and account, the repositories added (or listed by `created`), the ids removed, and the time the webhook was received.
+- A new `InstallationStore` port (upserts of installations and repositories, plus reads) has in-memory and Postgres adapters sharing one contract suite. The use case `core/usecases/track_installation.py` sets `deleted_at`, `suspended_at` and `removed_at` from the event time and clears them again on `created`, `unsuspend` or a repository added back.
+- Migration `0002` makes `repositories.default_branch` nullable: installation events list repositories without it. A save without a default branch keeps the stored one; P1c fills it in from the `workflow_run` payload.
+
+**Why:** It keeps the request path to verify, record and enqueue (SPEC §7.1, D-04), the delivery dedupe protects these events too, and a database hiccup while applying them is retried like any job.
+**Alternatives:** Applying the upserts in the webhook transaction (no job, but more work in the request path); fetching the default branch from the GitHub API (a GitHub call per repository, with a token, for a value the first `workflow_run` brings for free).
+**Consequences:** Two events of the same installation handled at the same time by different consumers can be applied out of order, leaving a stale state until the next event. These events are rare, and P1c refreshes the repository from each `workflow_run`. An installation installed before this code ran has no row until its next installation event or its first diagnosed run (P1c upserts it).
+
+## D-55 — The API receives its dependencies; uvicorn starts it from the composition root
+**Origin:** Proposed
+**Decision:** `api/main.py` exposes `create_app(dependencies)`, where `dependencies` is either a ready `ApiDependencies` (tests: in-memory queue, test secret) or a provider opened in the FastAPI lifespan (production). `ApiDependencies` holds the queue, the webhook secrets (current, then previous), the readiness check, the clock, `max_attempts` and the enqueue timeout. `app/container.py` builds the real one from the settings in `create_api()`, and `cicd-doctor api` runs `uvicorn.run("cicd_doctor.app.container:create_api", factory=True, loop="asyncio:SelectorEventLoop")`. There is no module-level `app` any more.
+**Why:** The inbound adapter no longer builds infrastructure, so the webhook can be tested with in-memory adapters and the composition root stays the only place that knows Postgres (D-39). uvicorn 0.54 picks the Proactor loop on Windows unless it reloads, which psycopg refuses (D-52); its `loop` option accepts an import string.
+**Alternatives:** A module-level `app` that reads the settings at import time (importing the module would need a `.env`); a FastAPI `Depends` per request (the queue and its engine must live for the whole process).
+**Consequences:** `TestClient(create_app(...))` needs no lifespan for in-memory dependencies. Amends D-39 (the uvicorn target) and D-52 (the API runs on the selector loop too).
+
+## D-56 — Webhook request policy: check order, what is stored, timeouts, normalised payloads
+**Origin:** Proposed
+**Decision:**
+- Order: size (413 past 25 MB, by `Content-Length` and while streaming) → signature (401; 503 if no secret is configured) → `X-GitHub-Event`, `X-GitHub-Delivery` (a UUID) and a JSON object (400) → `ping` (200) → routing (204 when no job applies; 400 when a handled event lacks a field) → enqueue (202, 200 for a duplicate delivery or dedupe key, 503 when the database fails or does not answer within 5 s).
+- Only deliveries that create a job are recorded in `webhook_deliveries`. `ping` and unhandled events store nothing.
+- The signature is compared against every configured secret without stopping at the first match. Nothing from an unverified request is logged; accepted requests log the delivery id, event, action and outcome, never the payload.
+- Job payloads are normalised (`DiagnoseRunPayload`, `InstallationEvent`), never the raw GitHub JSON, which carries commit messages, author e-mails and other data the pipeline does not need. Error messages for invalid payloads name fields, never values.
+- The webhook fixtures in `tests/fixtures/webhooks/` are synthetic payloads shaped like GitHub's documented ones, with invented names and e-mails, not recordings of real deliveries.
+
+**Why:** Each step costs more than the one before it, so cheap rejections come first and nothing is written for an unauthenticated or useless request. The 5 s bound keeps the answer under GitHub's 10 s timeout (NFR-01): if the commit went through anyway, a redelivery is a harmless duplicate (D-06). Storing less personal data in the queue narrows what a database leak exposes.
+**Alternatives:** Recording every verified delivery, including ignored ones (a fuller audit trail, but rows for events nobody acts on); storing the raw payload in the job (simpler now, but personal data in every row and a looser contract for the handlers); committing recorded real payloads (more realistic, but real names and e-mails in the repository).
+**Consequences:** The P1c diagnose handler reads `DiagnoseRunPayload` and must fetch anything else it needs from GitHub. An ignored delivery that is redelivered is ignored again, which is the intended outcome.
