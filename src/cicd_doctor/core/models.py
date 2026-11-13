@@ -51,6 +51,18 @@ class JobKind(StrEnum):
     RECORD_OUTCOME = "record_outcome"
     EXPLAIN = "explain"
     PURGE = "purge"
+    SYNC_INSTALLATION = "sync_installation"  # installation / installation_repositories (D-54)
+
+
+class InstallationAction(StrEnum):
+    """What an ``installation`` or ``installation_repositories`` webhook did (FR-03)."""
+
+    CREATED = "created"
+    DELETED = "deleted"
+    SUSPENDED = "suspended"
+    UNSUSPENDED = "unsuspended"
+    REPOSITORIES_ADDED = "repositories_added"
+    REPOSITORIES_REMOVED = "repositories_removed"
 
 
 class PublicationKind(StrEnum):
@@ -318,6 +330,11 @@ class NewJob(DomainModel):
     max_attempts: int = 5
 
 
+def diagnose_dedupe_key(run_id: int, run_attempt: int) -> str:
+    """One ``diagnose_run`` job per run attempt, whatever the delivery (D-06, FR-04)."""
+    return f"diagnose:{run_id}:{run_attempt}"
+
+
 class Job(DomainModel):
     id: int
     kind: JobKind
@@ -330,6 +347,46 @@ class Job(DomainModel):
     locked_until: datetime | None
     locked_by: str | None
     last_error: str | None
+
+
+class DiagnoseRunPayload(DomainModel):
+    """Payload of a ``diagnose_run`` job: what the webhook knew, never the raw GitHub JSON."""
+
+    run: RunRef
+    conclusion: Literal["failure", "timed_out"]
+    completed_at: datetime  # workflow_run.updated_at
+    default_branch: str
+    private: bool
+
+
+# --- Installations (FR-03, D-54) ----------------------------------------------------------
+
+
+class Installation(DomainModel):
+    id: int  # GitHub installation id
+    account_login: str
+    account_type: str  # "User" | "Organization"
+    suspended_at: datetime | None = None
+    deleted_at: datetime | None = None
+
+
+class Repository(DomainModel):
+    id: int  # GitHub repository id
+    installation_id: int
+    full_name: str
+    private: bool
+    default_branch: str | None = None  # installation events do not carry it (D-54)
+    removed_at: datetime | None = None
+
+
+class InstallationEvent(DomainModel):
+    """Payload of a ``sync_installation`` job, normalised from the webhook."""
+
+    action: InstallationAction
+    installation: Installation  # account data only; the use case decides the timestamps
+    repositories: list[Repository] = Field(default_factory=list)  # created or added
+    removed_repository_ids: list[int] = Field(default_factory=list)
+    occurred_at: datetime  # when the webhook was received
 
 
 class RepoRef(DomainModel):

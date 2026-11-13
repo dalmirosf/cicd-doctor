@@ -19,6 +19,7 @@ from cicd_doctor.core.models import (
     FailedJob,
     Failure,
     FailureStatus,
+    Installation,
     Job,
     JobRef,
     LLMResult,
@@ -28,6 +29,7 @@ from cicd_doctor.core.models import (
     RawLog,
     RepoConfig,
     RepoRef,
+    Repository,
     Reservation,
     RunAttempt,
     RunRef,
@@ -140,6 +142,22 @@ class JobQueue(Protocol):
         """Return True when new jobs may be ready (for example after an enqueue), or False
         after ``max_wait``. Callers still poll: a wake-up is a hint, not a guarantee."""
         ...
+
+
+class InstallationStore(Protocol):
+    """Installations and repositories tracked from webhooks (FR-03, D-54). Upserts only."""
+
+    async def save_installation(self, installation: Installation) -> None: ...
+
+    async def save_repositories(self, repositories: Sequence[Repository]) -> None:
+        """Upsert. A ``None`` ``default_branch`` keeps the stored one."""
+        ...
+
+    async def remove_repositories(self, repo_ids: Sequence[int], removed_at: datetime) -> None: ...
+
+    async def installation(self, installation_id: int) -> Installation | None: ...
+
+    async def repository(self, repo_id: int) -> Repository | None: ...
 
 
 class RepoConfigSource(Protocol):
