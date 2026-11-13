@@ -109,17 +109,37 @@ class Reporter(Protocol):
 
 
 class JobQueue(Protocol):
+    """At-least-once job queue (D-05, D-47).
+
+    Every ``lease`` increments ``Job.attempts``, so ``(job.id, job.attempts)`` identifies one
+    lease. The methods that take a leased ``Job`` change nothing and return False when that lease
+    is no longer the current one (it expired and another worker took the job, or it finished).
+    """
+
     async def enqueue(self, job: NewJob, delivery: Delivery | None) -> bool:
         """Return False on a duplicate delivery or dedupe key."""
         ...
 
-    async def lease(self, worker_id: str, lease: timedelta) -> Job | None: ...
+    async def lease(self, worker_id: str, lease: timedelta) -> Job | None:
+        """Lease the next ready job, or return None. Exhausted jobs become ``dead`` instead."""
+        ...
 
-    async def complete(self, job_id: int) -> None: ...
+    async def heartbeat(self, job: Job, lease: timedelta) -> bool:
+        """Extend the lease to ``now + lease`` while the job is still running."""
+        ...
 
-    async def retry(self, job_id: int, run_after: datetime, error: str) -> None: ...
+    async def complete(self, job: Job) -> bool: ...
 
-    async def fail(self, job_id: int, error: str, dead: bool) -> None: ...
+    async def retry(self, job: Job, run_after: datetime, error: str) -> bool: ...
+
+    async def fail(self, job: Job, error: str, dead: bool) -> bool:
+        """``dead=False``: permanent error (``failed``); ``dead=True``: attempts exhausted."""
+        ...
+
+    async def wait_for_jobs(self, max_wait: timedelta) -> bool:
+        """Return True when new jobs may be ready (for example after an enqueue), or False
+        after ``max_wait``. Callers still poll: a wake-up is a hint, not a guarantee."""
+        ...
 
 
 class RepoConfigSource(Protocol):
