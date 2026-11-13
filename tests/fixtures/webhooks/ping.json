@@ -1,0 +1,13 @@
+{
+  "zen": "Keep it logically awesome.",
+  "hook_id": 30000,
+  "hook": {
+    "type": "App",
+    "id": 30000,
+    "name": "web",
+    "active": true,
+    "events": ["workflow_run"],
+    "config": {"content_type": "json", "insecure_ssl": "0", "url": "https://smee.io/example-channel"},
+    "app_id": 900
+  }
+}

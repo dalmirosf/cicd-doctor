@@ -1,0 +1,18 @@
+{
+  "action": "added",
+  "installation": {
+    "id": 10,
+    "account": {"login": "acme", "id": 50, "type": "Organization"},
+    "repository_selection": "selected",
+    "app_id": 900,
+    "app_slug": "cicd-doctor-dev",
+    "target_type": "Organization"
+  },
+  "repository_selection": "selected",
+  "repositories_added": [
+    {"id": 102, "node_id": "R_kgDOAAAAZg", "name": "gizmos", "full_name": "acme/gizmos", "private": true}
+  ],
+  "repositories_removed": [],
+  "requester": null,
+  "sender": {"login": "acme-admin", "id": 4, "type": "User"}
+}

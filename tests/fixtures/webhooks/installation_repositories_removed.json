@@ -1,0 +1,18 @@
+{
+  "action": "removed",
+  "installation": {
+    "id": 10,
+    "account": {"login": "acme", "id": 50, "type": "Organization"},
+    "repository_selection": "selected",
+    "app_id": 900,
+    "app_slug": "cicd-doctor-dev",
+    "target_type": "Organization"
+  },
+  "repository_selection": "selected",
+  "repositories_added": [],
+  "repositories_removed": [
+    {"id": 101, "node_id": "R_kgDOAAAAZQ", "name": "gadgets", "full_name": "acme/gadgets", "private": false}
+  ],
+  "requester": null,
+  "sender": {"login": "acme-admin", "id": 4, "type": "User"}
+}
