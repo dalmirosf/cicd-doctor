@@ -29,7 +29,7 @@ New decisions are appended. A superseded decision is marked `Superseded by D-NN`
 | D-10 | Cache and similarity scoped to one repository | Proposed |
 | D-11 | Log limits: 3 failed jobs, 20 MB tail per job, ~6k tokens | Interview + Proposed |
 | D-12 | Redact before storage, LLM and publishing; never store raw logs | Brief + Proposed |
-| D-13 | Rule baseline: generic GHA + Python + Docker + Terraform/GCP | Interview |
+| D-13 | Rule baseline: generic GHA + Python + Docker + Terraform/GCP. Amended by D-46 (Terraform/AWS) | Interview |
 | D-14 | Rule matches are passed to the LLM as hints; evals ablate them | Proposed |
 | D-15 | Fixed 8-category enum; `flaky` from a single log is only "suspected" | Brief + Proposed |
 | D-16 | Cost control: signature cache + per-call, per-installation and global caps | Interview |
@@ -47,7 +47,7 @@ New decisions are appended. A superseded decision is marked `Superseded by D-NN`
 | D-28 | Library choices | Proposed |
 | D-29 | Quality tooling and gates | Brief + Proposed |
 | D-30 | Two GitHub Apps (dev via smee.io, prod) | Brief |
-| D-31 | GCP deployment with Terraform | Brief + Proposed |
+| D-31 | GCP deployment with Terraform. Superseded by D-46 | Brief + Proposed |
 | D-32 | Observability: structlog JSON + Langfuse | Brief + Proposed |
 | D-33 | Evals: committed fixtures, cached LLM responses, LLM judge, CI gate | Brief + Proposed |
 | D-34 | Data retention: 30 days deliveries, 90 days failures | Proposed |
@@ -62,6 +62,7 @@ New decisions are appended. A superseded decision is marked `Superseded by D-NN`
 | D-43 | The `core/` import rule is enforced by a pytest test, not import-linter | P0 request |
 | D-44 | `httpx2` backs the FastAPI test client | Proposed |
 | D-45 | CI runners are pinned to `ubuntu-24.04` instead of `ubuntu-latest` | Author request |
+| D-46 | AWS deployment with Terraform (replaces GCP; amends D-13) | Author request |
 
 ---
 
@@ -155,6 +156,7 @@ New decisions are appended. A superseded decision is marked `Superseded by D-NN`
 **Consequences:** Some false positives (redacted non-secrets) are accepted. Re-diagnosing an old failure with a new prompt uses the stored redacted excerpt, which is also what the LLM saw.
 
 ## D-13 — Rule baseline: generic GHA + Python + Docker + Terraform/GCP
+**Amended by D-46:** the cloud rule family is AWS (`AWS-*`) instead of GCP (`GCP-*`).
 **Origin:** Interview
 **Decision:** v1 rules cover generic GitHub Actions failures (timeout, OOM/137, lost runner, disk full, DNS/connection, rate limit, missing input/secret) plus Python (pip/uv, pytest, ruff, mypy), Docker build/push and Terraform/GCP. Lint and type-check failures map to `broken_test` with a rule id that names the gate (`PY-RUFF`, `PY-MYPY`).
 **Why:** These ecosystems match the project's own stack, so the app can diagnose its own CI and CD, and the lab repo's failures. Node/JS was left out of v1 to keep scope tight. The 8 categories come from the brief and have no "code quality" bucket. `broken_test` is the closest ("the code fails its own checks"), and the rule id keeps the distinction visible.
@@ -323,6 +325,7 @@ In every case, the sticky comment is edited to show the resolution.
 **Consequences:** Permission changes must be applied to both apps; the manifest is kept in the repo to keep them in sync.
 
 ## D-31 — GCP deployment with Terraform
+**Superseded by D-46.**
 **Origin:** Brief (stack) + Proposed (details)
 **Decision:**
 - Terraform manages Artifact Registry, Cloud Run (API service + worker), Cloud SQL for PostgreSQL with the `vector` extension, Secret Manager, least-privilege service accounts, and Workload Identity Federation for GitHub Actions CD (no service-account keys).
@@ -435,3 +438,17 @@ In every case, the sticky comment is edited to show the resolution.
 **Why:** The annotations on the first CI run warned that the `ubuntu-latest` label will migrate to Ubuntu 26 beginning October 19, 2026. With the floating label, the image and its preinstalled tools would change without any commit in this repository, so a green pipeline could turn red, or behave differently, with nothing in the history to bisect. A fixed image keeps CI reproducible, in line with the rest of the pipeline, which is already pinned (actions by commit SHA, dependencies by `uv.lock`).
 **Alternatives:** Keep `ubuntu-latest` (no maintenance, but the image changes on GitHub's schedule and not on ours); move straight to the Ubuntu 26 image (also a deliberate choice, but there is no reason to take that jump now, and it can be one reviewed commit later).
 **Consequences:** The pinned image will eventually leave standard support and has to be bumped by hand: one line per job, three today. Do it in a commit that also shows CI green on the new image. The bump is low risk because Python and `uv` come from `astral-sh/setup-uv` and not from the runner image.
+
+## D-46 — AWS deployment with Terraform (replaces GCP)
+**Origin:** Author request
+**Decision:**
+- Production runs on AWS, managed with Terraform: ECR for images, an ECS cluster on Fargate with two services built from the same image (the API behind an Application Load Balancer, and the worker with desired count 1), RDS for PostgreSQL 17 with the `vector` extension, AWS Secrets Manager for secrets, least-privilege IAM task and execution roles, and CloudWatch Logs for the JSON logs.
+- GitHub Actions CD authenticates with GitHub OIDC and an IAM deploy role (no long-lived access keys). It builds and pushes to ECR, runs the migrations as a one-off ECS task, and only then updates the services.
+- The Terraform GitHub provider still creates the `cicd-doctor-lab` repository from `lab/`.
+- The prod GitHub App webhook points at the API's public HTTPS endpoint.
+- The Terraform rule family of the diagnoser (D-13) targets AWS: `AWS-ACCESS-DENIED`, `AWS-CREDENTIALS`, `AWS-OIDC` and `AWS-CONFLICT` replace the four `GCP-*` rules. The lab case "GCP API disabled" becomes "AWS `AccessDenied`". The redaction patterns for GCP credentials stay, because the redactor is provider-agnostic.
+- Open for P5 (SPEC §14): the HTTPS entry point (ALB with an ACM certificate, which needs a domain, or App Runner for the API) and Secrets Manager vs SSM Parameter Store.
+
+**Why:** The author wants to build and show the deployment on AWS. Nothing before P5 depends on the cloud provider, because `core/` has no infrastructure imports (D-43) and the queue is Postgres (D-05). The worker needs continuous CPU to poll the queue, which a long-running Fargate service gives directly, and one image keeps the API and the worker in the same environment contract. Rules for the provider the project itself deploys to let CICD Doctor diagnose its own CD (D-13).
+**Alternatives:** Keep GCP (D-31); Azure (equivalent services, but not the author's target); App Runner for the API and Fargate for the worker only (simpler HTTPS, but two compute products); Lambda behind a function URL plus SQS (event-driven fit, but needs a second queue adapter and behaves differently in dev and prod, as in D-05); EKS (overkill, Kubernetes stays a local extra, D-37).
+**Consequences:** Supersedes D-31 and amends D-13. Wherever earlier entries or the code comments say Cloud Run, Cloud SQL, Secret Manager, Cloud Logging or Cloud Tasks, read ECS Fargate, RDS, Secrets Manager, CloudWatch Logs or SQS (D-05, D-07, D-30, D-32, D-37, D-38, D-40). Health probes in P5 use `/health` (D-40) as the ALB target group check. The ALB and RDS are the main fixed costs; use the smallest tiers (for example `db.t4g.micro`), avoid a NAT gateway by running tasks in public subnets restricted by security groups, and document the expected monthly cost in the README. SPEC §13 P5 and §10 are updated in the same change.
