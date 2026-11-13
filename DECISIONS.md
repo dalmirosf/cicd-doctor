@@ -5,7 +5,8 @@ Each entry records **what** was decided, **why**, the main **alternatives** cons
 **Origin** says where each decision came from:
 - **Brief**: the author's initial design brief.
 - **Interview**: chosen by the author during the design interview.
-- **Proposed**: a conventional default proposed while writing the spec, accepted with it. These are the first ones to challenge.
+- **P0 request**: asked for by the author in the Phase 0 skeleton request, where it differs from the spec as first written.
+- **Proposed**: a conventional default proposed while writing the spec, accepted with it, or a choice made while implementing a phase and reported to the author. These are the first ones to challenge.
 
 New decisions are appended. A superseded decision is marked `Superseded by D-NN` and kept.
 
@@ -52,6 +53,13 @@ New decisions are appended. A superseded decision is marked `Superseded by D-NN`
 | D-35 | Store both the rules and the LLM diagnosis for every failure | Proposed |
 | D-36 | English for code, commits, README and design docs | Brief + Interview |
 | D-37 | Local Kubernetes is an optional extra | Brief |
+| D-38 | Local Postgres is published on host port 5433 | Proposed |
+| D-39 | `api/` and `worker/` are sibling packages; `app/` is only the composition root | P0 request |
+| D-40 | The liveness endpoint is `GET /health` | P0 request |
+| D-41 | Compose lives in `docker/compose.yaml`, included by a root `docker-compose.yml` | P0 request |
+| D-42 | Pre-commit runs ruff and the fast tests; mypy runs in CI | P0 request |
+| D-43 | The `core/` import rule is enforced by a pytest test, not import-linter | P0 request |
+| D-44 | `httpx2` backs the FastAPI test client | Proposed |
 
 ---
 
@@ -68,6 +76,7 @@ New decisions are appended. A superseded decision is marked `Superseded by D-NN`
 **Why:** The interesting logic (excerpting, redaction, rules, validation, policy) is pure and becomes trivially testable with in-memory adapters. Providers can be swapped (D-07, D-08) without touching the domain. The rule is checked automatically instead of relying on discipline.
 **Alternatives:** Layered "service + repository" without explicit ports; checking the rule only in code review.
 **Consequences:** Some boilerplate (ports + two implementations of the stores). The extra ports (`RepoConfigSource`, `UsageLedger`, `Clock`) exist so that config, budget and time stay testable.
+**Amended by D-43:** the import rule is enforced by a pytest test instead of import-linter. **Amended by D-39:** `api/` and `worker/` are sibling packages of `app/`, and `core/` must not import them either.
 
 ## D-03 — Pydantic is allowed inside `core/`
 **Origin:** Proposed
@@ -289,6 +298,7 @@ In every case, the sticky comment is edited to show the resolution.
 **Why:** These are mainstream, typed and well documented. A thin GitHub client over httpx stays transparent (the auth, redirect-without-auth, Range and rate-limit behavior are explicit and testable) instead of hiding them behind PyGithub or githubkit. Alembic gives reviewable migrations. SQLAlchemy Core (not the ORM) keeps the SQL, including `SKIP LOCKED`, explicit.
 **Alternatives:** githubkit (typed and complete, but more magic); asyncpg directly (no migration story); an ORM.
 **Consequences:** A bit more code in the GitHub adapter, covered by recorded-response tests.
+**Amended by D-43 and D-44:** import-linter is not used (a pytest test replaces it), and the FastAPI test client uses `httpx2` as a dev dependency.
 
 ## D-29 — Quality tooling and gates
 **Origin:** Brief (tools) + Proposed (configuration)
@@ -301,6 +311,7 @@ In every case, the sticky comment is edited to show the resolution.
 **Why:** A fast local gate catches most problems before a push, and CI is the full authority. mypy is chosen over pyright for its established `--strict` profile and its plugin support (Pydantic).
 **Alternatives:** pyright or basedpyright (faster; a reasonable switch later); running the full suite in pre-commit (too slow, so people would skip it).
 **Consequences:** Integration tests run only in CI, unless the developer starts Compose and runs `-m integration`.
+**Amended by D-42 and D-43:** pre-commit runs ruff and the fast tests only (mypy runs in CI), and the import contract is a pytest test, so there is no import-linter hook.
 
 ## D-30 — Two GitHub Apps (dev via smee.io, prod)
 **Origin:** Brief
@@ -366,3 +377,52 @@ In every case, the sticky comment is edited to show the resolution.
 **Decision:** kind manifests (or a Helm chart) for api + worker + Postgres come in P6 as an optional extra. Production stays on Cloud Run.
 **Why:** It shows Kubernetes skills without paying for or operating a cluster that the workload doesn't need.
 **Consequences:** The manifests must reuse the same image and environment contract as Cloud Run.
+
+## D-38 — Local Postgres is published on host port 5433
+**Origin:** Proposed
+**Decision:** The Compose `db` service listens on 5432 inside the container and is published on `127.0.0.1:${POSTGRES_PORT:-5433}`. `.env.example` sets `POSTGRES_PORT=5433` and a `DATABASE_URL` that points to it. Setting `POSTGRES_PORT=5432` in `.env` restores the conventional port.
+**Why:** Running `docker compose up` on the author's Windows machine showed a native PostgreSQL already bound to `0.0.0.0:5432`. Native installs are common on developer machines, and stopping someone's own database service just to start a project is the wrong default. The port is bound to loopback so the development database is never exposed to the network.
+**Alternatives:** Keep 5432 and ask the developer to stop the native service (invasive, and it fails again on the next machine with the same setup); publish no host port (the API and worker run on the host with `uv run` until P5, so they could not connect); a random port (the connection URL would change on every start).
+**Consequences:** SPEC §4.6, `.env.example` and the README use 5433. The CI service container and Cloud SQL are not affected, because they do not share the developer's port space.
+
+## D-39 — `api/` and `worker/` are sibling packages; `app/` is only the composition root
+**Origin:** P0 request
+**Decision:** `src/cicd_doctor/` contains `core/`, `adapters/`, `api/` (the FastAPI app, in `api/main.py`), `worker/` (the job consumer) and `app/` (settings, the wiring of adapters into use cases, and the `cicd-doctor` command in `app/cli.py`). This replaces the placement of `api.py` and `worker.py` inside `app/` that SPEC §4.2 had at first. `core/` must not import any of these packages (D-43).
+**Why:** The API and the worker are inbound adapters in the hexagon (SPEC §4.1), so they sit beside `adapters/` instead of inside the composition root. `app/` keeps a single job: building the object graph. The author asked for these folders in the Phase 0 request.
+**Alternatives:** The original layout (`app/api.py`, `app/worker.py`), which mixes entry points with wiring.
+**Consequences:** uvicorn targets `cicd_doctor.api.main:app`. `app/settings.py` and `app/container.py` arrive in P1. D-02 still holds: `app/` is the composition root.
+
+## D-40 — The liveness endpoint is `GET /health`
+**Origin:** P0 request
+**Decision:** The API answers `GET /health` with `{"status": "ok"}` while the process is serving requests. This replaces the `/healthz` name in SPEC §4.4. The readiness endpoint (the database is reachable) stays planned for P1.
+**Why:** The author asked for `/health` in the Phase 0 request, and one plain name is enough for a liveness check.
+**Alternatives:** `/healthz` (a common convention, but nothing in this project depends on it); serving both names (two URLs for one check).
+**Consequences:** Health probes in P5 (Compose, Cloud Run) must use `/health`. The readiness endpoint, still called `/readyz` in the spec, is named when it is built in P1 so that the pair stays consistent.
+
+## D-41 — Compose lives in `docker/compose.yaml`, included by a root `docker-compose.yml`
+**Origin:** P0 request
+**Decision:** The Compose definition is `docker/compose.yaml`, the path used by SPEC §4.6 and the P0 acceptance criteria. A root `docker-compose.yml` contains only `include: [docker/compose.yaml]`, so `docker compose up -d db` works from the repository root and reads `.env`. Both files are valid entry points. The definition sets `name: cicd-doctor`, so the project, network and volume names are the same from either one. `docker/initdb/01-extensions.sql` runs `CREATE EXTENSION IF NOT EXISTS vector` on first start. Postgres is the only service, because it is also the queue (D-05).
+**Why:** The author asked for a `docker-compose.yml`, and the spec fixed `docker/compose.yaml`. With `-f docker/compose.yaml` Compose takes `docker/` as the project directory, which would skip the root `.env` and name the project `docker`. The shim and the explicit `name` remove both problems.
+**Alternatives:** Only a root file (breaks the spec's path, and the P5 Dockerfile is meant to live in `docker/`); only `docker/compose.yaml` (does not give the author the root file they asked for).
+**Consequences:** Two files to know about; `include` needs Compose 2.20 or later. Every `${VAR}` in the definition keeps a default, so `-f docker/compose.yaml` also works without a `.env`. Alembic still owns the schema (SPEC §6); the init script only makes pgvector available.
+
+## D-42 — Pre-commit runs ruff and the fast tests; mypy runs in CI
+**Origin:** P0 request
+**Decision:** `.pre-commit-config.yaml` runs `ruff check --fix`, `ruff format` and `pytest -m "unit or contract" -x -q`, as local hooks through `uv run`, so the tool versions come from `uv.lock`. `mypy --strict` runs in the `types` job of CI and on demand with `uv run mypy`. This amends D-29, which also listed mypy and import-linter in pre-commit.
+**Why:** The author asked for ruff and the fast tests in the commit gate. The gate takes about a second and still rejects broken commits (checked with a deliberately failing test). Type errors still block merges through CI.
+**Alternatives:** The D-29 set (mypy and import-linter in pre-commit too), which catches type errors before the push at the cost of a slower commit.
+**Consequences:** A type error can be committed locally and is caught by CI. The Claude Code `PostToolUse` hook has the same scope (ruff and fast tests). Revisit adding mypy to pre-commit if type errors keep reaching CI.
+
+## D-43 — The `core/` import rule is enforced by a pytest test, not import-linter
+**Origin:** P0 request
+**Decision:** `tests/unit/test_architecture.py` parses every module under `core/` with `ast` and fails if it imports `cicd_doctor.adapters`, `.app`, `.api` or `.worker`, or one of `fastapi`, `starlette`, `uvicorn`, `httpx`, `sqlalchemy`, `psycopg`, `openai`, `fastembed`. Relative imports and `from cicd_doctor import adapters` are resolved. Pydantic stays allowed (D-03). import-linter is not used. This amends D-02, D-29 and NFR-09.
+**Why:** The author asked for a test. It runs inside the fast suite, so pre-commit, the Claude Code hook and CI enforce the rule without another tool or configuration, and the forbidden list is the one D-02 defined. The test is itself tested with synthetic modules, and was checked once by adding `from cicd_doctor.adapters.memory import FakeEmbedder` to `core/` (it failed) and reverting.
+**Alternatives:** import-linter, which expresses the contract declaratively and can follow indirect import chains.
+**Consequences:** Only direct, static imports inside `core/` are checked: dynamic imports (`importlib`) and chains through other first-party packages are not followed. Adding a new forbidden library means editing the list in the test. Revisit import-linter if that gap ever matters.
+
+## D-44 — `httpx2` backs the FastAPI test client
+**Origin:** Proposed
+**Decision:** The dev dependency group contains `httpx2` instead of `httpx` for `fastapi.testclient.TestClient`. This amends D-28 for tests only.
+**Why:** The installed Starlette prefers `httpx2` and emits a deprecation warning when it falls back to `httpx`.
+**Alternatives:** Keep `httpx` and tolerate the warning, which is likely to become an error in a future Starlette release.
+**Consequences:** When P1 adds `httpx` as the runtime client for the GitHub adapter (D-28), check that `respx` still mocks it as expected, since the test client no longer shares that package.

@@ -1,6 +1,6 @@
 # CICD Doctor — Specification
 
-> Status: draft v1 · Last updated: 2026-11-12
+> Status: draft v1 · Last updated: 2026-11-13 (aligned with the Phase 0 skeleton; see D-38 to D-44)
 > Companion document: [DECISIONS.md](DECISIONS.md) (every decision below with its rationale, referenced as `D-NN`).
 
 ---
@@ -79,7 +79,7 @@ Each requirement is delivered in the phase noted in brackets (see §13).
 | NFR-06 | Least privilege: the app permissions in §9.6; installation tokens are scoped to one repository and the needed permission subset. | Manifest review + adapter tests on the token request. |
 | NFR-07 | Security: logs are untrusted input; prompt-injection attack success rate on the injection suite is 0. | Eval injection suite (§11). |
 | NFR-08 | Portability: full local workflow works on Windows 11 + PowerShell (uv, Docker Desktop, Node only for `npx smee-client`). No bash-only scripts are required. LF line endings enforced by `.gitattributes`. | P0 acceptance on Windows. |
-| NFR-09 | Maintainability: `core/` line coverage ≥ 90%; `mypy --strict` clean; ruff clean; import-linter contract (core never imports adapters, app or framework/IO libraries). | CI. |
+| NFR-09 | Maintainability: `core/` line coverage ≥ 90% (gate added in P1, when `core/` has logic); `mypy --strict` clean; ruff clean; architecture test (core never imports adapters, app, api, worker or framework/IO libraries, D-43). | CI. |
 | NFR-10 | Observability: JSON structured logs correlated by `delivery_id`, `job_id`, `run_id`, `installation_id`, `repository`; LLM traces in Langfuse (P5) containing only redacted text. | P5 acceptance. |
 | NFR-11 | Capacity target: ≤ 100 installations, ≤ 1,000 diagnoses/day. Beyond that, revisit the queue (D-05). | Documented limit. |
 | NFR-12 | Resilience: an LLM outage never prevents a diagnosis from being published (rules fallback). A GitHub outage delays but does not lose work (retries). | Fault-injection tests. |
@@ -90,7 +90,7 @@ Each requirement is delivered in the phase noted in brackets (see §13).
 
 ### 4.1 Hexagonal overview
 
-`core/` contains the domain models, the pure domain logic (cleaning, redaction, signature, rules, prompt building, output validation) and the use cases. It talks to the outside world only through **ports** (Python `Protocol`s). Adapters implement the ports. The composition root in `app/` wires adapters into use cases. `core/` never imports `adapters/` or `app/`; this is enforced by import-linter in CI (D-02).
+`core/` contains the domain models, the pure domain logic (cleaning, redaction, signature, rules, prompt building, output validation) and the use cases. It talks to the outside world only through **ports** (Python `Protocol`s). Adapters implement the ports. The composition root in `app/` wires adapters into use cases; the API (`api/`) and the worker (`worker/`) are the inbound adapters (D-39). `core/` never imports `adapters/`, `app/`, `api/` or `worker/`; this is enforced by a pytest architecture test that runs in the fast suite and in CI (D-02, D-43).
 
 ```mermaid
 flowchart LR
@@ -148,21 +148,27 @@ cicd-doctor/
 │   │   ├── render.py            # check run + comment markdown, output sanitization
 │   │   └── usecases/            # diagnose_failed_run.py, record_run_outcome.py, explain_command.py
 │   ├── adapters/
+│   │   ├── clock.py             # SystemClock, FakeClock
 │   │   ├── github/              # webhook router, app auth (JWT + installation tokens), logs, reporter, config
 │   │   ├── llm/openai_client.py
 │   │   ├── embeddings/fastembed_embedder.py
 │   │   ├── postgres/            # store.py, queue.py, ledger.py, alembic migrations
-│   │   └── memory/              # in-memory store/queue/ledger + fake LLM, fake log source
-│   └── app/                     # settings.py, container.py, api.py, worker.py, cli.py
-├── tests/                       # unit/, contract/, adapters/, integration/, e2e/, fixtures/
+│   │   └── memory/              # store.py, embedder.py (FakeEmbedder); queue, ledger, fake LLM, fake log source later
+│   ├── api/                     # main.py: FastAPI app, GET /health (D-40); webhook router in P1
+│   ├── worker/                  # job consumer (P1)
+│   └── app/                     # composition root (D-39): cli.py now; settings.py, container.py in P1
+├── tests/                       # unit/, contract/ (conftest.py, factories.py); adapters/, integration/, e2e/, fixtures/ from P1
 ├── evals/                       # cases/, runner/, reports/, baseline.json
 ├── lab/                         # source of the lab repo (workflows that fail on purpose)
-├── docker/                      # Dockerfile, compose.yaml
+├── docker/                      # compose.yaml, initdb/01-extensions.sql; Dockerfile (P5)
 ├── infra/terraform/             # GCP + GitHub provider (P5)
 ├── .github/workflows/           # ci.yml, evals.yml (P4), cd.yml (P5)
 ├── SPEC.md · DECISIONS.md · README.md
-└── pyproject.toml · uv.lock · .pre-commit-config.yaml · .env.example
+└── pyproject.toml · uv.lock · .pre-commit-config.yaml · .env.example · docker-compose.yml (D-41)
+    .claude/                     # settings.json + hooks/post_edit.py (§12)
 ```
+
+Implemented as of P0: `core/` has `models.py`, `ports.py` and `errors.py`; `adapters/` has `clock.py` and the in-memory `FailureStore` and `FakeEmbedder`; `api/` serves `GET /health`; `app/` has the CLI. The `logs/`, `rules/`, `diagnosis/` and `usecases/` packages under `core/`, and the `github/`, `llm/`, `embeddings/` and `postgres/` packages under `adapters/`, exist as empty placeholders. Everything else in the tree arrives in the phase that owns it (§13).
 
 ### 4.3 Ports
 
@@ -218,20 +224,21 @@ class Clock(Protocol):
 
 | Component | Process | Responsibilities |
 |---|---|---|
-| API | `cicd-doctor api` (uvicorn, FastAPI) | `/webhooks/github`, `/healthz` (process up), `/readyz` (DB reachable). Body limit 25 MB. |
-| Worker | `cicd-doctor worker` | N concurrent asyncio consumers (default 4); wakes on `LISTEN jobs_new`, polls every 5 s as fallback; runs use cases; schedules the purge job daily. |
-| Postgres 17 + pgvector | Compose locally (`pgvector/pgvector:pg17`); Cloud SQL in prod | Queue, deliveries, failures, diagnoses, publications, usage ledger, embeddings. |
+| API | `cicd-doctor api` (uvicorn, FastAPI; `api/main.py`) | `/webhooks/github` (P1), `/health` (process up; exists since P0, D-40), `/readyz` (DB reachable; P1, name settled then, D-40). Body limit 25 MB. |
+| Worker | `cicd-doctor worker` (P1; the command does not exist yet) | N concurrent asyncio consumers (default 4); wakes on `LISTEN jobs_new`, polls every 5 s as fallback; runs use cases; schedules the purge job daily. |
+| Postgres 17 + pgvector | Compose locally (`pgvector/pgvector:pg17`, host port 5433, D-38, D-41); Cloud SQL in prod | Queue, deliveries, failures, diagnoses, publications, usage ledger, embeddings. |
 
 ### 4.5 Configuration
 
-Settings come from the environment (`pydantic-settings`; `.env` locally, Secret Manager in prod). `.env.example` is committed, `.env` is not.
+Settings come from the environment (`pydantic-settings`; `.env` locally, Secret Manager in prod). `.env.example` is committed, `.env` is not. Until P1 only the `POSTGRES_*` variables are read (by Docker Compose); the rest of the table is the contract that the app starts reading in P1.
 
 | Variable | Default | Notes |
 |---|---|---|
 | `APP_ENV` | `dev` | `dev` / `prod` (two different GitHub Apps, D-30) |
 | `GITHUB_APP_ID`, `GITHUB_PRIVATE_KEY` | — | PEM content or file path |
 | `GITHUB_WEBHOOK_SECRET`, `GITHUB_WEBHOOK_SECRET_PREVIOUS` | — | Previous secret only during rotation |
-| `DATABASE_URL` | — | `postgresql+psycopg://…` |
+| `DATABASE_URL` | — | `postgresql+psycopg://…` (`.env.example` points at the Compose database on port 5433) |
+| `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_PORT` | `cicd`, `cicd`, `cicd_doctor`, `5433` | Read only by Docker Compose (D-38, D-41); development defaults, bound to loopback |
 | `LLM_ENABLED` | `true` | Global kill switch; `false` = rules only |
 | `OPENAI_API_KEY`, `OPENAI_MODEL` | — | Model chosen in P1 by a mini-eval (D-07) |
 | `LLM_PRICE_INPUT_PER_MTOK`, `LLM_PRICE_OUTPUT_PER_MTOK` | — | Used for cost estimates and accounting |
@@ -249,13 +256,17 @@ Settings come from the environment (`pydantic-settings`; `.env` locally, Secret 
 
 ```powershell
 uv sync
-docker compose -f docker/compose.yaml up -d db
-uv run alembic upgrade head
-uv run cicd-doctor api          # terminal 1, http://localhost:8000
-uv run cicd-doctor worker       # terminal 2
-npx smee-client --url https://smee.io/<dev-channel> --target http://localhost:8000/webhooks/github   # terminal 3
+Copy-Item .env.example .env
+docker compose up -d db         # from the repo root; same as: docker compose -f docker/compose.yaml up -d db
+uv run alembic upgrade head     # from P1
+uv run cicd-doctor api          # terminal 1, http://localhost:8000 (GET /health)
+uv run cicd-doctor worker       # terminal 2, from P1
+npx smee-client --url https://smee.io/<dev-channel> --target http://localhost:8000/webhooks/github   # terminal 3, from P1
 uv run pytest
+uv run pre-commit install       # once per clone: enables the commit gate (§12)
 ```
+
+In P0 only the database, `GET /health` and the tests exist; the migration, the worker and the webhook relay start working in P1.
 
 The **dev GitHub App** points its webhook URL at the smee channel; the **prod GitHub App** points at the Cloud Run URL (D-30).
 
@@ -368,6 +379,24 @@ The LLM returns only the fields below. The JSON Schema is generated from a dedic
 4. A schema-invalid response gets one repair attempt (the validation error is sent back once). If it fails again, the rules diagnosis is used with `fallback_reason = "invalid_output"`.
 
 Confidence is shown as **high** (≥ 0.75), **medium** (0.45–0.75) or **low** (< 0.45).
+
+### 5.2 Supporting types (P0 placeholders)
+
+The ports in §4.3 refer to types that §5 does not define. They exist in `core/models.py` with the minimum fields the ports need, and are refined in P1 when the first adapters use them:
+
+| Type | Used by | Fields (summary) |
+|---|---|---|
+| `FailureStatus`, `JobStatus`, `JobKind`, `PublicationKind` | stores, queue | Enums matching §6 (`failure_status`, `job_status`, the job kinds), plus `check` / `comment` |
+| `WorkflowRun`, `RunAttempt` | `FailureStore.save_run` | The columns of `workflow_runs` and `run_attempts` |
+| `RawLog` | `LogSource` | `text` (excluded from `repr`, so it cannot leak into log lines) and `truncated` |
+| `DiagnosisRequest`, `LLMResult` | `LLMClient` | Request: job, excerpt, rule hints, similar failures, repair error. Result: raw JSON, model, token counts, latency |
+| `CommentTarget`, `CommentRef` | `Reporter` | Target: run + PR number. Ref: installation, repository, comment id |
+| `PublicationKey`, `Publication` | `FailureStore.publication`, `save_publication` | Key: `check` (repo, run) or `comment` (repo, PR, workflow), validated per kind. Publication: key, GitHub id, run id, attempt. A publication is newer when its `(run_id, attempt)` pair is larger; the contract test fixes this ordering |
+| `Delivery`, `NewJob`, `Job` | `JobQueue` | The columns of `webhook_deliveries` and `jobs` |
+| `RepoRef`, `RepoConfig` | `RepoConfigSource` | `RepoConfig` has `comment`, `llm` and `ignore_workflows`, and rejects unknown keys (D-26) |
+| `Reservation` | `UsageLedger` | Installation, UTC day, estimated cost |
+
+`RunRef.branch_key` (`head_repo_full_name:head_branch`) is the branch identity used by `FailureStore.open_failures` and by flaky and fix tracking (§7.2).
 
 ---
 
@@ -937,8 +966,10 @@ Variants: `rules`, `llm` (no hints), `llm+hints` (production behavior in P1), `l
 The fake LLM adapter can script: valid responses, malformed JSON, timeouts, 429s, responses that follow an injection, fabricated evidence, and over-long fields.
 
 **Quality gates**
-- `pre-commit`: ruff (lint + format), mypy `--strict`, import-linter, and `pytest -m "unit or contract" -x -q` (memory adapters only, target < 30 s). A commit with a failing test is rejected.
-- CI (`.github/workflows/ci.yml`, on PR and push to `main`): lint, type check, import contracts, unit + contract + adapter + integration + e2e tests, coverage report (`core/` ≥ 90%). Later: offline evals (P4) and a Docker build (P5).
+- `pre-commit` (local hooks run through `uv run`): ruff (lint + format) and `pytest -m "unit or contract" -x -q` (memory adapters only, target < 30 s). A commit with a failing test is rejected. mypy is not part of pre-commit (D-42).
+- Claude Code hook (`.claude/settings.json` → `.claude/hooks/post_edit.py`): after each edit to a Python file or `pyproject.toml`, it runs `ruff check`, `ruff format --check` and the same fast tests, and reports failures back to Claude. It only checks and never rewrites files.
+- The `core/` import rule is a unit test (`tests/unit/test_architecture.py`), so it runs in all of the above (D-43).
+- CI (`.github/workflows/ci.yml`, on every push and pull request): three parallel jobs: lint (`ruff check`, `ruff format --check`), types (`mypy`, strict) and tests (`pytest`, the whole suite; today unit and contract tests). Added in later phases: the pgvector service container with the adapter, integration and e2e tests, and the `core/` coverage gate ≥ 90% (P1); offline evals (P4); a Docker build (P5).
 - The dev app is installed on this repository, so CICD Doctor diagnoses its own CI failures.
 
 ---
@@ -948,17 +979,20 @@ The fake LLM adapter can script: valid responses, malformed JSON, timeouts, 429s
 Every criterion is a check someone can run and observe passing.
 
 ### P0 — Foundations
-Scope: repo skeleton (§4.2), `pyproject.toml` with uv, ruff, mypy strict, pytest, import-linter, pre-commit, Compose with pgvector, empty Alembic baseline, CI workflow, `.env.example`, README stub.
-- [ ] On Windows PowerShell: `uv sync`, `docker compose -f docker/compose.yaml up -d db` and `uv run alembic upgrade head` succeed, and `uv run pytest` is green.
-- [ ] `uv run pre-commit run --all-files` is green.
-- [ ] A commit containing a deliberately failing test is rejected by the pre-commit hook.
-- [ ] Adding `import cicd_doctor.adapters` inside `core/` makes `lint-imports` fail (checked once, then reverted).
-- [ ] CI runs on a PR and is green. Python 3.13 compatibility of fastembed/onnxruntime is confirmed (otherwise pin 3.12 and record it in DECISIONS.md).
+Scope: repo skeleton (§4.2), `pyproject.toml` with uv, ruff, mypy strict and pytest, the core models and ports with an in-memory `FailureStore` and a `FakeEmbedder`, `GET /health`, the `core/` import test (D-43), pre-commit (D-42), the Claude Code hook, Compose with pgvector (D-41), CI workflow, `.gitignore`, `.env.example`, README stub. The empty Alembic baseline moved to P1a (§14).
+- [x] On Windows PowerShell: `uv sync` and `docker compose up -d db` (equivalently `docker compose -f docker/compose.yaml up -d db`) succeed, and `uv run pytest` is green. (`uv run alembic upgrade head` moved to P1a.)
+- [x] `uv run pre-commit run --all-files` is green.
+- [x] A commit containing a deliberately failing test is rejected by the pre-commit hook.
+- [x] Adding `import cicd_doctor.adapters` inside `core/` makes `tests/unit/test_architecture.py` fail (checked once, then reverted).
+- [x] CI is green on a push to `main`.
+- [ ] CI is green on a pull request.
+- [ ] Python 3.13 compatibility of fastembed/onnxruntime is confirmed (otherwise pin 3.12 and record it in DECISIONS.md). Confirmed on the dev machine only; Linux is still open (§14).
 
 ### P1 — MVP vertical slice
 Scope: FR-01…FR-14 and the FR-22 skeleton. Live on the dev app via smee.
 
 *P1a — Ingestion and queue*
+- [ ] `uv run alembic upgrade head` creates the §6 schema on the Compose database (the empty baseline moved here from P0).
 - [ ] A missing or wrong signature returns 401 and no DB rows are created (test).
 - [ ] The same delivery posted 3 times creates exactly 1 `webhook_deliveries` row and 1 job (test).
 - [ ] Load script: 100 deliveries → p99 acknowledgement < 1 s on the dev machine.
@@ -1030,3 +1064,6 @@ Scope: Docker, Terraform on GCP, CD, prod app, Langfuse.
 - Whether lint and type-check failures deserve their own category → after the P4 evals (D-13).
 - `issue_comment` delivery with Pull requests vs Issues permission → P3 (D-21).
 - Cloud Run worker pool vs a min-instances service → at P5 deploy time (D-31).
+- Alembic baseline migration: not part of the P0 skeleton, so `uv run alembic upgrade head` does not exist yet → P1a (§13).
+- CI on a pull request: CI has run green on a push to `main` only → confirm on the first pull request (P0 criterion in §13).
+- fastembed on Python 3.13: confirmed on the dev machine (Windows 11, CPython 3.13.7, fastembed 0.9.1, onnxruntime 1.31.1), tried in a throwaway environment without adding it as a dependency. It installs, loads the model in about 7.5 s including the first download, and returns 384-d float32 vectors that are L2-normalised and deterministic, at about 1.6 ms per embedding after the load. Still open: confirm on Linux (CI or the P5 Docker image) before relying on it, and pin 3.12 (recording it in DECISIONS.md) if that fails. Also, fastembed serves `BAAI/bge-small-en-v1.5` from the Qdrant ONNX build `Qdrant/bge-small-en-v1.5-onnx-Q` (`model_optimized.onnx`, 67 MB), not from the original weights, so check in P2 that the `SIMILAR_MIN_SCORE` of 0.85 is calibrated against that build (D-08).
