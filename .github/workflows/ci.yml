@@ -41,10 +41,31 @@ jobs:
     name: Tests (pytest)
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    # Same image as docker/compose.yaml (SPEC §12). Integration tests fail here instead of being
+    # skipped, because GitHub Actions sets CI=true (D-51).
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: cicd
+          POSTGRES_PASSWORD: cicd
+          POSTGRES_DB: cicd_doctor
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U cicd -d cicd_doctor"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql+psycopg://cicd:cicd@127.0.0.1:5432/cicd_doctor
+      TEST_DATABASE_URL: postgresql+psycopg://cicd:cicd@127.0.0.1:5432/cicd_doctor_test
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
           enable-cache: true
       - run: uv sync --locked
+      # The migration through the real CLI, on an empty database (SPEC §13 P1a).
+      - run: uv run alembic upgrade head
       - run: uv run pytest
