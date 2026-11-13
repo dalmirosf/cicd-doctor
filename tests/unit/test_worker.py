@@ -12,6 +12,7 @@ from cicd_doctor.core.errors import PermanentError, TransientError
 from cicd_doctor.core.models import Job, JobKind, JobStatus, NewJob
 from cicd_doctor.worker import Handler, Worker
 from tests.factories import T0
+from tests.scenarios import assert_transient_errors_back_off_until_dead
 
 KIND = JobKind.DIAGNOSE_RUN
 
@@ -65,37 +66,8 @@ async def test_a_successful_handler_completes_the_job() -> None:
 async def test_transient_errors_back_off_with_increasing_run_after_then_the_job_is_dead() -> None:
     clock = FakeClock(T0)
     queue = InMemoryJobQueue(clock)
-    handler, calls = raising(lambda: TransientError("GitHub 502"))
-    worker = make_worker(queue, clock, handler)
-    await enqueue(queue, max_attempts=5)
 
-    delays: list[timedelta] = []
-    run_afters = []
-    for _ in range(4):
-        started = clock.now()
-        assert await worker.run_one("c1") is True
-        queued = await job_1(queue)
-        assert queued.status is JobStatus.QUEUED
-        assert queued.last_error == "TransientError: GitHub 502"
-        delays.append(queued.run_after - started)
-        run_afters.append(queued.run_after)
-        assert await worker.run_one("c1") is False  # not ready before run_after
-        clock.advance(queued.run_after - clock.now())
-    assert await worker.run_one("c1") is True
-
-    dead = await job_1(queue)
-    assert delays == [
-        timedelta(seconds=30),
-        timedelta(minutes=2),
-        timedelta(minutes=8),
-        timedelta(minutes=30),
-    ]
-    assert run_afters == sorted(run_afters)
-    assert len(set(run_afters)) == len(run_afters)
-    assert calls == [1, 2, 3, 4, 5]
-    assert dead.status is JobStatus.DEAD
-    assert dead.attempts == 5
-    assert await worker.run_one("c1") is False
+    await assert_transient_errors_back_off_until_dead(queue, clock, queue.get)
 
 
 async def test_full_jitter_draws_the_delay_below_the_ceiling() -> None:
