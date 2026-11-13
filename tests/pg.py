@@ -79,9 +79,13 @@ def migrate_to_head(url: str) -> None:
     command.upgrade(alembic_config(url), "head")
 
 
-def reset_queue_tables(url: str) -> None:
+def reset_tables(url: str) -> None:
+    """Empty the tables the tests write to (CASCADE reaches everything that references them)."""
     with psycopg.connect(libpq_url(url), autocommit=True, connect_timeout=5) as conn:
-        conn.execute("TRUNCATE jobs, webhook_deliveries RESTART IDENTITY CASCADE")
+        conn.execute(
+            "TRUNCATE jobs, webhook_deliveries, installations, repositories "
+            "RESTART IDENTITY CASCADE"
+        )
 
 
 def scalar(url: str, query: str) -> object:
