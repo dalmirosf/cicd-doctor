@@ -102,6 +102,14 @@ def test_upgrade_creates_the_spec_schema(migrations_url: str) -> None:
         """,
     )
     assert embedding == [("vector(384)",)]
+    default_branch = _rows(
+        migrations_url,
+        """
+        SELECT is_nullable FROM information_schema.columns
+        WHERE table_name = 'repositories' AND column_name = 'default_branch'
+        """,
+    )
+    assert default_branch == [("YES",)]  # 0002: installation events carry no default branch
 
 
 def test_downgrade_removes_everything_and_upgrade_works_again(migrations_url: str) -> None:

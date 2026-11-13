@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.pg import database_url_for_tests, ensure_database, migrate_to_head, reset_queue_tables
+from tests.pg import database_url_for_tests, ensure_database, migrate_to_head, reset_tables
 
 _TESTS_DIR = Path(__file__).parent
 _MARKED_DIRECTORIES = {"unit", "contract", "integration", "e2e"}
@@ -52,6 +52,6 @@ def pg_url() -> str:
 
 @pytest.fixture
 def pg_clean(pg_url: str) -> str:
-    """``pg_url`` with empty queue tables."""
-    reset_queue_tables(pg_url)
+    """``pg_url`` with empty tables."""
+    reset_tables(pg_url)
     return pg_url

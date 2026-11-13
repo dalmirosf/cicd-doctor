@@ -9,18 +9,23 @@ enqueue transaction; a dedicated autocommit psycopg connection listens on ``jobs
 import asyncio
 import json
 import logging
-from collections.abc import AsyncIterator, Iterator
-from contextlib import asynccontextmanager, contextmanager, suppress
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager, suppress
 from datetime import datetime, timedelta
 from typing import Any, Self
 
 import psycopg
-from sqlalchemy import RowMapping, make_url, text
-from sqlalchemy import exc as sa_exc
-from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, create_async_engine
+from sqlalchemy import RowMapping, text
+from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
+from cicd_doctor.adapters.postgres.engine import (
+    CONNECT_TIMEOUT_S,
+    libpq_url,
+    make_engine,
+    ping,
+    transient_db_errors,
+)
 from cicd_doctor.adapters.wakeup import Wakeup
-from cicd_doctor.core.errors import TransientError
 from cicd_doctor.core.models import Delivery, Job, JobKind, JobStatus, NewJob
 from cicd_doctor.core.ports import Clock
 from cicd_doctor.core.retry import truncate_error
@@ -28,7 +33,6 @@ from cicd_doctor.core.retry import truncate_error
 logger = logging.getLogger(__name__)
 
 CHANNEL = "jobs_new"
-CONNECT_TIMEOUT_S = 10
 EXHAUSTED_ERROR = "no attempts left: the last attempt did not finish before its lease expired"
 _LISTEN_RETRY_MAX_S = 30.0
 _MAX_SKIPPED_ROWS = 10  # unknown kinds failed in one lease call before giving up for this poll
@@ -119,9 +123,6 @@ _FAIL = text(
 )
 _GET = text(f"SELECT {_JOB_COLUMNS} FROM jobs WHERE id = :id")
 
-# Connection-level problems are worth retrying (D-23); anything else is a bug and propagates.
-_TRANSIENT_DB_ERRORS = (sa_exc.OperationalError, sa_exc.InterfaceError, sa_exc.TimeoutError)
-
 
 class PostgresJobQueue:
     """Implements ``JobQueue``. Create it with ``PostgresJobQueue.connect(...)``."""
@@ -146,18 +147,12 @@ class PostgresJobQueue:
 
         ``database_url`` is a SQLAlchemy URL (``postgresql+psycopg://...``).
         """
-        engine = create_async_engine(
-            database_url,
-            pool_size=pool_size,
-            max_overflow=pool_size,
-            pool_pre_ping=True,
-            connect_args={"connect_timeout": CONNECT_TIMEOUT_S},
-        )
+        engine = make_engine(database_url, pool_size=pool_size)
         queue = cls(engine, clock)
         listener: asyncio.Task[None] | None = None
         try:
             if listen:
-                listener = asyncio.create_task(queue._listen(_libpq_url(database_url)))
+                listener = asyncio.create_task(queue._listen(libpq_url(database_url)))
                 # Give the listener a moment, so a job enqueued right after connect() wakes us.
                 # If the database is down the worker still starts and falls back to polling.
                 with suppress(TimeoutError):
@@ -175,7 +170,7 @@ class PostgresJobQueue:
 
     async def enqueue(self, job: NewJob, delivery: Delivery | None) -> bool:
         now = self._clock.now()
-        with _transient_db_errors():
+        with transient_db_errors():
             async with self._engine.begin() as conn:
                 if delivery is not None:
                     inserted = await conn.execute(
@@ -209,7 +204,7 @@ class PostgresJobQueue:
 
     async def lease(self, worker_id: str, lease: timedelta) -> Job | None:
         now = self._clock.now()
-        with _transient_db_errors():
+        with transient_db_errors():
             async with self._engine.begin() as conn:
                 await self._sweep_exhausted(conn, now)
                 for _ in range(_MAX_SKIPPED_ROWS):
@@ -252,10 +247,14 @@ class PostgresJobQueue:
             row = (await conn.execute(_GET, {"id": job_id})).first()
         return None if row is None else _to_job(row._mapping)
 
+    async def ping(self) -> bool:
+        """Readiness: the database answers ``SELECT 1`` within 2 s (D-53)."""
+        return await ping(self._engine)
+
     # --- Internals --------------------------------------------------------------------------
 
     async def _fenced(self, statement: Any, job: Job, params: dict[str, Any]) -> bool:
-        with _transient_db_errors():
+        with transient_db_errors():
             async with self._engine.begin() as conn:
                 result = await conn.execute(
                     statement, {"id": job.id, "attempts": job.attempts, **params}
@@ -318,17 +317,3 @@ def _to_job(row: RowMapping) -> Job:
         locked_by=row["locked_by"],
         last_error=row["last_error"],
     )
-
-
-def _libpq_url(database_url: str) -> str:
-    """``postgresql+psycopg://...`` (SQLAlchemy) -> ``postgresql://...`` (libpq)."""
-    return make_url(database_url).set(drivername="postgresql").render_as_string(hide_password=False)
-
-
-@contextmanager
-def _transient_db_errors() -> Iterator[None]:
-    try:
-        yield
-    except _TRANSIENT_DB_ERRORS as exc:
-        cause = getattr(exc, "orig", None) or exc
-        raise TransientError(f"database unavailable: {type(cause).__name__}") from exc
