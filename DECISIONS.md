@@ -6,6 +6,7 @@ Each entry records **what** was decided, **why**, the main **alternatives** cons
 - **Brief**: the author's initial design brief.
 - **Interview**: chosen by the author during the design interview.
 - **P0 request**: asked for by the author in the Phase 0 skeleton request, where it differs from the spec as first written.
+- **Author request**: asked for by the author in a later request, after the spec and the Phase 0 skeleton existed.
 - **Proposed**: a conventional default proposed while writing the spec, accepted with it, or a choice made while implementing a phase and reported to the author. These are the first ones to challenge.
 
 New decisions are appended. A superseded decision is marked `Superseded by D-NN` and kept.
@@ -60,6 +61,7 @@ New decisions are appended. A superseded decision is marked `Superseded by D-NN`
 | D-42 | Pre-commit runs ruff and the fast tests; mypy runs in CI | P0 request |
 | D-43 | The `core/` import rule is enforced by a pytest test, not import-linter | P0 request |
 | D-44 | `httpx2` backs the FastAPI test client | Proposed |
+| D-45 | CI runners are pinned to `ubuntu-24.04` instead of `ubuntu-latest` | Author request |
 
 ---
 
@@ -426,3 +428,10 @@ In every case, the sticky comment is edited to show the resolution.
 **Why:** The installed Starlette prefers `httpx2` and emits a deprecation warning when it falls back to `httpx`.
 **Alternatives:** Keep `httpx` and tolerate the warning, which is likely to become an error in a future Starlette release.
 **Consequences:** When P1 adds `httpx` as the runtime client for the GitHub adapter (D-28), check that `respx` still mocks it as expected, since the test client no longer shares that package.
+
+## D-45 — CI runners are pinned to `ubuntu-24.04` instead of `ubuntu-latest`
+**Origin:** Author request
+**Decision:** Every job in `.github/workflows/ci.yml` uses `runs-on: ubuntu-24.04`. The workflows added later (`evals.yml` in P4, `cd.yml` in P5) follow the same rule, and the runner image only changes through a commit.
+**Why:** The annotations on the first CI run warned that the `ubuntu-latest` label will migrate to Ubuntu 26 beginning October 19, 2026. With the floating label, the image and its preinstalled tools would change without any commit in this repository, so a green pipeline could turn red, or behave differently, with nothing in the history to bisect. A fixed image keeps CI reproducible, in line with the rest of the pipeline, which is already pinned (actions by commit SHA, dependencies by `uv.lock`).
+**Alternatives:** Keep `ubuntu-latest` (no maintenance, but the image changes on GitHub's schedule and not on ours); move straight to the Ubuntu 26 image (also a deliberate choice, but there is no reason to take that jump now, and it can be one reviewed commit later).
+**Consequences:** The pinned image will eventually leave standard support and has to be bumped by hand: one line per job, three today. Do it in a commit that also shows CI green on the new image. The bump is low risk because Python and `uv` come from `astral-sh/setup-uv` and not from the runner image.
