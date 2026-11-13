@@ -1,1 +1,1 @@
-"""Use cases: DiagnoseFailedRun, RecordRunOutcome, ExplainCommand. Arrive in P1-P3."""
+"""Use cases: track_installation; DiagnoseFailedRun, RecordRunOutcome, ExplainCommand later."""

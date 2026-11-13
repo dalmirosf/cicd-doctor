@@ -4,10 +4,11 @@ A GitHub App that explains *why* a GitHub Actions workflow run failed: it reads 
 failed jobs, redacts secrets, looks for similar past failures and publishes a structured diagnosis
 as a check run and a sticky PR comment.
 
-> **Status: Phase 1a (ingestion and queue), in progress.** The database schema, the Postgres job
-> queue and the worker exist; the webhook and the diagnosis pipeline do not yet, so the worker
-> runs placeholder handlers. See [SPEC.md](SPEC.md) for the design and phases, and
-> [DECISIONS.md](DECISIONS.md) for the reasoning behind each decision.
+> **Status: Phase 1a (ingestion and queue).** The signed webhook, the Postgres job queue and the
+> worker exist, and installations are tracked. The diagnosis pipeline does not exist yet, so a
+> failed run becomes a `diagnose_run` job that the worker completes with a placeholder handler.
+> See [SPEC.md](SPEC.md) for the design and phases, and [DECISIONS.md](DECISIONS.md) for the
+> reasoning behind each decision.
 
 ## Quickstart (Windows, PowerShell)
 
@@ -24,10 +25,24 @@ uv run cicd-doctor api               # http://127.0.0.1:8000
 In another terminal:
 
 ```powershell
-Invoke-RestMethod http://127.0.0.1:8000/health      # -> status: ok
+Invoke-RestMethod http://127.0.0.1:8000/health      # -> status: ok (liveness)
+Invoke-RestMethod http://127.0.0.1:8000/ready       # -> status: ready (the database answers)
 uv run cicd-doctor worker                            # job worker; Ctrl+C stops it cleanly
 uv run pytest                                        # all tests (integration ones need the db)
 ```
+
+### Receiving webhooks locally (dev GitHub App + smee.io)
+
+Set `GITHUB_WEBHOOK_SECRET` in `.env` to the dev app's webhook secret, point the app's webhook URL
+at your smee channel, then, with the API running:
+
+```powershell
+npx smee-client --url https://smee.io/<your-channel> --target http://127.0.0.1:8000/webhooks/github
+```
+
+A failed workflow run then shows up as a row in `webhook_deliveries` and a `diagnose_run` job.
+`uv run python scripts/load_webhooks.py --cleanup` measures the acknowledgement latency with 100
+signed deliveries (p99 must stay under 1 s).
 
 If your `.env` is older than this README, check that `DATABASE_URL` uses `127.0.0.1` and not
 `localhost`: on Windows `localhost` can try `::1` first and hang
@@ -58,11 +73,12 @@ database and never touch your development data.
 ```
 src/cicd_doctor/
 ├── core/       # domain models, ports, errors, retry rules. Never imports adapters (tests/unit/test_architecture.py)
-├── adapters/   # port implementations: postgres (job queue, migrations), memory (store, queue, FakeEmbedder), clock
-├── api/        # FastAPI app (GET /health today; webhook in P1)
-├── worker/     # job consumer
+├── adapters/   # port implementations: github (webhooks), postgres (queue, installations, migrations), memory, clock
+├── api/        # FastAPI app: GET /health, GET /ready, POST /webhooks/github
+├── worker/     # job consumer and handlers
 └── app/        # composition root, settings and CLI
-tests/          # unit/, contract/, adapters/, integration/, e2e/, fixtures/
+scripts/        # load_webhooks.py (webhook latency check)
+tests/          # unit/, contract/, integration/, fixtures/webhooks/ (synthetic payloads)
 evals/          # eval harness (P1 skeleton, P4)
 docker/         # compose.yaml (+ Dockerfile in P5)
 ```
