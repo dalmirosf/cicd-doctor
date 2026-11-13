@@ -1,6 +1,6 @@
 # CICD Doctor — Specification
 
-> Status: draft v1 · Last updated: 2026-11-13 (aligned with the Phase 0 skeleton; see D-38 to D-44)
+> Status: draft v1 · Last updated: 2026-11-13 (aligned with P1a-1, the Postgres queue and the worker; see D-47 to D-52)
 > Companion document: [DECISIONS.md](DECISIONS.md) (every decision below with its rationale, referenced as `D-NN`).
 
 ---
@@ -137,7 +137,8 @@ cicd-doctor/
 │   ├── core/
 │   │   ├── models.py            # Pydantic domain models (§5)
 │   │   ├── ports.py             # Protocols
-│   │   ├── errors.py            # TransientError, PermanentError, PolicyBlocked
+│   │   ├── errors.py            # TransientError (with retry_after), PermanentError, PolicyBlocked
+│   │   ├── retry.py             # job backoff (full jitter) and last_error truncation (D-49)
 │   │   ├── logs/                # step slicing, cleaning, noise filters, excerpt, token budget
 │   │   ├── redaction.py         # secret patterns + entropy heuristic
 │   │   ├── signature.py         # normalization, canonical text, sha256
@@ -152,12 +153,13 @@ cicd-doctor/
 │   │   ├── github/              # webhook router, app auth (JWT + installation tokens), logs, reporter, config
 │   │   ├── llm/openai_client.py
 │   │   ├── embeddings/fastembed_embedder.py
-│   │   ├── postgres/            # store.py, queue.py, ledger.py, alembic migrations
-│   │   └── memory/              # store.py, embedder.py (FakeEmbedder); queue, ledger, fake LLM, fake log source later
+│   │   ├── wakeup.py            # fan-out wake-up shared by the queue adapters
+│   │   ├── postgres/            # queue.py, migrations/ (Alembic, D-50); store.py, ledger.py later
+│   │   └── memory/              # store.py, embedder.py (FakeEmbedder), queue.py; ledger, fake LLM, fake log source later
 │   ├── api/                     # main.py: FastAPI app, GET /health (D-40); webhook router in P1
-│   ├── worker/                  # job consumer (P1)
-│   └── app/                     # composition root (D-39): cli.py now; settings.py, container.py in P1
-├── tests/                       # unit/, contract/ (conftest.py, factories.py); adapters/, integration/, e2e/, fixtures/ from P1
+│   ├── worker/                  # runner.py: the job consumer (D-49)
+│   └── app/                     # composition root (D-39): cli.py, settings.py, container.py
+├── tests/                       # unit/, contract/, integration/ (conftest.py, pg.py, factories.py, scenarios.py); adapters/, e2e/, fixtures/ later
 ├── evals/                       # cases/, runner/, reports/, baseline.json
 ├── lab/                         # source of the lab repo (workflows that fail on purpose)
 ├── docker/                      # compose.yaml, initdb/01-extensions.sql; Dockerfile (P5)
@@ -166,9 +168,10 @@ cicd-doctor/
 ├── SPEC.md · DECISIONS.md · README.md
 └── pyproject.toml · uv.lock · .pre-commit-config.yaml · .env.example · docker-compose.yml (D-41)
     .claude/                     # settings.json + hooks/post_edit.py (§12)
+    alembic.ini                  # migrations live in adapters/postgres/migrations (D-50)
 ```
 
-Implemented as of P0: `core/` has `models.py`, `ports.py` and `errors.py`; `adapters/` has `clock.py` and the in-memory `FailureStore` and `FakeEmbedder`; `api/` serves `GET /health`; `app/` has the CLI. The `logs/`, `rules/`, `diagnosis/` and `usecases/` packages under `core/`, and the `github/`, `llm/`, `embeddings/` and `postgres/` packages under `adapters/`, exist as empty placeholders. Everything else in the tree arrives in the phase that owns it (§13).
+Implemented as of P1a-1: `core/` has `models.py`, `ports.py`, `errors.py` and `retry.py`; `adapters/` has `clock.py`, `wakeup.py`, the in-memory `FailureStore`, `FakeEmbedder` and `JobQueue`, and in `postgres/` the `PostgresJobQueue` and the initial migration with the whole §6 schema; `api/` serves `GET /health`; `worker/` has the consumer; `app/` has the CLI (`api`, `worker`), the settings and the composition root, where every job kind still has a placeholder handler (D-49). The `logs/`, `rules/`, `diagnosis/` and `usecases/` packages under `core/`, and the `github/`, `llm/` and `embeddings/` packages under `adapters/`, exist as empty placeholders. Everything else in the tree arrives in the phase that owns it (§13).
 
 ### 4.3 Ports
 
@@ -202,12 +205,14 @@ class Reporter(Protocol):
     async def post_suggestion(self, target: CommentTarget, suggestion: Suggestion) -> None: ...  # P3
     async def react(self, comment: CommentRef, reaction: str) -> None: ...                     # P3
 
-class JobQueue(Protocol):
+class JobQueue(Protocol):      # a lease is (job.id, job.attempts); False = that lease is gone (D-47)
     async def enqueue(self, job: NewJob, delivery: Delivery | None) -> bool: ...   # False on duplicate
     async def lease(self, worker_id: str, lease: timedelta) -> Job | None: ...
-    async def complete(self, job_id: int) -> None: ...
-    async def retry(self, job_id: int, run_after: datetime, error: str) -> None: ...
-    async def fail(self, job_id: int, error: str, dead: bool) -> None: ...
+    async def heartbeat(self, job: Job, lease: timedelta) -> bool: ...
+    async def complete(self, job: Job) -> bool: ...
+    async def retry(self, job: Job, run_after: datetime, error: str) -> bool: ...
+    async def fail(self, job: Job, error: str, dead: bool) -> bool: ...
+    async def wait_for_jobs(self, max_wait: timedelta) -> bool: ...   # LISTEN jobs_new; callers still poll
 
 class RepoConfigSource(Protocol):
     async def load(self, repo: RepoRef) -> RepoConfig: ...   # default branch only; defaults if absent
@@ -225,19 +230,20 @@ class Clock(Protocol):
 | Component | Process | Responsibilities |
 |---|---|---|
 | API | `cicd-doctor api` (uvicorn, FastAPI; `api/main.py`) | `/webhooks/github` (P1), `/health` (process up; exists since P0, D-40), `/readyz` (DB reachable; P1, name settled then, D-40). Body limit 25 MB. |
-| Worker | `cicd-doctor worker` (P1; the command does not exist yet) | N concurrent asyncio consumers (default 4); wakes on `LISTEN jobs_new`, polls every 5 s as fallback; runs use cases; schedules the purge job daily. |
+| Worker | `cicd-doctor worker` (`worker/runner.py`, wired in `app/container.py`) | N concurrent asyncio consumers (default 4); wakes on `LISTEN jobs_new`, polls every 5 s as fallback; extends each lease every `lease / 3` while a job runs; drains running jobs for 30 s on SIGTERM or Ctrl+C (D-49); runs use cases (placeholder handlers until they exist); schedules the purge job daily (P2). |
 | Postgres 17 + pgvector | Compose locally (`pgvector/pgvector:pg17`, host port 5433, D-38, D-41); RDS for PostgreSQL in prod (D-46) | Queue, deliveries, failures, diagnoses, publications, usage ledger, embeddings. |
 
 ### 4.5 Configuration
 
-Settings come from the environment (`pydantic-settings`; `.env` locally, AWS Secrets Manager in prod). `.env.example` is committed, `.env` is not. Until P1 only the `POSTGRES_*` variables are read (by Docker Compose); the rest of the table is the contract that the app starts reading in P1.
+Settings come from the environment (`pydantic-settings` in `app/settings.py`; `.env` locally, AWS Secrets Manager in prod). `.env.example` is committed, `.env` is not, and a unit test keeps the two lists of variables equal. Empty values count as unset. Secrets, `DATABASE_URL` included, are `SecretStr`, so they never show up in a `repr`. The `POSTGRES_*` variables are read only by Docker Compose. The GitHub and OpenAI variables are optional in the settings until the adapters that need them arrive (P1b, P1c).
 
 | Variable | Default | Notes |
 |---|---|---|
 | `APP_ENV` | `dev` | `dev` / `prod` (two different GitHub Apps, D-30) |
 | `GITHUB_APP_ID`, `GITHUB_PRIVATE_KEY` | — | PEM content or file path |
 | `GITHUB_WEBHOOK_SECRET`, `GITHUB_WEBHOOK_SECRET_PREVIOUS` | — | Previous secret only during rotation |
-| `DATABASE_URL` | — | `postgresql+psycopg://…` (`.env.example` points at the Compose database on port 5433) |
+| `DATABASE_URL` | — | Required. `postgresql+psycopg://…` (`.env.example` points at the Compose database on `127.0.0.1:5433`, D-52) |
+| `TEST_DATABASE_URL` | `DATABASE_URL` + `_test` | Tests only, not a setting (D-51) |
 | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_PORT` | `cicd`, `cicd`, `cicd_doctor`, `5433` | Read only by Docker Compose (D-38, D-41); development defaults, bound to loopback |
 | `LLM_ENABLED` | `true` | Global kill switch; `false` = rules only |
 | `OPENAI_API_KEY`, `OPENAI_MODEL` | — | Model chosen in P1 by a mini-eval (D-07) |
@@ -258,15 +264,15 @@ Settings come from the environment (`pydantic-settings`; `.env` locally, AWS Sec
 uv sync
 Copy-Item .env.example .env
 docker compose up -d db         # from the repo root; same as: docker compose -f docker/compose.yaml up -d db
-uv run alembic upgrade head     # from P1
+uv run alembic upgrade head     # creates the §6 schema
 uv run cicd-doctor api          # terminal 1, http://localhost:8000 (GET /health)
-uv run cicd-doctor worker       # terminal 2, from P1
-npx smee-client --url https://smee.io/<dev-channel> --target http://localhost:8000/webhooks/github   # terminal 3, from P1
-uv run pytest
+uv run cicd-doctor worker       # terminal 2 (placeholder handlers until the use cases exist)
+npx smee-client --url https://smee.io/<dev-channel> --target http://localhost:8000/webhooks/github   # terminal 3, from P1c
+uv run pytest                   # integration tests are skipped while the database is down
 uv run pre-commit install       # once per clone: enables the commit gate (§12)
 ```
 
-In P0 only the database, `GET /health` and the tests exist; the migration, the worker and the webhook relay start working in P1.
+As of P1a-1 the database, the migration, `GET /health`, the worker and the tests work; the webhook relay starts working with the webhook endpoint (P1c).
 
 The **dev GitHub App** points its webhook URL at the smee channel; the **prod GitHub App** points at the public HTTPS endpoint of the API in AWS (D-30, D-46).
 
@@ -581,22 +587,33 @@ CREATE TABLE command_invocations (
 CREATE INDEX command_invocations_pr_idx ON command_invocations (repository_id, pr_number, created_at DESC);
 ```
 
-**Key queries**
+**Key queries** (`adapters/postgres/queue.py`). `:now` comes from the injected `Clock`, not from SQL `now()` (D-48).
 
-- *Lease* (one statement, inside a transaction):
+- *Lease* (one transaction, two statements). First, jobs whose last allowed attempt never finished are buried instead of being run again:
   ```sql
-  UPDATE jobs SET status = 'running', attempts = attempts + 1, locked_by = $1,
-                  locked_until = now() + make_interval(secs => $2), updated_at = now()
+  UPDATE jobs SET status = 'dead', locked_until = NULL, last_error = :error, updated_at = :now
+  WHERE id IN (SELECT id FROM jobs
+               WHERE status IN ('queued', 'running') AND attempts >= max_attempts
+                 AND (locked_until IS NULL OR locked_until < :now)
+               FOR UPDATE SKIP LOCKED)
+  RETURNING id, kind;                                  -- each one is logged at ERROR
+  ```
+  Then one ready job is leased:
+  ```sql
+  UPDATE jobs SET status = 'running', attempts = attempts + 1, locked_by = :worker_id,
+                  locked_until = :now + lease, updated_at = :now
   WHERE id = (SELECT id FROM jobs
-              WHERE status IN ('queued', 'running') AND run_after <= now()
-                AND (locked_until IS NULL OR locked_until < now())
-              ORDER BY run_after
+              WHERE status IN ('queued', 'running') AND run_after <= :now
+                AND (locked_until IS NULL OR locked_until < :now)
+                AND attempts < max_attempts
+              ORDER BY run_after, id
               LIMIT 1
               FOR UPDATE SKIP LOCKED)
   RETURNING *;
   ```
-  A `running` job whose lease expired (crashed worker) is leased again. If `attempts > max_attempts`, it is moved to `dead` instead of being run.
-- *Enqueue with idempotency*: `INSERT INTO webhook_deliveries … ON CONFLICT DO NOTHING RETURNING delivery_id`. If no row is returned, it is a duplicate and the request is a 200 no-op. Otherwise `INSERT INTO jobs … ON CONFLICT (dedupe_key) DO NOTHING` and `NOTIFY jobs_new`, all in one transaction.
+  A `running` job whose lease expired (crashed worker) is leased again, at most `max_attempts` times in total. A row whose `kind` is not a known `JobKind` is set to `failed` instead of being returned.
+- *Fenced transitions* (D-47): `heartbeat` (`locked_until = :now + lease`), `complete` (`done`), `retry` (`queued`, `run_after`, `last_error`) and `fail` (`failed` or `dead`, `last_error`) all end in `WHERE id = :id AND attempts = :attempts AND status = 'running'`. 0 rows means the caller's lease is gone, and nothing changes.
+- *Enqueue with idempotency*: `INSERT INTO webhook_deliveries … ON CONFLICT DO NOTHING RETURNING delivery_id`. If no row is returned, it is a duplicate and the request is a 200 no-op. Otherwise `INSERT INTO jobs … ON CONFLICT (dedupe_key) DO NOTHING RETURNING id` and `SELECT pg_notify('jobs_new', '')`, all in one transaction. A duplicate dedupe key also returns False.
 - *Newer-attempt guard*: `UPDATE check_publications SET … WHERE … AND last_attempt <= $attempt`. If 0 rows are affected, the result is stale and is not published.
 - *Budget reservation*: inside a transaction holding `pg_advisory_xact_lock(hashtext('llm_budget'))`, check the installation's `calls < limit` and that `SUM(reserved_usd + spent_usd)` for today plus the estimate stays within the global budget; then increment `calls` and `reserved_usd`. `settle` moves the reservation to `spent_usd` with the actual cost.
 
@@ -742,14 +759,16 @@ The embedding (P2) is computed on `canonical`, so the exact match and the simila
 | Worker | GitHub 429 / secondary rate limit / `x-ratelimit-remaining: 0` | Transient. `run_after` = `Retry-After` or `x-ratelimit-reset`, whichever applies. |
 | Worker | GitHub 401 (token expired) | Refresh the installation token once, then treat as transient. |
 | Worker | GitHub 403 (permission), 404/410 (run or logs gone), installation suspended | `PermanentError` → job `failed`. Publish a neutral check "Could not diagnose: \<reason\>" when the check can still be written. |
-| Worker | `attempts > max_attempts` (5) | Job `dead`, `ERROR` structured log with the full context. The check run gets "Could not diagnose (internal error)". |
-| Worker | Crash or kill mid-job | Lease (`JOB_LEASE_S` = 300 s) expires and another worker re-leases the job. Side effects are idempotent (§6, newer-attempt guard). |
+| Worker | Any other exception (a bug, or a library error that was not wrapped) | Treated as transient: retried with the same backoff, logged with its traceback (D-49). |
+| Worker | Attempts used up (`attempts = max_attempts`, default 5) | Job `dead`, `ERROR` structured log with the full context. The check run gets "Could not diagnose (internal error)" (from P1c). |
+| Worker | Crash or kill mid-job | Lease (`JOB_LEASE_S` = 300 s) expires and another worker re-leases the job; while a worker is alive it extends the lease every `lease / 3` (D-47). If the expired attempt was the last one, the job becomes `dead` instead. Side effects are idempotent (§6, newer-attempt guard). |
+| Worker | Shutdown (SIGTERM, Ctrl+C) | Stop leasing; running jobs get 30 s, then are cancelled and left to their lease (D-49). |
 | LLM | Timeout, 5xx, 429, connection error | Retried in-job twice (1 s, 4 s). Then rules fallback (`llm_error`). Never a job retry. |
 | LLM | Schema-invalid output | One repair call, then rules fallback (`invalid_output`). |
 | LLM | Budget or daily-call limit reached | No call; rules fallback (`budget`). The check says "LLM daily limit reached". |
 | Embedder | Model load failure (P2) | Skip similarity and cache-by-similarity; exact-hash cache still works. Logged as a warning. |
 
-Job payloads and `last_error` never contain raw log text. Errors are redacted and truncated before they are stored or logged.
+Job payloads and `last_error` never contain raw log text. Errors are redacted and truncated before they are stored or logged. As of P1a-1 `last_error` is `"<ExceptionType>: <message>"` cut to 2 KB on a character boundary; redaction is added when `core/redaction.py` exists (P1b, D-49).
 
 ---
 
@@ -957,9 +976,9 @@ Variants: `rules`, `llm` (no hints), `llm+hints` (production behavior in P1), `l
 | Layer | Scope | Tools | Runs in |
 |---|---|---|---|
 | Unit | Pure `core/`: noise filters, slicing, windowing, token budget, redaction, normalization/signature, each rule (positive and negative), policy, render/sanitization, outcome state machine, use cases with in-memory adapters + fake LLM | pytest, hypothesis (normalization idempotence, redaction never leaks pattern-shaped secrets), golden files for excerpts and rendered markdown | pre-commit + CI |
-| Contract | One shared test suite for `FailureStore`, `JobQueue` and `UsageLedger`, run against both the in-memory and the Postgres adapters | pytest parametrized fixtures | memory in pre-commit; both in CI |
+| Contract | One shared test suite for `FailureStore`, `JobQueue` and `UsageLedger`, run against both the in-memory and the Postgres adapters (today: `JobQueue` on both, `FailureStore` on memory) | pytest parametrized fixtures; the Postgres parameter is marked `integration` (D-51) | memory in pre-commit; both in CI |
 | Adapter | GitHub client (JWT, token scoping, pagination, redirect without auth, Range tail, rate-limit headers, comment upsert by marker), OpenAI client (schema, retries, repair), fastembed (dims, determinism) | respx with recorded responses, recorded webhook payloads | CI |
-| Integration | API + worker + real Postgres: idempotency, lease expiry after a simulated crash, concurrent workers (no double processing), newer-attempt guard, budget under concurrency | Compose / CI service container `pgvector/pgvector:pg17` | CI (`-m integration`) |
+| Integration | API + worker + real Postgres: migrations, idempotency, lease expiry after a killed worker process, heartbeats, concurrent workers (no double processing), NOTIFY wake-ups, newer-attempt guard, budget under concurrency | Compose / CI service container `pgvector/pgvector:pg17`; own `<db>_test` databases; skipped locally when Postgres is down, failing in CI (D-51) | CI (`-m integration`), and locally with Compose up |
 | E2E (offline) | Replay a recorded `workflow_run` delivery through the API → worker → fake GitHub (respx) and assert the exact check run and comment calls | pytest | CI |
 | Live smoke | Dev app + lab repo; a few OpenAI calls | manual / `-m live` | On demand |
 
@@ -969,7 +988,7 @@ The fake LLM adapter can script: valid responses, malformed JSON, timeouts, 429s
 - `pre-commit` (local hooks run through `uv run`): ruff (lint + format) and `pytest -m "unit or contract" -x -q` (memory adapters only, target < 30 s). A commit with a failing test is rejected. mypy is not part of pre-commit (D-42).
 - Claude Code hook (`.claude/settings.json` → `.claude/hooks/post_edit.py`): after each edit to a Python file or `pyproject.toml`, it runs `ruff check`, `ruff format --check` and the same fast tests, and reports failures back to Claude. It only checks and never rewrites files.
 - The `core/` import rule is a unit test (`tests/unit/test_architecture.py`), so it runs in all of the above (D-43).
-- CI (`.github/workflows/ci.yml`, on every push and pull request): three parallel jobs: lint (`ruff check`, `ruff format --check`), types (`mypy`, strict) and tests (`pytest`, the whole suite; today unit and contract tests). Added in later phases: the pgvector service container with the adapter, integration and e2e tests, and the `core/` coverage gate ≥ 90% (P1); offline evals (P4); a Docker build (P5).
+- CI (`.github/workflows/ci.yml`, on every push and pull request): three parallel jobs: lint (`ruff check`, `ruff format --check`), types (`mypy`, strict) and tests. The tests job runs a `pgvector/pgvector:pg17` service container, `uv run alembic upgrade head`, and then `pytest`, the whole suite (unit, contract and integration tests). Added in later phases: the adapter and e2e tests and the `core/` coverage gate ≥ 90% (P1b, when `core/` has its logic); offline evals (P4); a Docker build (P5).
 - The dev app is installed on this repository, so CICD Doctor diagnoses its own CI failures.
 
 ---
@@ -979,25 +998,26 @@ The fake LLM adapter can script: valid responses, malformed JSON, timeouts, 429s
 Every criterion is a check someone can run and observe passing.
 
 ### P0 — Foundations
-Scope: repo skeleton (§4.2), `pyproject.toml` with uv, ruff, mypy strict and pytest, the core models and ports with an in-memory `FailureStore` and a `FakeEmbedder`, `GET /health`, the `core/` import test (D-43), pre-commit (D-42), the Claude Code hook, Compose with pgvector (D-41), CI workflow, `.gitignore`, `.env.example`, README stub. The empty Alembic baseline moved to P1a (§14).
+Scope: repo skeleton (§4.2), `pyproject.toml` with uv, ruff, mypy strict and pytest, the core models and ports with an in-memory `FailureStore` and a `FakeEmbedder`, `GET /health`, the `core/` import test (D-43), pre-commit (D-42), the Claude Code hook, Compose with pgvector (D-41), CI workflow, `.gitignore`, `.env.example`, README stub. The Alembic baseline moved to P1a, where it became the full §6 schema (D-50).
 - [x] On Windows PowerShell: `uv sync` and `docker compose up -d db` (equivalently `docker compose -f docker/compose.yaml up -d db`) succeed, and `uv run pytest` is green. (`uv run alembic upgrade head` moved to P1a.)
 - [x] `uv run pre-commit run --all-files` is green.
 - [x] A commit containing a deliberately failing test is rejected by the pre-commit hook.
 - [x] Adding `import cicd_doctor.adapters` inside `core/` makes `tests/unit/test_architecture.py` fail (checked once, then reverted).
 - [x] CI is green on a push to `main`.
-- [ ] CI is green on a pull request.
+- [x] CI is green on a pull request (PR #1, the `pull_request` run of the CI workflow).
 - [ ] Python 3.13 compatibility of fastembed/onnxruntime is confirmed (otherwise pin 3.12 and record it in DECISIONS.md). Confirmed on the dev machine only; Linux is still open (§14).
 
 ### P1 — MVP vertical slice
 Scope: FR-01…FR-14 and the FR-22 skeleton. Live on the dev app via smee.
 
 *P1a — Ingestion and queue*
-- [ ] `uv run alembic upgrade head` creates the §6 schema on the Compose database (the empty baseline moved here from P0).
+- [x] `uv run alembic upgrade head` creates the §6 schema on the Compose database (the empty baseline moved here from P0). Checked by hand on Compose and by `tests/integration/test_migrations.py`; CI also runs it on an empty database.
 - [ ] A missing or wrong signature returns 401 and no DB rows are created (test).
-- [ ] The same delivery posted 3 times creates exactly 1 `webhook_deliveries` row and 1 job (test).
+- [ ] The same delivery posted 3 times creates exactly 1 `webhook_deliveries` row and 1 job (test). The queue half holds already (`JobQueue` contract suite); the endpoint is still missing.
 - [ ] Load script: 100 deliveries → p99 acknowledgement < 1 s on the dev machine.
-- [ ] A worker killed mid-job (lease 2 s in the test) → the job is re-leased and completes once, with exactly one check run created (integration test with the fake reporter).
-- [ ] A job failing with a transient error is retried with increasing `run_after`. After the max attempts it is `dead` (test with a fake clock).
+- [x] A worker killed mid-job (lease 2 s in the test) → the job is re-leased and completes once (`tests/integration/test_worker_crash.py`: a real worker process is killed).
+- [ ] … and exactly one check run is created for it (integration test with the fake reporter). Needs the diagnose handler and the publication guard (P1c).
+- [x] A job failing with a transient error is retried with increasing `run_after`. After the max attempts it is `dead` (test with a fake clock, on the in-memory and the Postgres queue).
 
 *P1b — Pipeline (offline, fixtures)*
 - [ ] For every lab fixture, the excerpt contains all `expected.evidence_lines`, and `token_count ≤ 6000`. That includes a synthetic 50 MB log, where only the last 20 MB is retained and `truncated = true`.
@@ -1064,6 +1084,4 @@ Scope: Docker, Terraform on AWS, CD, prod app, Langfuse.
 - Whether lint and type-check failures deserve their own category → after the P4 evals (D-13).
 - `issue_comment` delivery with Pull requests vs Issues permission → P3 (D-21).
 - HTTPS entry for the API: Application Load Balancer + ACM certificate (needs a domain) vs App Runner (HTTPS URL without a domain); and Secrets Manager vs SSM Parameter Store for secrets → at P5 deploy time (D-46).
-- Alembic baseline migration: not part of the P0 skeleton, so `uv run alembic upgrade head` does not exist yet → P1a (§13).
-- CI on a pull request: CI has run green on a push to `main` only → confirm on the first pull request (P0 criterion in §13).
 - fastembed on Python 3.13: confirmed on the dev machine (Windows 11, CPython 3.13.7, fastembed 0.9.1, onnxruntime 1.31.1), tried in a throwaway environment without adding it as a dependency. It installs, loads the model in about 7.5 s including the first download, and returns 384-d float32 vectors that are L2-normalised and deterministic, at about 1.6 ms per embedding after the load. Still open: confirm on Linux (CI or the P5 Docker image) before relying on it, and pin 3.12 (recording it in DECISIONS.md) if that fails. Also, fastembed serves `BAAI/bge-small-en-v1.5` from the Qdrant ONNX build `Qdrant/bge-small-en-v1.5-onnx-Q` (`model_optimized.onnx`, 67 MB), not from the original weights, so check in P2 that the `SIMILAR_MIN_SCORE` of 0.85 is calibrated against that build (D-08).

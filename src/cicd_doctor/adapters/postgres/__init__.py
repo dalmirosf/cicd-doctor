@@ -1,1 +1,1 @@
-"""Postgres + pgvector adapters: store, queue, ledger, Alembic migrations. Arrives in P1."""
+"""Postgres + pgvector adapters: the job queue and the Alembic migrations (store, ledger later)."""

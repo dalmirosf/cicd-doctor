@@ -63,6 +63,12 @@ New decisions are appended. A superseded decision is marked `Superseded by D-NN`
 | D-44 | `httpx2` backs the FastAPI test client | Proposed |
 | D-45 | CI runners are pinned to `ubuntu-24.04` instead of `ubuntu-latest` | Author request |
 | D-46 | AWS deployment with Terraform (replaces GCP; amends D-13) | Author request |
+| D-47 | Job leases are fenced by attempt; `heartbeat` and `wait_for_jobs` join the `JobQueue` port | Proposed |
+| D-48 | The queue takes time from the injected `Clock`, not from SQL `now()` | Proposed |
+| D-49 | Worker execution policy: outcomes, unexpected errors, backoff, shutdown | Proposed |
+| D-50 | Migrations are hand-written SQL; Alembic lives in the Postgres adapter | Proposed |
+| D-51 | Postgres tests: own databases, "integration wins", skip locally, fail in CI | Proposed |
+| D-52 | Windows: selector event loop for psycopg async, and `127.0.0.1` instead of `localhost` | Proposed |
 
 ---
 
@@ -101,6 +107,7 @@ New decisions are appended. A superseded decision is marked `Superseded by D-NN`
 **Why:** Postgres is already required (pgvector). No extra service in Compose or GCP; Memorystore would add about USD 35/month minimum to a portfolio project. Recording the delivery id and enqueueing the job can happen in **one transaction**, which makes idempotency atomic (D-06). The expected load (≤ 1k diagnoses/day, NFR-11) is far below what this pattern handles.
 **Alternatives:** Redis + arq/RQ (more infra, and idempotency split across two stores); Cloud Tasks in prod with Postgres locally (fits serverless better, but needs two adapters and behaves differently in dev and prod); a library such as procrastinate (viable, but a hand-written queue of about 100 lines is easier to explain and test, and shows the pattern).
 **Consequences:** The worker must run continuously (D-31). Revisit if load exceeds about 10 jobs/s or if Cloud Run's always-on cost becomes a problem (then consider Cloud Tasks behind the same `JobQueue` port).
+**Amended by D-47 and D-48:** leases are fenced by attempt and extended by heartbeats, and the queue takes its time from the injected `Clock`.
 
 ## D-06 — Three-level idempotency
 **Origin:** Brief (delivery id) + Proposed (the other two levels)
@@ -254,6 +261,7 @@ Events: `workflow_run` and `issue_comment`. No Issues, Administration or Workflo
 **Why:** Retrying permanent errors wastes rate limit and delays the user. LLM problems should degrade the answer (rules), not delay it. Leases plus idempotent effects (D-06) make crashes harmless.
 **Alternatives:** Uniform retries for every error; a separate dead-letter table (the job status already serves that purpose).
 **Consequences:** GitHub does not retry failed webhook deliveries automatically, so if the API cannot write to the database it answers 503, and the runbook explains how to redeliver from the app settings.
+**Amended by D-49:** exceptions that are neither transient nor permanent are retried like transient ones, and `TransientError.retry_after` replaces the computed backoff.
 
 ## D-24 — Flaky = same SHA passes on a later attempt; fix = first green SHA on the same branch
 **Origin:** Brief (definitions) + Proposed (exact matching)
@@ -389,6 +397,7 @@ In every case, the sticky comment is edited to show the resolution.
 **Why:** Running `docker compose up` on the author's Windows machine showed a native PostgreSQL already bound to `0.0.0.0:5432`. Native installs are common on developer machines, and stopping someone's own database service just to start a project is the wrong default. The port is bound to loopback so the development database is never exposed to the network.
 **Alternatives:** Keep 5432 and ask the developer to stop the native service (invasive, and it fails again on the next machine with the same setup); publish no host port (the API and worker run on the host with `uv run` until P5, so they could not connect); a random port (the connection URL would change on every start).
 **Consequences:** SPEC §4.6, `.env.example` and the README use 5433. The CI service container and Cloud SQL are not affected, because they do not share the developer's port space.
+**Amended by D-52:** `DATABASE_URL` in `.env.example` uses `127.0.0.1` instead of `localhost`.
 
 ## D-39 — `api/` and `worker/` are sibling packages; `app/` is only the composition root
 **Origin:** P0 request
@@ -424,6 +433,7 @@ In every case, the sticky comment is edited to show the resolution.
 **Why:** The author asked for a test. It runs inside the fast suite, so pre-commit, the Claude Code hook and CI enforce the rule without another tool or configuration, and the forbidden list is the one D-02 defined. The test is itself tested with synthetic modules, and was checked once by adding `from cicd_doctor.adapters.memory import FakeEmbedder` to `core/` (it failed) and reverting.
 **Alternatives:** import-linter, which expresses the contract declaratively and can follow indirect import chains.
 **Consequences:** Only direct, static imports inside `core/` are checked: dynamic imports (`importlib`) and chains through other first-party packages are not followed. Adding a new forbidden library means editing the list in the test. Revisit import-linter if that gap ever matters.
+**Amended by D-50:** the forbidden list also contains `alembic` and `pydantic_settings`.
 
 ## D-44 — `httpx2` backs the FastAPI test client
 **Origin:** Proposed
@@ -452,3 +462,64 @@ In every case, the sticky comment is edited to show the resolution.
 **Why:** The author wants to build and show the deployment on AWS. Nothing before P5 depends on the cloud provider, because `core/` has no infrastructure imports (D-43) and the queue is Postgres (D-05). The worker needs continuous CPU to poll the queue, which a long-running Fargate service gives directly, and one image keeps the API and the worker in the same environment contract. Rules for the provider the project itself deploys to let CICD Doctor diagnose its own CD (D-13).
 **Alternatives:** Keep GCP (D-31); Azure (equivalent services, but not the author's target); App Runner for the API and Fargate for the worker only (simpler HTTPS, but two compute products); Lambda behind a function URL plus SQS (event-driven fit, but needs a second queue adapter and behaves differently in dev and prod, as in D-05); EKS (overkill, Kubernetes stays a local extra, D-37).
 **Consequences:** Supersedes D-31 and amends D-13. Wherever earlier entries or the code comments say Cloud Run, Cloud SQL, Secret Manager, Cloud Logging or Cloud Tasks, read ECS Fargate, RDS, Secrets Manager, CloudWatch Logs or SQS (D-05, D-07, D-30, D-32, D-37, D-38, D-40). Health probes in P5 use `/health` (D-40) as the ALB target group check. The ALB and RDS are the main fixed costs; use the smallest tiers (for example `db.t4g.micro`), avoid a NAT gateway by running tasks in public subnets restricted by security groups, and document the expected monthly cost in the README. SPEC §13 P5 and §10 are updated in the same change.
+
+## D-47 — Job leases are fenced by attempt; `heartbeat` and `wait_for_jobs` join the `JobQueue` port
+**Origin:** Proposed
+**Decision:**
+- Every `lease` increments `attempts`, so `(id, attempts)` identifies one lease. `complete`, `retry` and `fail` take the leased `Job` instead of a `job_id`, and return `bool`: `False` means the lease is no longer the current one and nothing changed. Each of these statements ends in `WHERE id = :id AND attempts = :attempts AND status = 'running'`.
+- `heartbeat(job, lease) -> bool` moves `locked_until` to `now + lease`. The worker calls it every `lease / 3` while the handler runs, and cancels the handler when it returns `False`.
+- `wait_for_jobs(max_wait) -> bool` returns when new jobs may be ready, or after `max_wait`. The Postgres adapter implements it with `LISTEN jobs_new` on a dedicated autocommit connection that reconnects with backoff (1 s to 30 s); the in-memory one with an event set by `enqueue`. The worker still polls every 5 s.
+- `InMemoryJobQueue` implements the same contract, and one contract suite runs against both adapters (SPEC §12).
+
+**Why:** Without a fence, a worker whose lease expired could finish late and mark as done (or queue again) a job that another worker is running; a late `retry` would even let a third worker lease it. Without a heartbeat, every job longer than `JOB_LEASE_S` runs twice at the same time, which from P1 means two LLM calls and twice the budget. `wait_for_jobs` keeps the worker, an inbound adapter, free of Postgres details: it only sees the port.
+**Alternatives:** The `job_id` signatures first written in SPEC §4.3 (no protection against late outcomes); fencing by `locked_by` (a worker that leases its own expired job again would pass the check; `attempts` only grows); a longer lease instead of heartbeats (slower recovery after a crash); a separate notifier port.
+**Consequences:** SPEC §4.3 and §6 describe the new methods and queries. Amends D-05. A notification that arrives while no consumer is waiting is dropped, so the worst case is one poll interval of extra latency.
+
+## D-48 — The queue takes time from the injected `Clock`, not from SQL `now()`
+**Origin:** Proposed
+**Decision:** `PostgresJobQueue` reads the time from the `Clock` port and passes it as `:now` to every statement: `run_after`, `locked_until`, the lease comparisons, `updated_at` and `received_at`. The `DEFAULT now()` of the columns stays for rows written by hand. This replaces the `now()` calls in the SPEC §6 lease query.
+**Why:** The same contract suite and the "transient error → increasing `run_after` → `dead`" acceptance test (SPEC §13 P1a) then run deterministically on both adapters with a `FakeClock`, without sleeping and without editing rows behind the adapter's back.
+**Alternatives:** SQL `now()` as first written (the database is the only time source, but the Postgres adapter can then only be tested in real time); a `FakeClock` for the in-memory adapter only (the Postgres semantics would go untested).
+**Consequences:** Lease decisions compare times taken on different hosts, so clock skew between workers shifts lease expiry by that skew. Production runs one worker task (D-46) and Fargate keeps time with NTP, which is far below the 300 s lease. Revisit (for example `clock_timestamp()` in SQL behind a flag) if several worker hosts run with poor time sync.
+
+## D-49 — Worker execution policy: outcomes, unexpected errors, backoff, shutdown
+**Origin:** Proposed
+**Decision:**
+- `cicd-doctor worker` runs `WORKER_CONCURRENCY` consumers. Each one leases a job, runs the handler registered for its kind, records the outcome, and when idle waits for `wait_for_jobs` or 5 s.
+- Outcomes: success → `done`. `TransientError` → `retry` at `now + backoff`, or `dead` when `attempts == max_attempts`. `PermanentError` → `failed`. A kind without a handler → `failed`. **Any other exception is treated as transient** and logged with its traceback. `TransientError.retry_after` (from `Retry-After` or `x-ratelimit-reset`) replaces the computed backoff.
+- The backoff is a pure function in `core/retry.py`: the ceiling is 30 s × 4^(n−1), capped at 30 min; the delay is that ceiling times a jitter in [0, 1] drawn by the caller (full jitter). Tests pin the jitter to 1.
+- A consumer survives queue errors (the database is down, for example): it logs them and tries again after a poll interval. The Postgres adapter turns connection-level SQLAlchemy errors into `TransientError`.
+- Shutdown: SIGTERM and SIGINT on POSIX set a stop event; on Windows, Ctrl+C cancels the main task. Both stop the leasing, give running jobs 30 s to finish, and then cancel them; a cancelled job stays `running` and is leased again when its lease expires.
+- `last_error` is `"<ExceptionType>: <message>"`, cut to 2 KB on a character boundary by the queue. It goes through `core/redaction.py` once that exists (P1b). No handler logs job payloads.
+- Until each use case exists, every job kind has a placeholder handler that logs the job and completes it. Nothing enqueues jobs before the webhook (P1c).
+- Logs use the standard `logging` module in plain text until structlog arrives (D-32).
+
+**Why:** Retrying unknown errors means that an error a library raises unwrapped (a dropped database connection, for example) never loses work, while a real bug still ends up `dead`, logged at ERROR, after about 40 minutes. Keeping the backoff pure and the jitter injected makes the retry schedule exactly testable. Draining on shutdown avoids wasting an attempt on every deploy.
+**Alternatives:** Treating unknown errors as permanent (an unwrapped transient error would lose the job); equal jitter (the shortest delay never goes near zero, but the spec asks for full jitter); per-kind handler modules registered by import side effects (implicit wiring).
+**Consequences:** A deterministic bug costs five attempts before it is buried. With full jitter a retry can happen almost at once, which is acceptable for the errors involved. Amends D-23.
+
+## D-50 — Migrations are hand-written SQL; Alembic lives in the Postgres adapter
+**Origin:** Proposed
+**Decision:** `alembic.ini` is at the repository root and the scripts are in `src/cicd_doctor/adapters/postgres/migrations/`. Each revision is a tuple of SQL statements, each run with `op.execute`. There is no SQLAlchemy table metadata and no autogenerate. `env.py` runs on a sync psycopg engine with a 10 s connect timeout. It takes the URL from `config.attributes["database_url"]` when a caller passes one (the tests), otherwise from the settings (`DATABASE_URL`, `.env`). The downgrade drops every table and type but keeps the `vector` extension, which the Compose init script also creates. Revision ids are short sequence numbers (`0001`). The `core/` import test also forbids `alembic` and `pydantic_settings`.
+**Why:** SPEC §6 is written in SQL, so copying it statement by statement makes the migration reviewable as a diff against the spec, and the queue adapter uses explicit SQL as well (D-28). Autogenerate would need a second definition of the schema (table metadata, plus pgvector types) that nothing else uses.
+**Alternatives:** `op.create_table` with SQLAlchemy column types (more verbose and harder to compare with §6); metadata with autogenerate (convenient for later changes, but two schema definitions to keep in sync).
+**Consequences:** Every schema change is written by hand, together with its check in `tests/integration/test_migrations.py`. Amends D-43 (the forbidden list).
+
+## D-51 — Postgres tests: own databases, "integration wins", skip locally, fail in CI
+**Origin:** Proposed
+**Decision:**
+- Tests that need Postgres use the database `<db>_test`, and the migration round trip uses `<db>_test_migrations`. Both are created on first use. The URL is `TEST_DATABASE_URL`, or else `DATABASE_URL` with `_test` appended to the database name.
+- Contract suites run against `memory` and `postgres`. The `postgres` parameter is marked `integration`, and `tests/conftest.py` does not add the `unit` or `contract` directory marker to a test already marked `integration`. So pre-commit, the Claude Code hook and `-m "unit or contract"` never need a database.
+- When Postgres is unreachable, those tests are skipped locally with the command that starts it. When `CI` is set (GitHub Actions sets it), they fail instead.
+- The CI `tests` job runs `pgvector/pgvector:pg17` as a service container, runs `uv run alembic upgrade head` through the real CLI on the empty database, and then the whole suite.
+
+**Why:** The developer's own data is never truncated, the commit gate stays fast and database-free, and `uv run pytest` still works without Docker. But CI cannot go green while silently skipping every integration test.
+**Alternatives:** testcontainers (starts Docker from Python, heavier on Windows); always skipping when Postgres is unreachable (CI could pass with no integration test run); reusing the development database (the tests truncate the queue tables).
+**Consequences:** `tests/pg.py` and `tests/conftest.py` own the setup. The crash test starts a real Python subprocess and kills it.
+
+## D-52 — Windows: selector event loop for psycopg async, and `127.0.0.1` instead of `localhost`
+**Origin:** Proposed
+**Decision:** The worker runs `asyncio.run(..., loop_factory=asyncio.SelectorEventLoop)`, and the tests get the same loop through pytest-asyncio's `pytest_asyncio_loop_factories` hook. `DATABASE_URL` in `.env.example` uses `127.0.0.1`, and every connection has a connect timeout (10 s in the app, 5 s in the tests). This amends D-38, whose URL used `localhost`.
+**Why:** psycopg 3.3 refuses the Proactor event loop that Windows uses by default (checked: `InterfaceError`). On the author's machine `localhost` resolved to `::1` first, and the connection to Docker's port 5433 hung there: 5 s with a timeout, forever without one. `127.0.0.1` connected in about 30 ms, and Compose publishes the port on `127.0.0.1` only (D-38).
+**Alternatives:** Setting `WindowsSelectorEventLoopPolicy` globally (deprecated since Python 3.14); asyncpg (no such issue, but D-28 chose psycopg and Alembic would need a second driver); keeping `localhost` and relying on the timeout (a 5 s stall on every connection).
+**Consequences:** asyncio subprocesses are not available on Windows under the selector loop, so the crash test uses `subprocess.Popen`. A developer whose `.env` was copied before this change must switch `localhost` to `127.0.0.1` there too.
