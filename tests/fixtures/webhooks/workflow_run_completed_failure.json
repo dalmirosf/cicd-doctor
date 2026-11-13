@@ -1,0 +1,96 @@
+{
+  "action": "completed",
+  "workflow_run": {
+    "id": 5000,
+    "name": "CI",
+    "node_id": "WFR_kwLOAAAAAA",
+    "head_branch": "feature/x",
+    "head_sha": "4f7c1e0b9d2a3c5e6f708192a3b4c5d6e7f80912",
+    "path": ".github/workflows/ci.yml",
+    "display_title": "Add widget cache",
+    "run_number": 42,
+    "event": "pull_request",
+    "status": "completed",
+    "conclusion": "failure",
+    "workflow_id": 7,
+    "check_suite_id": 9001,
+    "check_suite_node_id": "CS_kwDOAAAAAA",
+    "url": "https://api.github.com/repos/acme/widgets/actions/runs/5000",
+    "html_url": "https://github.com/acme/widgets/actions/runs/5000",
+    "pull_requests": [
+      {
+        "url": "https://api.github.com/repos/acme/widgets/pulls/12",
+        "id": 120,
+        "number": 12,
+        "head": {
+          "ref": "feature/x",
+          "sha": "4f7c1e0b9d2a3c5e6f708192a3b4c5d6e7f80912",
+          "repo": {"id": 100, "url": "https://api.github.com/repos/acme/widgets", "name": "widgets"}
+        },
+        "base": {
+          "ref": "main",
+          "sha": "0a1b2c3d4e5f60718293a4b5c6d7e8f901234567",
+          "repo": {"id": 100, "url": "https://api.github.com/repos/acme/widgets", "name": "widgets"}
+        }
+      }
+    ],
+    "created_at": "2026-11-12T11:58:00Z",
+    "updated_at": "2026-11-12T12:03:21Z",
+    "actor": {"login": "octo-dev", "id": 1, "type": "User"},
+    "run_attempt": 1,
+    "referenced_workflows": [],
+    "run_started_at": "2026-11-12T11:58:02Z",
+    "triggering_actor": {"login": "octo-dev", "id": 1, "type": "User"},
+    "jobs_url": "https://api.github.com/repos/acme/widgets/actions/runs/5000/jobs",
+    "logs_url": "https://api.github.com/repos/acme/widgets/actions/runs/5000/logs",
+    "check_suite_url": "https://api.github.com/repos/acme/widgets/check-suites/9001",
+    "artifacts_url": "https://api.github.com/repos/acme/widgets/actions/runs/5000/artifacts",
+    "cancel_url": "https://api.github.com/repos/acme/widgets/actions/runs/5000/cancel",
+    "rerun_url": "https://api.github.com/repos/acme/widgets/actions/runs/5000/rerun",
+    "previous_attempt_url": null,
+    "workflow_url": "https://api.github.com/repos/acme/widgets/actions/workflows/7",
+    "head_commit": {
+      "id": "4f7c1e0b9d2a3c5e6f708192a3b4c5d6e7f80912",
+      "tree_id": "9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2f1e0d",
+      "message": "Add widget cache",
+      "timestamp": "2026-11-12T11:57:40Z",
+      "author": {"name": "Octo Dev", "email": "octo-dev@example.com"},
+      "committer": {"name": "Octo Dev", "email": "octo-dev@example.com"}
+    },
+    "repository": {
+      "id": 100,
+      "name": "widgets",
+      "full_name": "acme/widgets",
+      "private": true,
+      "owner": {"login": "acme", "id": 50, "type": "Organization"}
+    },
+    "head_repository": {
+      "id": 100,
+      "name": "widgets",
+      "full_name": "acme/widgets",
+      "private": true,
+      "owner": {"login": "acme", "id": 50, "type": "Organization"}
+    }
+  },
+  "workflow": {
+    "id": 7,
+    "name": "CI",
+    "path": ".github/workflows/ci.yml",
+    "state": "active"
+  },
+  "repository": {
+    "id": 100,
+    "node_id": "R_kgDOAAAAZA",
+    "name": "widgets",
+    "full_name": "acme/widgets",
+    "private": true,
+    "owner": {"login": "acme", "id": 50, "type": "Organization"},
+    "html_url": "https://github.com/acme/widgets",
+    "fork": false,
+    "default_branch": "main",
+    "visibility": "private"
+  },
+  "organization": {"login": "acme", "id": 50},
+  "sender": {"login": "octo-dev", "id": 1, "type": "User"},
+  "installation": {"id": 10, "node_id": "MDIzOkludGVncmF0aW9uSW5zdGFsbGF0aW9uMTA="}
+}

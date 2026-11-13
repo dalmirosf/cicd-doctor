@@ -1,0 +1,17 @@
+{
+  "action": "created",
+  "issue": {
+    "number": 12,
+    "title": "Add widget cache",
+    "pull_request": {"url": "https://api.github.com/repos/acme/widgets/pulls/12"}
+  },
+  "comment": {
+    "id": 777,
+    "body": "/cicd-doctor explain",
+    "author_association": "MEMBER",
+    "user": {"login": "acme-maintainer", "id": 3, "type": "User"}
+  },
+  "repository": {"id": 100, "name": "widgets", "full_name": "acme/widgets", "private": true},
+  "sender": {"login": "acme-maintainer", "id": 3, "type": "User"},
+  "installation": {"id": 10, "node_id": "MDIzOkludGVncmF0aW9uSW5zdGFsbGF0aW9uMTA="}
+}

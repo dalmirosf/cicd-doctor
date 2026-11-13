@@ -1,0 +1,32 @@
+{
+  "action": "created",
+  "installation": {
+    "id": 10,
+    "account": {"login": "acme", "id": 50, "type": "Organization"},
+    "repository_selection": "selected",
+    "access_tokens_url": "https://api.github.com/app/installations/10/access_tokens",
+    "repositories_url": "https://api.github.com/installation/repositories",
+    "html_url": "https://github.com/organizations/acme/settings/installations/10",
+    "app_id": 900,
+    "app_slug": "cicd-doctor-dev",
+    "target_id": 50,
+    "target_type": "Organization",
+    "permissions": {
+      "actions": "read",
+      "checks": "write",
+      "contents": "read",
+      "metadata": "read",
+      "pull_requests": "write"
+    },
+    "events": ["workflow_run"],
+    "created_at": "2026-11-12T10:00:00Z",
+    "updated_at": "2026-11-12T10:00:00Z",
+    "suspended_at": null
+  },
+  "repositories": [
+    {"id": 100, "node_id": "R_kgDOAAAAZA", "name": "widgets", "full_name": "acme/widgets", "private": true},
+    {"id": 101, "node_id": "R_kgDOAAAAZQ", "name": "gadgets", "full_name": "acme/gadgets", "private": false}
+  ],
+  "requester": null,
+  "sender": {"login": "acme-admin", "id": 4, "type": "User"}
+}
