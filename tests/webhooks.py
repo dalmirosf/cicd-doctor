@@ -8,6 +8,12 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
+from cicd_doctor.adapters.clock import FakeClock
+from cicd_doctor.adapters.memory import InMemoryJobQueue
+from cicd_doctor.api.deps import ApiDependencies
+from cicd_doctor.core.ports import JobQueue
+from tests.factories import T0
+
 FIXTURES = Path(__file__).parent / "fixtures" / "webhooks"
 SECRET = b"test-webhook-secret"  # not a real secret: only these tests use it
 
@@ -24,6 +30,25 @@ def encode(payload: dict[str, Any]) -> bytes:
 
 def sign(body: bytes, secret: bytes = SECRET) -> str:
     return "sha256=" + hmac.new(secret, body, hashlib.sha256).hexdigest()
+
+
+def memory_dependencies(
+    *,
+    queue: JobQueue | None = None,
+    secrets: tuple[bytes, ...] = (SECRET,),
+    ready: bool = True,
+) -> ApiDependencies:
+    """API dependencies backed by an in-memory queue (unit tests)."""
+
+    async def is_ready() -> bool:
+        return ready
+
+    return ApiDependencies(
+        queue=queue or InMemoryJobQueue(FakeClock(T0)),
+        webhook_secrets=secrets,
+        ready=is_ready,
+        clock=FakeClock(T0),
+    )
 
 
 def headers(

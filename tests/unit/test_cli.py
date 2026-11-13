@@ -15,7 +15,16 @@ def test_api_command_starts_uvicorn_on_loopback_by_default(
     assert cli.main(["api"]) == 0
 
     assert calls == [
-        ("cicd_doctor.api.main:app", {"host": "127.0.0.1", "port": 8000, "reload": False})
+        (
+            "cicd_doctor.app.container:create_api",
+            {
+                "factory": True,
+                "host": "127.0.0.1",
+                "port": 8000,
+                "reload": False,
+                "loop": "asyncio:SelectorEventLoop",  # psycopg on Windows (D-52)
+            },
+        )
     ]
 
 
@@ -25,7 +34,21 @@ def test_api_command_accepts_host_port_and_reload(monkeypatch: pytest.MonkeyPatc
 
     cli.main(["api", "--host", "0.0.0.0", "--port", "9000", "--reload"])
 
-    assert calls[0][1] == {"host": "0.0.0.0", "port": 9000, "reload": True}
+    assert {key: calls[0][1][key] for key in ("host", "port", "reload")} == {
+        "host": "0.0.0.0",
+        "port": 9000,
+        "reload": True,
+    }
+
+
+def test_the_api_factory_and_loop_strings_resolve() -> None:
+    """uvicorn imports these strings itself; a typo would only show up at startup."""
+    from uvicorn.importer import import_from_string
+
+    from cicd_doctor.app.container import create_api
+
+    assert import_from_string(cli.API_FACTORY) is create_api
+    assert import_from_string(cli.SELECTOR_LOOP) is asyncio.SelectorEventLoop
 
 
 def test_worker_command_serves_the_worker(monkeypatch: pytest.MonkeyPatch) -> None:
