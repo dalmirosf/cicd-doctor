@@ -295,8 +295,10 @@ class PostgresJobQueue:
                     self._wakeup.notify_all()  # jobs may have arrived while we were away
                     async for _ in conn.notifies():
                         self._wakeup.notify_all()
-            except psycopg.Error as exc:
-                logger.warning("LISTEN %s lost (%s); polling until it reconnects", CHANNEL, exc)
+            except Exception as exc:  # never let the listener die: wake-ups would stop for good
+                logger.warning(
+                    "LISTEN %s lost (%s); polling until it reconnects", CHANNEL, type(exc).__name__
+                )
             self._listening.clear()
             await asyncio.sleep(delay)
             delay = min(delay * 2, _LISTEN_RETRY_MAX_S)
