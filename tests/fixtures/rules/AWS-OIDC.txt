@@ -1,0 +1,5 @@
+=== positive: the trust policy refuses the token
+##[error]Could not assume role with OIDC: Not authorized to perform sts:AssumeRoleWithWebIdentity
+=== negative: OIDC worked
+Assuming role with OIDC
+Authenticated as assumedRoleId AROAEXAMPLEID:GitHubActions

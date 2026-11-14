@@ -1,0 +1,7 @@
+=== positive: GitHub API
+{"message":"API rate limit exceeded for 203.0.113.7. (But here's the good news: Authenticated requests get a higher rate limit.)"}
+=== positive: HTTP 429
+Error: HTTP 429 Too Many Requests
+=== negative: rate limit headers
+x-ratelimit-remaining: 4999
+Rate limit: 5000 requests per hour

@@ -1,0 +1,10 @@
+=== positive: a tag that does not exist
+ERROR: failed to solve: python:3.99-slim: failed to resolve source metadata for docker.io/library/python:3.99-slim: docker.io/library/python:3.99-slim: not found
+=== positive: manifest unknown
+Error response from daemon: manifest for python:3.99-slim not found: manifest unknown: manifest unknown
+=== positive: a private image without login (the auth rule ranks first)
+# top: DOCKER-AUTH
+Error response from daemon: pull access denied for acme/private-base, repository does not exist or may require 'docker login': denied: requested access to the resource is denied
+=== negative: base image metadata loaded
+#2 [internal] load metadata for docker.io/library/python:3.13-slim
+#2 DONE 0.6s

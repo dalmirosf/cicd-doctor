@@ -1,0 +1,15 @@
+=== positive: a syntax error in a test module
+==================================== ERRORS ====================================
+____________________ ERROR collecting tests/test_parser.py _____________________
+tests/test_parser.py:3: in <module>
+    from labpkg.parser import parse
+E   SyntaxError: invalid syntax
+=== positive: a missing module makes it a dependency problem (PY-MODNF ranks first)
+# top: PY-MODNF
+# category: dependency
+____________________ ERROR collecting tests/test_api.py ______________________
+ImportError while importing test module '/home/runner/work/x/x/tests/test_api.py'.
+E   ModuleNotFoundError: No module named 'httpx'
+=== negative: collection worked, a path was wrong
+collected 12 items
+ERROR: file or directory not found: tests/test_missing.py

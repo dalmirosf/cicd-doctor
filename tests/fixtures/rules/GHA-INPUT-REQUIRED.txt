@@ -1,0 +1,7 @@
+=== positive: a required action input
+# expect-cause: script
+##[group]Run actions/github-script@v7
+##[error]Input required and not supplied: script
+=== negative: an unexpected input warning
+##[warning]Unexpected input(s) 'scrpt', valid inputs are ['script', 'github-token']
+##[error]Process completed with exit code 1.

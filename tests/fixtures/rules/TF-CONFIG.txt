@@ -1,0 +1,11 @@
+=== positive: an unknown argument
+│ Error: Unsupported argument
+│
+│   on main.tf line 4, in resource "terraform_data" "lab":
+│    4:   bogus = 1
+│
+│ An argument named "bogus" is not expected here.
+=== positive: an undeclared variable
+│ Error: Reference to undeclared input variable
+=== negative: a valid configuration
+Success! The configuration is valid.

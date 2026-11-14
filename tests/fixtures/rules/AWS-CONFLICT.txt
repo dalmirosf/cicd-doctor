@@ -1,0 +1,7 @@
+=== positive: IAM role exists
+Error: creating IAM Role (lab-ci): operation error IAM: CreateRole, https response error StatusCode: 409, EntityAlreadyExists: Role with name lab-ci already exists.
+=== positive: bucket exists
+BucketAlreadyOwnedByYou: Your previous request to create the named bucket succeeded and you already own it.
+=== negative: creation worked
+aws_iam_role.ci: Creation complete after 1s [id=lab-ci]
+No changes. Your infrastructure matches the configuration.

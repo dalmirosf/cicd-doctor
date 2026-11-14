@@ -3,6 +3,7 @@
 #
 # Hooks are `local` and run through `uv run`, so they use the exact tool versions from uv.lock.
 # Install once with:  uv run pre-commit install
+exclude: ^lab/  # the lab repository fails lint on purpose (SPEC §11.1)
 repos:
   - repo: local
     hooks:

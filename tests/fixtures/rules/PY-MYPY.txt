@@ -1,0 +1,6 @@
+=== positive: mypy errors
+src/labpkg/typing_gate.py:4: error: Incompatible return value type (got "str", expected "int")  [return-value]
+Found 1 error in 1 file (checked 5 source files)
+=== negative: a clean mypy run
+src/labpkg/typing_gate.py:3: note: Revealed type is "builtins.int"
+Success: no issues found in 5 source files

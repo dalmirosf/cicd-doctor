@@ -1,0 +1,7 @@
+=== positive: a provider that does not exist
+│ Error: Failed to query available provider packages
+│
+│ Could not retrieve the list of available versions for provider hashicorp/doesnotexist: provider registry registry.terraform.io does not have a provider named registry.terraform.io/hashicorp/doesnotexist
+=== negative: init worked
+- Installing hashicorp/aws v5.70.0...
+Terraform has been successfully initialized!

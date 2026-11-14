@@ -1,0 +1,43 @@
+=== positive: exit code 137
+python scripts/build_index.py
+##[error]Process completed with exit code 137.
+=== positive: Node heap
+<--- Last few GCs --->
+FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory
+##[error]Process completed with exit code 134.
+=== positive: Killed near the end of the step
+python scripts/build_index.py
+/home/runner/work/_temp/a1b2.sh: line 1:  2741 Killed                  python scripts/build_index.py
+##[error]Process completed with exit code 1.
+=== positive: MemoryError
+Traceback (most recent call last):
+  File "scripts/build_index.py", line 12, in <module>
+MemoryError
+=== negative: Killed far from the end of the step
+Killed 3 stale processes before starting
+building module 1 of 30
+building module 2 of 30
+building module 3 of 30
+building module 4 of 30
+building module 5 of 30
+building module 6 of 30
+building module 7 of 30
+building module 8 of 30
+building module 9 of 30
+building module 10 of 30
+building module 11 of 30
+building module 12 of 30
+building module 13 of 30
+building module 14 of 30
+building module 15 of 30
+building module 16 of 30
+building module 17 of 30
+building module 18 of 30
+building module 19 of 30
+building module 20 of 30
+building module 21 of 30
+building module 22 of 30
+building module 23 of 30
+building module 24 of 30
+building module 25 of 30
+##[error]Process completed with exit code 1.
