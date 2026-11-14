@@ -1,10 +1,14 @@
 """``python -m evals capture``: turn a run of the lab repo into an eval case (SPEC §11.1, D-61).
 
 It calls the GitHub CLI (``gh``, with the user's own login; no token passes through this code),
-downloads the jobs of the run attempt and the log of the failed job, redacts the log, finds the
-evidence lines from the lab manifest's patterns, and writes ``evals/cases/lab/<id>/``.
+downloads the jobs of the run attempt and the log of the failed job, strips terminal escape
+sequences from the log, redacts it, finds the evidence lines from the lab manifest's patterns,
+and writes ``evals/cases/lab/<id>/``.
 
-The log is untrusted data: it is redacted and written to disk, never executed, and never printed.
+The log is untrusted data: it is stripped of terminal controls and redacted, written to disk,
+never executed, and never printed. Real logs carry ANSI colours, so ``gh api`` refuses to output
+them unless it is given ``--allow-escape-sequences``; the escape sequences are removed before
+anything else touches the text (D-62).
 """
 
 import json
@@ -20,7 +24,7 @@ import yaml
 from pydantic import BaseModel, ConfigDict, Field
 
 from cicd_doctor.adapters.github.jobs import parse_jobs
-from cicd_doctor.core.logs import select_failed_jobs
+from cicd_doctor.core.logs import select_failed_jobs, strip_terminal_controls
 from cicd_doctor.core.logs.parse import parse_log, slice_step
 from cicd_doctor.core.models import Category, FailedJob, RunRef, WorkflowJob
 from cicd_doctor.core.redaction import redact_text
@@ -98,6 +102,18 @@ def run_gh(args: Sequence[str]) -> bytes:
     return result.stdout
 
 
+def fetch_job_log(gh: Gh, repo: str, job_id: int) -> str:
+    """The log of a job, without terminal escape sequences or other control characters.
+
+    ``--allow-escape-sequences`` is needed because job logs carry ANSI colours and ``gh api``
+    refuses to output them otherwise. The bytes go to a pipe and are never shown on a terminal;
+    the escape sequences are stripped here, before redaction, so a colour code cannot split a
+    secret and hide it from the redaction patterns (D-62).
+    """
+    raw = gh(["api", "--allow-escape-sequences", f"repos/{repo}/actions/jobs/{job_id}/logs"])
+    return strip_terminal_controls(raw.decode("utf-8", errors="replace"))
+
+
 @dataclass(frozen=True)
 class Captured:
     path: Path
@@ -126,8 +142,7 @@ def capture(
     jobs = parse_jobs(payload)
     run_url = f"https://github.com/{repo}/actions/runs/{run_id}/attempts/{attempt}"
     failed = _failed_job(repo, run_id, attempt, jobs, lab)
-    raw = gh(["api", f"repos/{repo}/actions/jobs/{failed.job.job_id}/logs"])
-    redacted = redact_text(raw.decode("utf-8", errors="replace"))
+    redacted = redact_text(fetch_job_log(gh, repo, failed.job.job_id))
     evidence, missing = find_evidence(redacted.text, failed, lab.evidence)
 
     case_dir = _next_case_dir(out_dir, lab.id)

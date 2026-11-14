@@ -70,11 +70,11 @@ uv run python -m evals capture --repo $repo --all
 For each case it takes the latest failed runs it has not captured yet, until the case has its
 `captures`. Then it writes `evals/cases/lab/lab-<case>-NN/`:
 
-- `log.txt`: the failed job's log, redacted;
+- `log.txt`: the failed job's log, with terminal colours and other control characters stripped, then redacted (line numbers match GitHub's);
 - `jobs.json`: the job and step metadata, trimmed;
 - `case.yaml`: the labels from `cases.yaml`, plus the evidence line numbers found by its regexes.
 
-It reads through your own `gh` login and never prints log content. It warns when an evidence
+It reads through your own `gh` login (the log is requested with `--allow-escape-sequences`, because GitHub's logs carry ANSI colours) and never prints log content. It warns when an evidence
 regex matches no line. Read the warnings, then open the matching `log.txt` before committing,
 because the regex may need fixing. One run can also be captured on its own with
 `--run-id <id> --case <case>`.

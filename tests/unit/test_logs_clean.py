@@ -4,8 +4,16 @@ import re
 from datetime import UTC, datetime
 
 import pytest
+from hypothesis import given, settings
+from hypothesis import strategies as st
 
-from cicd_doctor.core.logs.clean import CleanLine, clean_lines, clean_text, collapse_repeats
+from cicd_doctor.core.logs.clean import (
+    CleanLine,
+    clean_lines,
+    clean_text,
+    collapse_repeats,
+    strip_terminal_controls,
+)
 from cicd_doctor.core.logs.errors import MAX_SCAN_CHARS, is_error_line
 from cicd_doctor.core.logs.noise import is_noise
 from cicd_doctor.core.logs.parse import RawLine, parse_log, slice_step
@@ -94,6 +102,75 @@ def test_clean_text_keeps_the_last_progress_update_and_strips_ansi() -> None:
     assert clean_text("\x1b[1m\x1b[31mFAILED\x1b[0m test_x   ") == "FAILED test_x"
     assert clean_text("\x1b]8;;https://x\x07link\x1b]8;;\x07") == "link"
     assert clean_text("\r\r") == ""
+
+
+# --- strip_terminal_controls (whole logs, D-62) -------------------------------------------------
+
+CONTROLS = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f\x80-\x9f]")
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("\x1b[31mred\x1b[0m", "red"),  # colours
+        ("\x1b[1;38;5;196mbold\x1b[m", "bold"),  # extended colours, reset without a parameter
+        ("\x1b[2K\x1b[1Gprogress", "progress"),  # erase line, move the cursor
+        ("\x1b[?25lhidden cursor\x1b[?25h", "hidden cursor"),  # private modes
+        ("\x1b]0;window title\x07text", "text"),  # OSC ended by BEL
+        ("\x1b]8;;https://x.test\x1b\\link\x1b]8;;\x1b\\", "link"),  # OSC ended by ST
+        ("\x1b7saved\x1b8", "saved"),  # two-byte escapes
+        ("a\x00b\x07c\x08d\x0be\x0cf\x7fg", "abcdefg"),  # C0 controls and DEL
+        ("a\x85b\x9bc\x9fd", "abcd"),  # C1 controls (U+009B is a one-character CSI)
+        ("lone ESC \x1b at the end\x1b", "lone ESC  at the end"),
+        ("\x1b[31", "[31"),  # a truncated sequence: ESC goes, the rest is visible text
+    ],
+)
+def test_strip_terminal_controls_removes_sequences_and_control_characters(
+    text: str, expected: str
+) -> None:
+    assert strip_terminal_controls(text) == expected
+
+
+def test_strip_terminal_controls_keeps_text_whitespace_and_unicode() -> None:
+    text = "col1\tcol2\r\nprogress 50%\r100%\nñandú ✓ ━━━ 日本語 😀\n"
+
+    assert strip_terminal_controls(text) == text  # TAB, LF, CR and normal characters stay
+
+
+def test_an_unterminated_osc_does_not_swallow_the_following_lines() -> None:
+    text = "one\x1b]0;never closed\ntwo\nthree\x07 four\n"
+
+    assert strip_terminal_controls(text).split("\n") == [
+        "one0;never closed",
+        "two",
+        "three four",
+        "",
+    ]
+
+
+def test_strip_terminal_controls_of_empty_and_plain_text() -> None:
+    assert strip_terminal_controls("") == ""
+    assert strip_terminal_controls("nothing to strip\n") == "nothing to strip\n"
+
+
+PIECES = ["\x1b", "[", "]", "\\", "\x07", "\x9b", "\x00", "\x7f", "m", ";", "3", "1", "?", "a"]
+SEQUENCE_PIECES = st.sampled_from([*PIECES, "é", " ", "\t", "\n", "\r"])
+
+
+@settings(max_examples=300, deadline=None)
+@given(st.one_of(st.lists(SEQUENCE_PIECES, max_size=40).map("".join), st.text(max_size=80)))
+def test_strip_terminal_controls_leaves_no_controls_and_keeps_the_lines(text: str) -> None:
+    stripped = strip_terminal_controls(text)
+
+    assert CONTROLS.search(stripped) is None
+    assert stripped.count("\n") == text.count("\n")  # line numbers never move
+    assert strip_terminal_controls(stripped) == stripped  # idempotent
+
+
+def test_strip_terminal_controls_agrees_with_clean_text_on_a_line() -> None:
+    line = "\x1b[1m\x1b[31mFAILED\x1b[0m \x1b]8;;https://x\x07tests/a.py\x1b]8;;\x07::t"
+
+    assert clean_text(line) == strip_terminal_controls(line) == "FAILED tests/a.py::t"
 
 
 def test_group_titles_are_kept_and_end_markers_dropped() -> None:
