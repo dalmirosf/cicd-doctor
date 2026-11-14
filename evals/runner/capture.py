@@ -297,7 +297,9 @@ def capture_all(
                 "--limit", str(RUN_LIST_LIMIT), "--json", "databaseId,attempt,conclusion",
             ]
         )  # fmt: skip
-        for run in json.loads(listing):
+        runs = json.loads(listing)
+        cancelled = sum(run.get("conclusion") == "cancelled" for run in runs)
+        for run in runs:
             if len(have) >= case.captures:
                 break
             if run.get("conclusion") not in FAILED_CONCLUSIONS:
@@ -313,7 +315,15 @@ def capture_all(
             new.append(captured)
             have.append(url)
         if len(have) < case.captures:
-            notes.append(
-                f"{case.id}: {len(have)} of {case.captures} captures; run {case.workflow} again"
-            )
+            missing = f"{case.id}: {len(have)} of {case.captures} captures"
+            if cancelled and not have:
+                # GitHub ends a job that hits its timeout-minutes as `cancelled`, like a manual
+                # cancellation, and the pipeline only diagnoses failure and timed_out (SPEC §14).
+                notes.append(
+                    f"{missing}; its {cancelled} run(s) ended cancelled, which capture does not "
+                    f"take (a job that hits timeout-minutes ends cancelled, SPEC §14), so running "
+                    f"{case.workflow} again will not help"
+                )
+            else:
+                notes.append(f"{missing}; run {case.workflow} again")
     return new, notes

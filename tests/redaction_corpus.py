@@ -183,6 +183,11 @@ LOOKALIKES: tuple[str, ...] = (
     "  token: ***",
     "GITHUB_TOKEN: ***",
     "password: ***",
+    # The checkout step of every real job prints this line, with GitHub's mask as the value.
+    "[command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-3f1ba908-846b-41f2-8715-6d760b8d8500.config http.https://github.com/.extraheader AUTHORIZATION: basic ***",  # noqa: E501
+    "Authorization: Bearer ***",
+    "AWS_SECRET_ACCESS_KEY: ***",
+    "git clone https://x-access-token:***@github.com/acme/widgets.git",
     "max_tokens: 800",
     "tokenizer: o200k_base",
     "secret_name: deploy-key",
