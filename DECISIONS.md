@@ -77,7 +77,8 @@ New decisions are appended. A superseded decision is marked `Superseded by D-NN`
 | D-58 | `core` selects the failed jobs and step; line numbers count in the retained log | Author request + Proposed |
 | D-59 | Redaction and signature details: order, thresholds, PEM spans, generated corpus, fixed-point normalisation | Proposed |
 | D-60 | Rule engine: per-rule priorities, context conditions, one match per rule, `core/analysis.py` | Proposed |
-| D-61 | Eval runner skeleton, lab repository sources and the `evals capture` command | Author request + Proposed |
+| D-61 | Eval runner skeleton, lab repository sources and the `evals capture` command. Amended by D-62 | Author request + Proposed |
+| D-62 | Captured logs are stripped of terminal escape sequences; `gh` reads them with `--allow-escape-sequences` | Author request + Proposed |
 
 ---
 
@@ -641,6 +642,7 @@ In every case, the sticky comment is edited to show the resolution.
 **Consequences:** The priorities are judgement calls, which the confusion matrix of the lab and public cases will test. The step-timeout pattern is the expected GitHub message, not yet seen in a captured log; the first lab capture confirms or corrects it.
 
 ## D-61 — Eval runner skeleton, lab repository sources and the `evals capture` command
+**Amended by D-62:** the capture reads the log with `--allow-escape-sequences` and strips terminal escape sequences before redacting it.
 **Origin:** Author request (runner, lab workflows to publish and capture) + Proposed (the details)
 **Decision:**
 - `evals/` is a top-level package run as `python -m evals`.
@@ -662,3 +664,15 @@ In every case, the sticky comment is edited to show the resolution.
 **Why:** The labels come from the person who wrote the failure, and the capture keeps them next to a real log without hand work. Capture-time redaction keeps fake or real tokens out of the repository. `workflow_dispatch` only means that publishing the lab costs nothing and fails nothing by itself.
 **Alternatives:** Synthetic logs as lab cases (no real log formats, so they would only test our own assumptions); recording the logs by hand (slow, and evidence line numbers are easy to get wrong); a separate capture script under `scripts/` (one more entry point to learn).
 **Consequences:** The P1b criteria that name lab fixtures stay open until the lab is published, run and captured. The capture depends on the GitHub CLI being installed and logged in.
+
+## D-62 — Captured logs are stripped of terminal escape sequences; `gh` reads them with `--allow-escape-sequences`
+**Origin:** Author request (found on the first real capture of the lab) + Proposed (the details)
+**Decision:**
+- Job logs carry ANSI colours. `gh api` refuses to output a response that has terminal escape sequences unless it gets `--allow-escape-sequences`, so the first real `evals capture` failed with `gh api failed: the response contains terminal escape sequences`. The capture now passes the flag for the log download only. The jobs response is JSON, which escapes control characters itself. `gh` runs with its output captured in a pipe, and the log is never printed.
+- `core/logs/clean.py` gets `strip_terminal_controls`. It removes CSI sequences (colours, cursor moves), OSC sequences (titles, hyperlinks, ended by BEL or ST), the other two-byte escapes (ESC followed by 0x30 to 0x7E, such as the save and restore cursor pair) and every remaining control character except TAB, LF and CR (C0, DEL and the C1 range). An OSC body cannot contain a newline, so no newline is ever removed and line numbers do not move. Bare CRs stay, because the excerpt reduces a progress line to its last state (§7.3). The function is idempotent. `clean_text` shares its regex.
+- The capture strips first, then redacts, then looks for the evidence lines. A colour code in the middle of a secret cannot hide it from the redaction patterns, and one between the words of an error message cannot stop an evidence regex from matching.
+- A stored `log.txt` never holds a terminal escape sequence, so printing or opening it cannot move the cursor, set a window title or rewrite what the screen shows.
+
+**Why:** Logs are untrusted input. A stored log with escape sequences is a file that can act on whatever terminal shows it, and colours also get in the way of both redaction and the evidence regexes. Stripping in `core` makes the rule testable offline, with a property test over arbitrary text.
+**Alternatives:** Passing the flag and storing the raw log (the stored files carry the escape sequences, and redaction and evidence matching have to cope with colours); stripping in the shell with `sed` or PowerShell (not testable, and Windows-only); asking GitHub for a log without colours (the logs API has no such option).
+**Consequences:** A stored log is not byte-identical to what GitHub serves, but it has the same lines. The webhook path (P1c) never stores a raw log (D-12) and its excerpts are already cleaned per line. No lab case had been captured before this change, so none needs to be redone.
