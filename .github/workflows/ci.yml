@@ -68,4 +68,5 @@ jobs:
       - run: uv sync --locked
       # The migration through the real CLI, on an empty database (SPEC §13 P1a).
       - run: uv run alembic upgrade head
-      - run: uv run pytest
+      # The whole suite, plus the core/ coverage gate of NFR-09 (>= 90%, P1b).
+      - run: uv run pytest --cov=cicd_doctor.core --cov-report=term-missing:skip-covered --cov-fail-under=90
