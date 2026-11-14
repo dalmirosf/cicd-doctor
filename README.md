@@ -4,9 +4,11 @@ A GitHub App that explains *why* a GitHub Actions workflow run failed: it reads 
 failed jobs, redacts secrets, looks for similar past failures and publishes a structured diagnosis
 as a check run and a sticky PR comment.
 
-> **Status: Phase 1a (ingestion and queue).** The signed webhook, the Postgres job queue and the
-> worker exist, and installations are tracked. The diagnosis pipeline does not exist yet, so a
-> failed run becomes a `diagnose_run` job that the worker completes with a placeholder handler.
+> **Status: Phase 1b (offline pipeline), in progress.** The signed webhook, the Postgres job queue
+> and the worker exist, and installations are tracked. The log pipeline (failed job selection,
+> redacted excerpt, error signature) exists and is tested on synthetic logs; the rules, the LLM
+> diagnosis and the GitHub output do not yet, so a failed run becomes a `diagnose_run` job that
+> the worker completes with a placeholder handler.
 > See [SPEC.md](SPEC.md) for the design and phases, and [DECISIONS.md](DECISIONS.md) for the
 > reasoning behind each decision.
 
