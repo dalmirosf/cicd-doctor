@@ -1,0 +1,77 @@
+{
+  "total_count": 1,
+  "jobs": [
+    {
+      "id": 71000000002,
+      "run_id": 19000000001,
+      "run_attempt": 1,
+      "name": "build (ubuntu-latest, 3.12)",
+      "status": "completed",
+      "conclusion": "failure",
+      "started_at": "2026-11-13T10:00:00Z",
+      "completed_at": "2026-11-13T10:00:17Z",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_name": "GitHub Actions 1000000123",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-13T10:00:00Z",
+          "completed_at": "2026-11-13T10:00:02Z"
+        },
+        {
+          "name": "Run actions/checkout@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-13T10:00:02Z",
+          "completed_at": "2026-11-13T10:00:04Z"
+        },
+        {
+          "name": "Run astral-sh/setup-uv@v6",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-11-13T10:00:04Z",
+          "completed_at": "2026-11-13T10:00:07Z"
+        },
+        {
+          "name": "Run uv sync --locked",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-11-13T10:00:07Z",
+          "completed_at": "2026-11-13T10:00:09Z"
+        },
+        {
+          "name": "Run uv run python -m widgets.cli --version",
+          "status": "completed",
+          "conclusion": "failure",
+          "number": 5,
+          "started_at": "2026-11-13T10:00:09Z",
+          "completed_at": "2026-11-13T10:00:15Z"
+        },
+        {
+          "name": "Post Run actions/checkout@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-11-13T10:00:15Z",
+          "completed_at": "2026-11-13T10:00:16Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-11-13T10:00:16Z",
+          "completed_at": "2026-11-13T10:00:17Z"
+        }
+      ]
+    }
+  ]
+}

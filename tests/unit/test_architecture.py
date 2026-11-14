@@ -33,6 +33,7 @@ FORBIDDEN_EXTERNAL = frozenset(
         "pydantic_settings",
         "openai",
         "fastembed",
+        "tiktoken",  # downloads its encoding on first use (D-57)
     }
 )
 

@@ -1,0 +1,10 @@
+# job 71000000021 'frontend' · step None · 117 tokens · truncated=False · redactions=0 · errors=[10]
+… lines 1-2 omitted …
+L3: Run npm ci
+L4: npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory.
+L5: npm error code E404
+L6: npm error 404 Not Found - GET https://registry.npmjs.org/left-padd - Not found
+L7: npm error 404
+L8: npm error 404  'left-padd@^1.3.0' is not in this registry.
+L9: npm error A complete log of this run can be found in: /home/runner/.npm/_logs/2026-11-13T10_00_09_412Z-debug-0.log
+L10: ##[error]Process completed with exit code 1.

@@ -1,0 +1,152 @@
+﻿2026-11-13T10:00:00.0769230Z Current runner version: '2.329.0'
+2026-11-13T10:00:00.1538460Z Runner name: 'GitHub Actions 1000000123'
+2026-11-13T10:00:00.2307690Z Machine name: 'runnervmf2e7y'
+2026-11-13T10:00:00.3076920Z ##[group]Operating System
+2026-11-13T10:00:00.3846150Z Ubuntu
+2026-11-13T10:00:00.4615380Z 24.04.3
+2026-11-13T10:00:00.5384610Z LTS
+2026-11-13T10:00:00.6153840Z ##[endgroup]
+2026-11-13T10:00:00.6923070Z ##[group]Runner Image
+2026-11-13T10:00:00.7692300Z Image: ubuntu-24.04
+2026-11-13T10:00:00.8461530Z Version: 20251102.1.0
+2026-11-13T10:00:00.9230760Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20251102.1/images/ubuntu/Ubuntu2404-Readme.md
+2026-11-13T10:00:00.9999990Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20251102.1
+2026-11-13T10:00:01.0769220Z ##[endgroup]
+2026-11-13T10:00:01.1538450Z ##[group]GITHUB_TOKEN Permissions
+2026-11-13T10:00:01.2307680Z Contents: read
+2026-11-13T10:00:01.3076910Z Metadata: read
+2026-11-13T10:00:01.3846140Z ##[endgroup]
+2026-11-13T10:00:01.4615370Z Secret source: Actions
+2026-11-13T10:00:01.5384600Z Prepare workflow directory
+2026-11-13T10:00:01.6153830Z Prepare all required actions
+2026-11-13T10:00:01.6923060Z Getting action download info
+2026-11-13T10:00:01.7692290Z Download action repository 'actions/checkout@v5' (SHA:08c6903cd8c0fde910a37f88322edcfb5dd907a8)
+2026-11-13T10:00:01.8461520Z Download action repository 'astral-sh/setup-uv@v6' (SHA:e92bafb6253dcd438e0484186d7669ea7a8ca1cc)
+2026-11-13T10:00:01.9230750Z Complete job name: integration
+2026-11-13T10:00:02.0689660Z ##[group]Run actions/checkout@v5
+2026-11-13T10:00:02.1379320Z with:
+2026-11-13T10:00:02.2068980Z   repository: acme/widgets
+2026-11-13T10:00:02.2758640Z   token: ***
+2026-11-13T10:00:02.3448300Z   ssh-strict: true
+2026-11-13T10:00:02.4137960Z   persist-credentials: true
+2026-11-13T10:00:02.4827620Z   clean: true
+2026-11-13T10:00:02.5517280Z   fetch-depth: 1
+2026-11-13T10:00:02.6206940Z ##[endgroup]
+2026-11-13T10:00:02.6896600Z Syncing repository: acme/widgets
+2026-11-13T10:00:02.7586260Z ##[group]Getting Git version info
+2026-11-13T10:00:02.8275920Z Working directory is '/home/runner/work/widgets/widgets'
+2026-11-13T10:00:02.8965580Z [command]/usr/bin/git version
+2026-11-13T10:00:02.9655240Z git version 2.51.0
+2026-11-13T10:00:03.0344900Z ##[endgroup]
+2026-11-13T10:00:03.1034560Z Temporarily overriding HOME='/home/runner/work/_temp/0b9b5f36-6b1e-4f0e-a2f4-39c0c8d2f1aa' before making global git config changes
+2026-11-13T10:00:03.1724220Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-13T10:00:03.2413880Z ##[group]Fetching the repository
+2026-11-13T10:00:03.3103540Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +5f1c2a9e4b7d3c6a8f0e1d2b3c4a5f6e7d8c9b0a:refs/remotes/origin/main
+2026-11-13T10:00:03.3793200Z remote: Enumerating objects: 52, done.
+2026-11-13T10:00:03.4482860Z remote: Counting objects:   1% (1/52)remote: Counting objects:  50% (26/52)remote: Counting objects: 100% (52/52), done.
+2026-11-13T10:00:03.5172520Z ##[endgroup]
+2026-11-13T10:00:03.5862180Z ##[group]Checking out the ref
+2026-11-13T10:00:03.6551840Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+2026-11-13T10:00:03.7241500Z Switched to a new branch 'main'
+2026-11-13T10:00:03.7931160Z ##[endgroup]
+2026-11-13T10:00:03.8620820Z [command]/usr/bin/git log -1 --format=%H
+2026-11-13T10:00:03.9310480Z 5f1c2a9e4b7d3c6a8f0e1d2b3c4a5f6e7d8c9b0a
+2026-11-13T10:00:04.3000000Z ##[group]Run astral-sh/setup-uv@v6
+2026-11-13T10:00:04.6000000Z with:
+2026-11-13T10:00:04.9000000Z   enable-cache: true
+2026-11-13T10:00:05.2000000Z ##[endgroup]
+2026-11-13T10:00:05.5000000Z Downloading uv from "https://github.com/astral-sh/uv/releases/download/0.9.8/uv-x86_64-unknown-linux-gnu.tar.gz" ...
+2026-11-13T10:00:05.8000000Z [command]/usr/bin/tar xz --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/3c4d1f0e -f /home/runner/work/_temp/a1b2c3d4
+2026-11-13T10:00:06.1000000Z Added /opt/hostedtoolcache/uv/0.9.8/x86_64 to the path
+2026-11-13T10:00:06.4000000Z Set UV_CACHE_DIR to /home/runner/work/_temp/setup-uv-cache
+2026-11-13T10:00:06.7000000Z Successfully installed uv version 0.9.8
+2026-11-13T10:00:07.1111110Z ##[group]Run uv sync --locked
+2026-11-13T10:00:07.2222220Z uv sync --locked
+2026-11-13T10:00:07.3333330Z shell: /usr/bin/bash -e {0}
+2026-11-13T10:00:07.4444440Z env:
+2026-11-13T10:00:07.5555550Z   UV_CACHE_DIR: /home/runner/work/_temp/setup-uv-cache
+2026-11-13T10:00:07.6666660Z ##[endgroup]
+2026-11-13T10:00:07.7777770Z Using CPython 3.13.7 interpreter at: /usr/bin/python3.13
+2026-11-13T10:00:07.8888880Z Creating virtual environment at: .venv
+2026-11-13T10:00:07.9999990Z Resolved 14 packages in 2ms
+2026-11-13T10:00:08.1111100Z Prepared 9 packages in 412ms
+2026-11-13T10:00:08.2222210Z Installed 9 packages in 18ms
+2026-11-13T10:00:08.3333320Z  + iniconfig==2.1.0
+2026-11-13T10:00:08.4444430Z  + packaging==25.0
+2026-11-13T10:00:08.5555540Z  + pluggy==1.6.0
+2026-11-13T10:00:08.6666650Z  + pygments==2.19.2
+2026-11-13T10:00:08.7777760Z  + pytest==8.4.2
+2026-11-13T10:00:08.8888870Z  + widgets==0.1.0 (from file:///home/runner/work/widgets/widgets)
+2026-11-13T10:00:09.8208960Z ##[group]Run python scripts/wait_for_service.py --retries 500
+2026-11-13T10:00:10.6417920Z python scripts/wait_for_service.py --retries 500
+2026-11-13T10:00:11.4626880Z shell: /usr/bin/bash -e {0}
+2026-11-13T10:00:12.2835840Z ##[endgroup]
+2026-11-13T10:00:13.1044800Z waiting for http://127.0.0.1:8080/health (attempt 1/500)
+2026-11-13T10:00:13.9253760Z waiting for http://127.0.0.1:8080/health (attempt 2/500)
+2026-11-13T10:00:14.7462720Z waiting for http://127.0.0.1:8080/health (attempt 3/500)
+2026-11-13T10:00:15.5671680Z waiting for http://127.0.0.1:8080/health (attempt 4/500)
+2026-11-13T10:00:16.3880640Z waiting for http://127.0.0.1:8080/health (attempt 5/500)
+2026-11-13T10:00:17.2089600Z waiting for http://127.0.0.1:8080/health (attempt 6/500)
+2026-11-13T10:00:18.0298560Z waiting for http://127.0.0.1:8080/health (attempt 7/500)
+2026-11-13T10:00:18.8507520Z waiting for http://127.0.0.1:8080/health (attempt 8/500)
+2026-11-13T10:00:19.6716480Z waiting for http://127.0.0.1:8080/health (attempt 9/500)
+2026-11-13T10:00:20.4925440Z waiting for http://127.0.0.1:8080/health (attempt 10/500)
+2026-11-13T10:00:21.3134400Z waiting for http://127.0.0.1:8080/health (attempt 11/500)
+2026-11-13T10:00:22.1343360Z waiting for http://127.0.0.1:8080/health (attempt 12/500)
+2026-11-13T10:00:22.9552320Z waiting for http://127.0.0.1:8080/health (attempt 13/500)
+2026-11-13T10:00:23.7761280Z waiting for http://127.0.0.1:8080/health (attempt 14/500)
+2026-11-13T10:00:24.5970240Z waiting for http://127.0.0.1:8080/health (attempt 15/500)
+2026-11-13T10:00:25.4179200Z waiting for http://127.0.0.1:8080/health (attempt 16/500)
+2026-11-13T10:00:26.2388160Z waiting for http://127.0.0.1:8080/health (attempt 17/500)
+2026-11-13T10:00:27.0597120Z waiting for http://127.0.0.1:8080/health (attempt 18/500)
+2026-11-13T10:00:27.8806080Z waiting for http://127.0.0.1:8080/health (attempt 19/500)
+2026-11-13T10:00:28.7015040Z waiting for http://127.0.0.1:8080/health (attempt 20/500)
+2026-11-13T10:00:29.5224000Z waiting for http://127.0.0.1:8080/health (attempt 21/500)
+2026-11-13T10:00:30.3432960Z waiting for http://127.0.0.1:8080/health (attempt 22/500)
+2026-11-13T10:00:31.1641920Z waiting for http://127.0.0.1:8080/health (attempt 23/500)
+2026-11-13T10:00:31.9850880Z waiting for http://127.0.0.1:8080/health (attempt 24/500)
+2026-11-13T10:00:32.8059840Z waiting for http://127.0.0.1:8080/health (attempt 25/500)
+2026-11-13T10:00:33.6268800Z waiting for http://127.0.0.1:8080/health (attempt 26/500)
+2026-11-13T10:00:34.4477760Z waiting for http://127.0.0.1:8080/health (attempt 27/500)
+2026-11-13T10:00:35.2686720Z waiting for http://127.0.0.1:8080/health (attempt 28/500)
+2026-11-13T10:00:36.0895680Z waiting for http://127.0.0.1:8080/health (attempt 29/500)
+2026-11-13T10:00:36.9104640Z waiting for http://127.0.0.1:8080/health (attempt 30/500)
+2026-11-13T10:00:37.7313600Z waiting for http://127.0.0.1:8080/health (attempt 31/500)
+2026-11-13T10:00:38.5522560Z waiting for http://127.0.0.1:8080/health (attempt 32/500)
+2026-11-13T10:00:39.3731520Z waiting for http://127.0.0.1:8080/health (attempt 33/500)
+2026-11-13T10:00:40.1940480Z waiting for http://127.0.0.1:8080/health (attempt 34/500)
+2026-11-13T10:00:41.0149440Z waiting for http://127.0.0.1:8080/health (attempt 35/500)
+2026-11-13T10:00:41.8358400Z waiting for http://127.0.0.1:8080/health (attempt 36/500)
+2026-11-13T10:00:42.6567360Z waiting for http://127.0.0.1:8080/health (attempt 37/500)
+2026-11-13T10:00:43.4776320Z waiting for http://127.0.0.1:8080/health (attempt 38/500)
+2026-11-13T10:00:44.2985280Z waiting for http://127.0.0.1:8080/health (attempt 39/500)
+2026-11-13T10:00:45.1194240Z waiting for http://127.0.0.1:8080/health (attempt 40/500)
+2026-11-13T10:00:45.9403200Z waiting for http://127.0.0.1:8080/health (attempt 41/500)
+2026-11-13T10:00:46.7612160Z waiting for http://127.0.0.1:8080/health (attempt 42/500)
+2026-11-13T10:00:47.5821120Z waiting for http://127.0.0.1:8080/health (attempt 43/500)
+2026-11-13T10:00:48.4030080Z waiting for http://127.0.0.1:8080/health (attempt 44/500)
+2026-11-13T10:00:49.2239040Z waiting for http://127.0.0.1:8080/health (attempt 45/500)
+2026-11-13T10:00:50.0448000Z waiting for http://127.0.0.1:8080/health (attempt 46/500)
+2026-11-13T10:00:50.8656960Z waiting for http://127.0.0.1:8080/health (attempt 47/500)
+2026-11-13T10:00:51.6865920Z waiting for http://127.0.0.1:8080/health (attempt 48/500)
+2026-11-13T10:00:52.5074880Z waiting for http://127.0.0.1:8080/health (attempt 49/500)
+2026-11-13T10:00:53.3283840Z waiting for http://127.0.0.1:8080/health (attempt 50/500)
+2026-11-13T10:00:54.1492800Z waiting for http://127.0.0.1:8080/health (attempt 51/500)
+2026-11-13T10:00:54.9701760Z waiting for http://127.0.0.1:8080/health (attempt 52/500)
+2026-11-13T10:00:55.7910720Z waiting for http://127.0.0.1:8080/health (attempt 53/500)
+2026-11-13T10:00:56.6119680Z waiting for http://127.0.0.1:8080/health (attempt 54/500)
+2026-11-13T10:00:57.4328640Z waiting for http://127.0.0.1:8080/health (attempt 55/500)
+2026-11-13T10:00:58.2537600Z waiting for http://127.0.0.1:8080/health (attempt 56/500)
+2026-11-13T10:00:59.0746560Z waiting for http://127.0.0.1:8080/health (attempt 57/500)
+2026-11-13T10:00:59.8955520Z waiting for http://127.0.0.1:8080/health (attempt 58/500)
+2026-11-13T10:01:00.7164480Z waiting for http://127.0.0.1:8080/health (attempt 59/500)
+2026-11-13T10:01:01.5373440Z waiting for http://127.0.0.1:8080/health (attempt 60/500)
+2026-11-13T10:01:02.3582400Z ##[error]The job running on runner GitHub Actions 1000000123 has exceeded the maximum execution time of 1 minutes.
+2026-11-13T10:01:03.1791360Z ##[error]The operation was canceled.
+2026-11-13T10:01:04.1428570Z Post job cleanup.
+2026-11-13T10:01:04.2857140Z [command]/usr/bin/git version
+2026-11-13T10:01:04.4285710Z git version 2.51.0
+2026-11-13T10:01:04.5714280Z Temporarily overriding HOME='/home/runner/work/_temp/7d0c0b8e-1f2e-4d3c-9b8a-7f6e5d4c3b2a' before making global git config changes
+2026-11-13T10:01:04.7142850Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-13T10:01:04.8571420Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-13T10:01:05.5000000Z Cleaning up orphan processes

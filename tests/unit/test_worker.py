@@ -12,6 +12,7 @@ from cicd_doctor.core.errors import PermanentError, TransientError
 from cicd_doctor.core.models import Job, JobKind, JobStatus, NewJob
 from cicd_doctor.worker import Handler, Worker
 from tests.factories import T0
+from tests.redaction_corpus import planted_secrets
 from tests.scenarios import assert_transient_errors_back_off_until_dead
 
 KIND = JobKind.DIAGNOSE_RUN
@@ -119,6 +120,22 @@ async def test_an_unexpected_exception_is_retried_like_a_transient_one() -> None
     retried = await job_1(queue)
     assert retried.status is JobStatus.QUEUED
     assert retried.last_error == "ValueError: bug"
+
+
+async def test_last_error_is_redacted() -> None:
+    clock = FakeClock(T0)
+    queue = InMemoryJobQueue(clock)
+    planted = planted_secrets()[0]
+    handler, _ = raising(lambda: TransientError(f"GitHub said no: {planted.line}"))
+    await enqueue(queue)
+
+    await make_worker(queue, clock, handler).run_one("c1")
+
+    retried = await job_1(queue)
+    assert retried.last_error is not None
+    assert retried.last_error.startswith("TransientError: GitHub said no: ")
+    assert planted.secret not in retried.last_error
+    assert f"[REDACTED:{planted.kind}]" in retried.last_error
 
 
 async def test_a_kind_without_a_handler_fails_the_job() -> None:

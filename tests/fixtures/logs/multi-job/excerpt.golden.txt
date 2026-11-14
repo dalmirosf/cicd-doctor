@@ -1,0 +1,26 @@
+# job 71000000012 'test (b)' · step 'Run uv run pytest tests/test_b.py' · 56 tokens · truncated=False · redactions=0 · errors=[84, 85]
+… lines 1-79 omitted …
+L80: Run uv run pytest tests/test_b.py
+L81: uv run pytest tests/test_b.py
+L82: shell: /usr/bin/bash -e {0}
+… lines 83-83 omitted …
+L84: FAILED tests/test_b.py::test_beta - KeyError: 'beta'
+L85: ##[error]Process completed with exit code 1.
+
+# job 71000000011 'test (a)' · step 'Run uv run pytest tests/test_a.py' · 56 tokens · truncated=False · redactions=0 · errors=[84, 85]
+… lines 1-79 omitted …
+L80: Run uv run pytest tests/test_a.py
+L81: uv run pytest tests/test_a.py
+L82: shell: /usr/bin/bash -e {0}
+… lines 83-83 omitted …
+L84: FAILED tests/test_a.py::test_alpha - assert 'a' == 'b'
+L85: ##[error]Process completed with exit code 1.
+
+# job 71000000013 'test (c)' · step 'Run uv run pytest tests/test_c.py' · 61 tokens · truncated=False · redactions=0 · errors=[84, 85]
+… lines 1-79 omitted …
+L80: Run uv run pytest tests/test_c.py
+L81: uv run pytest tests/test_c.py
+L82: shell: /usr/bin/bash -e {0}
+… lines 83-83 omitted …
+L84: FAILED tests/test_c.py::test_gamma - ZeroDivisionError: division by zero
+L85: ##[error]Process completed with exit code 1.

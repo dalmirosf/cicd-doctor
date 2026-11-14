@@ -1,0 +1,14 @@
+{
+  "synthetic": true,
+  "description": "Dockerfile COPY of a file that is not in the build context",
+  "selected_job_ids": [
+    71000000004
+  ],
+  "evidence_lines": {
+    "71000000004": [
+      92,
+      104,
+      105
+    ]
+  }
+}

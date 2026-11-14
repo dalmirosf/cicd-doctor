@@ -1,0 +1,14 @@
+{
+  "synthetic": true,
+  "description": "the jobs API returned no steps: the whole job log is used",
+  "selected_job_ids": [
+    71000000021
+  ],
+  "evidence_lines": {
+    "71000000021": [
+      5,
+      6,
+      10
+    ]
+  }
+}

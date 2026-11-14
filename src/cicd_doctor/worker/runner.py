@@ -23,6 +23,7 @@ from typing import Any
 from cicd_doctor.core.errors import PermanentError, TransientError
 from cicd_doctor.core.models import Job, JobKind
 from cicd_doctor.core.ports import Clock, JobQueue
+from cicd_doctor.core.redaction import redact
 from cicd_doctor.core.retry import backoff_delay
 
 logger = logging.getLogger(__name__)
@@ -200,5 +201,5 @@ class Worker:
 
 
 def _describe(exc: BaseException) -> str:
-    # The queue truncates it to 2 KB. Redaction (core/redaction.py) is applied here from P1b.
-    return f"{type(exc).__name__}: {exc}"
+    """``"<ExceptionType>: <message>"``, redacted (D-49, D-59); the queue truncates it to 2 KB."""
+    return redact(f"{type(exc).__name__}: {exc}")

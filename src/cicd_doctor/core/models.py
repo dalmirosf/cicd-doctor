@@ -102,13 +102,42 @@ class JobRef(DomainModel):
     job_name: str
 
 
+class WorkflowStep(DomainModel):
+    """One step of a job, normalised from the GitHub jobs API (D-58)."""
+
+    number: int
+    name: str
+    conclusion: str | None  # success, failure, cancelled, skipped, timed_out; None while running
+    started_at: datetime | None
+    completed_at: datetime | None
+
+
+class WorkflowJob(DomainModel):
+    """One job of a run attempt, normalised from the GitHub jobs API (D-58).
+
+    ``LogSource.jobs`` returns every job of the attempt; ``core/logs`` picks the failed ones.
+    """
+
+    job_id: int
+    name: str
+    conclusion: str | None  # success, failure, cancelled, skipped, timed_out; None while running
+    started_at: datetime | None
+    completed_at: datetime | None
+    runner_os: str | None  # "Linux" | "Windows" | "macOS", derived from the runner labels
+    steps: list[WorkflowStep] = Field(default_factory=list)
+
+
 class FailedJob(DomainModel):
     job: JobRef
+    conclusion: Literal["failure", "timed_out"]
     step_name: str | None
     step_number: int | None
     started_at: datetime
     completed_at: datetime
     runner_os: str | None
+    # Time range of the failed step, used to slice its lines out of the job log (SPEC §7.3).
+    step_started_at: datetime | None = None
+    step_completed_at: datetime | None = None
 
 
 class WorkflowRun(DomainModel):
@@ -146,7 +175,7 @@ class RawLog(DomainModel):
 
 
 class LogLine(DomainModel):
-    number: int  # original line number
+    number: int  # 1-based line number in the retained log (D-58: relative to the tail if truncated)
     text: str  # cleaned + redacted text
 
 

@@ -1,0 +1,23 @@
+{
+  "synthetic": true,
+  "description": "four failed jobs, at most three are selected (earliest completion first)",
+  "selected_job_ids": [
+    71000000012,
+    71000000011,
+    71000000013
+  ],
+  "evidence_lines": {
+    "71000000011": [
+      84,
+      85
+    ],
+    "71000000012": [
+      84,
+      85
+    ],
+    "71000000013": [
+      84,
+      85
+    ]
+  }
+}

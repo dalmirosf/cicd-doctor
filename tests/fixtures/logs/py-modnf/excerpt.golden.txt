@@ -1,0 +1,13 @@
+# job 71000000002 'build (ubuntu-latest, 3.12)' · step 'Run uv run python -m widgets.cli --version' · 127 tokens · truncated=False · redactions=0 · errors=[84, 89, 90]
+… lines 1-79 omitted …
+L80: Run uv run python -m widgets.cli --version
+L81: uv run python -m widgets.cli --version
+L82: shell: /usr/bin/bash -e {0}
+… lines 83-83 omitted …
+L84: Traceback (most recent call last):
+L85:   File "<frozen runpy>", line 198, in _run_module_as_main
+L86:   File "<frozen runpy>", line 88, in _run_code
+L87:   File "/home/runner/work/widgets/widgets/src/widgets/cli.py", line 3, in <module>
+L88:     import requests
+L89: ModuleNotFoundError: No module named 'requests'
+L90: ##[error]Process completed with exit code 1.
