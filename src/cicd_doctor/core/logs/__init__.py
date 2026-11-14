@@ -1,5 +1,6 @@
 """Job selection, log retention, cleaning, noise filters, excerpt and token budget (SPEC §7.3)."""
 
+from cicd_doctor.core.logs.clean import strip_terminal_controls
 from cicd_doctor.core.logs.excerpt import (
     DEFAULT_CONFIG,
     ExcerptConfig,
@@ -21,5 +22,6 @@ __all__ = [
     "render_line",
     "select_failed_jobs",
     "share_budget",
+    "strip_terminal_controls",
     "tail_text",
 ]

@@ -1,6 +1,8 @@
 """Lab capture (``python -m evals capture``, D-61) with a fake ``gh``: no network, no GitHub."""
 
 import json
+import re
+import subprocess
 from collections.abc import Sequence
 from datetime import UTC, datetime
 from pathlib import Path
@@ -16,8 +18,10 @@ from evals.runner.capture import (
     capture,
     capture_all,
     captured_runs,
+    fetch_job_log,
     find_evidence,
     load_manifest,
+    run_gh,
     trim_jobs_payload,
 )
 from evals.runner.cases import load_cases
@@ -25,6 +29,8 @@ from tests.logcases import LOG_CASES_DIR, load_log_case, select_case_jobs
 from tests.redaction_corpus import planted_secrets
 
 NOW = datetime(2026, 11, 13, 12, 0, tzinfo=UTC)
+PLAIN_ERROR = "ModuleNotFoundError: No module named 'requests'"
+COLOURED_ERROR = "\x1b[1;31mModuleNotFoundError\x1b[0m: No module named '\x1b[33mrequests\x1b[0m'"
 JOB_ID = 71000000002
 REPO = "acme/cicd-doctor-lab"
 MANIFEST = LabManifest(
@@ -44,8 +50,21 @@ MANIFEST = LabManifest(
 )
 
 
+ESCAPE_FLAG = "--allow-escape-sequences"
+# What the stored log must not contain: C0 controls except TAB/LF/CR, DEL and the C1 range.
+CONTROLS = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f\x80-\x9f]")
+ESCAPES_REFUSED = (
+    f"the response contains terminal escape sequences; pass {ESCAPE_FLAG} to output it anyway"
+)
+
+
 class FakeGh:
-    """Answers the few ``gh`` calls capture makes, from the py-modnf log fixture."""
+    """Answers the few ``gh`` calls capture makes, from the py-modnf log fixture.
+
+    The log is a real-looking one: ANSI colours (even between the words of the error), an OSC
+    hyperlink, stray control characters, a progress line and a secret split by a colour code.
+    Like the real ``gh api``, it refuses to output that log unless it gets the escape flag.
+    """
 
     def __init__(self, runs: list[dict[str, object]] | None = None) -> None:
         self.calls: list[list[str]] = []
@@ -55,17 +74,31 @@ class FakeGh:
         self.jobs = json.loads((fixture / "jobs.json").read_text("utf-8"))
         self.jobs["jobs"][0]["runner_name"] = "GitHub Actions 1000000123"
         self.jobs["jobs"][0]["html_url"] = "https://github.com/acme/x/actions/runs/1/job/2"
-        log = (fixture / "logs" / f"{JOB_ID}.txt").read_bytes()
-        planted = f"2026-11-13T10:00:13.0000000Z {self.secret.line}\n".encode()
-        self.log = log + planted
+        text = (fixture / "logs" / f"{JOB_ID}.txt").read_bytes().decode("utf-8")
+        assert PLAIN_ERROR in text
+        text = text.replace(PLAIN_ERROR, COLOURED_ERROR)  # same line number, colours in between
+        token = self.secret.secret
+        extra = [
+            self.secret.line,
+            f"fetching with {token[:10]}\x1b[0m{token[10:]} now",  # a colour code inside a secret
+            "\x1b]8;;https://example.com\x1b\\a link\x1b]8;;\x1b\\",
+            "bell\x07 backspace\x08 nul\x00 del\x7f c1\x9b end",
+            "10%\r55%\r100%",  # a progress line: the bare CRs must survive
+        ]
+        self.log = (
+            text + "".join(f"2026-11-13T10:00:13.0000000Z {line}\n" for line in extra)
+        ).encode()
 
     def __call__(self, args: Sequence[str]) -> bytes:
         self.calls.append(list(args))
         if args[:2] == ["run", "list"]:
             return json.dumps(self.runs).encode()
-        if args[1].endswith("/logs"):
+        endpoint = args[-1]
+        if endpoint.endswith("/logs"):
+            if ESCAPE_FLAG not in args:
+                raise CaptureError(f"gh api failed: {ESCAPES_REFUSED}")
             return self.log
-        if "/jobs?" in args[1]:
+        if "/jobs?" in endpoint:
             return json.dumps(self.jobs).encode()
         raise AssertionError(f"unexpected gh call {args}")
 
@@ -94,11 +127,91 @@ def test_capture_writes_a_redacted_labelled_case(tmp_path: Path) -> None:
     assert "runner_name" not in jobs["jobs"][0]
     assert "html_url" not in jobs["jobs"][0]
     assert gh.calls[0] == ["api", f"repos/{REPO}/actions/runs/555/attempts/1/jobs?per_page=100"]
-    assert gh.calls[1] == ["api", f"repos/{REPO}/actions/jobs/{JOB_ID}/logs"]
+    assert gh.calls[1] == ["api", ESCAPE_FLAG, f"repos/{REPO}/actions/jobs/{JOB_ID}/logs"]
     # The eval runner can load the captured case.
     [loaded] = load_cases(tmp_path, ["lab"])
     assert loaded.id == "lab-py-modnf-01"
     assert loaded.meta.job_id == JOB_ID
+
+
+def test_the_log_is_read_with_the_escape_flag_and_the_jobs_json_without_it(
+    tmp_path: Path,
+) -> None:
+    gh = FakeGh()
+
+    capture(REPO, 555, "py-modnf", manifest=MANIFEST, out_dir=tmp_path, gh=gh)
+
+    jobs_call, log_call = gh.calls
+    assert ESCAPE_FLAG not in jobs_call  # JSON escapes control characters itself
+    assert log_call[:2] == ["api", ESCAPE_FLAG]
+
+
+def test_without_the_flag_gh_refuses_the_log_and_the_error_says_so(tmp_path: Path) -> None:
+    gh = FakeGh()
+
+    with pytest.raises(CaptureError, match="terminal escape sequences"):
+        gh(["api", f"repos/{REPO}/actions/jobs/{JOB_ID}/logs"])  # what capture used to send
+
+
+def test_the_stored_log_has_no_terminal_escapes_but_keeps_its_structure(tmp_path: Path) -> None:
+    gh = FakeGh()
+
+    captured = capture(REPO, 555, "py-modnf", manifest=MANIFEST, out_dir=tmp_path, gh=gh)
+
+    log = (captured.path / "log.txt").read_bytes().decode("utf-8")
+    assert CONTROLS.search(log) is None
+    assert "\x1b" not in log
+    assert "a link" in log
+    assert "https://example.com" not in log  # the OSC target goes with the sequence
+    assert "bell backspace nul del c1 end" in log.replace("\x00", "")  # text around controls
+    assert "10%\r55%\r100%" in log  # progress lines keep their CRs: the excerpt needs them
+    assert log.count("\n") == gh.log.decode("utf-8").count("\n")  # line numbers do not move
+    # The colours sat between the words of the error; the evidence regex still finds the line.
+    assert PLAIN_ERROR in log
+    assert captured.evidence_lines == [89]
+    assert "never matches" in captured.missing_evidence
+
+
+def test_a_secret_split_by_a_colour_code_is_still_redacted(tmp_path: Path) -> None:
+    gh = FakeGh()
+    token = gh.secret.secret
+
+    captured = capture(REPO, 555, "py-modnf", manifest=MANIFEST, out_dir=tmp_path, gh=gh)
+
+    log = (captured.path / "log.txt").read_bytes().decode("utf-8")
+    assert token[:10] not in log
+    assert token[10:] not in log
+    assert log.count("[REDACTED:github_token]") == 2  # the planted line and the split one
+    assert captured.redactions >= 2
+
+
+def test_fetch_job_log_runs_gh_with_the_flag_through_a_pipe(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    commands: list[tuple[list[str], dict[str, object]]] = []
+
+    def fake_run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[bytes]:
+        commands.append((command, kwargs))
+        return subprocess.CompletedProcess(command, 0, stdout=b"\x1b[31mred\x1b[0m text\n")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    text = fetch_job_log(run_gh, REPO, 77)
+
+    assert text == "red text\n"
+    [(command, kwargs)] = commands
+    assert command == ["gh", "api", ESCAPE_FLAG, f"repos/{REPO}/actions/jobs/77/logs"]
+    assert kwargs["capture_output"] is True  # stdout goes to a pipe, never to a terminal
+
+
+def test_run_gh_reports_the_last_line_of_gh_errors(monkeypatch: pytest.MonkeyPatch) -> None:
+    def fake_run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[bytes]:
+        raise subprocess.CalledProcessError(1, command, stderr=f"{ESCAPES_REFUSED}\n".encode())
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    with pytest.raises(CaptureError, match="gh api failed: the response contains terminal"):
+        run_gh(["api", "x"])
 
 
 def test_a_second_capture_gets_the_next_number(tmp_path: Path) -> None:

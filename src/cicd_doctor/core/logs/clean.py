@@ -8,8 +8,14 @@ from cicd_doctor.core.logs.errors import is_error_line
 from cicd_doctor.core.logs.noise import NOISE_GROUPS, is_noise
 from cicd_doctor.core.logs.parse import RawLine
 
-# CSI sequences (colors, cursor moves), OSC sequences (titles, links) and other 2-byte escapes.
-_ANSI = re.compile(r"\x1b(?:\[[0-?]*[ -/]*[@-~]|\][^\x07\x1b]*(?:\x07|\x1b\\)|[@-Z\\-_])")
+# CSI sequences (colors, cursor moves), OSC sequences (titles, links) and the other 2-byte
+# escapes (ESC followed by 0x30-0x7E: ESC 7 / ESC 8 save and restore the cursor, ESC M scrolls...).
+# An OSC body cannot contain a newline, so an unterminated one never swallows the next lines
+# when the pattern runs over a whole log (D-62); CSI and the 2-byte forms cannot either.
+_ANSI = re.compile(r"\x1b(?:\[[0-?]*[ -/]*[@-~]|\][^\x07\x1b\n]*(?:\x07|\x1b\\)|[0-Z\\-~])")
+# What is left of the control characters once the sequences are gone: C0 except TAB, LF and CR
+# (ESC included), DEL, and the C1 range (U+009B is a one-character CSI on some terminals).
+_CONTROL = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f\x80-\x9f]")
 GROUP_START = "##[group]"
 GROUP_END = "##[endgroup]"
 MIN_REPEATS = 3  # this many identical consecutive lines collapse into one
@@ -20,6 +26,18 @@ class CleanLine:
     number: int
     text: str
     is_error: bool
+
+
+def strip_terminal_controls(text: str) -> str:
+    """Remove terminal escape sequences and other control characters from a whole log (D-62).
+
+    Used before a log is stored (``python -m evals capture``), so a stored log can never move a
+    cursor, set a window title or rewrite the screen when someone prints it. TAB, LF and CR stay:
+    the excerpt needs them (a bare CR is a progress update, SPEC §7.3). No newline is ever
+    removed, so line numbers do not move. Idempotent: the result has no ESC, so a second pass
+    finds nothing to remove.
+    """
+    return _CONTROL.sub("", _ANSI.sub("", text))
 
 
 def clean_text(content: str) -> str:
