@@ -23,7 +23,7 @@ uv run cicd-doctor api                   # API on http://127.0.0.1:8000 (/health
 uv run cicd-doctor worker                # job worker (sync_installation is real; other kinds are placeholders)
 Invoke-RestMethod http://127.0.0.1:8000/ready    # from a second terminal; expect status "ready"
 uv run python scripts/load_webhooks.py --cleanup # webhook load test against the running API (p99 < 1 s)
-uv run python -m evals run --variant rules        # eval report on evals/cases/lab (empty until captured)
+uv run python -m evals run --variant rules        # eval report on evals/cases/lab (24 cases captured from real lab runs)
 uv run python -m evals capture --repo <owner>/cicd-doctor-lab --all   # lab runs -> eval cases (lab/README.md)
 ```
 

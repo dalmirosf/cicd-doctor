@@ -7,7 +7,8 @@ as a check run and a sticky PR comment.
 > **Status: Phase 1b (offline pipeline), in progress.** The signed webhook, the Postgres job queue
 > and the worker exist, and installations are tracked. The log pipeline (failed job selection,
 > redacted excerpt, error signature), the rule-based diagnoser and the eval runner exist and are
-> tested offline; the lab repository's sources are in `lab/`. The LLM diagnosis and the GitHub
+> tested offline and on 24 cases captured from real lab runs (`evals/cases/lab`; the lab's
+> sources are in `lab/`). The LLM diagnosis and the GitHub
 > output do not exist yet, so a failed run becomes a `diagnose_run` job that the worker
 > completes with a placeholder handler.
 > See [SPEC.md](SPEC.md) for the design and phases, and [DECISIONS.md](DECISIONS.md) for the

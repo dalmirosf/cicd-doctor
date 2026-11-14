@@ -20,7 +20,7 @@ and regexes that mark its evidence lines.
 | dependency | `py-modnf`, `py-resolve`, `pip-no-dist`, `docker-base`, `tf-init` |
 | network | `dns`, `conn-refused` |
 | config_or_secrets | `missing-input`, `secret-misspelled`, `docker-copy`, `tf-validate`, `aws-no-credentials` |
-| timeout | `job-timeout`, `step-timeout` |
+| timeout | `job-timeout` (ends `cancelled`, so it is not captured: SPEC §14), `step-timeout` |
 | infra_or_deploy | `oom-137`, `disk-full` |
 | flaky | `flaky-random`, `flaky-timing` (each fails about half of the time) |
 | unknown | `opaque-exit`, `obscure-tool` |
