@@ -1,0 +1,77 @@
+{
+  "total_count": 1,
+  "jobs": [
+    {
+      "id": 132270668988,
+      "run_id": 43537721313,
+      "run_attempt": 1,
+      "workflow_name": "py-modnf",
+      "name": "run",
+      "status": "completed",
+      "conclusion": "failure",
+      "started_at": "2026-11-14T00:59:19Z",
+      "completed_at": "2026-11-14T00:59:28Z",
+      "labels": [
+        "ubuntu-24.04"
+      ],
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-14T00:59:20Z",
+          "completed_at": "2026-11-14T00:59:21Z"
+        },
+        {
+          "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-14T00:59:21Z",
+          "completed_at": "2026-11-14T00:59:22Z"
+        },
+        {
+          "name": "Run astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-11-14T00:59:22Z",
+          "completed_at": "2026-11-14T00:59:25Z"
+        },
+        {
+          "name": "Run uv run python -m labpkg.cli",
+          "status": "completed",
+          "conclusion": "failure",
+          "number": 4,
+          "started_at": "2026-11-14T00:59:25Z",
+          "completed_at": "2026-11-14T00:59:26Z"
+        },
+        {
+          "name": "Post Run astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 7,
+          "started_at": "2026-11-14T00:59:26Z",
+          "completed_at": "2026-11-14T00:59:26Z"
+        },
+        {
+          "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8,
+          "started_at": "2026-11-14T00:59:26Z",
+          "completed_at": "2026-11-14T00:59:26Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9,
+          "started_at": "2026-11-14T00:59:26Z",
+          "completed_at": "2026-11-14T00:59:26Z"
+        }
+      ]
+    }
+  ]
+}

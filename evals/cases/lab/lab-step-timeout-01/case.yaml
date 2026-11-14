@@ -1,0 +1,18 @@
+id: lab-step-timeout-01
+source: lab
+repo: dalmirosf/cicd-doctor-lab
+run_url: https://github.com/dalmirosf/cicd-doctor-lab/actions/runs/43537738373/attempts/1
+job_id: 132270727899
+lab_case: step-timeout
+expected:
+  category: timeout
+  cause: The step's timeout-minutes (1) is shorter than the 5-minute sleep.
+  evidence_lines:
+  - 123
+fix:
+  summary: Raise the step's timeout-minutes, or make the work shorter.
+flaky: false
+tags:
+- actions
+- timeout
+captured_at: '2026-11-14T01:27:53+00:00'

@@ -1,0 +1,17 @@
+id: lab-tf-init-01
+source: lab
+repo: dalmirosf/cicd-doctor-lab
+run_url: https://github.com/dalmirosf/cicd-doctor-lab/actions/runs/43537742028/attempts/1
+job_id: 132270740030
+lab_case: tf-init
+expected:
+  category: dependency
+  cause: terraform init cannot find the provider hashicorp/cicd-doctor-lab-does-not-exist.
+  evidence_lines:
+  - 138
+fix:
+  summary: Fix the provider source in terraform/init/main.tf.
+flaky: false
+tags:
+- terraform
+captured_at: '2026-11-14T01:27:30+00:00'

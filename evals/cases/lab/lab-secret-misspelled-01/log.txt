@@ -1,0 +1,160 @@
+﻿2026-11-14T00:59:29.4704695Z Current runner version: '2.338.2'
+2026-11-14T00:59:29.4743030Z ##[group]Runner Image Provisioner
+2026-11-14T00:59:29.4744575Z Hosted Compute Agent
+2026-11-14T00:59:29.4745695Z Version: 20261103.629
+2026-11-14T00:59:29.4746769Z Commit: 15dbd9ccb5dbf34fae002b6ed1a2670f52df37bc
+2026-11-14T00:59:29.4748876Z Build Date: 2026-11-03T17:26:59Z
+2026-11-14T00:59:29.4750151Z Worker ID: {93e038df-2ec8-4d7e-bfa5-7e95b12f02e0}
+2026-11-14T00:59:29.4751488Z Region: eastus
+2026-11-14T00:59:29.4752617Z Cloud: Azure
+2026-11-14T00:59:29.4753513Z ##[endgroup]
+2026-11-14T00:59:29.4756030Z ##[group]Operating System
+2026-11-14T00:59:29.4757100Z Ubuntu
+2026-11-14T00:59:29.4758355Z 24.04.5
+2026-11-14T00:59:29.4759396Z LTS
+2026-11-14T00:59:29.4760266Z ##[endgroup]
+2026-11-14T00:59:29.4761228Z ##[group]Runner Image
+2026-11-14T00:59:29.4762351Z Image: ubuntu-24.04
+2026-11-14T00:59:29.4763318Z Version: 20261111.370.1
+2026-11-14T00:59:29.4765659Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261111.370/images/ubuntu/Ubuntu2404-Readme.md
+2026-11-14T00:59:29.4769386Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261111.370
+2026-11-14T00:59:29.4771263Z ##[endgroup]
+2026-11-14T00:59:29.4773493Z ##[group]GITHUB_TOKEN Permissions
+2026-11-14T00:59:29.4776441Z Contents: read
+2026-11-14T00:59:29.4777812Z Metadata: read
+2026-11-14T00:59:29.4779011Z ##[endgroup]
+2026-11-14T00:59:29.4782282Z Secret source: Actions
+2026-11-14T00:59:29.4784146Z Cache mode: write
+2026-11-14T00:59:29.4785391Z Prepare workflow directory
+2026-11-14T00:59:29.5303097Z Prepare all required actions
+2026-11-14T00:59:29.5380346Z Getting action download info
+2026-11-14T00:59:29.8083132Z Download action repository 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+2026-11-14T00:59:30.1094217Z Complete job name: run
+2026-11-14T00:59:30.2373583Z ##[group]Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+2026-11-14T00:59:30.2375358Z with:
+2026-11-14T00:59:30.2376284Z   repository: dalmirosf/cicd-doctor-lab
+2026-11-14T00:59:30.2384133Z   token: ***
+2026-11-14T00:59:30.2384986Z   ssh-strict: true
+2026-11-14T00:59:30.2385770Z   ssh-user: git
+2026-11-14T00:59:30.2386591Z   persist-credentials: true
+2026-11-14T00:59:30.2387800Z   clean: true
+2026-11-14T00:59:30.2388673Z   sparse-checkout-cone-mode: true
+2026-11-14T00:59:30.2389691Z   fetch-depth: 1
+2026-11-14T00:59:30.2390534Z   fetch-tags: false
+2026-11-14T00:59:30.2391338Z   show-progress: true
+2026-11-14T00:59:30.2392275Z   lfs: false
+2026-11-14T00:59:30.2393057Z   submodules: false
+2026-11-14T00:59:30.2393902Z   set-safe-directory: true
+2026-11-14T00:59:30.2394853Z   allow-unsafe-pr-checkout: false
+2026-11-14T00:59:30.2396272Z ##[endgroup]
+2026-11-14T00:59:30.7522411Z Syncing repository: dalmirosf/cicd-doctor-lab
+2026-11-14T00:59:30.7526136Z ##[group]Getting Git version info
+2026-11-14T00:59:30.7530204Z Working directory is '/home/runner/work/cicd-doctor-lab/cicd-doctor-lab'
+2026-11-14T00:59:30.7532614Z [command]/usr/bin/git version
+2026-11-14T00:59:30.7534380Z git version 2.56.1
+2026-11-14T00:59:30.7538593Z ##[endgroup]
+2026-11-14T00:59:30.7555428Z Temporarily overriding HOME='/home/runner/work/_temp/d8d253cd-c6ad-4e70-a089-afdd912dba34' before making global git config changes
+2026-11-14T00:59:30.7560130Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-14T00:59:30.7562893Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/cicd-doctor-lab/cicd-doctor-lab
+2026-11-14T00:59:30.7569521Z Deleting the contents of '/home/runner/work/cicd-doctor-lab/cicd-doctor-lab'
+2026-11-14T00:59:30.7577011Z ##[group]Determining repository object format
+2026-11-14T00:59:30.7580555Z ##[endgroup]
+2026-11-14T00:59:30.7582335Z ##[group]Initializing the repository
+2026-11-14T00:59:30.7587040Z [command]/usr/bin/git init /home/runner/work/cicd-doctor-lab/cicd-doctor-lab
+2026-11-14T00:59:30.7589616Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-11-14T00:59:30.7593010Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-11-14T00:59:30.7595441Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-11-14T00:59:30.7598949Z hint: call:
+2026-11-14T00:59:30.7600697Z hint:
+2026-11-14T00:59:30.7603337Z hint: 	git config --global init.defaultBranch <name>
+2026-11-14T00:59:30.7605080Z hint:
+2026-11-14T00:59:30.7609130Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-11-14T00:59:30.7611698Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-11-14T00:59:30.7614690Z hint:
+2026-11-14T00:59:30.7616038Z hint: 	git branch -m <name>
+2026-11-14T00:59:30.7618931Z hint:
+2026-11-14T00:59:30.7620599Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-11-14T00:59:30.7624008Z Initialized empty Git repository in /home/runner/work/cicd-doctor-lab/cicd-doctor-lab/.git/
+2026-11-14T00:59:30.7656649Z [command]/usr/bin/git remote add origin https://github.com/dalmirosf/cicd-doctor-lab
+2026-11-14T00:59:30.7665625Z ##[endgroup]
+2026-11-14T00:59:30.7668393Z ##[group]Disabling automatic garbage collection
+2026-11-14T00:59:30.7672550Z [command]/usr/bin/git config --local gc.auto 0
+2026-11-14T00:59:30.7678951Z ##[endgroup]
+2026-11-14T00:59:30.7680822Z ##[group]Setting up auth
+2026-11-14T00:59:30.7681816Z Removing SSH command configuration
+2026-11-14T00:59:30.7683244Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-14T00:59:30.7687289Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-14T00:59:30.8155273Z Removing HTTP extra header
+2026-11-14T00:59:30.8158024Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-14T00:59:30.8162957Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-14T00:59:30.8614013Z Removing includeIf entries pointing to credentials config files
+2026-11-14T00:59:30.8616570Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-14T00:59:30.8623305Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-14T00:59:30.8841898Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-c9e52ff6-ca65-4b97-8500-d8ca87c94a4a.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-11-14T00:59:30.8903987Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/cicd-doctor-lab/cicd-doctor-lab/.git.path /home/runner/work/_temp/git-credentials-c9e52ff6-ca65-4b97-8500-d8ca87c94a4a.config
+2026-11-14T00:59:30.8962404Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/cicd-doctor-lab/cicd-doctor-lab/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-c9e52ff6-ca65-4b97-8500-d8ca87c94a4a.config
+2026-11-14T00:59:30.9012280Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-c9e52ff6-ca65-4b97-8500-d8ca87c94a4a.config
+2026-11-14T00:59:30.9070754Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-c9e52ff6-ca65-4b97-8500-d8ca87c94a4a.config
+2026-11-14T00:59:30.9120202Z ##[endgroup]
+2026-11-14T00:59:30.9122477Z ##[group]Fetching the repository
+2026-11-14T00:59:30.9128649Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +49eeb475071186b3d296efea984c999341a7d243:refs/remotes/origin/main
+2026-11-14T00:59:31.1584621Z From https://github.com/dalmirosf/cicd-doctor-lab
+2026-11-14T00:59:31.1586008Z  * [new ref]         49eeb475071186b3d296efea984c999341a7d243 -> origin/main
+2026-11-14T00:59:31.1589834Z [command]/usr/bin/git branch --list --remote origin/main
+2026-11-14T00:59:31.1604254Z   origin/main
+2026-11-14T00:59:31.1611975Z [command]/usr/bin/git rev-parse refs/remotes/origin/main
+2026-11-14T00:59:31.1655858Z 49eeb475071186b3d296efea984c999341a7d243
+2026-11-14T00:59:31.1662977Z ##[endgroup]
+2026-11-14T00:59:31.1666485Z ##[group]Determining the checkout info
+2026-11-14T00:59:31.1668997Z ##[endgroup]
+2026-11-14T00:59:31.1670446Z [command]/usr/bin/git sparse-checkout disable
+2026-11-14T00:59:31.1759283Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-11-14T00:59:31.1814602Z ##[group]Checking out the ref
+2026-11-14T00:59:31.1821087Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+2026-11-14T00:59:31.1925276Z Switched to a new branch 'main'
+2026-11-14T00:59:31.1934733Z branch 'main' set up to track 'origin/main'.
+2026-11-14T00:59:31.1944211Z ##[endgroup]
+2026-11-14T00:59:31.2007997Z [command]/usr/bin/git log -1 --format=%H
+2026-11-14T00:59:31.2053914Z 49eeb475071186b3d296efea984c999341a7d243
+2026-11-14T00:59:31.2388425Z ##[group]Run : "${TOKEN:?Error: the deploy token is empty or not set}"
+2026-11-14T00:59:31.2390785Z : "${TOKEN:?Error: the deploy token is empty or not set}"
+2026-11-14T00:59:31.2392565Z echo deploying
+2026-11-14T00:59:31.2422120Z shell: /usr/bin/bash -e {0}
+2026-11-14T00:59:31.2423858Z env:
+2026-11-14T00:59:31.2425292Z   TOKEN: 
+2026-11-14T00:59:31.2426236Z ##[endgroup]
+2026-11-14T00:59:31.2541911Z /home/runner/work/_temp/c442c9aa-a533-446c-8bbf-1d98f3446195.sh: line 1: TOKEN: Error: the deploy token is empty or not set
+2026-11-14T00:59:31.2567068Z ##[error]Process completed with exit code 1.
+2026-11-14T00:59:31.2876340Z Post job cleanup.
+2026-11-14T00:59:31.4039404Z [command]/usr/bin/git version
+2026-11-14T00:59:31.4110148Z git version 2.56.1
+2026-11-14T00:59:31.4192502Z Temporarily overriding HOME='/home/runner/work/_temp/9d714b19-48f2-40ae-92b7-604c1ee60251' before making global git config changes
+2026-11-14T00:59:31.4201002Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-14T00:59:31.4212747Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/cicd-doctor-lab/cicd-doctor-lab
+2026-11-14T00:59:31.4349340Z Removing SSH command configuration
+2026-11-14T00:59:31.4369952Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-14T00:59:31.4382055Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-14T00:59:31.4879421Z Removing HTTP extra header
+2026-11-14T00:59:31.4886188Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-14T00:59:31.4953652Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-14T00:59:31.5382512Z Removing includeIf entries pointing to credentials config files
+2026-11-14T00:59:31.5409558Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-14T00:59:31.5464966Z includeif.gitdir:/home/runner/work/cicd-doctor-lab/cicd-doctor-lab/.git.path
+2026-11-14T00:59:31.5484359Z includeif.gitdir:/home/runner/work/cicd-doctor-lab/cicd-doctor-lab/.git/worktrees/*.path
+2026-11-14T00:59:31.5488623Z includeif.gitdir:/github/workspace/.git.path
+2026-11-14T00:59:31.5491775Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-11-14T00:59:31.5499902Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/cicd-doctor-lab/cicd-doctor-lab/.git.path
+2026-11-14T00:59:31.5539354Z /home/runner/work/_temp/git-credentials-c9e52ff6-ca65-4b97-8500-d8ca87c94a4a.config
+2026-11-14T00:59:31.5561421Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/cicd-doctor-lab/cicd-doctor-lab/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-c9e52ff6\-ca65\-4b97\-8500\-d8ca87c94a4a\.config
+2026-11-14T00:59:31.5642252Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/cicd-doctor-lab/cicd-doctor-lab/.git/worktrees/*.path
+2026-11-14T00:59:31.5714905Z /home/runner/work/_temp/git-credentials-c9e52ff6-ca65-4b97-8500-d8ca87c94a4a.config
+2026-11-14T00:59:31.5742486Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/cicd-doctor-lab/cicd-doctor-lab/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-c9e52ff6\-ca65\-4b97\-8500\-d8ca87c94a4a\.config
+2026-11-14T00:59:31.5900106Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-11-14T00:59:31.5910205Z /github/runner_temp/git-credentials-c9e52ff6-ca65-4b97-8500-d8ca87c94a4a.config
+2026-11-14T00:59:31.5979963Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-c9e52ff6\-ca65\-4b97\-8500\-d8ca87c94a4a\.config
+2026-11-14T00:59:31.6040102Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-11-14T00:59:31.6055681Z /github/runner_temp/git-credentials-c9e52ff6-ca65-4b97-8500-d8ca87c94a4a.config
+2026-11-14T00:59:31.6114624Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-c9e52ff6\-ca65\-4b97\-8500\-d8ca87c94a4a\.config
+2026-11-14T00:59:31.6190584Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-14T00:59:31.6591156Z Removing credentials config '/home/runner/work/_temp/git-credentials-c9e52ff6-ca65-4b97-8500-d8ca87c94a4a.config'
+2026-11-14T00:59:31.6879087Z Cleaning up orphan processes

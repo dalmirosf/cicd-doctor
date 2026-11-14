@@ -1,0 +1,19 @@
+id: lab-oom-137-01
+source: lab
+repo: dalmirosf/cicd-doctor-lab
+run_url: https://github.com/dalmirosf/cicd-doctor-lab/actions/runs/43537707043/attempts/1
+job_id: 132270621186
+lab_case: oom-137
+expected:
+  category: infra_or_deploy
+  cause: 'The container is limited to 64 MB and the process allocates 512 MB: it is
+    killed.'
+  evidence_lines:
+  - 144
+fix:
+  summary: Raise the container's memory limit, or allocate less.
+flaky: false
+tags:
+- docker
+- memory
+captured_at: '2026-11-14T01:27:56+00:00'

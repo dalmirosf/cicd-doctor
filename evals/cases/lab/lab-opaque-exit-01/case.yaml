@@ -1,0 +1,17 @@
+id: lab-opaque-exit-01
+source: lab
+repo: dalmirosf/cicd-doctor-lab
+run_url: https://github.com/dalmirosf/cicd-doctor-lab/actions/runs/43537710713/attempts/1
+job_id: 132270635261
+lab_case: opaque-exit
+expected:
+  category: unknown
+  cause: scripts/opaque.sh exits with code 3 without saying why.
+  evidence_lines:
+  - 124
+fix:
+  summary: Make the script report what failed.
+flaky: false
+tags:
+- shell
+captured_at: '2026-11-14T01:28:07+00:00'

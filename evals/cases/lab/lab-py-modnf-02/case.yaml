@@ -1,0 +1,18 @@
+id: lab-py-modnf-02
+source: lab
+repo: dalmirosf/cicd-doctor-lab
+run_url: https://github.com/dalmirosf/cicd-doctor-lab/actions/runs/43537721313/attempts/1
+job_id: 132270668988
+lab_case: py-modnf
+expected:
+  category: dependency
+  cause: labpkg.cli imports requests, which is not declared in pyproject.toml.
+  evidence_lines:
+  - 190
+fix:
+  summary: Add requests to [project].dependencies in python/pyproject.toml.
+flaky: false
+tags:
+- python
+- uv
+captured_at: '2026-11-14T01:27:19+00:00'

@@ -1,0 +1,18 @@
+id: lab-aws-no-credentials-01
+source: lab
+repo: dalmirosf/cicd-doctor-lab
+run_url: https://github.com/dalmirosf/cicd-doctor-lab/actions/runs/43537665925/attempts/1
+job_id: 132270490019
+lab_case: aws-no-credentials
+expected:
+  category: config_or_secrets
+  cause: The AWS CLI runs without any credentials configured.
+  evidence_lines:
+  - 124
+fix:
+  summary: Configure credentials first, with aws-actions/configure-aws-credentials
+    and OIDC.
+flaky: false
+tags:
+- aws
+captured_at: '2026-11-14T01:27:50+00:00'

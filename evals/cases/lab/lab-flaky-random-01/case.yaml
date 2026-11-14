@@ -1,0 +1,19 @@
+id: lab-flaky-random-01
+source: lab
+repo: dalmirosf/cicd-doctor-lab
+run_url: https://github.com/dalmirosf/cicd-doctor-lab/actions/runs/43537688364/attempts/1
+job_id: 132270561957
+lab_case: flaky-random
+expected:
+  category: flaky
+  cause: test_coin_flip depends on a random number and fails about half of the time.
+  evidence_lines:
+  - 206
+fix:
+  summary: Seed the random generator or remove the randomness from the test.
+flaky: true
+tags:
+- python
+- pytest
+- flaky
+captured_at: '2026-11-14T01:28:02+00:00'

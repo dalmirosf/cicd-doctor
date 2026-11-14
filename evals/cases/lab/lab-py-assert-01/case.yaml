@@ -1,0 +1,19 @@
+id: lab-py-assert-01
+source: lab
+repo: dalmirosf/cicd-doctor-lab
+run_url: https://github.com/dalmirosf/cicd-doctor-lab/actions/runs/43537957870/attempts/1
+job_id: 132271435877
+lab_case: py-assert
+expected:
+  category: broken_test
+  cause: The test test_add expects add(1, 2) to be 4; it is 3.
+  evidence_lines:
+  - 198
+  - 203
+fix:
+  summary: Fix the expected value in tests/test_math.py (add(1, 2) == 3).
+flaky: false
+tags:
+- python
+- pytest
+captured_at: '2026-11-14T01:27:07+00:00'

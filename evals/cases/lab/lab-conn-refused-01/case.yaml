@@ -1,0 +1,19 @@
+id: lab-conn-refused-01
+source: lab
+repo: dalmirosf/cicd-doctor-lab
+run_url: https://github.com/dalmirosf/cicd-doctor-lab/actions/runs/43537669717/attempts/1
+job_id: 132270501661
+lab_case: conn-refused
+expected:
+  category: network
+  cause: Nothing listens on 127.0.0.1:9, so the connection is refused.
+  evidence_lines:
+  - 129
+fix:
+  summary: Start the service before connecting (a service container or a background
+    step).
+flaky: false
+tags:
+- network
+- python
+captured_at: '2026-11-14T01:27:36+00:00'

@@ -1,0 +1,21 @@
+id: lab-py-mypy-01
+source: lab
+repo: dalmirosf/cicd-doctor-lab
+run_url: https://github.com/dalmirosf/cicd-doctor-lab/actions/runs/43537725199/attempts/1
+job_id: 132270682164
+lab_case: py-mypy
+expected:
+  category: broken_test
+  cause: 'The type gate fails: answer() is declared to return int but returns a str.'
+  evidence_lines:
+  - 183
+  - 184
+fix:
+  summary: Return an int from answer() in src/labpkg/typing_gate.py, or change its
+    annotation.
+flaky: false
+tags:
+- python
+- mypy
+- gate
+captured_at: '2026-11-14T01:27:14+00:00'

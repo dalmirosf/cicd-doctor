@@ -1,0 +1,61 @@
+{
+  "total_count": 1,
+  "jobs": [
+    {
+      "id": 132270490019,
+      "run_id": 43537665925,
+      "run_attempt": 1,
+      "workflow_name": "aws-no-credentials",
+      "name": "run",
+      "status": "completed",
+      "conclusion": "failure",
+      "started_at": "2026-11-14T00:58:46Z",
+      "completed_at": "2026-11-14T00:59:00Z",
+      "labels": [
+        "ubuntu-24.04"
+      ],
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-14T00:58:47Z",
+          "completed_at": "2026-11-14T00:58:50Z"
+        },
+        {
+          "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-14T00:58:50Z",
+          "completed_at": "2026-11-14T00:58:53Z"
+        },
+        {
+          "name": "Run aws sts get-caller-identity",
+          "status": "completed",
+          "conclusion": "failure",
+          "number": 3,
+          "started_at": "2026-11-14T00:58:53Z",
+          "completed_at": "2026-11-14T00:58:58Z"
+        },
+        {
+          "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-11-14T00:58:58Z",
+          "completed_at": "2026-11-14T00:58:58Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-11-14T00:58:58Z",
+          "completed_at": "2026-11-14T00:58:58Z"
+        }
+      ]
+    }
+  ]
+}
