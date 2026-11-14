@@ -11,6 +11,7 @@ dependencies = [
     "pydantic>=2.9",
     "pydantic-settings>=2.16.3",
     "sqlalchemy[asyncio]>=2.1.8",
+    "tiktoken>=0.14.0",
     "uvicorn>=0.32",
 ]
 
@@ -20,10 +21,12 @@ cicd-doctor = "cicd_doctor.app.cli:main"
 [dependency-groups]
 dev = [
     "httpx2>=2.0",  # backend of FastAPI's TestClient (Starlette deprecated plain httpx there)
+    "hypothesis>=6.170.15",
     "mypy>=1.13",
     "pre-commit>=4.0",
     "pytest>=8.3",
     "pytest-asyncio>=0.24",
+    "pytest-cov>=7.1.0",
     "ruff>=0.8",
 ]
 
@@ -82,4 +85,14 @@ markers = [
     "integration: needs a real Postgres (tests/integration)",
     "e2e: replayed deliveries through API + worker + fakes (tests/e2e)",
     "live: calls real external services, on demand only",
+]
+
+# --- coverage (the core/ gate of NFR-09 runs in CI: pytest --cov=cicd_doctor.core) -----------
+[tool.coverage.run]
+branch = true
+
+[tool.coverage.report]
+exclude_also = [
+    '^\s*\.\.\.\s*$',  # Protocol method bodies
+    "if TYPE_CHECKING:",
 ]

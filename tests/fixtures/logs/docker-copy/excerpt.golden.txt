@@ -1,0 +1,48 @@
+# job 71000000004 'image' · step 'Run docker build -t widgets:ci .' · 460 tokens · truncated=False · redactions=0 · errors=[92, 104, 105]
+… lines 1-51 omitted …
+L52: [command]/usr/bin/git log -1 --format=%H
+L53: 5f1c2a9e4b7d3c6a8f0e1d2b3c4a5f6e7d8c9b0a
+L54: Run docker build -t widgets:ci .
+L55: docker build -t widgets:ci .
+L56: shell: /usr/bin/bash -e {0}
+… lines 57-57 omitted …
+L58: #0 building with "default" instance using docker driver
+L59: 
+L60: #1 [internal] load build definition from Dockerfile
+L61: #1 transferring dockerfile: 214B done
+L62: #1 DONE 0.0s
+L63: 
+L64: #2 [internal] load metadata for docker.io/library/python:3.13-slim
+L65: #2 DONE 0.6s
+L66: 
+L67: #3 [internal] load .dockerignore
+L68: #3 transferring context: 2B done
+L69: #3 DONE 0.0s
+L70: 
+L71: #4 [1/4] FROM docker.io/library/python:3.13-slim@sha256:4c2cf9917bd1cbacc5e9b07320025bdb7cdf2df7b0ceaccb55e9dd7e30987419
+L72: #4 resolve docker.io/library/python:3.13-slim@sha256:4c2cf9917bd1cbacc5e9b07320025bdb7cdf2df7b0ceaccb55e9dd7e30987419 0.0s done
+… lines 73-81 omitted …
+L82: #4 DONE 2.1s
+L83: 
+L84: #5 [internal] load build context
+L85: #5 transferring context: 1.24kB done
+L86: #5 DONE 0.0s
+L87: 
+L88: #6 [2/4] WORKDIR /app
+L89: #6 DONE 0.2s
+L90: 
+L91: #7 [3/4] COPY requirements-dev.txt /app/
+L92: #7 ERROR: failed to calculate checksum of ref 0f3d9c2e-8b7a-4c1d-9e2f-3a4b5c6d7e8f::q7w8e9r0t1y2u3i4o5p6: "/requirements-dev.txt": not found
+L93: ------
+L94:  > [3/4] COPY requirements-dev.txt /app/:
+L95: ------
+L96: Dockerfile:5
+L97: --------------------
+L98:    3 |     WORKDIR /app
+L99:    4 |
+L100:    5 | >>> COPY requirements-dev.txt /app/
+L101:    6 |     RUN pip install -r requirements-dev.txt
+L102:    7 |
+L103: --------------------
+L104: ERROR: failed to solve: failed to compute cache key: failed to calculate checksum of ref 0f3d9c2e-8b7a-4c1d-9e2f-3a4b5c6d7e8f::q7w8e9r0t1y2u3i4o5p6: "/requirements-dev.txt": not found
+L105: ##[error]Process completed with exit code 1.

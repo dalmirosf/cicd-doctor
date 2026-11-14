@@ -28,3 +28,6 @@ Thumbs.db
 
 # --- Claude Code: personal overrides stay local (.claude/settings.json is shared) ---
 .claude/settings.local.json
+
+# --- Test tools ---
+.hypothesis/

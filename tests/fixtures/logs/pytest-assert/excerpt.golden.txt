@@ -1,0 +1,39 @@
+# job 71000000001 'test' · step 'Run uv run pytest -v' · 536 tokens · truncated=False · redactions=0 · errors=[102, 114, 116]
+… lines 1-79 omitted …
+L80: Run uv run pytest -v
+L81: uv run pytest -v
+L82: shell: /usr/bin/bash -e {0}
+… lines 83-83 omitted …
+L84: ============================= test session starts ==============================
+L85: platform linux -- Python 3.13.7, pytest-8.4.2, pluggy-1.6.0 -- /home/runner/work/widgets/widgets/.venv/bin/python
+L86: cachedir: .pytest_cache
+L87: rootdir: /home/runner/work/widgets/widgets
+L88: configfile: pyproject.toml
+L89: collecting ... collected 12 items
+L90: 
+L91: tests/test_strings.py::test_case_0 PASSED                              [  8%]
+L92: tests/test_strings.py::test_case_1 PASSED                              [ 16%]
+L93: tests/test_strings.py::test_case_2 PASSED                              [ 24%]
+L94: tests/test_strings.py::test_case_3 PASSED                              [ 32%]
+L95: tests/test_strings.py::test_case_4 PASSED                              [ 40%]
+L96: tests/test_strings.py::test_case_5 PASSED                              [ 48%]
+L97: tests/test_strings.py::test_case_6 PASSED                              [ 56%]
+L98: tests/test_strings.py::test_case_7 PASSED                              [ 64%]
+L99: tests/test_strings.py::test_case_8 PASSED                              [ 72%]
+L100: tests/test_strings.py::test_case_9 PASSED                              [ 80%]
+L101: tests/test_strings.py::test_case_10 PASSED                              [ 88%]
+L102: tests/test_math.py::test_add FAILED                                       [100%]
+L103: 
+L104: =================================== FAILURES ===================================
+L105: ___________________________________ test_add ___________________________________
+L106: 
+L107:     def test_add() -> None:
+L108: >       assert add(1, 2) == 4
+L109: E       assert 3 == 4
+L110: E        +  where 3 = add(1, 2)
+L111: 
+L112: tests/test_math.py:7: AssertionError
+L113: =========================== short test summary info ============================
+L114: FAILED tests/test_math.py::test_add - assert 3 == 4
+L115: ========================= 1 failed, 11 passed in 0.42s =========================
+L116: ##[error]Process completed with exit code 1.

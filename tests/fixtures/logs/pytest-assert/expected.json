@@ -1,0 +1,16 @@
+{
+  "synthetic": true,
+  "description": "pytest assertion failure in a uv project",
+  "selected_job_ids": [
+    71000000001
+  ],
+  "evidence_lines": {
+    "71000000001": [
+      108,
+      109,
+      114,
+      115,
+      116
+    ]
+  }
+}

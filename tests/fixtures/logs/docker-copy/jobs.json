@@ -1,0 +1,61 @@
+{
+  "total_count": 1,
+  "jobs": [
+    {
+      "id": 71000000004,
+      "run_id": 19000000001,
+      "run_attempt": 1,
+      "name": "image",
+      "status": "completed",
+      "conclusion": "failure",
+      "started_at": "2026-11-13T10:00:00Z",
+      "completed_at": "2026-11-13T10:00:11Z",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_name": "GitHub Actions 1000000123",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-13T10:00:00Z",
+          "completed_at": "2026-11-13T10:00:02Z"
+        },
+        {
+          "name": "Run actions/checkout@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-13T10:00:02Z",
+          "completed_at": "2026-11-13T10:00:04Z"
+        },
+        {
+          "name": "Run docker build -t widgets:ci .",
+          "status": "completed",
+          "conclusion": "failure",
+          "number": 3,
+          "started_at": "2026-11-13T10:00:04Z",
+          "completed_at": "2026-11-13T10:00:09Z"
+        },
+        {
+          "name": "Post Run actions/checkout@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-11-13T10:00:09Z",
+          "completed_at": "2026-11-13T10:00:10Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-11-13T10:00:10Z",
+          "completed_at": "2026-11-13T10:00:11Z"
+        }
+      ]
+    }
+  ]
+}

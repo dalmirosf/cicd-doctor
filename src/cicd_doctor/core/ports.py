@@ -16,7 +16,6 @@ from cicd_doctor.core.models import (
     Diagnosis,
     DiagnosisReport,
     DiagnosisRequest,
-    FailedJob,
     Failure,
     FailureStatus,
     Installation,
@@ -35,16 +34,27 @@ from cicd_doctor.core.models import (
     RunRef,
     SimilarFailure,
     Suggestion,
+    WorkflowJob,
     WorkflowRun,
 )
 
 
 class LogSource(Protocol):
-    async def failed_jobs(self, run: RunRef) -> list[FailedJob]: ...
+    async def jobs(self, run: RunRef) -> list[WorkflowJob]:
+        """Every job of the run attempt; ``core.logs.select_failed_jobs`` picks the failed ones
+        (D-58)."""
+        ...
 
     async def job_log(self, job: JobRef, max_bytes: int) -> RawLog:
         """Tail-biased download; the result is never persisted."""
         ...
+
+
+class TokenCounter(Protocol):
+    """Counts LLM tokens. tiktoken lives in an adapter because it downloads its encoding on
+    first use (D-57)."""
+
+    def count(self, text: str) -> int: ...
 
 
 class Embedder(Protocol):

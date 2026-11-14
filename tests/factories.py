@@ -56,6 +56,7 @@ def make_failure(
         id=failure_id or uuid4(),
         job=FailedJob(
             job=job_ref,
+            conclusion="failure",
             step_name="Run pytest",
             step_number=5,
             started_at=T0,

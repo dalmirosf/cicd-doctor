@@ -1,0 +1,28 @@
+# job 71000000031 'unit' · step 'Run make test' · 275 tokens · truncated=False · redactions=0 · errors=[108, 110, 113, 118, 120]
+… lines 1-51 omitted …
+L52: [command]/usr/bin/git log -1 --format=%H
+L53: 5f1c2a9e4b7d3c6a8f0e1d2b3c4a5f6e7d8c9b0a
+L54: Run make test
+L55: make test
+L56: shell: /usr/bin/bash -e {0}
+… lines 57-57 omitted …
+L58: Waiting for the database lock... (repeated 40 times)
+… lines 59-97 omitted …
+L98: Pulling postgres (postgres:17)...
+… lines 99-104 omitted …
+L105: python -m unittest discover -s tests
+L106: ..F.
+L107: ======================================================================
+L108: FAIL: test_parse_header (tests.test_parser.ParserTest.test_parse_header)
+L109: ----------------------------------------------------------------------
+L110: Traceback (most recent call last):
+L111:   File "/home/runner/work/widgets/widgets/tests/test_parser.py", line 21, in test_parse_header
+L112:     self.assertEqual(parse_header(b'\x00\x01'), Header(version=1))
+L113: AssertionError: Header(version=0) != Header(version=1)
+L114: 
+L115: ----------------------------------------------------------------------
+L116: Ran 4 tests in 0.003s
+L117: 
+L118: FAILED (failures=1)
+L119: make: *** [Makefile:12: test] Error 1
+L120: ##[error]Process completed with exit code 2.

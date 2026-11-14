@@ -1,0 +1,112 @@
+﻿2026-11-13T10:00:00.0769230Z Current runner version: '2.329.0'
+2026-11-13T10:00:00.1538460Z Runner name: 'GitHub Actions 1000000123'
+2026-11-13T10:00:00.2307690Z Machine name: 'runnervmf2e7y'
+2026-11-13T10:00:00.3076920Z ##[group]Operating System
+2026-11-13T10:00:00.3846150Z Ubuntu
+2026-11-13T10:00:00.4615380Z 24.04.3
+2026-11-13T10:00:00.5384610Z LTS
+2026-11-13T10:00:00.6153840Z ##[endgroup]
+2026-11-13T10:00:00.6923070Z ##[group]Runner Image
+2026-11-13T10:00:00.7692300Z Image: ubuntu-24.04
+2026-11-13T10:00:00.8461530Z Version: 20251102.1.0
+2026-11-13T10:00:00.9230760Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20251102.1/images/ubuntu/Ubuntu2404-Readme.md
+2026-11-13T10:00:00.9999990Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20251102.1
+2026-11-13T10:00:01.0769220Z ##[endgroup]
+2026-11-13T10:00:01.1538450Z ##[group]GITHUB_TOKEN Permissions
+2026-11-13T10:00:01.2307680Z Contents: read
+2026-11-13T10:00:01.3076910Z Metadata: read
+2026-11-13T10:00:01.3846140Z ##[endgroup]
+2026-11-13T10:00:01.4615370Z Secret source: Actions
+2026-11-13T10:00:01.5384600Z Prepare workflow directory
+2026-11-13T10:00:01.6153830Z Prepare all required actions
+2026-11-13T10:00:01.6923060Z Getting action download info
+2026-11-13T10:00:01.7692290Z Download action repository 'actions/checkout@v5' (SHA:08c6903cd8c0fde910a37f88322edcfb5dd907a8)
+2026-11-13T10:00:01.8461520Z Download action repository 'astral-sh/setup-uv@v6' (SHA:e92bafb6253dcd438e0484186d7669ea7a8ca1cc)
+2026-11-13T10:00:01.9230750Z Complete job name: image
+2026-11-13T10:00:02.0689660Z ##[group]Run actions/checkout@v5
+2026-11-13T10:00:02.1379320Z with:
+2026-11-13T10:00:02.2068980Z   repository: acme/widgets
+2026-11-13T10:00:02.2758640Z   token: ***
+2026-11-13T10:00:02.3448300Z   ssh-strict: true
+2026-11-13T10:00:02.4137960Z   persist-credentials: true
+2026-11-13T10:00:02.4827620Z   clean: true
+2026-11-13T10:00:02.5517280Z   fetch-depth: 1
+2026-11-13T10:00:02.6206940Z ##[endgroup]
+2026-11-13T10:00:02.6896600Z Syncing repository: acme/widgets
+2026-11-13T10:00:02.7586260Z ##[group]Getting Git version info
+2026-11-13T10:00:02.8275920Z Working directory is '/home/runner/work/widgets/widgets'
+2026-11-13T10:00:02.8965580Z [command]/usr/bin/git version
+2026-11-13T10:00:02.9655240Z git version 2.51.0
+2026-11-13T10:00:03.0344900Z ##[endgroup]
+2026-11-13T10:00:03.1034560Z Temporarily overriding HOME='/home/runner/work/_temp/0b9b5f36-6b1e-4f0e-a2f4-39c0c8d2f1aa' before making global git config changes
+2026-11-13T10:00:03.1724220Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-13T10:00:03.2413880Z ##[group]Fetching the repository
+2026-11-13T10:00:03.3103540Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +5f1c2a9e4b7d3c6a8f0e1d2b3c4a5f6e7d8c9b0a:refs/remotes/origin/main
+2026-11-13T10:00:03.3793200Z remote: Enumerating objects: 52, done.
+2026-11-13T10:00:03.4482860Z remote: Counting objects:   1% (1/52)remote: Counting objects:  50% (26/52)remote: Counting objects: 100% (52/52), done.
+2026-11-13T10:00:03.5172520Z ##[endgroup]
+2026-11-13T10:00:03.5862180Z ##[group]Checking out the ref
+2026-11-13T10:00:03.6551840Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+2026-11-13T10:00:03.7241500Z Switched to a new branch 'main'
+2026-11-13T10:00:03.7931160Z ##[endgroup]
+2026-11-13T10:00:03.8620820Z [command]/usr/bin/git log -1 --format=%H
+2026-11-13T10:00:03.9310480Z 5f1c2a9e4b7d3c6a8f0e1d2b3c4a5f6e7d8c9b0a
+2026-11-13T10:00:04.0943400Z ##[group]Run docker build -t widgets:ci .
+2026-11-13T10:00:04.1886800Z docker build -t widgets:ci .
+2026-11-13T10:00:04.2830200Z shell: /usr/bin/bash -e {0}
+2026-11-13T10:00:04.3773600Z ##[endgroup]
+2026-11-13T10:00:04.4717000Z #0 building with "default" instance using docker driver
+2026-11-13T10:00:04.5660400Z 
+2026-11-13T10:00:04.6603800Z #1 [internal] load build definition from Dockerfile
+2026-11-13T10:00:04.7547200Z #1 transferring dockerfile: 214B done
+2026-11-13T10:00:04.8490600Z #1 DONE 0.0s
+2026-11-13T10:00:04.9434000Z 
+2026-11-13T10:00:05.0377400Z #2 [internal] load metadata for docker.io/library/python:3.13-slim
+2026-11-13T10:00:05.1320800Z #2 DONE 0.6s
+2026-11-13T10:00:05.2264200Z 
+2026-11-13T10:00:05.3207600Z #3 [internal] load .dockerignore
+2026-11-13T10:00:05.4151000Z #3 transferring context: 2B done
+2026-11-13T10:00:05.5094400Z #3 DONE 0.0s
+2026-11-13T10:00:05.6037800Z 
+2026-11-13T10:00:05.6981200Z #4 [1/4] FROM docker.io/library/python:3.13-slim@sha256:4c2cf9917bd1cbacc5e9b07320025bdb7cdf2df7b0ceaccb55e9dd7e30987419
+2026-11-13T10:00:05.7924600Z #4 resolve docker.io/library/python:3.13-slim@sha256:4c2cf9917bd1cbacc5e9b07320025bdb7cdf2df7b0ceaccb55e9dd7e30987419 0.0s done
+2026-11-13T10:00:05.8868000Z #4 sha256:8a1e25ce7c4f75e372e9884f8f7b1bedcfe4a7a7d452eb4b0a1c7477c9a90345 3.15MB / 29.13MB 0.1s
+2026-11-13T10:00:05.9811400Z #4 sha256:8a1e25ce7c4f75e372e9884f8f7b1bedcfe4a7a7d452eb4b0a1c7477c9a90345 6.15MB / 29.13MB 0.2s
+2026-11-13T10:00:06.0754800Z #4 sha256:8a1e25ce7c4f75e372e9884f8f7b1bedcfe4a7a7d452eb4b0a1c7477c9a90345 9.15MB / 29.13MB 0.3s
+2026-11-13T10:00:06.1698200Z #4 sha256:8a1e25ce7c4f75e372e9884f8f7b1bedcfe4a7a7d452eb4b0a1c7477c9a90345 12.15MB / 29.13MB 0.4s
+2026-11-13T10:00:06.2641600Z #4 sha256:8a1e25ce7c4f75e372e9884f8f7b1bedcfe4a7a7d452eb4b0a1c7477c9a90345 15.15MB / 29.13MB 0.5s
+2026-11-13T10:00:06.3585000Z #4 sha256:8a1e25ce7c4f75e372e9884f8f7b1bedcfe4a7a7d452eb4b0a1c7477c9a90345 18.15MB / 29.13MB 0.6s
+2026-11-13T10:00:06.4528400Z #4 sha256:8a1e25ce7c4f75e372e9884f8f7b1bedcfe4a7a7d452eb4b0a1c7477c9a90345 21.15MB / 29.13MB 0.7s
+2026-11-13T10:00:06.5471800Z #4 sha256:8a1e25ce7c4f75e372e9884f8f7b1bedcfe4a7a7d452eb4b0a1c7477c9a90345 24.15MB / 29.13MB 0.8s
+2026-11-13T10:00:06.6415200Z #4 sha256:8a1e25ce7c4f75e372e9884f8f7b1bedcfe4a7a7d452eb4b0a1c7477c9a90345 27.15MB / 29.13MB 0.9s
+2026-11-13T10:00:06.7358600Z #4 DONE 2.1s
+2026-11-13T10:00:06.8302000Z 
+2026-11-13T10:00:06.9245400Z #5 [internal] load build context
+2026-11-13T10:00:07.0188800Z #5 transferring context: 1.24kB done
+2026-11-13T10:00:07.1132200Z #5 DONE 0.0s
+2026-11-13T10:00:07.2075600Z 
+2026-11-13T10:00:07.3019000Z #6 [2/4] WORKDIR /app
+2026-11-13T10:00:07.3962400Z #6 DONE 0.2s
+2026-11-13T10:00:07.4905800Z 
+2026-11-13T10:00:07.5849200Z #7 [3/4] COPY requirements-dev.txt /app/
+2026-11-13T10:00:07.6792600Z #7 ERROR: failed to calculate checksum of ref 0f3d9c2e-8b7a-4c1d-9e2f-3a4b5c6d7e8f::q7w8e9r0t1y2u3i4o5p6: "/requirements-dev.txt": not found
+2026-11-13T10:00:07.7736000Z ------
+2026-11-13T10:00:07.8679400Z  > [3/4] COPY requirements-dev.txt /app/:
+2026-11-13T10:00:07.9622800Z ------
+2026-11-13T10:00:08.0566200Z Dockerfile:5
+2026-11-13T10:00:08.1509600Z --------------------
+2026-11-13T10:00:08.2453000Z    3 |     WORKDIR /app
+2026-11-13T10:00:08.3396400Z    4 |     
+2026-11-13T10:00:08.4339800Z    5 | >>> COPY requirements-dev.txt /app/
+2026-11-13T10:00:08.5283200Z    6 |     RUN pip install -r requirements-dev.txt
+2026-11-13T10:00:08.6226600Z    7 |     
+2026-11-13T10:00:08.7170000Z --------------------
+2026-11-13T10:00:08.8113400Z ERROR: failed to solve: failed to compute cache key: failed to calculate checksum of ref 0f3d9c2e-8b7a-4c1d-9e2f-3a4b5c6d7e8f::q7w8e9r0t1y2u3i4o5p6: "/requirements-dev.txt": not found
+2026-11-13T10:00:08.9056800Z ##[error]Process completed with exit code 1.
+2026-11-13T10:00:09.1428570Z Post job cleanup.
+2026-11-13T10:00:09.2857140Z [command]/usr/bin/git version
+2026-11-13T10:00:09.4285710Z git version 2.51.0
+2026-11-13T10:00:09.5714280Z Temporarily overriding HOME='/home/runner/work/_temp/7d0c0b8e-1f2e-4d3c-9b8a-7f6e5d4c3b2a' before making global git config changes
+2026-11-13T10:00:09.7142850Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-13T10:00:09.8571420Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-13T10:00:10.5000000Z Cleaning up orphan processes

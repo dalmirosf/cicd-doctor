@@ -1,0 +1,315 @@
+{
+  "total_count": 6,
+  "jobs": [
+    {
+      "id": 71000000011,
+      "run_id": 19000000001,
+      "run_attempt": 1,
+      "name": "test (a)",
+      "status": "completed",
+      "conclusion": "failure",
+      "started_at": "2026-11-13T10:00:30Z",
+      "completed_at": "2026-11-13T10:00:47Z",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_name": "GitHub Actions 1000000123",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-13T10:00:30Z",
+          "completed_at": "2026-11-13T10:00:32Z"
+        },
+        {
+          "name": "Run actions/checkout@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-13T10:00:32Z",
+          "completed_at": "2026-11-13T10:00:34Z"
+        },
+        {
+          "name": "Run astral-sh/setup-uv@v6",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-11-13T10:00:34Z",
+          "completed_at": "2026-11-13T10:00:37Z"
+        },
+        {
+          "name": "Run uv sync --locked",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-11-13T10:00:37Z",
+          "completed_at": "2026-11-13T10:00:39Z"
+        },
+        {
+          "name": "Run uv run pytest tests/test_a.py",
+          "status": "completed",
+          "conclusion": "failure",
+          "number": 5,
+          "started_at": "2026-11-13T10:00:39Z",
+          "completed_at": "2026-11-13T10:00:45Z"
+        },
+        {
+          "name": "Post Run actions/checkout@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-11-13T10:00:45Z",
+          "completed_at": "2026-11-13T10:00:46Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-11-13T10:00:46Z",
+          "completed_at": "2026-11-13T10:00:47Z"
+        }
+      ]
+    },
+    {
+      "id": 71000000012,
+      "run_id": 19000000001,
+      "run_attempt": 1,
+      "name": "test (b)",
+      "status": "completed",
+      "conclusion": "failure",
+      "started_at": "2026-11-13T10:00:10Z",
+      "completed_at": "2026-11-13T10:00:27Z",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_name": "GitHub Actions 1000000123",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-13T10:00:10Z",
+          "completed_at": "2026-11-13T10:00:12Z"
+        },
+        {
+          "name": "Run actions/checkout@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-13T10:00:12Z",
+          "completed_at": "2026-11-13T10:00:14Z"
+        },
+        {
+          "name": "Run astral-sh/setup-uv@v6",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-11-13T10:00:14Z",
+          "completed_at": "2026-11-13T10:00:17Z"
+        },
+        {
+          "name": "Run uv sync --locked",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-11-13T10:00:17Z",
+          "completed_at": "2026-11-13T10:00:19Z"
+        },
+        {
+          "name": "Run uv run pytest tests/test_b.py",
+          "status": "completed",
+          "conclusion": "failure",
+          "number": 5,
+          "started_at": "2026-11-13T10:00:19Z",
+          "completed_at": "2026-11-13T10:00:25Z"
+        },
+        {
+          "name": "Post Run actions/checkout@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-11-13T10:00:25Z",
+          "completed_at": "2026-11-13T10:00:26Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-11-13T10:00:26Z",
+          "completed_at": "2026-11-13T10:00:27Z"
+        }
+      ]
+    },
+    {
+      "id": 71000000013,
+      "run_id": 19000000001,
+      "run_attempt": 1,
+      "name": "test (c)",
+      "status": "completed",
+      "conclusion": "failure",
+      "started_at": "2026-11-13T10:00:50Z",
+      "completed_at": "2026-11-13T10:01:07Z",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_name": "GitHub Actions 1000000123",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-13T10:00:50Z",
+          "completed_at": "2026-11-13T10:00:52Z"
+        },
+        {
+          "name": "Run actions/checkout@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-13T10:00:52Z",
+          "completed_at": "2026-11-13T10:00:54Z"
+        },
+        {
+          "name": "Run astral-sh/setup-uv@v6",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-11-13T10:00:54Z",
+          "completed_at": "2026-11-13T10:00:57Z"
+        },
+        {
+          "name": "Run uv sync --locked",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-11-13T10:00:57Z",
+          "completed_at": "2026-11-13T10:00:59Z"
+        },
+        {
+          "name": "Run uv run pytest tests/test_c.py",
+          "status": "completed",
+          "conclusion": "failure",
+          "number": 5,
+          "started_at": "2026-11-13T10:00:59Z",
+          "completed_at": "2026-11-13T10:01:05Z"
+        },
+        {
+          "name": "Post Run actions/checkout@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-11-13T10:01:05Z",
+          "completed_at": "2026-11-13T10:01:06Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-11-13T10:01:06Z",
+          "completed_at": "2026-11-13T10:01:07Z"
+        }
+      ]
+    },
+    {
+      "id": 71000000014,
+      "run_id": 19000000001,
+      "run_attempt": 1,
+      "name": "test (d)",
+      "status": "completed",
+      "conclusion": "timed_out",
+      "started_at": "2026-11-13T10:01:10Z",
+      "completed_at": "2026-11-13T10:01:27Z",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_name": "GitHub Actions 1000000123",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-13T10:01:10Z",
+          "completed_at": "2026-11-13T10:01:12Z"
+        },
+        {
+          "name": "Run actions/checkout@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-13T10:01:12Z",
+          "completed_at": "2026-11-13T10:01:14Z"
+        },
+        {
+          "name": "Run astral-sh/setup-uv@v6",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-11-13T10:01:14Z",
+          "completed_at": "2026-11-13T10:01:17Z"
+        },
+        {
+          "name": "Run uv sync --locked",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-11-13T10:01:17Z",
+          "completed_at": "2026-11-13T10:01:19Z"
+        },
+        {
+          "name": "Run uv run pytest tests/test_d.py",
+          "status": "completed",
+          "conclusion": "failure",
+          "number": 5,
+          "started_at": "2026-11-13T10:01:19Z",
+          "completed_at": "2026-11-13T10:01:25Z"
+        },
+        {
+          "name": "Post Run actions/checkout@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-11-13T10:01:25Z",
+          "completed_at": "2026-11-13T10:01:26Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-11-13T10:01:26Z",
+          "completed_at": "2026-11-13T10:01:27Z"
+        }
+      ]
+    },
+    {
+      "id": 71000000010,
+      "name": "lint",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-13T10:00:00Z",
+      "completed_at": "2026-11-13T10:00:20Z",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "steps": []
+    },
+    {
+      "id": 71000000015,
+      "name": "deploy",
+      "status": "completed",
+      "conclusion": "skipped",
+      "started_at": "2026-11-13T10:00:00Z",
+      "completed_at": "2026-11-13T10:00:00Z",
+      "labels": [],
+      "steps": []
+    }
+  ]
+}

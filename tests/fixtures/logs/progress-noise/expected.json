@@ -1,0 +1,15 @@
+{
+  "synthetic": true,
+  "description": "carriage-return progress, ANSI colours, repeated lines and docker pull noise",
+  "selected_job_ids": [
+    71000000031
+  ],
+  "evidence_lines": {
+    "71000000031": [
+      108,
+      113,
+      118,
+      120
+    ]
+  }
+}
