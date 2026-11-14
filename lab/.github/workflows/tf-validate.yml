@@ -1,0 +1,21 @@
+# config_or_secrets: the Terraform configuration has an argument that does not exist.
+# Fails on purpose. Started by hand only (workflow_dispatch); see README.md.
+name: tf-validate
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+      - run: terraform init -input=false -backend=false && terraform validate
+        working-directory: terraform/validate

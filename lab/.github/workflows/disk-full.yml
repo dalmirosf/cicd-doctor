@@ -1,0 +1,19 @@
+# infra_or_deploy: the disk (an 8 MB tmpfs) fills up.
+# Fails on purpose. Started by hand only (workflow_dispatch); see README.md.
+name: disk-full
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: >
+          docker run --rm --tmpfs /scratch:size=8m alpine:3.20
+          dd if=/dev/zero of=/scratch/fill bs=1M count=64

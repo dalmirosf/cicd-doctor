@@ -10,6 +10,7 @@ dependencies = [
     "psycopg[binary]>=3.3.9",
     "pydantic>=2.9",
     "pydantic-settings>=2.16.3",
+    "pyyaml>=6.0.3",
     "sqlalchemy[asyncio]>=2.1.8",
     "tiktoken>=0.14.0",
     "uvicorn>=0.32",
@@ -28,6 +29,7 @@ dev = [
     "pytest-asyncio>=0.24",
     "pytest-cov>=7.1.0",
     "ruff>=0.8",
+    "types-pyyaml>=6.0.12.20261113",
 ]
 
 [build-system]
@@ -40,7 +42,8 @@ line-length = 100
 target-version = "py313"
 src = ["src", "tests"]
 # ruff 0.17 also formats code blocks inside Markdown; SPEC.md and DECISIONS.md are hand-written.
-extend-exclude = ["*.md"]
+extend-exclude = ["*.md", "lab"]  # lab/ fails lint and type checks on purpose (SPEC §11.1)
+force-exclude = true  # also when pre-commit passes lab/ files by name
 
 [tool.ruff.lint]
 select = [
@@ -58,6 +61,9 @@ select = [
     "RUF",
 ]
 
+[tool.ruff.lint.isort]
+known-first-party = ["cicd_doctor", "evals", "tests"]
+
 [tool.ruff.format]
 line-ending = "lf"
 
@@ -66,7 +72,7 @@ line-ending = "lf"
 strict = true
 plugins = ["pydantic.mypy"]
 mypy_path = "src"
-files = ["src", "tests", "scripts"]
+files = ["src", "tests", "scripts", "evals"]
 
 [tool.pydantic-mypy]
 init_forbid_extra = true

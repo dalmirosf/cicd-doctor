@@ -1,0 +1,17 @@
+# config_or_secrets: the Dockerfile copies a file that is not in the build context.
+# Fails on purpose. Started by hand only (workflow_dispatch); see README.md.
+name: docker-copy
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: docker build -t lab-copy docker/copy-missing
