@@ -180,6 +180,33 @@ def test_github_masks_are_kept() -> None:
 @pytest.mark.parametrize(
     "line",
     [
+        "AUTHORIZATION: basic ***",
+        "authorization: Bearer ***",
+        "aws_secret_access_key = ***",
+        "https://x-access-token:***@github.com/acme/widgets.git",
+    ],
+)
+def test_github_masks_are_not_reported_as_redactions(line: str) -> None:
+    result = redact_line(line)
+
+    assert result.text == line
+    assert result.count == 0  # the checkout step of every job has one of these lines
+
+
+def test_a_real_secret_next_to_a_mask_is_still_redacted() -> None:
+    planted = next(p for p in PLANTED if p.kind == "authorization")
+    line = f"AUTHORIZATION: basic *** then Authorization: Bearer {planted.secret}"
+
+    result = redact_line(line)
+
+    assert planted.secret not in result.text
+    assert "basic ***" in result.text
+    assert result.count == 1
+
+
+@pytest.mark.parametrize(
+    "line",
+    [
         "PWD=/home/runner/work/widgets/widgets",
         r"secret: C:\Users\runneradmin\secrets\file.txt",
         "token=${GITHUB_TOKEN}",

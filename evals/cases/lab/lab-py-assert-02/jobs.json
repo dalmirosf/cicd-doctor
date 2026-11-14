@@ -1,0 +1,77 @@
+{
+  "total_count": 1,
+  "jobs": [
+    {
+      "id": 132270656917,
+      "run_id": 43537717903,
+      "run_attempt": 1,
+      "workflow_name": "py-assert",
+      "name": "run",
+      "status": "completed",
+      "conclusion": "failure",
+      "started_at": "2026-11-14T00:59:17Z",
+      "completed_at": "2026-11-14T00:59:33Z",
+      "labels": [
+        "ubuntu-24.04"
+      ],
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-14T00:59:18Z",
+          "completed_at": "2026-11-14T00:59:21Z"
+        },
+        {
+          "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-14T00:59:21Z",
+          "completed_at": "2026-11-14T00:59:25Z"
+        },
+        {
+          "name": "Run astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-11-14T00:59:25Z",
+          "completed_at": "2026-11-14T00:59:28Z"
+        },
+        {
+          "name": "Run uv run pytest tests/test_math.py",
+          "status": "completed",
+          "conclusion": "failure",
+          "number": 4,
+          "started_at": "2026-11-14T00:59:28Z",
+          "completed_at": "2026-11-14T00:59:30Z"
+        },
+        {
+          "name": "Post Run astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 7,
+          "started_at": "2026-11-14T00:59:30Z",
+          "completed_at": "2026-11-14T00:59:30Z"
+        },
+        {
+          "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8,
+          "started_at": "2026-11-14T00:59:30Z",
+          "completed_at": "2026-11-14T00:59:30Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9,
+          "started_at": "2026-11-14T00:59:30Z",
+          "completed_at": "2026-11-14T00:59:30Z"
+        }
+      ]
+    }
+  ]
+}

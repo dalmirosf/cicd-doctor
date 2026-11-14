@@ -1,0 +1,20 @@
+id: lab-py-resolve-01
+source: lab
+repo: dalmirosf/cicd-doctor-lab
+run_url: https://github.com/dalmirosf/cicd-doctor-lab/actions/runs/43537728533/attempts/1
+job_id: 132270693212
+lab_case: py-resolve
+expected:
+  category: dependency
+  cause: requests==2.32.3 needs urllib3>=1.21.1, but the project requires urllib3<1.21.
+  evidence_lines:
+  - 181
+  - 182
+fix:
+  summary: Drop or relax the urllib3<1.21 constraint in python-conflict/pyproject.toml.
+flaky: false
+tags:
+- python
+- uv
+- resolver
+captured_at: '2026-11-14T01:27:22+00:00'

@@ -1,0 +1,61 @@
+{
+  "total_count": 1,
+  "jobs": [
+    {
+      "id": 132270644669,
+      "run_id": 43537714450,
+      "run_attempt": 1,
+      "workflow_name": "pip-no-dist",
+      "name": "run",
+      "status": "completed",
+      "conclusion": "failure",
+      "started_at": "2026-11-14T00:59:15Z",
+      "completed_at": "2026-11-14T00:59:24Z",
+      "labels": [
+        "ubuntu-24.04"
+      ],
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-14T00:59:16Z",
+          "completed_at": "2026-11-14T00:59:16Z"
+        },
+        {
+          "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-14T00:59:16Z",
+          "completed_at": "2026-11-14T00:59:18Z"
+        },
+        {
+          "name": "Run python3 -m venv .venv",
+          "status": "completed",
+          "conclusion": "failure",
+          "number": 3,
+          "started_at": "2026-11-14T00:59:18Z",
+          "completed_at": "2026-11-14T00:59:21Z"
+        },
+        {
+          "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-11-14T00:59:21Z",
+          "completed_at": "2026-11-14T00:59:22Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-11-14T00:59:22Z",
+          "completed_at": "2026-11-14T00:59:22Z"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+id: lab-pip-no-dist-01
+source: lab
+repo: dalmirosf/cicd-doctor-lab
+run_url: https://github.com/dalmirosf/cicd-doctor-lab/actions/runs/43537714450/attempts/1
+job_id: 132270644669
+lab_case: pip-no-dist
+expected:
+  category: dependency
+  cause: The package cicd-doctor-lab-does-not-exist is not on PyPI.
+  evidence_lines:
+  - 125
+fix:
+  summary: Fix the package name, or configure the private index that hosts it.
+flaky: false
+tags:
+- python
+- pip
+captured_at: '2026-11-14T01:27:25+00:00'

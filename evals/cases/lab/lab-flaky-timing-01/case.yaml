@@ -1,0 +1,20 @@
+id: lab-flaky-timing-01
+source: lab
+repo: dalmirosf/cicd-doctor-lab
+run_url: https://github.com/dalmirosf/cicd-doctor-lab/actions/runs/43538157927/attempts/1
+job_id: 132272099099
+lab_case: flaky-timing
+expected:
+  category: flaky
+  cause: test_fast_enough asserts a 50 ms budget around a random sleep of up to 100
+    ms.
+  evidence_lines:
+  - 207
+fix:
+  summary: Remove the timing assertion or make the budget independent of the sleep.
+flaky: true
+tags:
+- python
+- pytest
+- flaky
+captured_at: '2026-11-14T01:28:05+00:00'

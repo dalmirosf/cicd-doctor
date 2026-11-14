@@ -1,0 +1,17 @@
+id: lab-tf-validate-01
+source: lab
+repo: dalmirosf/cicd-doctor-lab
+run_url: https://github.com/dalmirosf/cicd-doctor-lab/actions/runs/43537745642/attempts/1
+job_id: 132270751390
+lab_case: tf-validate
+expected:
+  category: config_or_secrets
+  cause: terraform_data has no argument named bogus.
+  evidence_lines:
+  - 146
+fix:
+  summary: Remove `bogus = 1` from terraform/validate/main.tf.
+flaky: false
+tags:
+- terraform
+captured_at: '2026-11-14T01:27:47+00:00'

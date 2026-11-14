@@ -23,7 +23,10 @@ GENERIC_MIN_ENTROPY = 3.5  # bits per character
 GENERIC_ENTROPY_SLACK = 1.0  # short values: within this many bits of the maximum for the length
 GENERIC_MIN_LENGTH = 20  # a value this long is redacted whatever its entropy
 
-_NOT_PLACEHOLDER = r"(?!\[REDACTED:)"
+# A value that is already a placeholder, or GitHub's own mask for a registered secret, is not
+# redacted again: the secret is not in the log. The checkout step of every real job prints
+# "AUTHORIZATION: basic ***", which used to be reported as a redaction on every log.
+_NOT_MASKED = r"(?!\[REDACTED:|\*\*\*)"
 
 # A line can only hold a secret if it contains one of these (case-insensitive) fragments.
 # Checking this first keeps redaction cheap on the many lines that hold none.
@@ -104,19 +107,17 @@ _RULES: tuple[_Rule, ...] = (
     _Rule("private_key", _PEM_INLINE, _whole),
     _Rule(
         "url_credentials",
-        re.compile(r"([a-zA-Z][a-zA-Z0-9+.\-]*://)[^/\s:@\[]+:[^/\s@]+@"),
+        re.compile(r"([a-zA-Z][a-zA-Z0-9+.\-]*://)[^/\s:@\[]+:(?!\*\*\*@)[^/\s@]+@"),
         _url_credentials,
     ),
     _Rule(
         "authorization",
-        re.compile(rf"(?i)(authorization:\s*(?:bearer|basic|token)\s+){_NOT_PLACEHOLDER}\S+"),
+        re.compile(rf"(?i)(authorization:\s*(?:bearer|basic|token)\s+){_NOT_MASKED}\S+"),
         _keep_prefix,
     ),
     _Rule(
         "aws_secret_access_key",
-        re.compile(
-            rf"(?i)(aws_secret_access_key['\"]?\s*[=:]\s*['\"]?){_NOT_PLACEHOLDER}[^\s'\"]+"
-        ),
+        re.compile(rf"(?i)(aws_secret_access_key['\"]?\s*[=:]\s*['\"]?){_NOT_MASKED}[^\s'\"]+"),
         _keep_prefix,
     ),
     _Rule("github_pat", re.compile(r"\bgithub_pat_[A-Za-z0-9_]{22,}"), _whole),

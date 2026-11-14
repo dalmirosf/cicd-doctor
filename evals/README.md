@@ -1,7 +1,7 @@
 # Evals
 
 The eval harness (SPEC §11, FR-22). As of P1b it has the `rules` variant, the P1b subset of the
-metrics (no LLM judge yet), JSON and Markdown reports, and the lab capture command. The LLM
+metrics (no LLM judge yet), JSON and Markdown reports, and the lab capture command. `evals/cases/lab` holds 24 cases captured from real runs of the lab. The LLM
 variants arrive with the LLM client (P1b), similarity in P2, and the CI gate in P4.
 
 ```

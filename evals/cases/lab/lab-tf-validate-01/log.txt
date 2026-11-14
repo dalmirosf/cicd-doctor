@@ -1,0 +1,187 @@
+﻿2026-11-14T00:59:36.6431876Z Current runner version: '2.338.2'
+2026-11-14T00:59:36.6498933Z ##[group]Runner Image Provisioner
+2026-11-14T00:59:36.6500206Z Hosted Compute Agent
+2026-11-14T00:59:36.6501261Z Version: 20261103.629
+2026-11-14T00:59:36.6502278Z Commit: 15dbd9ccb5dbf34fae002b6ed1a2670f52df37bc
+2026-11-14T00:59:36.6503477Z Build Date: 2026-11-03T17:26:59Z
+2026-11-14T00:59:36.6504690Z Worker ID: {d259d4ce-e983-478c-8ed9-a9cfbb9142f6}
+2026-11-14T00:59:36.6505838Z Region: westcentralus
+2026-11-14T00:59:36.6524280Z Cloud: Azure
+2026-11-14T00:59:36.6525206Z ##[endgroup]
+2026-11-14T00:59:36.6527718Z ##[group]Operating System
+2026-11-14T00:59:36.6528891Z Ubuntu
+2026-11-14T00:59:36.6529724Z 24.04.5
+2026-11-14T00:59:36.6530619Z LTS
+2026-11-14T00:59:36.6531479Z ##[endgroup]
+2026-11-14T00:59:36.6532432Z ##[group]Runner Image
+2026-11-14T00:59:36.6533659Z Image: ubuntu-24.04
+2026-11-14T00:59:36.6534547Z Version: 20261111.370.1
+2026-11-14T00:59:36.6537045Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261111.370/images/ubuntu/Ubuntu2404-Readme.md
+2026-11-14T00:59:36.6539674Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261111.370
+2026-11-14T00:59:36.6541352Z ##[endgroup]
+2026-11-14T00:59:36.6543071Z ##[group]GITHUB_TOKEN Permissions
+2026-11-14T00:59:36.6546113Z Contents: read
+2026-11-14T00:59:36.6547382Z Metadata: read
+2026-11-14T00:59:36.6548442Z ##[endgroup]
+2026-11-14T00:59:36.6551498Z Secret source: Actions
+2026-11-14T00:59:36.6552930Z Cache mode: write
+2026-11-14T00:59:36.6554648Z Prepare workflow directory
+2026-11-14T00:59:36.7263184Z Prepare all required actions
+2026-11-14T00:59:36.7415900Z Getting action download info
+2026-11-14T00:59:37.0520300Z Download action repository 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+2026-11-14T00:59:37.1725556Z Download action repository 'hashicorp/setup-terraform@v3' (SHA:b9cd54a3c349d3f38e8881555d616ced269862dd)
+2026-11-14T00:59:37.7628476Z Complete job name: run
+2026-11-14T00:59:37.8485292Z ##[group]Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+2026-11-14T00:59:37.8486541Z with:
+2026-11-14T00:59:37.8487022Z   repository: dalmirosf/cicd-doctor-lab
+2026-11-14T00:59:37.8491309Z   token: ***
+2026-11-14T00:59:37.8491771Z   ssh-strict: true
+2026-11-14T00:59:37.8492236Z   ssh-user: git
+2026-11-14T00:59:37.8492712Z   persist-credentials: true
+2026-11-14T00:59:37.8493226Z   clean: true
+2026-11-14T00:59:37.8493699Z   sparse-checkout-cone-mode: true
+2026-11-14T00:59:37.8494235Z   fetch-depth: 1
+2026-11-14T00:59:37.8494694Z   fetch-tags: false
+2026-11-14T00:59:37.8495150Z   show-progress: true
+2026-11-14T00:59:37.8495614Z   lfs: false
+2026-11-14T00:59:37.8496048Z   submodules: false
+2026-11-14T00:59:37.8496680Z   set-safe-directory: true
+2026-11-14T00:59:37.8497216Z   allow-unsafe-pr-checkout: false
+2026-11-14T00:59:37.8497967Z ##[endgroup]
+2026-11-14T00:59:38.0786047Z Syncing repository: dalmirosf/cicd-doctor-lab
+2026-11-14T00:59:38.0789361Z ##[group]Getting Git version info
+2026-11-14T00:59:38.0790786Z Working directory is '/home/runner/work/cicd-doctor-lab/cicd-doctor-lab'
+2026-11-14T00:59:38.0793772Z [command]/usr/bin/git version
+2026-11-14T00:59:38.0947576Z git version 2.56.1
+2026-11-14T00:59:38.1028243Z ##[endgroup]
+2026-11-14T00:59:38.1066741Z Temporarily overriding HOME='/home/runner/work/_temp/8e66b5c9-bb5b-4b42-9d76-6aaec5e07110' before making global git config changes
+2026-11-14T00:59:38.1073196Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-14T00:59:38.1075924Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/cicd-doctor-lab/cicd-doctor-lab
+2026-11-14T00:59:38.1080449Z Deleting the contents of '/home/runner/work/cicd-doctor-lab/cicd-doctor-lab'
+2026-11-14T00:59:38.1084497Z ##[group]Determining repository object format
+2026-11-14T00:59:38.1087884Z ##[endgroup]
+2026-11-14T00:59:38.1092461Z ##[group]Initializing the repository
+2026-11-14T00:59:38.1094988Z [command]/usr/bin/git init /home/runner/work/cicd-doctor-lab/cicd-doctor-lab
+2026-11-14T00:59:38.1193739Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-11-14T00:59:38.1197054Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-11-14T00:59:38.1232237Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-11-14T00:59:38.1357680Z hint: call:
+2026-11-14T00:59:38.1379172Z hint:
+2026-11-14T00:59:38.1441499Z hint: 	git config --global init.defaultBranch <name>
+2026-11-14T00:59:38.1443936Z hint:
+2026-11-14T00:59:38.1444725Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-11-14T00:59:38.1445777Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-11-14T00:59:38.1447443Z hint:
+2026-11-14T00:59:38.1448229Z hint: 	git branch -m <name>
+2026-11-14T00:59:38.1449081Z hint:
+2026-11-14T00:59:38.1450217Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-11-14T00:59:38.1472610Z Initialized empty Git repository in /home/runner/work/cicd-doctor-lab/cicd-doctor-lab/.git/
+2026-11-14T00:59:38.1494527Z [command]/usr/bin/git remote add origin https://github.com/dalmirosf/cicd-doctor-lab
+2026-11-14T00:59:38.1508012Z ##[endgroup]
+2026-11-14T00:59:38.1527057Z ##[group]Disabling automatic garbage collection
+2026-11-14T00:59:38.1528516Z [command]/usr/bin/git config --local gc.auto 0
+2026-11-14T00:59:38.1531409Z ##[endgroup]
+2026-11-14T00:59:38.1533055Z ##[group]Setting up auth
+2026-11-14T00:59:38.1534141Z Removing SSH command configuration
+2026-11-14T00:59:38.1535695Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-14T00:59:38.1543527Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-14T00:59:38.2143752Z Removing HTTP extra header
+2026-11-14T00:59:38.2149345Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-14T00:59:38.2154841Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-14T00:59:38.2418185Z Removing includeIf entries pointing to credentials config files
+2026-11-14T00:59:38.2423997Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-14T00:59:38.2479918Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-14T00:59:38.2900691Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-4be6366b-b80a-47d9-b0d9-336f4f500877.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-11-14T00:59:38.2920329Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/cicd-doctor-lab/cicd-doctor-lab/.git.path /home/runner/work/_temp/git-credentials-4be6366b-b80a-47d9-b0d9-336f4f500877.config
+2026-11-14T00:59:38.2970220Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/cicd-doctor-lab/cicd-doctor-lab/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-4be6366b-b80a-47d9-b0d9-336f4f500877.config
+2026-11-14T00:59:38.3019388Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-4be6366b-b80a-47d9-b0d9-336f4f500877.config
+2026-11-14T00:59:38.3069972Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-4be6366b-b80a-47d9-b0d9-336f4f500877.config
+2026-11-14T00:59:38.3120663Z ##[endgroup]
+2026-11-14T00:59:38.3122657Z ##[group]Fetching the repository
+2026-11-14T00:59:38.3129449Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +49eeb475071186b3d296efea984c999341a7d243:refs/remotes/origin/main
+2026-11-14T00:59:38.7572539Z From https://github.com/dalmirosf/cicd-doctor-lab
+2026-11-14T00:59:38.7575288Z  * [new ref]         49eeb475071186b3d296efea984c999341a7d243 -> origin/main
+2026-11-14T00:59:38.7586482Z [command]/usr/bin/git branch --list --remote origin/main
+2026-11-14T00:59:38.7633621Z   origin/main
+2026-11-14T00:59:38.7675419Z [command]/usr/bin/git rev-parse refs/remotes/origin/main
+2026-11-14T00:59:38.7716782Z 49eeb475071186b3d296efea984c999341a7d243
+2026-11-14T00:59:38.7724722Z ##[endgroup]
+2026-11-14T00:59:38.7727278Z ##[group]Determining the checkout info
+2026-11-14T00:59:38.7730310Z ##[endgroup]
+2026-11-14T00:59:38.7732340Z [command]/usr/bin/git sparse-checkout disable
+2026-11-14T00:59:38.7817828Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-11-14T00:59:38.7855605Z ##[group]Checking out the ref
+2026-11-14T00:59:38.7862040Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+2026-11-14T00:59:38.8001182Z Switched to a new branch 'main'
+2026-11-14T00:59:38.8004295Z branch 'main' set up to track 'origin/main'.
+2026-11-14T00:59:38.8018570Z ##[endgroup]
+2026-11-14T00:59:38.8064903Z [command]/usr/bin/git log -1 --format=%H
+2026-11-14T00:59:38.8114474Z 49eeb475071186b3d296efea984c999341a7d243
+2026-11-14T00:59:38.8467852Z ##[group]Run hashicorp/setup-terraform@v3
+2026-11-14T00:59:38.8469915Z with:
+2026-11-14T00:59:38.8471339Z   terraform_wrapper: false
+2026-11-14T00:59:38.8473192Z   cli_config_credentials_hostname: app.terraform.io
+2026-11-14T00:59:38.8475296Z   terraform_version: latest
+2026-11-14T00:59:38.8477008Z ##[endgroup]
+2026-11-14T00:59:39.0322042Z (node:2203) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-11-14T00:59:39.0330461Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-11-14T00:59:39.6713449Z [command]/usr/bin/unzip -o -q /home/runner/work/_temp/25d4881e-bc3b-4a89-8183-6bb2bc0135be
+2026-11-14T00:59:40.6162363Z ##[group]Run terraform init -input=false -backend=false && terraform validate
+2026-11-14T00:59:40.6163106Z terraform init -input=false -backend=false && terraform validate
+2026-11-14T00:59:40.6191533Z shell: /usr/bin/bash -e {0}
+2026-11-14T00:59:40.6191886Z ##[endgroup]
+2026-11-14T00:59:40.6562192Z Initializing provider plugins...
+2026-11-14T00:59:40.6563373Z - terraform.io/builtin/terraform is built in to Terraform
+2026-11-14T00:59:40.6565673Z 
+2026-11-14T00:59:40.6566368Z Terraform has been successfully initialized!
+2026-11-14T00:59:40.6567058Z 
+2026-11-14T00:59:40.6567635Z You may now begin working with Terraform. Try running "terraform plan" to see
+2026-11-14T00:59:40.6568556Z any changes that are required for your infrastructure. All Terraform commands
+2026-11-14T00:59:40.6569265Z should now work.
+2026-11-14T00:59:40.6569507Z 
+2026-11-14T00:59:40.6569963Z If you ever set or change modules or backend configuration for Terraform,
+2026-11-14T00:59:40.6570953Z rerun this command to reinitialize your working directory. If you forget, other
+2026-11-14T00:59:40.6571946Z commands will detect it and remind you to do so if necessary.
+2026-11-14T00:59:40.6881310Z ╷
+2026-11-14T00:59:40.6882970Z │ Error: Unsupported argument
+2026-11-14T00:59:40.6885905Z │ 
+2026-11-14T00:59:40.6887461Z │   on main.tf line 4, in resource "terraform_data" "lab":
+2026-11-14T00:59:40.6888828Z │    4:   bogus = 1
+2026-11-14T00:59:40.6889450Z │ 
+2026-11-14T00:59:40.6890084Z │ An argument named "bogus" is not expected here.
+2026-11-14T00:59:40.6890751Z ╵
+2026-11-14T00:59:40.6907823Z ##[error]Process completed with exit code 1.
+2026-11-14T00:59:40.7168378Z Post job cleanup.
+2026-11-14T00:59:40.8249519Z [command]/usr/bin/git version
+2026-11-14T00:59:40.8357747Z git version 2.56.1
+2026-11-14T00:59:40.8524227Z Temporarily overriding HOME='/home/runner/work/_temp/1e45dc2b-974e-4004-b80f-3fd1265109ed' before making global git config changes
+2026-11-14T00:59:40.8547357Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-14T00:59:40.8561490Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/cicd-doctor-lab/cicd-doctor-lab
+2026-11-14T00:59:40.8643876Z Removing SSH command configuration
+2026-11-14T00:59:40.8647647Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-14T00:59:40.8649712Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-14T00:59:40.9057164Z Removing HTTP extra header
+2026-11-14T00:59:40.9179074Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-14T00:59:40.9184243Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-14T00:59:40.9401498Z Removing includeIf entries pointing to credentials config files
+2026-11-14T00:59:40.9411757Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-14T00:59:40.9456903Z includeif.gitdir:/home/runner/work/cicd-doctor-lab/cicd-doctor-lab/.git.path
+2026-11-14T00:59:40.9458360Z includeif.gitdir:/home/runner/work/cicd-doctor-lab/cicd-doctor-lab/.git/worktrees/*.path
+2026-11-14T00:59:40.9460230Z includeif.gitdir:/github/workspace/.git.path
+2026-11-14T00:59:40.9461217Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-11-14T00:59:40.9468841Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/cicd-doctor-lab/cicd-doctor-lab/.git.path
+2026-11-14T00:59:40.9541111Z /home/runner/work/_temp/git-credentials-4be6366b-b80a-47d9-b0d9-336f4f500877.config
+2026-11-14T00:59:40.9556017Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/cicd-doctor-lab/cicd-doctor-lab/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-4be6366b\-b80a\-47d9\-b0d9\-336f4f500877\.config
+2026-11-14T00:59:40.9655293Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/cicd-doctor-lab/cicd-doctor-lab/.git/worktrees/*.path
+2026-11-14T00:59:40.9713801Z /home/runner/work/_temp/git-credentials-4be6366b-b80a-47d9-b0d9-336f4f500877.config
+2026-11-14T00:59:40.9748458Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/cicd-doctor-lab/cicd-doctor-lab/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-4be6366b\-b80a\-47d9\-b0d9\-336f4f500877\.config
+2026-11-14T00:59:41.0026737Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-11-14T00:59:41.0077488Z /github/runner_temp/git-credentials-4be6366b-b80a-47d9-b0d9-336f4f500877.config
+2026-11-14T00:59:41.0105198Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-4be6366b\-b80a\-47d9\-b0d9\-336f4f500877\.config
+2026-11-14T00:59:41.0117281Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-11-14T00:59:41.0118876Z /github/runner_temp/git-credentials-4be6366b-b80a-47d9-b0d9-336f4f500877.config
+2026-11-14T00:59:41.0124010Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-4be6366b\-b80a\-47d9\-b0d9\-336f4f500877\.config
+2026-11-14T00:59:41.0126347Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-14T00:59:41.0385847Z Removing credentials config '/home/runner/work/_temp/git-credentials-4be6366b-b80a-47d9-b0d9-336f4f500877.config'
+2026-11-14T00:59:41.0555636Z Cleaning up orphan processes
+2026-11-14T00:59:41.0924562Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: hashicorp/setup-terraform@v3. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

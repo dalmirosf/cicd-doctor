@@ -1,0 +1,17 @@
+id: lab-disk-full-01
+source: lab
+repo: dalmirosf/cicd-doctor-lab
+run_url: https://github.com/dalmirosf/cicd-doctor-lab/actions/runs/43537673292/attempts/1
+job_id: 132270513378
+lab_case: disk-full
+expected:
+  category: infra_or_deploy
+  cause: The 8 MB tmpfs fills up while dd writes 64 MB.
+  evidence_lines:
+  - 130
+fix:
+  summary: Write less, or give the step more disk.
+flaky: false
+tags:
+- disk
+captured_at: '2026-11-14T01:27:59+00:00'

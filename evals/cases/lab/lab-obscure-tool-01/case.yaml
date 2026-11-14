@@ -1,0 +1,17 @@
+id: lab-obscure-tool-01
+source: lab
+repo: dalmirosf/cicd-doctor-lab
+run_url: https://github.com/dalmirosf/cicd-doctor-lab/actions/runs/43537703235/attempts/1
+job_id: 132270608337
+lab_case: obscure-tool
+expected:
+  category: unknown
+  cause: An in-house tool fails with its own error code E9921.
+  evidence_lines:
+  - 124
+fix:
+  summary: Look up E9921 in the tool's documentation.
+flaky: false
+tags:
+- python
+captured_at: '2026-11-14T01:28:10+00:00'

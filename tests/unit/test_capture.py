@@ -265,6 +265,30 @@ def test_capture_all_notes_cases_that_lack_failed_runs(tmp_path: Path) -> None:
     assert notes == ["py-modnf: 1 of 2 captures; run py-modnf.yml again"]
 
 
+def test_capture_all_explains_runs_that_ended_cancelled(tmp_path: Path) -> None:
+    # A job that hits its timeout-minutes ends cancelled, as the real lab showed.
+    runs = [{"databaseId": 21, "attempt": 1, "conclusion": "cancelled"}]
+
+    captured, notes = capture_all(REPO, manifest=MANIFEST, out_dir=tmp_path, gh=FakeGh(runs))
+
+    assert captured == []
+    [note] = notes
+    assert note.startswith("py-modnf: 0 of 2 captures; its 1 run(s) ended cancelled")
+    assert "will not help" in note
+    assert "SPEC §14" in note
+
+
+def test_a_cancelled_run_next_to_a_captured_one_keeps_the_plain_note(tmp_path: Path) -> None:
+    runs = [
+        {"databaseId": 21, "attempt": 1, "conclusion": "cancelled"},
+        {"databaseId": 22, "attempt": 1, "conclusion": "failure"},
+    ]
+
+    _, notes = capture_all(REPO, manifest=MANIFEST, out_dir=tmp_path, gh=FakeGh(runs))
+
+    assert notes == ["py-modnf: 1 of 2 captures; run py-modnf.yml again"]
+
+
 def test_find_evidence_looks_only_at_the_failed_step() -> None:
     case = load_log_case("pytest-assert")
     [job] = select_case_jobs(case)

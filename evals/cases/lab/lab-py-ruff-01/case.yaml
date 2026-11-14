@@ -1,0 +1,20 @@
+id: lab-py-ruff-01
+source: lab
+repo: dalmirosf/cicd-doctor-lab
+run_url: https://github.com/dalmirosf/cicd-doctor-lab/actions/runs/43537731851/attempts/1
+job_id: 132270704926
+lab_case: py-ruff
+expected:
+  category: broken_test
+  cause: 'The lint gate fails: ruff reports an unused import (F401) in lint_gate.py.'
+  evidence_lines:
+  - 182
+  - 196
+fix:
+  summary: Remove the unused `import os` from src/labpkg/lint_gate.py.
+flaky: false
+tags:
+- python
+- ruff
+- gate
+captured_at: '2026-11-14T01:27:11+00:00'

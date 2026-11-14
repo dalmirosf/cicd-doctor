@@ -1,0 +1,77 @@
+{
+  "total_count": 1,
+  "jobs": [
+    {
+      "id": 132272099099,
+      "run_id": 43538157927,
+      "run_attempt": 1,
+      "workflow_name": "flaky-timing",
+      "name": "run",
+      "status": "completed",
+      "conclusion": "failure",
+      "started_at": "2026-11-14T01:03:07Z",
+      "completed_at": "2026-11-14T01:03:18Z",
+      "labels": [
+        "ubuntu-24.04"
+      ],
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-14T01:03:08Z",
+          "completed_at": "2026-11-14T01:03:09Z"
+        },
+        {
+          "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-14T01:03:09Z",
+          "completed_at": "2026-11-14T01:03:10Z"
+        },
+        {
+          "name": "Run astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-11-14T01:03:10Z",
+          "completed_at": "2026-11-14T01:03:13Z"
+        },
+        {
+          "name": "Run uv run pytest tests/test_flaky_timing.py",
+          "status": "completed",
+          "conclusion": "failure",
+          "number": 4,
+          "started_at": "2026-11-14T01:03:13Z",
+          "completed_at": "2026-11-14T01:03:15Z"
+        },
+        {
+          "name": "Post Run astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 7,
+          "started_at": "2026-11-14T01:03:15Z",
+          "completed_at": "2026-11-14T01:03:15Z"
+        },
+        {
+          "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8,
+          "started_at": "2026-11-14T01:03:15Z",
+          "completed_at": "2026-11-14T01:03:16Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9,
+          "started_at": "2026-11-14T01:03:16Z",
+          "completed_at": "2026-11-14T01:03:16Z"
+        }
+      ]
+    }
+  ]
+}

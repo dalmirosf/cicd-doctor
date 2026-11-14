@@ -1,0 +1,17 @@
+id: lab-docker-base-01
+source: lab
+repo: dalmirosf/cicd-doctor-lab
+run_url: https://github.com/dalmirosf/cicd-doctor-lab/actions/runs/43537680549/attempts/1
+job_id: 132270537671
+lab_case: docker-base
+expected:
+  category: dependency
+  cause: The base image python:3.99-slim does not exist.
+  evidence_lines:
+  - 136
+fix:
+  summary: Use an existing tag in FROM, for example python:3.13-slim.
+flaky: false
+tags:
+- docker
+captured_at: '2026-11-14T01:27:27+00:00'

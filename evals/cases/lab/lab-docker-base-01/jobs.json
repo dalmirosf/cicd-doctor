@@ -1,0 +1,61 @@
+{
+  "total_count": 1,
+  "jobs": [
+    {
+      "id": 132270537671,
+      "run_id": 43537680549,
+      "run_attempt": 1,
+      "workflow_name": "docker-base",
+      "name": "run",
+      "status": "completed",
+      "conclusion": "failure",
+      "started_at": "2026-11-14T00:58:55Z",
+      "completed_at": "2026-11-14T00:59:06Z",
+      "labels": [
+        "ubuntu-24.04"
+      ],
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-14T00:58:56Z",
+          "completed_at": "2026-11-14T00:58:58Z"
+        },
+        {
+          "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-14T00:58:58Z",
+          "completed_at": "2026-11-14T00:59:02Z"
+        },
+        {
+          "name": "Run docker build -t lab-base docker/base-missing",
+          "status": "completed",
+          "conclusion": "failure",
+          "number": 3,
+          "started_at": "2026-11-14T00:59:02Z",
+          "completed_at": "2026-11-14T00:59:03Z"
+        },
+        {
+          "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-11-14T00:59:03Z",
+          "completed_at": "2026-11-14T00:59:03Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-11-14T00:59:03Z",
+          "completed_at": "2026-11-14T00:59:03Z"
+        }
+      ]
+    }
+  ]
+}

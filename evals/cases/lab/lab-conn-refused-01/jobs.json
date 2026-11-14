@@ -1,0 +1,61 @@
+{
+  "total_count": 1,
+  "jobs": [
+    {
+      "id": 132270501661,
+      "run_id": 43537669717,
+      "run_attempt": 1,
+      "workflow_name": "conn-refused",
+      "name": "run",
+      "status": "completed",
+      "conclusion": "failure",
+      "started_at": "2026-11-14T00:58:48Z",
+      "completed_at": "2026-11-14T00:58:55Z",
+      "labels": [
+        "ubuntu-24.04"
+      ],
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-14T00:58:49Z",
+          "completed_at": "2026-11-14T00:58:50Z"
+        },
+        {
+          "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-14T00:58:50Z",
+          "completed_at": "2026-11-14T00:58:51Z"
+        },
+        {
+          "name": "Run python3 -c \"import socket; socket.create_connection(('127.0.0.1', 9), timeout=5)\"",
+          "status": "completed",
+          "conclusion": "failure",
+          "number": 3,
+          "started_at": "2026-11-14T00:58:51Z",
+          "completed_at": "2026-11-14T00:58:51Z"
+        },
+        {
+          "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-11-14T00:58:51Z",
+          "completed_at": "2026-11-14T00:58:52Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-11-14T00:58:52Z",
+          "completed_at": "2026-11-14T00:58:52Z"
+        }
+      ]
+    }
+  ]
+}
