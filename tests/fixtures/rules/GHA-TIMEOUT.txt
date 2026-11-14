@@ -1,0 +1,11 @@
+=== positive: the job-level limit message
+waiting for http://127.0.0.1:8080/health (attempt 58/500)
+##[error]The job running on runner GitHub Actions 1000000123 has exceeded the maximum execution time of 1 minutes.
+##[error]The operation was canceled.
+=== positive: a timed-out job without the message in the excerpt
+# conclusion: timed_out
+Running integration suite...
+##[error]The operation was canceled.
+=== negative: a warning about the limit, in a job that failed
+Warning: the step took 4m 10s, close to the maximum execution time of 5 minutes
+##[error]Process completed with exit code 1.

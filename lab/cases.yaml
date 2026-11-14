@@ -1,0 +1,217 @@
+# The lab cases (SPEC §11.1): one workflow each, with the diagnosis it should get.
+# `python -m evals capture` reads this file to label a captured run:
+#   job        the job's name in the workflow
+#   evidence   regexes; each one marks the first matching line of the failed step
+#   captures   how many failing runs to capture (2 = also checks that the signature is stable)
+cases:
+  - id: py-assert
+    workflow: py-assert.yml
+    job: run
+    category: broken_test
+    cause: "The test test_add expects add(1, 2) to be 4; it is 3."
+    fix: "Fix the expected value in tests/test_math.py (add(1, 2) == 3)."
+    evidence: ["FAILED tests/test_math.py::test_add", "assert 3 == 4"]
+    tags: [python, pytest]
+    captures: 2
+
+  - id: py-ruff
+    workflow: py-ruff.yml
+    job: run
+    category: broken_test
+    cause: "The lint gate fails: ruff reports an unused import (F401) in lint_gate.py."
+    fix: "Remove the unused `import os` from src/labpkg/lint_gate.py."
+    evidence: ["F401", "Found 1 error"]
+    tags: [python, ruff, gate]
+
+  - id: py-mypy
+    workflow: py-mypy.yml
+    job: run
+    category: broken_test
+    cause: "The type gate fails: answer() is declared to return int but returns a str."
+    fix: "Return an int from answer() in src/labpkg/typing_gate.py, or change its annotation."
+    evidence: ["error: Incompatible return value type", "Found 1 error in 1 file"]
+    tags: [python, mypy, gate]
+
+  - id: py-modnf
+    workflow: py-modnf.yml
+    job: run
+    category: dependency
+    cause: "labpkg.cli imports requests, which is not declared in pyproject.toml."
+    fix: "Add requests to [project].dependencies in python/pyproject.toml."
+    evidence: ["ModuleNotFoundError: No module named 'requests'"]
+    tags: [python, uv]
+    captures: 2
+
+  - id: py-resolve
+    workflow: py-resolve.yml
+    job: run
+    category: dependency
+    cause: "requests==2.32.3 needs urllib3>=1.21.1, but the project requires urllib3<1.21."
+    fix: "Drop or relax the urllib3<1.21 constraint in python-conflict/pyproject.toml."
+    evidence: ["No solution found when resolving dependencies", "we can conclude"]
+    tags: [python, uv, resolver]
+
+  - id: pip-no-dist
+    workflow: pip-no-dist.yml
+    job: run
+    category: dependency
+    cause: "The package cicd-doctor-lab-does-not-exist is not on PyPI."
+    fix: "Fix the package name, or configure the private index that hosts it."
+    evidence: ["No matching distribution found for cicd-doctor-lab-does-not-exist"]
+    tags: [python, pip]
+
+  - id: docker-base
+    workflow: docker-base.yml
+    job: run
+    category: dependency
+    cause: "The base image python:3.99-slim does not exist."
+    fix: "Use an existing tag in FROM, for example python:3.13-slim."
+    evidence: ["python:3\\.99-slim.*not found"]
+    tags: [docker]
+
+  - id: tf-init
+    workflow: tf-init.yml
+    job: run
+    category: dependency
+    cause: "terraform init cannot find the provider hashicorp/cicd-doctor-lab-does-not-exist."
+    fix: "Fix the provider source in terraform/init/main.tf."
+    evidence: ["Failed to query available provider packages"]
+    tags: [terraform]
+
+  - id: dns
+    workflow: dns.yml
+    job: run
+    category: network
+    cause: "The host cicd-doctor-lab.invalid cannot be resolved."
+    fix: "Use a host name that exists (the .invalid domain never resolves)."
+    evidence: ["Could not resolve host: cicd-doctor-lab.invalid"]
+    tags: [network, curl]
+    captures: 2
+
+  - id: conn-refused
+    workflow: conn-refused.yml
+    job: run
+    category: network
+    cause: "Nothing listens on 127.0.0.1:9, so the connection is refused."
+    fix: "Start the service before connecting (a service container or a background step)."
+    evidence: ["Connection refused"]
+    tags: [network, python]
+
+  - id: missing-input
+    workflow: missing-input.yml
+    job: run
+    category: config_or_secrets
+    cause: "actions/github-script requires the `script` input, which the step does not set."
+    fix: "Add `with: script: ...` to the actions/github-script step."
+    evidence: ["Input required and not supplied: script"]
+    tags: [actions]
+
+  - id: secret-misspelled
+    workflow: secret-misspelled.yml
+    job: run
+    category: config_or_secrets
+    cause: "The secret LAB_DEPLOY_TOKNE is misspelled, so TOKEN is empty."
+    fix: "Use the right secret name in the workflow (LAB_DEPLOY_TOKEN) and define it."
+    evidence: ["TOKEN: Error: the deploy token is empty or not set"]
+    tags: [secrets]
+
+  - id: docker-copy
+    workflow: docker-copy.yml
+    job: run
+    category: config_or_secrets
+    cause: "The Dockerfile copies requirements-missing.txt, which is not in the build context."
+    fix: "Add the file to docker/copy-missing/, or fix the path in the COPY instruction."
+    evidence: ["requirements-missing\\.txt.*not found"]
+    tags: [docker]
+
+  - id: tf-validate
+    workflow: tf-validate.yml
+    job: run
+    category: config_or_secrets
+    cause: "terraform_data has no argument named bogus."
+    fix: "Remove `bogus = 1` from terraform/validate/main.tf."
+    evidence: ["Error: Unsupported argument"]
+    tags: [terraform]
+
+  - id: aws-no-credentials
+    workflow: aws-no-credentials.yml
+    job: run
+    category: config_or_secrets
+    cause: "The AWS CLI runs without any credentials configured."
+    fix: "Configure credentials first, with aws-actions/configure-aws-credentials and OIDC."
+    evidence: ["Unable to locate credentials"]
+    tags: [aws]
+
+  - id: job-timeout
+    workflow: job-timeout.yml
+    job: run
+    category: timeout
+    cause: "The job's timeout-minutes (1) is shorter than the 5-minute sleep."
+    fix: "Raise the job's timeout-minutes, or make the work shorter."
+    evidence: ["has exceeded the maximum execution time"]
+    tags: [actions, timeout]
+
+  - id: step-timeout
+    workflow: step-timeout.yml
+    job: run
+    category: timeout
+    cause: "The step's timeout-minutes (1) is shorter than the 5-minute sleep."
+    fix: "Raise the step's timeout-minutes, or make the work shorter."
+    evidence: ["has timed out after|The operation was canceled"]
+    tags: [actions, timeout]
+
+  - id: oom-137
+    workflow: oom-137.yml
+    job: run
+    category: infra_or_deploy
+    cause: "The container is limited to 64 MB and the process allocates 512 MB: it is killed."
+    fix: "Raise the container's memory limit, or allocate less."
+    evidence: ["exit code 137"]
+    tags: [docker, memory]
+
+  - id: disk-full
+    workflow: disk-full.yml
+    job: run
+    category: infra_or_deploy
+    cause: "The 8 MB tmpfs fills up while dd writes 64 MB."
+    fix: "Write less, or give the step more disk."
+    evidence: ["No space left on device"]
+    tags: [disk]
+
+  - id: flaky-random
+    workflow: flaky-random.yml
+    job: run
+    category: flaky
+    cause: "test_coin_flip depends on a random number and fails about half of the time."
+    fix: "Seed the random generator or remove the randomness from the test."
+    evidence: ["FAILED tests/test_flaky_random.py"]
+    flaky: true
+    tags: [python, pytest, flaky]
+
+  - id: flaky-timing
+    workflow: flaky-timing.yml
+    job: run
+    category: flaky
+    cause: "test_fast_enough asserts a 50 ms budget around a random sleep of up to 100 ms."
+    fix: "Remove the timing assertion or make the budget independent of the sleep."
+    evidence: ["FAILED tests/test_flaky_timing.py"]
+    flaky: true
+    tags: [python, pytest, flaky]
+
+  - id: opaque-exit
+    workflow: opaque-exit.yml
+    job: run
+    category: unknown
+    cause: "scripts/opaque.sh exits with code 3 without saying why."
+    fix: "Make the script report what failed."
+    evidence: ["Process completed with exit code 3"]
+    tags: [shell]
+
+  - id: obscure-tool
+    workflow: obscure-tool.yml
+    job: run
+    category: unknown
+    cause: "An in-house tool fails with its own error code E9921."
+    fix: "Look up E9921 in the tool's documentation."
+    evidence: ["E9921: the frobnicator rejected the manifest"]
+    tags: [python]

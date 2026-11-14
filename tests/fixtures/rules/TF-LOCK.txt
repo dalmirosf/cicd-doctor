@@ -1,0 +1,7 @@
+=== positive: locked state
+│ Error: Error acquiring the state lock
+│
+│ Error message: ConditionalCheckFailedException: The conditional request failed
+=== negative: the lock is taken and released
+Acquiring state lock. This may take a few moments...
+Releasing state lock. This may take a few moments...

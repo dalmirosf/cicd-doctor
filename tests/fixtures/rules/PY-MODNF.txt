@@ -1,0 +1,10 @@
+=== positive: an undeclared import
+# expect-cause: requests
+Traceback (most recent call last):
+  File "/home/runner/work/widgets/widgets/src/widgets/cli.py", line 3, in <module>
+    import requests
+ModuleNotFoundError: No module named 'requests'
+##[error]Process completed with exit code 1.
+=== negative: the module is installed
+Successfully installed requests-2.32.3
+import requests  # a ModuleNotFoundError here is handled below

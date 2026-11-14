@@ -1,0 +1,11 @@
+=== positive: pip
+# expect-cause: cicd-doctor-lab-missing==9.9.9
+ERROR: Could not find a version that satisfies the requirement cicd-doctor-lab-missing==9.9.9 (from versions: none)
+ERROR: No matching distribution found for cicd-doctor-lab-missing==9.9.9
+=== positive: uv
+# expect-cause: cicd-doctor-lab-missing
+  × No solution found when resolving dependencies:
+  ╰─▶ Because cicd-doctor-lab-missing was not found in the package registry and your project depends on cicd-doctor-lab-missing, we can conclude that your project's requirements are unsatisfiable.
+=== negative: an index lookup that worked
+Looking in indexes: https://pypi.org/simple
+Found existing installation: requests 2.31.0

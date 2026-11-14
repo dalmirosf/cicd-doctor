@@ -1,0 +1,9 @@
+=== positive: shutdown signal
+##[error]The runner has received a shutdown signal. This can happen when the runner service is stopped, or a manually started runner is canceled.
+=== positive: disk full
+OSError: [Errno 28] No space left on device: '/home/runner/work/x/x/dist/big.whl'
+=== positive: lost runner
+##[error]The self-hosted runner: runner-1 lost communication with the server.
+=== negative: a disk report
+Disk check: 14 GB free, plenty of space left on device /dev/root
+##[error]Process completed with exit code 1.

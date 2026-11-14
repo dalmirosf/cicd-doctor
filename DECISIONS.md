@@ -76,6 +76,8 @@ New decisions are appended. A superseded decision is marked `Superseded by D-NN`
 | D-57 | Token counting goes through a `TokenCounter` port; tiktoken lives in an adapter; the budget is water-filled | Proposed |
 | D-58 | `core` selects the failed jobs and step; line numbers count in the retained log | Author request + Proposed |
 | D-59 | Redaction and signature details: order, thresholds, PEM spans, generated corpus, fixed-point normalisation | Proposed |
+| D-60 | Rule engine: per-rule priorities, context conditions, one match per rule, `core/analysis.py` | Proposed |
+| D-61 | Eval runner skeleton, lab repository sources and the `evals capture` command | Author request + Proposed |
 
 ---
 
@@ -614,3 +616,49 @@ In every case, the sticky comment is edited to show the resolution.
 **Why:** The corpus found a short planted password that the fixed threshold let through, and the property tests found two glued workspace paths that made `normalize` change its own output. The other points close gaps seen while writing the tests: a placeholder that a later rule would redact again, a UUID-shaped token, and Windows paths that would give one error two signatures.
 **Alternatives:** Keeping §9.2's fixed entropy threshold (short passwords leak); exempting UUIDs and hex everywhere (leaks UUID-shaped tokens); literal fake secrets in a fixture file (push protection may block the push, and scanners raise alerts).
 **Consequences:** More false positives after secret-named keys (a nine-character dictionary word with a digit after `password:` is redacted, and so is a code line such as `token = get_token()` quoted in a traceback), which D-12 accepts. The corpus is less readable as data, but each case states its kind, its line and the value that must disappear.
+
+## D-60 — Rule engine: per-rule priorities, context conditions, one match per rule, `core/analysis.py`
+**Origin:** Proposed
+**Decision:**
+- Each rule has its own priority. 3 is decisive: the run's own verdict or a cause nothing else explains (GHA-TIMEOUT, GHA-RUNNER-LOST, GHA-INPUT-REQUIRED, PY-NO-DIST, DOCKER-HUB-LIMIT, TF-LOCK, AWS-OIDC). 2 is a specific cause (most rules). 1 is a symptom or a fallback (PY-PYTEST-FAIL, GHA-CONN, GHA-CANCEL-TIMEOUT, DOCKER-RUN-FAIL). Matches are ranked by priority, then confidence, then earliest evidence line.
+- A rule fires once per excerpt. Its evidence is every matching line (at most 8). Its cause and fix templates take the first value of each named group over all matching lines, cut to 120 characters; a placeholder without a value uses the rule's default or `?`. Captured values are never re-read as templates.
+- Context conditions:
+  - `on_conclusion`: GHA-TIMEOUT also fires for a `timed_out` job with no matching line.
+  - `tail_patterns`: GHA-OOM's `Killed` only counts in the last 20 lines.
+  - `when`: PY-RUFF needs `ruff` in the step name or the excerpt.
+  - `refine`: PY-PYTEST-COLLECT becomes `dependency` when a `ModuleNotFoundError` is in the excerpt.
+- Patterns added to the §10 table:
+  - GHA-CANCEL-TIMEOUT: `has timed out after N minutes`.
+  - GHA-DNS: `Name or service not known`, `nodename nor servname provided`.
+  - GHA-CONN: `ECONNREFUSED`.
+  - PY-NO-DIST: uv's `Because X was not found in the package registry`.
+  - PY-MYPY: its `[code]` pattern is anchored at the end of the line.
+- Every rule pattern also flags error lines in the excerpt, so the lines a rule can match stay in it.
+- `core/analysis.py` (`analyze_jobs`) runs the offline part of the pipeline for the jobs of a run: the excerpts (one shared budget), the rules, the rules diagnosis and the signature, whose error type is the best rule id. The diagnose use case (P1c) and the eval runner both call it.
+
+**Why:** Priorities per ecosystem got wrong answers: a timeout or a missing package must win over a failing test that it caused, and a pytest `FAILED` line is usually a symptom. One match per rule keeps the evidence of a cause together. The added patterns are the forms the same errors take in tools the lab and the project use (uv, Python sockets, Node).
+**Alternatives:** Priority by ecosystem (generic < specific; ranks a test failure above the timeout that caused it); one match per line (scatters the evidence, ranks by repetition).
+**Consequences:** The priorities are judgement calls, which the confusion matrix of the lab and public cases will test. The step-timeout pattern is the expected GitHub message, not yet seen in a captured log; the first lab capture confirms or corrects it.
+
+## D-61 — Eval runner skeleton, lab repository sources and the `evals capture` command
+**Origin:** Author request (runner, lab workflows to publish and capture) + Proposed (the details)
+**Decision:**
+- `evals/` is a top-level package run as `python -m evals`.
+  - `run` loads `evals/cases/<source>/*`, runs the variants (`rules` today; `all` runs what exists and lists the rest), and writes `evals/reports/<date>-<sha>.{json,md}`.
+  - Metrics today: accuracy, per-category precision/recall/F1, macro-F1 over the categories with support, the confusion matrix, evidence kept in the excerpt and cited by the diagnosis, abstention, a calibration table, latency and cost.
+  - It fails with a clear message when there are no cases or the variant does not exist yet.
+- `case.yaml` gains `job_id` (the job of `log.txt`), `lab_case` (the `lab/cases.yaml` entry, shared by several captures of one failure) and `captured_at`.
+- `lab/` holds the lab repository sources:
+  - 23 `workflow_dispatch` workflows covering the 8 categories, at least 2 each, with `contents: read` and a timeout;
+  - a small Python project, two Dockerfiles, two Terraform folders and two scripts;
+  - `cases.yaml`, which labels each case (category, cause, fix, evidence regexes, how many runs to capture).
+- No case needs a secret or a cloud account. A real AWS `AccessDenied` is left out, and `aws-no-credentials` stands in for it. `lab/` is excluded from ruff, mypy and pre-commit, because it fails them on purpose.
+- `python -m evals capture` (one run, or `--all`) uses the user's `gh` login:
+  - it downloads the jobs of the attempt and the failed job's log, redacts the log, and keeps only the job and step fields the pipeline reads;
+  - it finds the evidence line numbers in the failed step with the manifest's regexes;
+  - it writes the case directory. It never prints log content and skips runs it already captured.
+- The acceptance tests over `evals/cases/lab` (evidence lines in the excerpt, ≤ 6,000 tokens, one signature per repeated failure, different signatures across failures) are written and skip while no case is captured.
+
+**Why:** The labels come from the person who wrote the failure, and the capture keeps them next to a real log without hand work. Capture-time redaction keeps fake or real tokens out of the repository. `workflow_dispatch` only means that publishing the lab costs nothing and fails nothing by itself.
+**Alternatives:** Synthetic logs as lab cases (no real log formats, so they would only test our own assumptions); recording the logs by hand (slow, and evidence line numbers are easy to get wrong); a separate capture script under `scripts/` (one more entry point to learn).
+**Consequences:** The P1b criteria that name lab fixtures stay open until the lab is published, run and captured. The capture depends on the GitHub CLI being installed and logged in.

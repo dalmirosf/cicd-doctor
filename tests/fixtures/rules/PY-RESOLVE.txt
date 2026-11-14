@@ -1,0 +1,8 @@
+=== positive: uv
+  × No solution found when resolving dependencies:
+  ╰─▶ Because requests==2.32.3 depends on urllib3>=1.21.1,<3 and your project depends on urllib3<1.21, we can conclude that your project's requirements are unsatisfiable.
+=== positive: pip
+ERROR: ResolutionImpossible: for help visit https://pip.pypa.io/en/latest/topics/dependency-resolution/#dealing-with-dependency-conflicts
+=== negative: resolution worked
+Resolved 14 packages in 3ms
+No conflicts found when resolving dependencies

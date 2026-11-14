@@ -1,0 +1,5 @@
+=== positive: a name removed in a new release
+# expect-cause: soft_unicode
+ImportError: cannot import name 'soft_unicode' from 'markupsafe' (/home/runner/work/x/x/.venv/lib/python3.13/site-packages/markupsafe/__init__.py)
+=== negative: an optional import handled
+Handled ImportError for the optional dependency 'ujson', falling back to json

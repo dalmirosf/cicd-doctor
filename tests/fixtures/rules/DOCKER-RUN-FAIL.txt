@@ -1,0 +1,9 @@
+=== positive: a RUN step failed
+# expect-cause: exit code 2
+#8 [4/4] RUN make build
+#8 0.512 make: *** No rule to make target 'build'.  Stop.
+#8 ERROR: process "/bin/sh -c make build" did not complete successfully: exit code: 2
+ERROR: failed to solve: process "/bin/sh -c make build" did not complete successfully: exit code: 2
+=== negative: a RUN step that worked
+#8 [4/4] RUN make build
+#8 DONE 3.2s

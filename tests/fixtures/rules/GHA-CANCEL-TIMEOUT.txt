@@ -1,0 +1,10 @@
+=== positive: a step-level timeout-minutes
+# step: Run sleep 600
+sleeping for 600 seconds
+##[error]The action 'Run sleep 600' has timed out after 1 minutes.
+=== positive: a cancelled operation in a failed job
+Running long migration...
+##[error]The operation was canceled.
+=== negative: a cancellation mentioned in the output
+Operation was cancelled by the user in a previous attempt, retrying
+##[error]Process completed with exit code 1.

@@ -1,0 +1,8 @@
+=== positive: push denied
+The push refers to repository [ghcr.io/acme/app]
+denied: requested access to the resource is denied
+=== positive: no credentials
+Error response from daemon: Head "https://registry.example.com/v2/app/manifests/latest": unauthorized: authentication required
+=== negative: login worked
+Login Succeeded
+The push refers to repository [ghcr.io/acme/app]

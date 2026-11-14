@@ -1,0 +1,8 @@
+=== positive: refused
+ConnectionRefusedError: [Errno 111] Connection refused
+##[error]Process completed with exit code 1.
+=== positive: reset
+npm error code ECONNRESET
+=== negative: a connection that worked after a retry
+Retrying after a slow connection (attempt 1/3)... connected
+Connection established to db:5432

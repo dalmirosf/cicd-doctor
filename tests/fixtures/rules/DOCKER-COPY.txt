@@ -1,0 +1,9 @@
+=== positive: BuildKit
+#7 [3/4] COPY requirements-dev.txt /app/
+#7 ERROR: failed to calculate checksum of ref 0f3d9c2e::q7w8e9r0: "/requirements-dev.txt": not found
+ERROR: failed to solve: failed to compute cache key: failed to calculate checksum of ref 0f3d9c2e::q7w8e9r0: "/requirements-dev.txt": not found
+=== positive: the legacy builder
+COPY failed: file not found in build context or excluded by .dockerignore: stat requirements-dev.txt: file does not exist
+=== negative: a COPY that worked
+#7 [3/4] COPY requirements.txt /app/
+#7 DONE 0.1s

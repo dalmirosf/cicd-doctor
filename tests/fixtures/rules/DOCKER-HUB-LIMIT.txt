@@ -1,0 +1,5 @@
+=== positive: anonymous pull limit
+Error response from daemon: toomanyrequests: You have reached your pull rate limit. You may increase the limit by authenticating and upgrading: https://www.docker.com/increase-rate-limit
+=== negative: a pull that worked
+latest: Pulling from library/python
+Status: Downloaded newer image for python:3.13-slim

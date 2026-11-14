@@ -1,0 +1,9 @@
+=== positive: curl
+curl: (6) Could not resolve host: cicd-doctor-lab.invalid
+##[error]Process completed with exit code 6.
+=== positive: npm
+npm error request to https://registry.npmjs.org/left-pad failed, reason: getaddrinfo EAI_AGAIN registry.npmjs.org
+=== positive: Python
+socket.gaierror: [Errno -2] Name or service not known
+=== negative: resolution worked
+Resolving host api.example.com ... done (10.0.0.12)
