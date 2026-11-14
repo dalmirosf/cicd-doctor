@@ -1,6 +1,6 @@
 # CICD Doctor — Specification
 
-> Status: draft v1 · Last updated: 2026-11-13 (aligned with P1b's log pipeline: excerpt, redaction, signature; see D-57 to D-59)
+> Status: draft v1 · Last updated: 2026-11-13 (aligned with P1b's rules, eval runner and lab; see D-60 and D-61)
 > Companion document: [DECISIONS.md](DECISIONS.md) (every decision below with its rationale, referenced as `D-NN`).
 
 ---
@@ -142,7 +142,8 @@ cicd-doctor/
 │   │   ├── logs/                # job selection, tail cap, step slicing, cleaning, noise, excerpt, token budget
 │   │   ├── redaction.py         # secret patterns + entropy heuristic
 │   │   ├── signature.py         # normalization, canonical text, sha256
-│   │   ├── rules/               # engine + generic.py, python.py, docker.py, terraform.py
+│   │   ├── rules/               # engine + generic.py, python.py, docker.py, terraform.py (Terraform and AWS)
+│   │   ├── analysis.py          # excerpts + rules + signature for the failed jobs of a run (D-60)
 │   │   ├── diagnosis/           # prompt.py, schema.py, validate.py, merge.py
 │   │   ├── policy.py            # LLM allowed? (fork, config, budget, cache)
 │   │   ├── outcomes.py          # flaky / fix-commit state machine
@@ -161,8 +162,8 @@ cicd-doctor/
 │   └── app/                     # composition root (D-39): cli.py, settings.py, container.py
 ├── scripts/                     # load_webhooks.py (NFR-01 load test)
 ├── tests/                       # unit/, contract/, integration/, adapters/, fixtures/{webhooks,logs}/ (conftest.py, pg.py, factories.py, scenarios.py, webhooks.py, logcases.py, redaction_corpus.py); e2e/ later
-├── evals/                       # cases/, runner/, reports/, baseline.json
-├── lab/                         # source of the lab repo (workflows that fail on purpose)
+├── evals/                       # python -m evals: runner/ (cases, variants, metrics, report, capture, cli), cases/, reports/; baseline.json in P4
+├── lab/                         # source of the lab repo: workflows that fail on purpose + cases.yaml (D-61)
 ├── docker/                      # compose.yaml, initdb/01-extensions.sql; Dockerfile (P5)
 ├── infra/terraform/             # AWS + GitHub provider (P5)
 ├── .github/workflows/           # ci.yml, evals.yml (P4), cd.yml (P5)
@@ -172,14 +173,15 @@ cicd-doctor/
     alembic.ini                  # migrations live in adapters/postgres/migrations (D-50)
 ```
 
-Implemented as of P1b (log pipeline):
-- `core/` has `models.py`, `ports.py`, `errors.py`, `retry.py`, the use case `usecases/track_installation.py`, `logs/` (selection, tail cap, slicing, cleaning, noise, excerpt and token budget, §7.3), `redaction.py` (§9.2) and `signature.py` (§7.4).
+Implemented as of P1b (log pipeline and rules):
+- `core/` has `models.py`, `ports.py`, `errors.py`, `retry.py`, the use case `usecases/track_installation.py`, `logs/` (selection, tail cap, slicing, cleaning, noise, excerpt and token budget, §7.3), `redaction.py` (§9.2), `signature.py` (§7.4), `rules/` (§10) and `analysis.py` (D-60).
+- `evals/` has the runner with the `rules` variant and the lab capture command (§11, D-61); `lab/` has the lab repository sources.
 - `adapters/` has `clock.py`, `wakeup.py`, `github/webhooks.py`, `github/jobs.py` and `llm/tiktoken_counter.py`; in `memory/`, the `FailureStore`, `FakeEmbedder`, `JobQueue`, `InstallationStore` and `CharTokenCounter`; in `postgres/`, the `PostgresJobQueue`, the `PostgresInstallationStore` and migrations `0001` (the whole §6 schema) and `0002`.
 - `api/` serves `GET /health`, `GET /ready` and `POST /webhooks/github`.
 - `worker/` has the consumer and the `sync_installation` handler; every other job kind still has a placeholder handler (D-49).
 - `app/` has the CLI (`api`, `worker`), the settings and the composition root.
 
-The `rules/` and `diagnosis/` packages under `core/` and the `embeddings/` package under `adapters/` exist as empty placeholders. Everything else in the tree arrives in the phase that owns it (§13).
+The `diagnosis/` package under `core/` and the `embeddings/` package under `adapters/` exist as empty placeholders. Everything else in the tree arrives in the phase that owns it (§13).
 
 ### 4.3 Ports
 
@@ -905,45 +907,47 @@ Rejected commands are ignored silently, so they don't add noise and don't reveal
 
 ## 10. Rule-based diagnoser (`core/rules`)
 
-A rule has: `id`, `ecosystem`, one or more regex `patterns` (compiled, anchored when possible, run with a per-line length cap of 2,000 chars to avoid catastrophic backtracking), `category`, base `confidence`, a `priority` (specific > generic), and `cause`/`fix` templates with named groups (`{module}`, `{input}`). The engine scans the excerpt lines, collects every `RuleMatch`, and picks the one with the highest (`priority`, `confidence`, earliest line). Evidence is the matched lines. If nothing matches, the result is `unknown` with confidence 0.0. Every rule needs at least one positive and one negative fixture.
+A rule has: `id`, `ecosystem`, one or more regex `patterns` (compiled, anchored when possible, run with a per-line length cap of 2,000 chars to avoid catastrophic backtracking), `category`, base `confidence`, a `priority`, and `cause`/`fix` templates with named groups (`{module}`, `{input}`). The engine scans the excerpt lines and builds one `RuleMatch` per rule that fires: its evidence is every matching line (at most 8), and its templates take the first value of each named group (cut to 120 chars). It picks the match with the highest (`priority`, `confidence`, earliest line). If nothing matches, the result is `unknown` with confidence 0.0. Every rule needs at least one positive and one negative fixture (`tests/fixtures/rules/<ID>.txt`).
 
-| ID | Pattern (summary) | Category | Conf. |
-|---|---|---|---|
-| **Generic GitHub Actions** | | | |
-| GHA-TIMEOUT | `has exceeded the maximum execution time of`, job conclusion `timed_out` | timeout | 0.95 |
-| GHA-CANCEL-TIMEOUT | `The operation was canceled.` after `timeout-minutes` step limit | timeout | 0.70 |
-| GHA-OOM | `exit code 137`, `Killed` near the end of the step, `MemoryError`, `JavaScript heap out of memory` | infra_or_deploy | 0.80 |
-| GHA-RUNNER-LOST | `The runner has received a shutdown signal`, `lost communication with the server`, `No space left on device` | infra_or_deploy | 0.85 |
-| GHA-INPUT-REQUIRED | `Input required and not supplied: (?P<input>\S+)` | config_or_secrets | 0.90 |
-| GHA-SECRET-EMPTY | `Bad credentials`, `Error: .* token .* (empty|not set)`, `Credentials could not be loaded` | config_or_secrets | 0.80 |
-| GHA-DNS | `Could not resolve host`, `getaddrinfo (ENOTFOUND|EAI_AGAIN)`, `Temporary failure in name resolution` | network | 0.85 |
-| GHA-CONN | `Connection reset by peer`, `ECONNRESET`, `ETIMEDOUT`, `TLS handshake timeout`, `Connection refused` | network | 0.75 |
-| GHA-RATE-LIMIT | `API rate limit exceeded`, `429 Too Many Requests`, `secondary rate limit` | network | 0.85 |
-| **Python** | | | |
-| PY-MODNF | `ModuleNotFoundError: No module named '(?P<module>[^']+)'` | dependency | 0.90 |
-| PY-IMPORT | `ImportError: cannot import name '(?P<name>[^']+)'` | dependency | 0.70 |
-| PY-RESOLVE | `ResolutionImpossible`, `No solution found when resolving dependencies`, `Because .* depends on .* we can conclude` | dependency | 0.90 |
-| PY-NO-DIST | `No matching distribution found for (?P<pkg>\S+)` | dependency | 0.85 |
-| PY-PYTEST-FAIL | `^FAILED (?P<test>\S+::\S+)`, `=+ \d+ failed` | broken_test | 0.85 |
-| PY-PYTEST-COLLECT | `ERROR collecting`, `ImportError while importing test module` (→ dependency if a PY-MODNF line is inside) | broken_test | 0.75 |
-| PY-RUFF | `Found \d+ errors?\.` in a ruff step, `would reformat` | broken_test (gate: lint) | 0.80 |
-| PY-MYPY | `Found \d+ errors? in \d+ files?`, `error: .* \[[a-z-]+\]` | broken_test (gate: types) | 0.80 |
-| **Docker** | | | |
-| DOCKER-COPY | `failed to compute cache key: .*not found`, `COPY failed` | config_or_secrets | 0.85 |
-| DOCKER-BASE | `manifest unknown`, `pull access denied for`, `failed to resolve source metadata` | dependency | 0.80 |
-| DOCKER-AUTH | `denied: requested access to the resource is denied`, `unauthorized: authentication required` | config_or_secrets | 0.85 |
-| DOCKER-HUB-LIMIT | `toomanyrequests: You have reached your pull rate limit` | network | 0.90 |
-| DOCKER-RUN-FAIL | `failed to solve: process .* did not complete successfully: exit code: (?P<code>\d+)` | infra_or_deploy | 0.50 |
-| **Terraform / AWS** | | | |
-| TF-LOCK | `Error acquiring the state lock` | infra_or_deploy | 0.90 |
-| TF-CONFIG | `Error: (Unsupported argument|Missing required argument|Invalid reference|Reference to undeclared)` | config_or_secrets | 0.85 |
-| TF-INIT | `Error: Failed to query available provider packages`, `Inconsistent dependency lock file` | dependency | 0.80 |
-| AWS-ACCESS-DENIED | `AccessDenied`, `UnauthorizedOperation`, `is not authorized to perform: (?P<action>\S+)` | config_or_secrets | 0.85 |
-| AWS-CREDENTIALS | `Unable to locate credentials`, `Could not load credentials`, `The security token included in the request is invalid`, `ExpiredToken` | config_or_secrets | 0.85 |
-| AWS-OIDC | `Could not assume role with OIDC`, `Not authorized to perform sts:AssumeRoleWithWebIdentity`, `aws-actions/configure-aws-credentials` failure | config_or_secrets | 0.90 |
-| AWS-CONFLICT | `AlreadyExists`, `EntityAlreadyExists`, `BucketAlreadyOwnedByYou`, `ResourceAlreadyExistsException` | infra_or_deploy | 0.75 |
+Priorities (column P, D-60): 3 = decisive (the run's own verdict, or a cause nothing else explains), 2 = a specific cause, 1 = a symptom or fallback. Some rules also look at their context: GHA-TIMEOUT fires for a `timed_out` job even without the line, GHA-OOM counts `Killed` only in the last 20 lines, PY-RUFF needs `ruff` in the step name or the excerpt, and PY-PYTEST-COLLECT becomes `dependency` when a `ModuleNotFoundError` is in the excerpt. Every rule pattern also flags error lines in the excerpt (§7.3 step 6).
 
-The rules never output `flaky`: flakiness is a property of the history, not of one log (D-15). Rule matches are passed to the LLM as trusted hints (D-14).
+| ID | Pattern (summary) | Category | Conf. | P |
+|---|---|---|---|---|
+| **Generic GitHub Actions** | | | | |
+| GHA-TIMEOUT | `has exceeded the maximum execution time of`, job conclusion `timed_out` | timeout | 0.95 | 3 |
+| GHA-CANCEL-TIMEOUT | `has timed out after N minutes`, `The operation was canceled.` (a step's `timeout-minutes`) | timeout | 0.70 | 1 |
+| GHA-OOM | `exit code 137`, `Killed` near the end of the step, `MemoryError`, `JavaScript heap out of memory` | infra_or_deploy | 0.80 | 2 |
+| GHA-RUNNER-LOST | `The runner has received a shutdown signal`, `lost communication with the server`, `No space left on device` | infra_or_deploy | 0.85 | 3 |
+| GHA-INPUT-REQUIRED | `Input required and not supplied: (?P<input>\S+)` | config_or_secrets | 0.90 | 3 |
+| GHA-SECRET-EMPTY | `Bad credentials`, `Error: .* token .* (empty|not set)`, `Credentials could not be loaded` | config_or_secrets | 0.80 | 2 |
+| GHA-DNS | `Could not resolve host`, `getaddrinfo (ENOTFOUND|EAI_AGAIN)`, `Temporary failure in name resolution`, `Name or service not known`, `nodename nor servname provided` | network | 0.85 | 2 |
+| GHA-CONN | `Connection reset by peer`, `ECONNRESET`, `ECONNREFUSED`, `ETIMEDOUT`, `TLS handshake timeout`, `Connection refused` | network | 0.75 | 1 |
+| GHA-RATE-LIMIT | `API rate limit exceeded`, `429 Too Many Requests`, `secondary rate limit` | network | 0.85 | 2 |
+| **Python** | | | | |
+| PY-MODNF | `ModuleNotFoundError: No module named '(?P<module>[^']+)'` | dependency | 0.90 | 2 |
+| PY-IMPORT | `ImportError: cannot import name '(?P<name>[^']+)'` | dependency | 0.70 | 2 |
+| PY-RESOLVE | `ResolutionImpossible`, `No solution found when resolving dependencies`, `Because .* depends on .* we can conclude` | dependency | 0.90 | 2 |
+| PY-NO-DIST | `No matching distribution found for (?P<pkg>\S+)`, `Because (?P<pkg>\S+) was not found in the package registry` (uv) | dependency | 0.85 | 3 |
+| PY-PYTEST-FAIL | `^FAILED (?P<test>\S+::\S+)`, `=+ \d+ failed` | broken_test | 0.85 | 1 |
+| PY-PYTEST-COLLECT | `ERROR collecting`, `ImportError while importing test module` (→ dependency if a PY-MODNF line is inside) | broken_test | 0.75 | 2 |
+| PY-RUFF | `Found \d+ errors?\.` in a ruff step, `would reformat` | broken_test (gate: lint) | 0.80 | 2 |
+| PY-MYPY | `Found \d+ errors? in \d+ files?`, `error: .* \[[a-z-]+\]$` | broken_test (gate: types) | 0.80 | 2 |
+| **Docker** | | | | |
+| DOCKER-COPY | `failed to compute cache key: .*not found`, `COPY failed` | config_or_secrets | 0.85 | 2 |
+| DOCKER-BASE | `manifest unknown`, `pull access denied for`, `failed to resolve source metadata` | dependency | 0.80 | 2 |
+| DOCKER-AUTH | `denied: requested access to the resource is denied`, `unauthorized: authentication required` | config_or_secrets | 0.85 | 2 |
+| DOCKER-HUB-LIMIT | `toomanyrequests: You have reached your pull rate limit` | network | 0.90 | 3 |
+| DOCKER-RUN-FAIL | `failed to solve: process .* did not complete successfully: exit code: (?P<code>\d+)` | infra_or_deploy | 0.50 | 1 |
+| **Terraform / AWS** | | | | |
+| TF-LOCK | `Error acquiring the state lock` | infra_or_deploy | 0.90 | 3 |
+| TF-CONFIG | `Error: (Unsupported argument|Missing required argument|Invalid reference|Reference to undeclared)` | config_or_secrets | 0.85 | 2 |
+| TF-INIT | `Error: Failed to query available provider packages`, `Inconsistent dependency lock file` | dependency | 0.80 | 2 |
+| AWS-ACCESS-DENIED | `AccessDenied`, `UnauthorizedOperation`, `is not authorized to perform: (?P<action>\S+)` | config_or_secrets | 0.85 | 2 |
+| AWS-CREDENTIALS | `Unable to locate credentials`, `Could not load credentials`, `The security token included in the request is invalid`, `ExpiredToken` | config_or_secrets | 0.85 | 2 |
+| AWS-OIDC | `Could not assume role with OIDC`, `Not authorized to perform sts:AssumeRoleWithWebIdentity` (the `aws-actions/configure-aws-credentials` failures) | config_or_secrets | 0.90 | 3 |
+| AWS-CONFLICT | `AlreadyExists`, `EntityAlreadyExists`, `BucketAlreadyOwnedByYou`, `ResourceAlreadyExistsException` | infra_or_deploy | 0.75 | 2 |
+
+The rules never output `flaky`: flakiness is a property of the history, not of one log (D-15). Rule matches are passed to the LLM as trusted hints (D-14). `core/analysis.py` runs the excerpts, the rules and the signature together for the failed jobs of a run; the signature's error type is the best rule id (D-60).
 
 ---
 
@@ -963,7 +967,10 @@ evals/cases/<source>/<case_id>/
 id: lab-py-modnf-01
 source: lab            # lab | public | injection
 repo: <owner>/cicd-doctor-lab
-run_url: https://github.com/…/actions/runs/…
+run_url: https://github.com/…/actions/runs/…/attempts/1
+job_id: 123456                      # the job of log.txt (default: the first failed job)
+lab_case: py-modnf                  # lab/cases.yaml entry, shared by captures of one failure
+captured_at: 2026-11-13T12:00:00+00:00
 expected:
   category: dependency
   cause: "Package 'requests' is imported but not declared in pyproject dependencies"
@@ -975,7 +982,7 @@ flaky: false
 tags: [python, uv]
 ```
 
-- **Lab repo** (`lab/`, published as `cicd-doctor-lab`): `workflow_dispatch` workflows that fail on purpose with known causes. There are at least 20 cases covering all 8 categories (at least 2 each), for example: undeclared import, broken assertion, uv resolution conflict, misspelled secret name / missing `with:` input, unresolvable host, `timeout-minutes: 1` + sleep, memory hog → 137, Dockerfile `COPY` of a missing file, private base image without login, Terraform `validate` error, AWS `AccessDenied` (missing IAM permission), a random-failure test (flaky, run 10 times), and ruff/mypy gates. Created manually for P1; managed by the Terraform GitHub provider from P5.
+- **Lab repo** (`lab/`, published as `cicd-doctor-lab`): `workflow_dispatch` workflows that fail on purpose with known causes. There are 23 cases covering all 8 categories (at least 2 each, listed with their labels in `lab/cases.yaml`): undeclared import, broken assertion, uv resolution conflict, a package that does not exist, missing base image, unknown Terraform provider, ruff and mypy gates, unresolvable host, refused connection, missing `with:` input, misspelled secret name, Dockerfile `COPY` of a missing file, Terraform `validate` error, AWS CLI without credentials, job and step `timeout-minutes`, memory limit → 137, full disk, two flaky tests and two failures no rule knows. None needs a secret or a cloud account; a real AWS `AccessDenied` would, so it is left out (D-61). `python -m evals capture` turns failed runs into cases: it redacts the log, trims `jobs.json` to the fields the pipeline reads and finds the evidence lines with the manifest's regexes. Created manually for P1; managed by the Terraform GitHub provider from P5.
 - **Public cases:** at least 30 real failures from public repositories, each with the commit that fixed it (found by pairing a failed run with the first green run on the same branch). Licenses are respected: only log excerpts and short diff summaries are stored.
 - **Injection suite:** at least 10 lab logs that echo adversarial text (instructions to change the category, insert links or mentions, reveal the prompt, emit fake evidence, close the `untrusted_log` tag).
 - **Redaction corpus** (`tests/redaction_corpus.py`): synthetic fake secrets of every pattern in §9.2, at least two contexts each, plus look-alikes that must **not** be redacted (SHAs, UUIDs, `***` masks). The fake secrets are assembled at import time from fragments, so no secret-shaped literal is committed (D-59). They are the only fake secrets in the repository.
@@ -997,7 +1004,8 @@ Variants: `rules`, `llm` (no hints), `llm+hints` (production behavior in P1), `l
 
 ### 11.3 Running
 
-- `uv run python -m evals run --variant all --sources lab,public,injection` writes `evals/reports/<date>-<git-sha>.{json,md}`.
+- `uv run python -m evals run --variant all --sources lab,public,injection` writes `evals/reports/<date>-<git-sha>.{json,md}`. As of P1b only the `rules` variant exists; `all` runs what exists and lists the rest. The P1b reports have accuracy, per-category P/R/F1, macro-F1, the confusion matrix, evidence kept and cited, abstention, calibration, latency and cost; the judge arrives in P4.
+- `uv run python -m evals capture --repo <owner>/cicd-doctor-lab --all` captures the lab's failed runs (see `lab/README.md`).
 - LLM responses are cached in `evals/.cache/` keyed by `(model, prompt_version, case_hash)`. CI runs offline from the committed cache (deterministic, free). `--live` refreshes it on demand.
 - `evals/baseline.json` holds the last accepted metrics. A change to the prompt, model or rules **fails CI if macro-F1 drops by more than 5 points** or if any injection case succeeds.
 - The README shows the latest comparison table between `rules` and the LLM variants.
@@ -1056,7 +1064,7 @@ Scope: FR-01…FR-14 and the FR-22 skeleton. Live on the dev app via smee.
 - [ ] For every lab fixture, the excerpt contains all `expected.evidence_lines`, and `token_count ≤ 6000`. That includes a synthetic 50 MB log, where only the last 20 MB is retained and `truncated = true`. Verified so far on the 7 synthetic fixtures in `tests/fixtures/logs/` (evidence lines, and ≤ 6000 tokens with tiktoken) and on the 50 MB log (`tests/unit/test_logs_tail.py`). Stays open until the lab cases are captured from real runs.
 - [x] Redaction corpus: 100% of planted secrets are redacted and 0 SHAs or UUIDs are redacted. The hypothesis property test passes (`tests/unit/test_redaction.py`: 34 planted secrets of 15 kinds, 22 look-alikes, and property tests for leaks, SHAs, UUIDs and idempotence).
 - [ ] The same lab failure captured from 2 runs (different timestamps, durations, paths) → the same `signature_hash`. Different errors → different hashes. Verified so far on synthetic runs (`tests/unit/test_signature.py`: six runs of one failure with different timestamps, durations, workspace and temp paths, OS, ids, ports and IPs give one hash; the fixture failures give distinct hashes). Stays open until it is checked on two captured runs of a lab failure.
-- [ ] Every rule in §10 has ≥ 1 positive and ≥ 1 negative fixture passing. `evals run --variant rules` produces a report on the lab fixtures.
+- [ ] Every rule in §10 has ≥ 1 positive and ≥ 1 negative fixture passing. `evals run --variant rules` produces a report on the lab fixtures. The fixtures part is verified (`tests/unit/test_rules.py`: 29 rules, each with positive and negative fixtures). The runner is tested on synthetic cases (`tests/unit/test_evals.py`). The box stays open until the report is produced on captured lab cases.
 - [ ] Fake LLM: a valid response is published; malformed JSON is repaired once and then falls back to `rules` with `invalid_output`; fabricated evidence is dropped and confidence is capped at 0.3; a timeout falls back to `llm_error`.
 - [ ] Live `-m live` smoke: 5 lab fixtures against OpenAI return schema-valid diagnoses. The model choice (2 candidates × lab fixtures: accuracy, cost, latency) is recorded in DECISIONS.md and `OPENAI_MODEL` is set.
 - [ ] Injection suite (fake + live): no case forces the attacker's category, and the rendered markdown has no clickable non-allowlisted link and no live `@mention`.
