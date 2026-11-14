@@ -73,6 +73,9 @@ New decisions are appended. A superseded decision is marked `Superseded by D-NN`
 | D-54 | Installation events are applied by the worker through a `sync_installation` job | Author request + Proposed |
 | D-55 | The API receives its dependencies; uvicorn starts it from the composition root | Proposed |
 | D-56 | Webhook request policy: check order, what is stored, timeouts, normalised payloads | Proposed |
+| D-57 | Token counting goes through a `TokenCounter` port; tiktoken lives in an adapter; the budget is water-filled | Proposed |
+| D-58 | `core` selects the failed jobs and step; line numbers count in the retained log | Author request + Proposed |
+| D-59 | Redaction and signature details: order, thresholds, PEM spans, generated corpus, fixed-point normalisation | Proposed |
 
 ---
 
@@ -569,3 +572,45 @@ In every case, the sticky comment is edited to show the resolution.
 **Why:** Each step costs more than the one before it, so cheap rejections come first and nothing is written for an unauthenticated or useless request. The 5 s bound keeps the answer under GitHub's 10 s timeout (NFR-01): if the commit went through anyway, a redelivery is a harmless duplicate (D-06). Storing less personal data in the queue narrows what a database leak exposes.
 **Alternatives:** Recording every verified delivery, including ignored ones (a fuller audit trail, but rows for events nobody acts on); storing the raw payload in the job (simpler now, but personal data in every row and a looser contract for the handlers); committing recorded real payloads (more realistic, but real names and e-mails in the repository).
 **Consequences:** The P1c diagnose handler reads `DiagnoseRunPayload` and must fetch anything else it needs from GitHub. An ignored delivery that is redelivered is ignored again, which is the intended outcome.
+
+## D-57 — Token counting goes through a `TokenCounter` port; tiktoken lives in an adapter; the budget is water-filled
+**Origin:** Proposed
+**Decision:**
+- `core/logs` counts tokens through a new port, `TokenCounter` (`count(text) -> int`). `adapters/llm/tiktoken_counter.py` implements it with tiktoken `o200k_base` (`encode_ordinary`, so special-token text in a log is plain text), loaded on first use. `adapters/memory/tokens.py` has `CharTokenCounter` (about 4 characters per token) for the offline tests.
+- An excerpt line costs the tokens of `L<number>: <text>\n`, the form the prompt shows it in (P1b, LLM part). `token_count` is the sum over the kept lines.
+- When the failed jobs of a run need more than `EXCERPT_MAX_TOKENS` together, the budget is split evenly and what a job does not use is shared again between the others (water-filling).
+- Lines longer than 2,000 characters are cut after redaction, with a `…[line truncated]` suffix.
+
+**Why:** tiktoken downloads its encoding file the first time it is used. That is network IO, which `core/` must not do (D-02), and it would make the offline fast suite depend on the network. A plain equal split would waste the share of a short excerpt while another job is cut.
+**Alternatives:** Importing tiktoken in `core/` (IO on a cold cache); vendoring the encoding file (several MB in the repository); estimating tokens from characters everywhere (the 6,000-token limit would only be approximate).
+**Consequences:** Tests that need real counts, such as the `token_count ≤ 6000` criterion, live in `tests/adapters/`, outside the fast suite, and need the network once on a cold cache. CI runs them. The diagnose use case (P1c) wires `TiktokenCounter`.
+
+## D-58 — `core` selects the failed jobs and step; line numbers count in the retained log
+**Origin:** Author request (selection in `core`, approved with the P1b plan) + Proposed (the details)
+**Decision:**
+- `LogSource.failed_jobs(run) -> list[FailedJob]` becomes `LogSource.jobs(run) -> list[WorkflowJob]`. The adapter returns every job of the attempt, normalised (`WorkflowJob`, `WorkflowStep`), and `core/logs/select.py` keeps the `failure` and `timed_out` jobs, earliest `completed_at` first (ties by job id), at most `LOG_MAX_JOBS`. The failed step is the first step with conclusion `failure`; when there is none (a timed-out job), the first `timed_out` or `cancelled` step; else the whole job log is used.
+- `FailedJob` gains `conclusion` (`failure` or `timed_out`, needed by GHA-TIMEOUT) and `step_started_at` / `step_completed_at` (needed to slice the step out of the log).
+- `adapters/github/jobs.py` parses the jobs API JSON, without HTTP. The P1c client and the `jobs.json` of the eval cases both use it. `runner_os` comes from the runner labels.
+- Line numbers are 1-based in the retained log. When the log was cut to its tail (`truncated = true`), they count from the first complete line of the tail, because the number of dropped lines is unknown. Renderers must not link those numbers to a line of GitHub's log view.
+- The retained tail starts at a complete line: the partial first line is dropped, unless the cut falls right after a newline.
+- `omitted` lists the ranges dropped before the first kept line and between kept lines, not after the last one (the excerpt keeps the end of the step).
+
+**Why:** Which jobs and which step to read is domain logic with edge cases (timed-out jobs have no failed step, ties, unfinished jobs) that belongs in unit-tested `core` code rather than in the HTTP adapter. The step times must travel with the job to slice the log.
+**Alternatives:** Selecting in the adapter (the port as first written); counting the lines of the dropped head to keep absolute line numbers (it means reading the whole log, which the `Range` request avoids).
+**Consequences:** A port changes before any adapter implements it, so nothing breaks. Evidence in a truncated excerpt links to the job, not to the line.
+
+## D-59 — Redaction and signature details: order, thresholds, PEM spans, generated corpus, fixed-point normalisation
+**Origin:** Proposed
+**Decision:**
+- Redaction order: structural patterns first (inline PEM, URL credentials, `Authorization` headers, `aws_secret_access_key`), then token shapes, then generic `key=value` assignments. Placeholders are never redacted again, so redaction is idempotent and a second pass counts nothing.
+- A value assigned to a secret-named key (`token=`, `"api_key": "…"`) is redacted whatever its shape, UUIDs and hex strings included (Codecov upload tokens are UUIDs). SHAs and UUIDs anywhere else are never touched.
+- Generic values are redacted when they have 20 or more characters, or an entropy of at least `min(3.5, log2(length) − 1)` bits per character. §9.2's fixed 3.5 bits cannot be reached by a value shorter than 12 characters (n characters carry at most log2 n bits each), so short passwords never matched. Variable references (`$X`, `${X}`, `%X%`), paths and values containing GitHub's `***` mask are skipped.
+- Multi-line PEM blocks are located over all the lines of the step, so a window that starts in the middle of a key still redacts it. A block without its `END` line runs while the lines look like PEM content (base64, headers, blank lines). Each redacted line of a block counts as one replacement.
+- In the excerpt, redaction runs on the windowed lines before tokens are counted and long lines are cut, not on every line of a 20 MB step. Nothing unredacted leaves `build_excerpts`.
+- The worker redacts `jobs.last_error` (completes D-49).
+- The redaction corpus (`tests/redaction_corpus.py`) assembles its fake secrets at import time from fragments and a seeded random generator. No secret-shaped literal is committed, so GitHub's secret scanning and push protection have nothing to flag.
+- Signature: `normalize` applies its rules until nothing changes, which makes it idempotent by construction (one pass can uncover a new match, such as two workspace paths glued together). Workspace paths become repository-relative with `/` separators, so Linux, macOS and Windows runs of one error share a hash. `[<ipv6>]:<port>` becomes `[<ip>]:<port>`. Digits glued to letters (`x64`, `py3`) are kept. When an excerpt has no error line, its last five non-blank lines stand in for the error lines in the canonical text.
+
+**Why:** The corpus found a short planted password that the fixed threshold let through, and the property tests found two glued workspace paths that made `normalize` change its own output. The other points close gaps seen while writing the tests: a placeholder that a later rule would redact again, a UUID-shaped token, and Windows paths that would give one error two signatures.
+**Alternatives:** Keeping §9.2's fixed entropy threshold (short passwords leak); exempting UUIDs and hex everywhere (leaks UUID-shaped tokens); literal fake secrets in a fixture file (push protection may block the push, and scanners raise alerts).
+**Consequences:** More false positives after secret-named keys (a nine-character dictionary word with a digit after `password:` is redacted, and so is a code line such as `token = get_token()` quoted in a traceback), which D-12 accepts. The corpus is less readable as data, but each case states its kind, its line and the value that must disappear.
