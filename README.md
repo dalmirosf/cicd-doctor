@@ -4,21 +4,23 @@ A GitHub App that explains *why* a GitHub Actions workflow run failed: it reads 
 failed jobs, redacts secrets, looks for similar past failures and publishes a structured diagnosis
 as a check run and a sticky PR comment.
 
-> **Status: Phase 1b (offline pipeline), in progress.** The signed webhook, the Postgres job queue
-> and the worker exist, and installations are tracked. The log pipeline (failed job selection,
-> redacted excerpt, error signature), the rule-based diagnoser and the eval runner exist and are
-> tested offline and on 24 cases captured from real lab runs (`evals/cases/lab`; the lab's
-> sources are in `lab/`). The LLM path exists too (policy, prompt, validation, budget, fallbacks,
-> the OpenAI client and the safe renderer) and is tested offline with a fake model and an
-> injection suite of 16 cases; it has not run against OpenAI yet (`pytest -m live` waits for an
-> `OPENAI_API_KEY`, and the model is chosen by a mini-eval, D-65). The GitHub client and the app
-> authentication, the log source, the reporter and the persistence exist (D-67 to D-76) and the
-> worker now runs them (D-74): a failed run becomes a `diagnose_run` job that is diagnosed and
-> published as a check run and a sticky comment. That is verified only against a fake GitHub and a
-> fake model (plus 19 sanitized responses of the real GitHub API in `tests/fixtures/github/`);
-> nothing has run against the real GitHub or OpenAI yet, so the live boxes of P1c stay open (the
-> runbook is "Live verification (P1c)" in `lab/README.md`) and the worker needs `GITHUB_APP_ID`
-> and `GITHUB_PRIVATE_KEY` to start.
+> **Status: Phase 1c done, verified live; the OpenAI parts still never run.** The signed webhook,
+> the Postgres job queue and the worker exist, and installations are tracked. The log pipeline
+> (failed job selection, redacted excerpt, error signature), the rule-based diagnoser and the eval
+> runner exist and are tested offline and on 24 cases captured from real lab runs
+> (`evals/cases/lab`; the lab's sources are in `lab/`). The LLM path exists too (policy, prompt,
+> validation, budget, fallbacks, the OpenAI client and the safe renderer) and is tested offline
+> with a fake model and an injection suite of 16 cases; it has not run against OpenAI yet
+> (`pytest -m live` waits for an `OPENAI_API_KEY`, `OPENAI_MODEL` is empty, and the model is chosen
+> by a mini-eval, D-65). The GitHub client and the app authentication, the log source, the reporter
+> and the persistence exist (D-67 to D-76) and the worker runs them (D-74): a failed run becomes a
+> `diagnose_run` job that is diagnosed and published as a check run and a sticky comment. On
+> 2026-11-16 that was verified against the real GitHub with the dev app, the lab and this
+> repository (SPEC §13, P1c): one check run and one comment per run and workflow, 9.4 s from the end
+> of the run to the comment in the measured case, and a re-run updates the same check run and the
+> same comment. The invalid-key and zero-budget fallbacks were checked live too. Still open: the PR
+> from a fork (an organization for the fork is missing; the offline tests cover it) and everything
+> that needs a real OpenAI key. The worker needs `GITHUB_APP_ID` and `GITHUB_PRIVATE_KEY` to start.
 > See [SPEC.md](SPEC.md) for the design and phases, and [DECISIONS.md](DECISIONS.md) for the
 > reasoning behind each decision.
 
@@ -52,7 +54,10 @@ at your smee channel, then, with the API running:
 npx smee-client --url https://smee.io/<your-channel> --target http://127.0.0.1:8000/webhooks/github
 ```
 
-A failed workflow run then shows up as a row in `webhook_deliveries` and a `diagnose_run` job.
+With the worker running too (`uv run cicd-doctor worker`, in its own terminal), a failed workflow run
+becomes a `diagnose_run` job that is diagnosed and published as a check run and a sticky comment.
+It shows up first as a row in `webhook_deliveries`. The step-by-step live check is "Live
+verification (P1c)" in [lab/README.md](lab/README.md).
 `uv run python scripts/load_webhooks.py --cleanup` measures the acknowledgement latency with 100
 signed deliveries (p99 must stay under 1 s).
 
