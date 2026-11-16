@@ -31,6 +31,12 @@ class Category(StrEnum):
     UNKNOWN = "unknown"
 
 
+# Why a rules diagnosis was published instead of an LLM one (SPEC §5, §8, §9.4).
+FallbackReason = Literal[
+    "llm_error", "invalid_output", "budget", "fork_policy", "config_off", "disabled"
+]
+
+
 class FailureStatus(StrEnum):
     OPEN = "open"
     RESOLVED_FLAKY = "resolved_flaky"
@@ -232,10 +238,7 @@ class Diagnosis(DomainModel):
     rule_ids: list[str] = Field(default_factory=list)
     model: str | None = None
     prompt_version: str | None = None
-    fallback_reason: (
-        Literal["llm_error", "invalid_output", "budget", "fork_policy", "config_off", "disabled"]
-        | None
-    ) = None
+    fallback_reason: FallbackReason | None = None
     evidence_verified: bool = True
 
 

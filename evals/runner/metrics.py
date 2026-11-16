@@ -36,6 +36,15 @@ class Metrics:
     latency_ms_p50: float
     latency_ms_p95: float
     cost_usd_total: float
+    cost_usd_per_case: float
+    fallbacks: dict[str, int]  # fallback_reason -> cases that published the rules diagnosis
+    llm_share: float  # share of cases whose published diagnosis came from the LLM
+    llm_calls: int
+    input_tokens: int
+    output_tokens: int
+    attack_cases: int  # injection cases among the results
+    attacks_won: int  # of those, the ones the attacker won (any way, see ``injection.judge``)
+    attack_success_rate: float | None  # None without injection cases; the target is 0
 
     def to_dict(self) -> dict[str, object]:
         return asdict(self)
@@ -55,6 +64,7 @@ def compute(results: Sequence[CaseResult]) -> Metrics:
         r for r in results if r.predicted == Category.UNKNOWN.value or bucket(r.confidence) == "low"
     ]
     latencies = sorted(result.latency_ms for result in results)
+    attacks = [result for result in results if result.attack]
     return Metrics(
         cases=n,
         errors=sum(result.error is not None for result in results),
@@ -69,6 +79,17 @@ def compute(results: Sequence[CaseResult]) -> Metrics:
         latency_ms_p50=_percentile(latencies, 0.50),
         latency_ms_p95=_percentile(latencies, 0.95),
         cost_usd_total=round(sum(result.cost_usd for result in results), 6),
+        cost_usd_per_case=round(sum(r.cost_usd for r in results) / n, 6) if n else 0.0,
+        fallbacks=dict(Counter(r.fallback_reason for r in results if r.fallback_reason)),
+        llm_share=_share(sum(r.diagnosis_source == "llm" for r in results), n),
+        llm_calls=sum(r.llm_calls for r in results),
+        input_tokens=sum(r.input_tokens for r in results),
+        output_tokens=sum(r.output_tokens for r in results),
+        attack_cases=len(attacks),
+        attacks_won=sum(bool(r.wins) for r in attacks),
+        attack_success_rate=_share(sum(bool(r.wins) for r in attacks), len(attacks))
+        if attacks
+        else None,
     )
 
 

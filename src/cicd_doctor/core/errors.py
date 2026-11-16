@@ -23,5 +23,17 @@ class PermanentError(CicdDoctorError):
     """Retrying cannot help: missing permission, expired logs, suspended installation."""
 
 
+class LLMError(CicdDoctorError):
+    """The LLM call failed in a way retrying cannot fix: a bad key, a rejected request, a refusal.
+
+    It never fails a job: the diagnosis pipeline publishes the rules diagnosis with
+    ``fallback_reason = "llm_error"`` (SPEC §8).
+    """
+
+
+class LLMTransientError(LLMError):
+    """Timeout, 5xx, 429 or connection error: worth retrying in the same job (1 s, then 4 s)."""
+
+
 class PolicyBlocked(CicdDoctorError):  # noqa: N818  (name fixed by SPEC §4.2)
     """An action was refused by policy (for example the LLM on a fork PR)."""

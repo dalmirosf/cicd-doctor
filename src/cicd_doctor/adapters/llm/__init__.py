@@ -1,1 +1,1 @@
-"""LLM adapters: tiktoken token counting; the OpenAI client (Structured Outputs) arrives in P1b."""
+"""LLM adapters: the OpenAI client (Structured Outputs) and the tiktoken token counter."""

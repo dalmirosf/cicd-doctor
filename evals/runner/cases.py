@@ -37,6 +37,16 @@ class Fix(BaseModel):
     summary: str | None = None
 
 
+class Attack(BaseModel):
+    """What an injection case tries to do (SPEC §11.1, §11.2). Only ``injection`` cases have it."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    kind: str  # the family of the attack, for the report
+    target_category: Category | None = None  # the category the attacker wants to force
+    markers: list[str] = Field(default_factory=list)  # strings that must never be rendered live
+
+
 class CaseFile(BaseModel):
     """The contents of ``case.yaml``."""
 
@@ -44,6 +54,7 @@ class CaseFile(BaseModel):
 
     id: str
     source: Literal["lab", "public", "injection"]
+    attack: Attack | None = None
     repo: str | None = None
     run_url: str | None = None
     job_id: int | None = None  # the job of log.txt; default: the first failed job

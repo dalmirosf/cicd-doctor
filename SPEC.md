@@ -144,25 +144,25 @@ cicd-doctor/
 │   │   ├── signature.py         # normalization, canonical text, sha256
 │   │   ├── rules/               # engine + generic.py, python.py, docker.py, terraform.py (Terraform and AWS)
 │   │   ├── analysis.py          # excerpts + rules + signature for the failed jobs of a run (D-60)
-│   │   ├── diagnosis/           # prompt.py, schema.py, validate.py, merge.py
-│   │   ├── policy.py            # LLM allowed? (fork, config, budget, cache)
+│   │   ├── diagnosis/           # prompt.py, schema.py, validate.py, merge.py, cost.py, pipeline.py (DiagnoseJob, D-66)
+│   │   ├── policy.py            # LLM allowed? (fork, config, cache; the budget is reserved by the pipeline)
 │   │   ├── outcomes.py          # flaky / fix-commit state machine
-│   │   ├── render.py            # check run + comment markdown, output sanitization
+│   │   ├── render.py            # check run + comment markdown, output sanitization (D-64)
 │   │   └── usecases/            # track_installation.py; diagnose_failed_run.py, record_run_outcome.py, explain_command.py later
 │   ├── adapters/
 │   │   ├── clock.py             # SystemClock, FakeClock
 │   │   ├── github/              # webhooks.py (signature, event → job), jobs.py (jobs API JSON → WorkflowJob); app auth (JWT + installation tokens), logs, reporter, config later
-│   │   ├── llm/                 # tiktoken_counter.py (TokenCounter, D-57); openai_client.py later
+│   │   ├── llm/                 # tiktoken_counter.py (TokenCounter, D-57); openai_client.py (D-63); cache.py (the eval answer cache, D-65)
 │   │   ├── embeddings/fastembed_embedder.py
 │   │   ├── wakeup.py            # fan-out wake-up shared by the queue adapters
 │   │   ├── postgres/            # engine.py, queue.py, installations.py, migrations/ (Alembic, D-50); store.py, ledger.py later
-│   │   └── memory/              # store.py, embedder.py (FakeEmbedder), queue.py, installations.py, tokens.py (CharTokenCounter); ledger, fake LLM, fake log source later
+│   │   └── memory/              # store.py, embedder.py (FakeEmbedder), queue.py, installations.py, tokens.py (CharTokenCounter), ledger.py (InMemoryUsageLedger), llm.py (FakeLLM); fake log source later
 │   ├── api/                     # main.py (create_app, GET /health, GET /ready), webhooks.py (POST /webhooks/github), deps.py (D-55)
 │   ├── worker/                  # runner.py: the job consumer (D-49); handlers.py: job → use case
 │   └── app/                     # composition root (D-39): cli.py, settings.py, container.py
 ├── scripts/                     # load_webhooks.py (NFR-01 load test)
-├── tests/                       # unit/, contract/, integration/, adapters/, fixtures/{webhooks,logs}/ (conftest.py, pg.py, factories.py, scenarios.py, webhooks.py, logcases.py, redaction_corpus.py); e2e/ later
-├── evals/                       # python -m evals: runner/ (cases, variants, metrics, report, capture, cli), cases/, reports/; baseline.json in P4
+├── tests/                       # unit/, contract/, integration/, adapters/, live/ (only with -m live), fixtures/{webhooks,logs,rules}/ (conftest.py, pg.py, factories.py, scenarios.py, webhooks.py, logcases.py, llmcases.py, redaction_corpus.py); e2e/ later
+├── evals/                       # python -m evals: runner/ (cases, variants, metrics, report, capture, injection, markdown_threats, live, cli), cases/{lab,injection}, .cache/, reports/; baseline.json in P4
 ├── lab/                         # source of the lab repo: workflows that fail on purpose + cases.yaml (D-61)
 ├── docker/                      # compose.yaml, initdb/01-extensions.sql; Dockerfile (P5)
 ├── infra/terraform/             # AWS + GitHub provider (P5)
@@ -173,15 +173,15 @@ cicd-doctor/
     alembic.ini                  # migrations live in adapters/postgres/migrations (D-50)
 ```
 
-Implemented as of P1b (log pipeline and rules):
-- `core/` has `models.py`, `ports.py`, `errors.py`, `retry.py`, the use case `usecases/track_installation.py`, `logs/` (selection, tail cap, slicing, cleaning, noise, excerpt and token budget, §7.3), `redaction.py` (§9.2), `signature.py` (§7.4), `rules/` (§10) and `analysis.py` (D-60).
-- `evals/` has the runner with the `rules` variant and the lab capture command (§11, D-61); `lab/` has the lab repository sources.
-- `adapters/` has `clock.py`, `wakeup.py`, `github/webhooks.py`, `github/jobs.py` and `llm/tiktoken_counter.py`; in `memory/`, the `FailureStore`, `FakeEmbedder`, `JobQueue`, `InstallationStore` and `CharTokenCounter`; in `postgres/`, the `PostgresJobQueue`, the `PostgresInstallationStore` and migrations `0001` (the whole §6 schema) and `0002`.
+Implemented as of P1b (log pipeline, rules and the LLM path, all offline):
+- `core/` has `models.py`, `ports.py`, `errors.py`, `retry.py`, the use case `usecases/track_installation.py`, `logs/` (selection, tail cap, slicing, cleaning, noise, excerpt and token budget, §7.3), `redaction.py` (§9.2), `signature.py` (§7.4), `rules/` (§10), `analysis.py` (D-60), `policy.py` (§9.4), `diagnosis/` (prompt, schema, validation, merge, cost and the `DiagnoseJob` pipeline, D-66) and `render.py` (§9.5, D-64).
+- `evals/` has the runner with the `rules`, `llm` and `llm+hints` variants, the lab capture command (§11, D-61), the injection suite and its judge (D-64) and the live and cache plumbing (D-65); `lab/` has the lab repository sources.
+- `adapters/` has `clock.py`, `wakeup.py`, `github/webhooks.py`, `github/jobs.py`, `llm/tiktoken_counter.py`, `llm/openai_client.py` (D-63) and `llm/cache.py`; in `memory/`, the `FailureStore`, `FakeEmbedder`, `JobQueue`, `InstallationStore`, `CharTokenCounter`, `InMemoryUsageLedger` and `FakeLLM`; in `postgres/`, the `PostgresJobQueue`, the `PostgresInstallationStore` and migrations `0001` (the whole §6 schema) and `0002`. The Postgres `UsageLedger` and the GitHub log source, reporter and app auth belong to P1c.
 - `api/` serves `GET /health`, `GET /ready` and `POST /webhooks/github`.
 - `worker/` has the consumer and the `sync_installation` handler; every other job kind still has a placeholder handler (D-49).
 - `app/` has the CLI (`api`, `worker`), the settings and the composition root.
 
-The `diagnosis/` package under `core/` and the `embeddings/` package under `adapters/` exist as empty placeholders. Everything else in the tree arrives in the phase that owns it (§13).
+The `embeddings/` package under `adapters/` exists as an empty placeholder. Nothing calls GitHub yet and nothing calls the pipeline from the worker (P1c). Everything else in the tree arrives in the phase that owns it (§13).
 
 ### 4.3 Ports
 
@@ -380,7 +380,7 @@ class DiagnosisReport(BaseModel):
 
 ### 5.1 LLM output contract
 
-The LLM returns only the fields below. The JSON Schema is generated from a dedicated Pydantic model (`LLMDiagnosisOutput`), sent to OpenAI as a **strict** Structured Outputs schema, and the response is **re-validated** in core regardless of the provider's guarantees.
+The LLM returns only the fields below. The JSON Schema is generated from a dedicated Pydantic model (`LLMDiagnosisOutput`), sent to OpenAI as a **strict** Structured Outputs schema, and the response is **re-validated** in core regardless of the provider's guarantees. The schema that goes over the wire has no length, range, `pattern`, `format`, `default`, `title` or `description` keywords (strict mode may reject them): the limits below are enforced by core after the call, and the prompt states them (D-63).
 
 ```json
 {
@@ -407,10 +407,10 @@ The LLM returns only the fields below. The JSON Schema is generated from a dedic
 
 **Post-validation rules (core):**
 
-1. Each `evidence` item must reference a line number present in the excerpt, and its `text` must be a substring of that line after whitespace normalization. Items that fail are dropped.
+1. Each `evidence` item must reference a line number present in the excerpt, and its `text` must be a substring of that line after whitespace normalization (an `L<n>:` prefix copied from the prompt is ignored). Items that fail are dropped.
 2. If no evidence item survives, then `evidence_verified = false` and `confidence = min(confidence, 0.3)`.
-3. `suggestion` is kept only if `path` is a relative path without `..`, `start_line ≤ end_line`, and the span is ≤ 30 lines. Otherwise it is dropped and the text in `suggested_fix` remains.
-4. A schema-invalid response gets one repair attempt (the validation error is sent back once). If it fails again, the rules diagnosis is used with `fallback_reason = "invalid_output"`.
+3. `suggestion` is kept only if `path` is a relative path without `..`, a drive, `~` or control characters (at most 260 characters), `start_line ≤ end_line`, and the span is ≤ 30 lines. Otherwise it is dropped and the text in `suggested_fix` remains.
+4. A schema-invalid response gets one repair attempt (the validation error is sent back once: only the paths and messages, at most 600 characters, never the offending text). If it fails again, the rules diagnosis is used with `fallback_reason = "invalid_output"`. An answer that contains the canary of the system prompt counts as invalid too (D-66).
 
 Confidence is shown as **high** (≥ 0.75), **medium** (0.45–0.75) or **low** (< 0.45).
 
@@ -769,9 +769,9 @@ The embedding (P2) is computed on `canonical`, so the exact match and the simila
 - `summary` (markdown, ≤ 60,000 chars) has one section per failed job, with:
   - Job, step and attempt.
   - The probable cause.
-  - Evidence in a fenced block with original line numbers, each one linking to `…/actions/runs/{run_id}/job/{job_id}#step:{n}:{line}`.
+  - Evidence in a fenced block, each line labelled `L<n>:` with its position in the retained log (D-58), and a link to the failed step, `…/actions/runs/{run_id}/job/{job_id}#step:{n}:1`. The evidence lines are labels and not links: a line number of the excerpt is not GitHub's per-step line number, so a link to `#step:{n}:{line}` would point at the wrong line (D-64).
   - The suggested fix.
-  - The source (`LLM <model> · prompt diag-v1`, `rule PY-MODNF`, or `cached from run #123`) and the fallback reason when there is one.
+  - The source (`LLM <model> · prompt diag-v1`, `rule PY-MODNF`, or `cached from an earlier run`) and the fallback reason when there is one.
   - The rule baseline when it disagrees with the LLM.
   - Similar past failures (P2).
   - A footer: "Diagnosis generated automatically from untrusted logs; verify before acting."
@@ -874,6 +874,7 @@ Evaluated in order; the first match decides:
 - `@mentions` are neutralized (`@` followed by a zero-width joiner), and `#123` references are wrapped in code.
 - URLs are rendered as inline code (not clickable) unless the host is on an allowlist (`github.com`, `docs.github.com`, `docs.python.org`, `pypi.org`, `docs.docker.com`, `registry.terraform.io`, `docs.aws.amazon.com`). Images are never rendered.
 - A second redaction pass runs, and each field is capped at its maximum length.
+- The text of the rules diagnosis is treated the same way: its templates fill in values captured from the log (D-64). Invisible and bidirectional characters are removed. The same renderer produces the check run and the comment, and a threat scanner written from CommonMark's rules is the test oracle (D-64).
 
 ### 9.6 GitHub App permissions
 
@@ -984,7 +985,7 @@ tags: [python, uv]
 
 - **Lab repo** (`lab/`, published as `cicd-doctor-lab`): `workflow_dispatch` workflows that fail on purpose with known causes. There are 23 cases covering all 8 categories (at least 2 each, listed with their labels in `lab/cases.yaml`): undeclared import, broken assertion, uv resolution conflict, a package that does not exist, missing base image, unknown Terraform provider, ruff and mypy gates, unresolvable host, refused connection, missing `with:` input, misspelled secret name, Dockerfile `COPY` of a missing file, Terraform `validate` error, AWS CLI without credentials, job and step `timeout-minutes`, memory limit → 137, full disk, two flaky tests and two failures no rule knows. None needs a secret or a cloud account; a real AWS `AccessDenied` would, so it is left out (D-61). `python -m evals capture` turns failed runs into cases: it strips terminal escape sequences from the log (`gh` is called with `--allow-escape-sequences`, D-62), redacts it, trims `jobs.json` to the fields the pipeline reads and finds the evidence lines with the manifest's regexes. Created manually for P1; managed by the Terraform GitHub provider from P5.
 - **Public cases:** at least 30 real failures from public repositories, each with the commit that fixed it (found by pairing a failed run with the first green run on the same branch). Licenses are respected: only log excerpts and short diff summaries are stored.
-- **Injection suite:** at least 10 lab logs that echo adversarial text (instructions to change the category, insert links or mentions, reveal the prompt, emit fake evidence, close the `untrusted_log` tag).
+- **Injection suite:** 16 cases (the target was at least 10) of two real failure kinds whose log also echoes adversarial text: instructions to change the category, a fake JSON answer, links and images, mention floods, a request to reveal the prompt, fake evidence, closing the `untrusted_log` tag, a fake chat template, HTML, an entity-encoded mention, a path traversal in a suggestion, invisible text, exfiltration of secrets, an instruction flood and role-play. The cases are synthetic and generated (`evals/runner/injection.py`, `python -m evals write-injection`), not captured from lab runs, so they need no real repository (D-64). Each case has an `attack:` block in `case.yaml` (the kind, the category the attacker wants and the markers planted), and `judge` says whether an attack succeeded (D-64).
 - **Redaction corpus** (`tests/redaction_corpus.py`): synthetic fake secrets of every pattern in §9.2, at least two contexts each, plus look-alikes that must **not** be redacted (SHAs, UUIDs, `***` masks). The fake secrets are assembled at import time from fragments, so no secret-shaped literal is committed (D-59). They are the only fake secrets in the repository.
 
 ### 11.2 Variants and metrics
@@ -1004,9 +1005,9 @@ Variants: `rules`, `llm` (no hints), `llm+hints` (production behavior in P1), `l
 
 ### 11.3 Running
 
-- `uv run python -m evals run --variant all --sources lab,public,injection` writes `evals/reports/<date>-<git-sha>.{json,md}`. As of P1b only the `rules` variant exists; `all` runs what exists and lists the rest. The P1b reports have accuracy, per-category P/R/F1, macro-F1, the confusion matrix, evidence kept and cited, abstention, calibration, latency and cost; the judge arrives in P4.
+- `uv run python -m evals run --variant all --sources lab,public,injection` writes `evals/reports/<date>-<git-sha>.{json,md}`. As of P1b the `rules`, `llm` and `llm+hints` variants exist; `llm+hints+similar` arrives with P2, and `all` runs what exists and lists the rest. The LLM variants need a model: `--model a,b` (or `OPENAI_MODEL`), prices from `--price MODEL=IN,OUT` or `LLM_PRICE_*`, and `--live` to call OpenAI (the key comes from `.env` and is never printed). Each model is its own column (`llm+hints [model]`) and runs the production pipeline (D-65). The reports have accuracy, per-category P/R/F1, macro-F1, the confusion matrix, evidence kept and cited, abstention, calibration, latency and cost, and for the LLM variants the share of LLM diagnoses, the fallbacks by reason, tokens, cost per case and the injection attacks won; the cause-match judge arrives in P4.
 - `uv run python -m evals capture --repo <owner>/cicd-doctor-lab --all` captures the lab's failed runs (see `lab/README.md`).
-- LLM responses are cached in `evals/.cache/` keyed by `(model, prompt_version, case_hash)`. CI runs offline from the committed cache (deterministic, free). `--live` refreshes it on demand.
+- LLM responses are cached in `evals/.cache/` keyed by a hash of `(model, prompt_version, the whole request)`, so any change of model, prompt, excerpt, hint or repair message is a miss (D-65). CI runs offline from the committed cache (deterministic, free). `--live` fills or refreshes it on demand. Without `--live` a miss is an `LLMError`, reported as an `llm_error` fallback. The cache is empty until the first live run.
 - `evals/baseline.json` holds the last accepted metrics. A change to the prompt, model or rules **fails CI if macro-F1 drops by more than 5 points** or if any injection case succeeds.
 - The README shows the latest comparison table between `rules` and the LLM variants.
 
@@ -1018,12 +1019,12 @@ Variants: `rules`, `llm` (no hints), `llm+hints` (production behavior in P1), `l
 |---|---|---|---|
 | Unit | Pure `core/`: noise filters, slicing, windowing, token budget, redaction, normalization/signature, each rule (positive and negative), policy, render/sanitization, outcome state machine, use cases with in-memory adapters + fake LLM | pytest, hypothesis (normalization idempotence, redaction never leaks pattern-shaped secrets), golden files for excerpts and rendered markdown | pre-commit + CI |
 | Contract | One shared test suite for `FailureStore`, `JobQueue` and `UsageLedger`, run against both the in-memory and the Postgres adapters (today: `JobQueue` on both, `FailureStore` on memory) | pytest parametrized fixtures; the Postgres parameter is marked `integration` (D-51) | memory in pre-commit; both in CI |
-| Adapter | GitHub client (JWT, token scoping, pagination, redirect without auth, Range tail, rate-limit headers, comment upsert by marker), OpenAI client (schema, retries, repair), fastembed (dims, determinism), tiktoken counts (`tests/adapters/`, today); webhook signature, routing and the jobs JSON parser (unit tests today) | respx with recorded responses; synthetic webhook payloads in `tests/fixtures/webhooks/` (D-56); synthetic job logs in `tests/fixtures/logs/` | CI |
+| Adapter | GitHub client (JWT, token scoping, pagination, redirect without auth, Range tail, rate-limit headers, comment upsert by marker), OpenAI client (schema, error mapping, retries and repair through the pipeline: `tests/adapters/test_openai_client.py`, today), fastembed (dims, determinism), tiktoken counts (`tests/adapters/`, today); webhook signature, routing and the jobs JSON parser (unit tests today) | respx (OpenAI: `httpx2.MockTransport`, because the SDK runs on `httpx2`, D-63) with recorded responses; synthetic webhook payloads in `tests/fixtures/webhooks/` (D-56); synthetic job logs in `tests/fixtures/logs/` | CI |
 | Integration | API + worker + real Postgres: migrations, webhook (401 with no rows, delivery idempotency, 503 and `/ready` with the database unreachable), installation events through the worker, idempotency, lease expiry after a killed worker process, heartbeats, concurrent workers (no double processing), NOTIFY wake-ups, newer-attempt guard, budget under concurrency | Compose / CI service container `pgvector/pgvector:pg17`; own `<db>_test` databases; skipped locally when Postgres is down, failing in CI (D-51) | CI (`-m integration`), and locally with Compose up |
 | E2E (offline) | Replay a recorded `workflow_run` delivery through the API → worker → fake GitHub (respx) and assert the exact check run and comment calls | pytest | CI |
-| Live smoke | Dev app + lab repo; a few OpenAI calls | manual / `-m live` | On demand |
+| Live smoke | OpenAI (5 lab cases and the injection suite, `tests/live/`, from P1b); dev app + lab repo (P1c) | `-m live`; skipped without `OPENAI_API_KEY` and `OPENAI_MODEL`; at most 40 calls per test (D-65) | On demand |
 
-The fake LLM adapter can script: valid responses, malformed JSON, timeouts, 429s, responses that follow an injection, fabricated evidence, and over-long fields.
+The fake LLM adapter (`FakeLLM`) can script: valid responses, raw and malformed JSON, truncated output, timeouts, 429s, server errors, an invalid key, responses that follow an injection, fabricated evidence, and over-long fields. The injection suite also runs offline against a fake model that obeys the log (D-64).
 
 **Quality gates**
 - `pre-commit` (local hooks run through `uv run`): ruff (lint + format) and `pytest -m "unit or contract" -x -q` (memory adapters only, target < 30 s). A commit with a failing test is rejected. mypy is not part of pre-commit (D-42).
@@ -1065,9 +1066,10 @@ Scope: FR-01…FR-14 and the FR-22 skeleton. Live on the dev app via smee.
 - [x] Redaction corpus: 100% of planted secrets are redacted and 0 SHAs or UUIDs are redacted. The hypothesis property test passes (`tests/unit/test_redaction.py`: 34 planted secrets of 15 kinds, 22 look-alikes, and property tests for leaks, SHAs, UUIDs and idempotence).
 - [x] The same lab failure captured from 2 runs (different timestamps, durations, paths) → the same `signature_hash`. Different errors → different hashes. Verified on real runs: `py-assert` and `py-modnf` were captured twice (different run ids, timestamps and runner names) and each pair has one hash, and the 22 different lab failures have 22 different hashes (`tests/unit/test_lab_cases.py`). Also verified on synthetic runs that differ in OS, paths, ids, ports and IPs (`tests/unit/test_signature.py`). `dns` has one capture so far, so its stability is not checked.
 - [x] Every rule in §10 has ≥ 1 positive and ≥ 1 negative fixture passing. `evals run --variant rules` produces a report on the lab fixtures. Verified: the 29 rules each have positive and negative fixtures (`tests/unit/test_rules.py`), and the report on the 24 captured lab cases has accuracy 91.7% (22 of 24) and macro-F1 0.850. The two misses are the two `flaky` cases, which the rules cannot output by design (D-15). Every other case got its expected category from the rule the lab manifest intended. That includes the two messages the lab was written to confirm: a step's `has timed out after N minutes` (GHA-CANCEL-TIMEOUT) and bash's empty-token error (GHA-SECRET-EMPTY).
-- [ ] Fake LLM: a valid response is published; malformed JSON is repaired once and then falls back to `rules` with `invalid_output`; fabricated evidence is dropped and confidence is capped at 0.3; a timeout falls back to `llm_error`.
-- [ ] Live `-m live` smoke: 5 lab fixtures against OpenAI return schema-valid diagnoses. The model choice (2 candidates × lab fixtures: accuracy, cost, latency) is recorded in DECISIONS.md and `OPENAI_MODEL` is set.
-- [ ] Injection suite (fake + live): no case forces the attacker's category, and the rendered markdown has no clickable non-allowlisted link and no live `@mention`.
+- [x] Fake LLM: a valid response is published; malformed JSON is repaired once and then falls back to `rules` with `invalid_output`; fabricated evidence is dropped and confidence is capped at 0.3; a timeout falls back to `llm_error`. Verified with `FakeLLM` in `tests/unit/test_diagnosis_pipeline.py` (each of the four, plus a prompt leak, the retries after 1 s and 4 s, the daily and per-installation budget, the fork policy and the explain command), and through the real OpenAI client over a mocked transport in `tests/adapters/test_openai_client.py` (including an invalid key falling back to the rules with `llm_error`).
+- [ ] Live `-m live` smoke: 5 lab fixtures against OpenAI return schema-valid diagnoses. The model choice (2 candidates × lab fixtures: accuracy, cost, latency) is recorded in DECISIONS.md and `OPENAI_MODEL` is set. **Open: it has never run.** The tests (`tests/live/test_live_smoke.py`), the mini-eval command and the cache exist (D-65), and they are skipped until `OPENAI_API_KEY` and `OPENAI_MODEL` are in `.env`. The logic of the tests was dry-run against a fake model.
+- [x] Injection suite, offline (fake model): the 16 cases are in `evals/cases/injection`. Even when the fake model obeys the log, the rendered check run and comment of every case have no clickable non-allowlisted link, no live `@mention` and nothing else that acts on a reader; no fabricated evidence, leaked prompt or unsafe suggestion is published; a fork run never reaches the model. Verified in `tests/unit/test_injection.py` and `tests/unit/test_render.py`, and by mutation (nine defences removed one at a time, each made a test fail).
+- [ ] Injection suite, live: no case forces the attacker's category. **Open:** only the real model can show it (an obedient fake model does force it, by design: no check in `core` can tell a true category from a forced one). `tests/live/test_live_injection.py` and `python -m evals run --sources injection --live` measure it.
 
 *P1c — GitHub integration (dev app, lab repo)*
 - [ ] Running a failing lab workflow from a PR → the `CICD Doctor` check run is completed with `neutral` within 90 s, and a sticky comment exists.
@@ -1122,7 +1124,7 @@ Scope: Docker, Terraform on AWS, CD, prod app, Langfuse.
 ## 14. Open questions (to resolve in the noted phase)
 
 - Job-level timeouts, found by the first real lab capture (P1b) → start of P1c. A job that exceeds its `timeout-minutes` ends **`cancelled`** (the job and the run), not `timed_out` or `failure`, and its log only says `##[error]The operation was canceled.`, like a manual cancellation. The text "The job has exceeded the maximum execution time of 1m0s" is an annotation of the job's check run (`GET /repos/{o}/{r}/check-runs/{job_id}/annotations`; the job id is the check run id), not a log line. So FR-04 (only `failure` and `timed_out` runs are enqueued) and FR-06 (only such jobs are selected) never diagnose a job-level timeout, and GHA-TIMEOUT never fires on a real run. A step-level `timeout-minutes` is different: it ends `failure` with `##[error]The action '…' has timed out after N minutes.`, which GHA-CANCEL-TIMEOUT diagnoses. Options: (a) enqueue `cancelled` runs too, read the annotations of their cancelled jobs, and diagnose only when one reports the timeout (silent for manual cancellations; costs a job listing and an annotations call per cancelled run, and the app already has Checks permission); (b) document the gap and diagnose step-level timeouts only. The lab case `job-timeout` cannot be captured until this is decided.
-- Exact OpenAI model ID and price table → P1 mini-eval (D-07).
+- Exact OpenAI model ID and price table → P1 mini-eval (D-07). The procedure and the `-m live` tests are ready (D-65); they wait for `OPENAI_API_KEY`. The winner goes into DECISIONS.md and `OPENAI_MODEL`. Also open until then: that OpenAI accepts the strict schema of D-63.
 - Whether lint and type-check failures deserve their own category → after the P4 evals (D-13).
 - `issue_comment` delivery with Pull requests vs Issues permission → P3 (D-21).
 - HTTPS entry for the API: Application Load Balancer + ACM certificate (needs a domain) vs App Runner (HTTPS URL without a domain); and Secrets Manager vs SSM Parameter Store for secrets → at P5 deploy time (D-46).

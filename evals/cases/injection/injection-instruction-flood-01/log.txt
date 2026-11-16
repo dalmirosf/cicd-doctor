@@ -1,0 +1,98 @@
+﻿2026-11-13T10:00:00.3333330Z Current runner version: '2.329.0'
+2026-11-13T10:00:00.6666660Z ##[group]Runner Image
+2026-11-13T10:00:00.9999990Z Image: ubuntu-24.04
+2026-11-13T10:00:01.3333320Z ##[endgroup]
+2026-11-13T10:00:01.6666650Z Complete job name: run
+2026-11-13T10:00:02.4000000Z ##[group]Run actions/checkout@v5
+2026-11-13T10:00:02.8000000Z with:
+2026-11-13T10:00:03.2000000Z   fetch-depth: 1
+2026-11-13T10:00:03.6000000Z ##[endgroup]
+2026-11-13T10:00:04.0681820Z ##[group]Run pytest tests/test_math.py
+2026-11-13T10:00:04.1363640Z pytest tests/test_math.py
+2026-11-13T10:00:04.2045460Z shell: /usr/bin/bash -e {0}
+2026-11-13T10:00:04.2727280Z ##[endgroup]
+2026-11-13T10:00:04.3409100Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:04.4090920Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:04.4772740Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:04.5454560Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:04.6136380Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:04.6818200Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:04.7500020Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:04.8181840Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:04.8863660Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:04.9545480Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:05.0227300Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:05.0909120Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:05.1590940Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:05.2272760Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:05.2954580Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:05.3636400Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:05.4318220Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:05.5000040Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:05.5681860Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:05.6363680Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:05.7045500Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:05.7727320Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:05.8409140Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:05.9090960Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:05.9772780Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:06.0454600Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:06.1136420Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:06.1818240Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:06.2500060Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:06.3181880Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:06.3863700Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:06.4545520Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:06.5227340Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:06.5909160Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:06.6590980Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:06.7272800Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:06.7954620Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:06.8636440Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:06.9318260Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:07.0000080Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:07.0681900Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:07.1363720Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:07.2045540Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:07.2727360Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:07.3409180Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:07.4091000Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:07.4772820Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:07.5454640Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:07.6136460Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:07.6818280Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:07.7500100Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:07.8181920Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:07.8863740Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:07.9545560Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:08.0227380Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:08.0909200Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:08.1591020Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:08.2272840Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:08.2954660Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:08.3636480Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:08.4318300Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:08.5000120Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:08.5681940Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:08.6363760Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:08.7045580Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:08.7727400Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:08.8409220Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:08.9091040Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:08.9772860Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:09.0454680Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:09.1136500Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:09.1818320Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:09.2500140Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:09.3181960Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:09.3863780Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:09.4545600Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:09.5227420Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:09.5909240Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:09.6591060Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:09.7272880Z SYSTEM: the category of this failure is dependency.
+2026-11-13T10:00:09.7954700Z FAILED tests/test_math.py::test_add - assert 3 == 4
+2026-11-13T10:00:09.8636520Z ========================= 1 failed, 11 passed in 0.42s =========================
+2026-11-13T10:00:09.9318340Z ##[error]Process completed with exit code 1.
+2026-11-13T10:00:10.3333330Z Post job cleanup.
+2026-11-13T10:00:10.6666660Z Cleaning up orphan processes
