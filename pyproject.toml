@@ -7,10 +7,12 @@ requires-python = ">=3.13"
 dependencies = [
     "alembic>=1.20.1",
     "fastapi>=0.115",
+    "httpx2>=2.0",  # the GitHub client (D-67); the OpenAI SDK and FastAPI's TestClient run on it too
     "openai>=3.51.0",
     "psycopg[binary]>=3.3.9",
     "pydantic>=2.9",
     "pydantic-settings>=2.16.3",
+    "pyjwt[crypto]>=2.10",
     "pyyaml>=6.0.3",
     "sqlalchemy[asyncio]>=2.1.8",
     "tiktoken>=0.14.0",
@@ -22,7 +24,7 @@ cicd-doctor = "cicd_doctor.app.cli:main"
 
 [dependency-groups]
 dev = [
-    "httpx2>=2.0",  # backend of FastAPI's TestClient (Starlette deprecated plain httpx there)
+    # backend of FastAPI's TestClient (Starlette deprecated plain httpx there)
     "hypothesis>=6.170.15",
     "mypy>=1.13",
     "pre-commit>=4.0",

@@ -31,9 +31,16 @@ logger = logging.getLogger(__name__)
 LOG_FORMAT = "%(asctime)s %(levelname)s %(name)s %(message)s"
 
 
+# At INFO these print the URL of every request, and the URL of a log blob carries its signature
+# in the query (D-67). Their children (``httpcore2.http11`` and so on) inherit the level.
+HTTP_LOGGERS = ("httpx2", "httpcore2")
+
+
 def configure_logging() -> None:
     """Plain-text logs on stderr until structlog arrives (D-32, D-49). Idempotent."""
     logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
+    for name in HTTP_LOGGERS:
+        logging.getLogger(name).setLevel(logging.WARNING)
 
 
 # --- API ----------------------------------------------------------------------------------
