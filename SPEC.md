@@ -151,7 +151,7 @@ cicd-doctor/
 │   │   └── usecases/            # track_installation.py; diagnose_failed_run.py, record_run_outcome.py, explain_command.py later
 │   ├── adapters/
 │   │   ├── clock.py             # SystemClock, FakeClock
-│   │   ├── github/              # webhooks.py (signature, event → job), jobs.py (jobs API JSON → WorkflowJob); app auth (JWT + installation tokens), logs, reporter, config later
+│   │   ├── github/              # webhooks.py (signature, event → job), jobs.py (jobs API JSON → WorkflowJob), http.py (GitHubHttp: headers, pagination, error mapping, D-67), auth.py (app JWT, scoped installation tokens, D-68); logs, reporter, config later
 │   │   ├── llm/                 # tiktoken_counter.py (TokenCounter, D-57); openai_client.py (D-63); cache.py (the eval answer cache, D-65)
 │   │   ├── embeddings/fastembed_embedder.py
 │   │   ├── wakeup.py            # fan-out wake-up shared by the queue adapters
@@ -161,7 +161,7 @@ cicd-doctor/
 │   ├── worker/                  # runner.py: the job consumer (D-49); handlers.py: job → use case
 │   └── app/                     # composition root (D-39): cli.py, settings.py, container.py
 ├── scripts/                     # load_webhooks.py (NFR-01 load test)
-├── tests/                       # unit/, contract/, integration/, adapters/, live/ (only with -m live), fixtures/{webhooks,logs,rules}/ (conftest.py, pg.py, factories.py, scenarios.py, webhooks.py, logcases.py, llmcases.py, redaction_corpus.py); e2e/ later
+├── tests/                       # unit/, contract/, integration/, adapters/, live/ (only with -m live), fixtures/{webhooks,logs,rules}/ (conftest.py, pg.py, factories.py, scenarios.py, webhooks.py, logcases.py, llmcases.py, github_fake.py, redaction_corpus.py); e2e/ later
 ├── evals/                       # python -m evals: runner/ (cases, variants, metrics, report, capture, injection, markdown_threats, live, cli), cases/{lab,injection}, .cache/, reports/; baseline.json in P4
 ├── lab/                         # source of the lab repo: workflows that fail on purpose + cases.yaml (D-61)
 ├── docker/                      # compose.yaml, initdb/01-extensions.sql; Dockerfile (P5)
@@ -173,15 +173,15 @@ cicd-doctor/
     alembic.ini                  # migrations live in adapters/postgres/migrations (D-50)
 ```
 
-Implemented so far (P1b: the log pipeline, rules and the LLM path, all offline; and the persistence of P1c, not wired into the worker yet):
+Implemented so far (P1b: the log pipeline, rules and the LLM path, all offline; and the GitHub client and the persistence of P1c, not wired into the worker yet):
 - `core/` has `models.py` (with the checkpoint models of D-69: `DiagnosisUsage`, `StoredFailure`, `RunAnalysisRecord`, `failure_id_for`), `ports.py`, `errors.py`, `retry.py`, the use case `usecases/track_installation.py`, `logs/` (selection, tail cap, slicing, cleaning, noise, excerpt and token budget, §7.3), `redaction.py` (§9.2), `signature.py` (§7.4), `rules/` (§10), `analysis.py` (D-60), `policy.py` (§9.4), `diagnosis/` (prompt, schema, validation, merge, cost and the `DiagnoseJob` pipeline, D-66) and `render.py` (§9.5, D-64).
 - `evals/` has the runner with the `rules`, `llm` and `llm+hints` variants, the lab capture command (§11, D-61), the injection suite and its judge (D-64) and the live and cache plumbing (D-65); `lab/` has the lab repository sources.
-- `adapters/` has `clock.py`, `wakeup.py`, `github/webhooks.py`, `github/jobs.py`, `llm/tiktoken_counter.py`, `llm/openai_client.py` (D-63) and `llm/cache.py`; in `memory/`, the `FailureStore`, `FakeEmbedder`, `JobQueue`, `InstallationStore`, `CharTokenCounter`, `InMemoryUsageLedger` and `FakeLLM`; in `postgres/`, the `PostgresJobQueue`, the `PostgresInstallationStore`, the `PostgresFailureStore` (every method but `similar`, which needs the embeddings of P2; D-69), the `PostgresUsageLedger` and migrations `0001` (the whole §6 schema), `0002` and `0003` (the analysis checkpoint). The GitHub log source, reporter and app auth belong to P1c.
+- `adapters/` has `clock.py`, `wakeup.py`, `github/webhooks.py`, `github/jobs.py`, `github/http.py` (D-67), `github/auth.py` (D-68), `llm/tiktoken_counter.py`, `llm/openai_client.py` (D-63) and `llm/cache.py`; in `memory/`, the `FailureStore`, `FakeEmbedder`, `JobQueue`, `InstallationStore`, `CharTokenCounter`, `InMemoryUsageLedger` and `FakeLLM`; in `postgres/`, the `PostgresJobQueue`, the `PostgresInstallationStore`, the `PostgresFailureStore` (every method but `similar`, which needs the embeddings of P2; D-69), the `PostgresUsageLedger` and migrations `0001` (the whole §6 schema), `0002` and `0003` (the analysis checkpoint). The GitHub log source and reporter belong to P1c.
 - `api/` serves `GET /health`, `GET /ready` and `POST /webhooks/github`.
 - `worker/` has the consumer and the `sync_installation` handler; every other job kind still has a placeholder handler (D-49).
 - `app/` has the CLI (`api`, `worker`), the settings and the composition root.
 
-The `embeddings/` package under `adapters/` exists as an empty placeholder. Nothing calls GitHub yet and nothing calls the pipeline from the worker (P1c). Everything else in the tree arrives in the phase that owns it (§13).
+The `embeddings/` package under `adapters/` exists as an empty placeholder. The GitHub client and the app authentication exist and are tested against a fake, but nothing is wired to them: nothing calls GitHub yet and nothing calls the pipeline from the worker (P1c). Everything else in the tree arrives in the phase that owns it (§13).
 
 ### 4.3 Ports
 
@@ -263,7 +263,7 @@ Settings come from the environment (`pydantic-settings` in `app/settings.py`; `.
 | Variable | Default | Notes |
 |---|---|---|
 | `APP_ENV` | `dev` | `dev` / `prod` (two different GitHub Apps, D-30) |
-| `GITHUB_APP_ID`, `GITHUB_PRIVATE_KEY` | — | PEM content or file path |
+| `GITHUB_APP_ID`, `GITHUB_PRIVATE_KEY` | — | PEM content (real newlines or a one-line value with `\n`) or a file path. The app id is the JWT `iss` (D-68) |
 | `GITHUB_WEBHOOK_SECRET`, `GITHUB_WEBHOOK_SECRET_PREVIOUS` | — | Previous secret only during rotation |
 | `DATABASE_URL` | — | Required. `postgresql+psycopg://…` (`.env.example` points at the Compose database on `127.0.0.1:5433`, D-52) |
 | `TEST_DATABASE_URL` | `DATABASE_URL` + `_test` | Tests only, not a setting (D-51) |
@@ -809,10 +809,10 @@ The embedding (P2) is computed on `canonical`, so the exact match and the simila
 | Webhook | Body > 25 MB or invalid JSON | 413 / 400. Also 400: missing `X-GitHub-Event`, missing or non-UUID `X-GitHub-Delivery`, a body that is not a JSON object, or a handled event without a field it needs (the message names fields, never values). |
 | Webhook | `ping` / event or action CICD Doctor does not act on | 200 / 204, nothing stored (D-56). |
 | Webhook | DB unavailable, or no answer within 5 s | 503 (the 5 s bound keeps the answer under GitHub's 10 s, D-56). GitHub does **not** auto-retry failed deliveries, so failed deliveries are visible in the app's "Advanced → Recent deliveries" and can be redelivered manually. Documented in the runbook. |
-| Worker | GitHub 5xx, network error, timeout, DB error | `TransientError` → retry with exponential backoff + full jitter: base 30 s, ×4, capped at 30 min (≈30 s, 2 min, 8 min, 30 min). |
-| Worker | GitHub 429 / secondary rate limit / `x-ratelimit-remaining: 0` | Transient. `run_after` = `Retry-After` or `x-ratelimit-reset`, whichever applies. |
-| Worker | GitHub 401 (token expired) | Refresh the installation token once, then treat as transient. |
-| Worker | GitHub 403 (permission), 404/410 (run or logs gone), installation suspended | `PermanentError` → job `failed`. Publish a neutral check "Could not diagnose: \<reason\>" when the check can still be written. |
+| Worker | GitHub 5xx or 408, network error, timeout, DB error | `TransientError` → retry with exponential backoff + full jitter: base 30 s, ×4, capped at 30 min (≈30 s, 2 min, 8 min, 30 min). |
+| Worker | GitHub 429 / secondary rate limit / `x-ratelimit-remaining: 0` | Transient. `run_after` = `Retry-After`, else `x-ratelimit-reset`, else 60 s for a secondary limit without a header; kept between 1 s and 1 h (D-67). |
+| Worker | GitHub 401 (token expired) | Refresh the installation token once and send the request again (D-67, D-68), then treat as transient. |
+| Worker | GitHub 403 (permission), 404/410 (run or logs gone), 422, installation suspended or uninstalled | `PermanentError` → job `failed`. Publish a neutral check "Could not diagnose: \<reason\>" when the check can still be written. A 403 names the permission GitHub says was missing (`x-accepted-github-permissions`) when it has a safe shape (D-67). |
 | Worker | Any other exception (a bug, or a library error that was not wrapped) | Treated as transient: retried with the same backoff, logged with its traceback (D-49). |
 | Worker | Attempts used up (`attempts = max_attempts`, default 5) | Job `dead`, `ERROR` structured log with the full context. The check run gets "Could not diagnose (internal error)" (from P1c). |
 | Worker | Crash or kill mid-job | Lease (`JOB_LEASE_S` = 300 s) expires and another worker re-leases the job; while a worker is alive it extends the lease every `lease / 3` (D-47). If the expired attempt was the last one, the job becomes `dead` instead. Side effects are idempotent (§6, newer-attempt guard). |
@@ -822,7 +822,7 @@ The embedding (P2) is computed on `canonical`, so the exact match and the simila
 | LLM | Budget or daily-call limit reached | No call; rules fallback (`budget`). The check says "LLM daily limit reached". |
 | Embedder | Model load failure (P2) | Skip similarity and cache-by-similarity; exact-hash cache still works. Logged as a warning. |
 
-Job payloads and `last_error` never contain raw log text. Errors are redacted and truncated before they are stored or logged. `last_error` is `"<ExceptionType>: <message>"`, redacted (D-59) and cut to 2 KB on a character boundary.
+Job payloads and `last_error` never contain raw log text. The messages of the GitHub client name the method, the endpoint template and the status, never a response body, a URL, a query or a token (D-67). Errors are redacted and truncated before they are stored or logged. `last_error` is `"<ExceptionType>: <message>"`, redacted (D-59) and cut to 2 KB on a character boundary.
 
 ---
 
@@ -910,7 +910,7 @@ Evaluated in order; the first match decides:
 
 Subscribed events: `workflow_run`, `issue_comment` (P3). Installation events are delivered by default. P3 verifies that `issue_comment` events on PRs are delivered with the Pull requests permission; if not, add **Issues: read** and record it in DECISIONS.md.
 
-Installation tokens are requested with `repository_ids: [repo_id]` and only the permissions the use case needs (for example, `{actions: read, checks: write, pull_requests: write}` for diagnosis). They are cached in memory until 5 minutes before expiry. The app private key and webhook secret live in AWS Secrets Manager (prod) or `.env` (dev, git-ignored).
+Installation tokens are requested with `repository_ids: [repo_id]` and only the permissions the use case needs (for example, `{actions: read, checks: write, pull_requests: write}` for diagnosis). They are cached in memory until 5 minutes before expiry, with one request in flight per (installation, repository, permission set) (D-68). The app private key and webhook secret live in AWS Secrets Manager (prod) or `.env` (dev, git-ignored).
 
 **CICD Doctor Fixer (P6, separate app, opt-in):** Contents write, Pull requests write, Metadata read; no webhook events (it is driven by CICD Doctor's queue through an internal API).
 
@@ -1039,9 +1039,9 @@ Variants: `rules`, `llm` (no hints), `llm+hints` (production behavior in P1), `l
 |---|---|---|---|
 | Unit | Pure `core/`: noise filters, slicing, windowing, token budget, redaction, normalization/signature, each rule (positive and negative), policy, render/sanitization, outcome state machine, use cases with in-memory adapters + fake LLM | pytest, hypothesis (normalization idempotence, redaction never leaks pattern-shaped secrets), golden files for excerpts and rendered markdown | pre-commit + CI |
 | Contract | One shared test suite for `FailureStore`, `JobQueue`, `InstallationStore` and `UsageLedger`, run against both the in-memory and the Postgres adapters (today: all of them on both, except `FailureStore.similar`, which is P2 and runs on memory only) | pytest parametrized fixtures; the Postgres parameter is marked `integration` (D-51) | memory in pre-commit; both in CI |
-| Adapter | GitHub client (JWT, token scoping, pagination, redirect without auth, Range tail, rate-limit headers, comment upsert by marker), OpenAI client (schema, error mapping, retries and repair through the pipeline: `tests/adapters/test_openai_client.py`, today), fastembed (dims, determinism), tiktoken counts (`tests/adapters/`, today); webhook signature, routing and the jobs JSON parser (unit tests today) | respx (OpenAI: `httpx2.MockTransport`, because the SDK runs on `httpx2`, D-63) with recorded responses; synthetic webhook payloads in `tests/fixtures/webhooks/` (D-56); synthetic job logs in `tests/fixtures/logs/` | CI |
+| Adapter | GitHub client (JWT, token scoping, pagination, rate-limit headers and the error mapping: `tests/adapters/test_github_{http,auth}.py`, today; redirect without auth, Range tail and comment upsert by marker later in P1c), OpenAI client (schema, error mapping, retries and repair through the pipeline: `tests/adapters/test_openai_client.py`, today), fastembed (dims, determinism), tiktoken counts (`tests/adapters/`, today); webhook signature, routing and the jobs JSON parser (unit tests today) | `httpx2.MockTransport` for OpenAI (the SDK runs on `httpx2`, D-63) and for GitHub, where `tests/github_fake.py` is a stateful FakeGitHub (D-67; no respx); responses built inline, recorded fixtures of the real API arrive with the PRs that need them; synthetic webhook payloads in `tests/fixtures/webhooks/` (D-56); synthetic job logs in `tests/fixtures/logs/` | CI |
 | Integration | API + worker + real Postgres: migrations, webhook (401 with no rows, delivery idempotency, 503 and `/ready` with the database unreachable), installation events through the worker, idempotency, lease expiry after a killed worker process, heartbeats, concurrent workers (no double processing), NOTIFY wake-ups, newer-attempt guard, budget under concurrency (two engines, 40 racing reservations), the analysis checkpoint (atomic, first writer wins) and the publication lock (a waiter, a dead connection, a cancelled waiter) | Compose / CI service container `pgvector/pgvector:pg17`; own `<db>_test` databases; skipped locally when Postgres is down, failing in CI (D-51) | CI (`-m integration`), and locally with Compose up |
-| E2E (offline) | Replay a recorded `workflow_run` delivery through the API → worker → fake GitHub (respx) and assert the exact check run and comment calls | pytest | CI |
+| E2E (offline) | Replay a recorded `workflow_run` delivery through the API → worker → FakeGitHub (`tests/github_fake.py`, D-67) and assert the exact check run and comment calls | pytest | CI |
 | Live smoke | OpenAI (5 lab cases and the injection suite, `tests/live/`, from P1b); dev app + lab repo (P1c) | `-m live`; skipped without `OPENAI_API_KEY` and `OPENAI_MODEL`; at most 40 calls per test (D-65) | On demand |
 
 The fake LLM adapter (`FakeLLM`) can script: valid responses, raw and malformed JSON, truncated output, timeouts, 429s, server errors, an invalid key, responses that follow an injection, fabricated evidence, and over-long fields. The injection suite also runs offline against a fake model that obeys the log (D-64).
