@@ -100,9 +100,12 @@ class GitHubReporter:
         self, run: RunRef, credential: Credential, check_run_id: int, progress: dict[str, str]
     ) -> bool:
         """Put an existing check run in progress, with the current name of the workflow. ``False``
-        when GitHub does not know it (404). A 422 may mean that a completed check run cannot go
-        back to ``in_progress`` (U10, unverified): then only its output changes and it stays
-        completed."""
+        when GitHub does not know it (404).
+
+        GitHub does not reopen a completed check run (U10, measured on 2026-11-16): the ``PATCH``
+        answers 200, the check stays ``completed`` with its conclusion, and ``name`` and
+        ``output`` are applied. That is normal here: the answer is not inspected and nothing is
+        retried. The 422 branch below is defensive only: GitHub has never been seen refusing it."""
         path: dict[str, str | int] = {**_repo_path(run), "check_run_id": check_run_id}
         body: dict[str, Any] = {
             "name": check_name(run.workflow_name),
@@ -118,6 +121,7 @@ class GitHubReporter:
                 return False
             if exc.status_code != 422:
                 raise
+            # Never observed (see above): kept in case GitHub starts refusing; only the output.
             try:
                 await self._http.request(
                     "PATCH",

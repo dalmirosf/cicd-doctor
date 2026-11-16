@@ -1,0 +1,96 @@
+{
+  "default_encoding": {
+    "status": 200,
+    "headers": {
+      "content-length": "21481",
+      "content-type": "text/plain",
+      "last-modified": "Sat, 14 Nov 2026 01:03:17 GMT",
+      "accept-ranges": "bytes",
+      "server": "Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0",
+      "x-ms-version": "2025-11-05",
+      "x-ms-blob-type": "BlockBlob",
+      "date": "Mon, 16 Nov 2026 11:52:47 GMT"
+    },
+    "bytes_counted": 21481,
+    "decoded": true,
+    "first_two_bytes_hex": "efbb",
+    "looks_gzip": false,
+    "sent_accept_encoding": "<client default>",
+    "raw_bytes_downloaded": 21481
+  },
+  "identity": {
+    "status": 200,
+    "headers": {
+      "content-length": "21481",
+      "content-type": "text/plain",
+      "last-modified": "Sat, 14 Nov 2026 01:03:17 GMT",
+      "accept-ranges": "bytes",
+      "server": "Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0",
+      "x-ms-version": "2025-11-05",
+      "x-ms-blob-type": "BlockBlob",
+      "date": "Mon, 16 Nov 2026 11:52:47 GMT"
+    },
+    "bytes_counted": 21481,
+    "decoded": false,
+    "first_two_bytes_hex": "efbb",
+    "looks_gzip": false,
+    "sent_accept_encoding": "identity"
+  },
+  "range_offset_identity": {
+    "status": 206,
+    "headers": {
+      "content-length": "10741",
+      "content-type": "text/plain",
+      "content-range": "bytes 10740-21480/21481",
+      "last-modified": "Sat, 14 Nov 2026 01:03:17 GMT",
+      "accept-ranges": "bytes",
+      "server": "Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0",
+      "x-ms-version": "2025-11-05",
+      "x-ms-blob-type": "BlockBlob",
+      "date": "Mon, 16 Nov 2026 11:52:47 GMT"
+    },
+    "bytes_counted": 10741,
+    "decoded": false,
+    "first_two_bytes_hex": "656e",
+    "looks_gzip": false,
+    "sent_accept_encoding": "identity"
+  },
+  "range_suffix_identity": {
+    "status": 200,
+    "headers": {
+      "content-length": "21481",
+      "content-type": "text/plain",
+      "last-modified": "Sat, 14 Nov 2026 01:03:17 GMT",
+      "accept-ranges": "bytes",
+      "server": "Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0",
+      "x-ms-version": "2025-11-05",
+      "x-ms-blob-type": "BlockBlob",
+      "date": "Mon, 16 Nov 2026 11:52:48 GMT"
+    },
+    "bytes_counted": 21481,
+    "decoded": false,
+    "first_two_bytes_hex": "efbb",
+    "looks_gzip": false,
+    "sent_accept_encoding": "identity"
+  },
+  "range_offset_default_encoding": {
+    "status": 206,
+    "headers": {
+      "content-length": "10741",
+      "content-type": "text/plain",
+      "content-range": "bytes 10740-21480/21481",
+      "last-modified": "Sat, 14 Nov 2026 01:03:17 GMT",
+      "accept-ranges": "bytes",
+      "server": "Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0",
+      "x-ms-version": "2025-11-05",
+      "x-ms-blob-type": "BlockBlob",
+      "date": "Mon, 16 Nov 2026 11:52:48 GMT"
+    },
+    "bytes_counted": 10741,
+    "decoded": true,
+    "first_two_bytes_hex": "656e",
+    "looks_gzip": false,
+    "sent_accept_encoding": "<client default>",
+    "raw_bytes_downloaded": 10741
+  }
+}

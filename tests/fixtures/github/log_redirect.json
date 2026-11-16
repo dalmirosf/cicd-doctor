@@ -1,0 +1,36 @@
+{
+  "status": 302,
+  "headers": {
+    "date": "Mon, 16 Nov 2026 11:52:47 GMT",
+    "content-type": "text/html;charset=utf-8",
+    "content-length": "0",
+    "x-github-api-version-selected": "2022-11-28",
+    "server": "github.com",
+    "x-ratelimit-limit": "5000",
+    "x-ratelimit-remaining": "4997",
+    "x-ratelimit-reset": "1794833565",
+    "x-ratelimit-used": "3",
+    "x-ratelimit-resource": "core"
+  },
+  "location": {
+    "scheme": "https",
+    "host": "productionresultssa6.blob.core.windows.net",
+    "path_template": "/actions-results/<uuid>/workflow-job-run-<uuid>/logs/job/job-logs.txt",
+    "query_names": [
+      "rsct",
+      "se",
+      "sig",
+      "ske",
+      "skoid",
+      "sks",
+      "skt",
+      "sktid",
+      "skv",
+      "sp",
+      "spr",
+      "sr",
+      "st",
+      "sv"
+    ]
+  }
+}

@@ -19,6 +19,8 @@ LAB = Path(__file__).resolve().parents[2] / "lab"
 WORKFLOWS = LAB / ".github" / "workflows"
 MANIFEST = load_manifest(LAB / "cases.yaml")
 CASES = {case.id: case for case in MANIFEST.cases}
+# Workflows of the live verification (P1c): started by a pull request, not a case of the evals.
+LIVE_WORKFLOWS = {"pr-py-modnf.yml": "py-modnf"}
 
 
 def _workflow(name: str) -> dict[Any, Any]:
@@ -29,7 +31,9 @@ def _workflow(name: str) -> dict[Any, Any]:
 
 def test_case_ids_are_unique_and_every_workflow_has_a_case() -> None:
     assert len(CASES) == len(MANIFEST.cases)
-    assert {case.workflow for case in MANIFEST.cases} == {p.name for p in WORKFLOWS.glob("*.yml")}
+    assert {case.workflow for case in MANIFEST.cases} | LIVE_WORKFLOWS.keys() == {
+        p.name for p in WORKFLOWS.glob("*.yml")
+    }
 
 
 def test_at_least_twenty_cases_and_two_per_category() -> None:
@@ -51,6 +55,20 @@ def test_workflow_is_manual_only_least_privilege_and_has_the_job(case_id: str) -
     assert workflow["permissions"] == {"contents": "read"}
     assert case.job in workflow["jobs"]
     assert "timeout-minutes" in workflow["jobs"][case.job]
+
+
+@pytest.mark.parametrize("name", sorted(LIVE_WORKFLOWS))
+def test_live_workflow_runs_on_pull_requests_and_repeats_its_case(name: str) -> None:
+    workflow = _workflow(name)
+    case = CASES[LIVE_WORKFLOWS[name]]
+    original = _workflow(case.workflow)
+    triggers = workflow.get("on", workflow.get(True))
+
+    assert triggers == {"pull_request": None}
+    assert workflow["name"] == name.removesuffix(".yml")  # the check is "CICD Doctor: <name>"
+    assert workflow["permissions"] == {"contents": "read"}
+    assert "timeout-minutes" in workflow["jobs"][case.job]
+    assert workflow["jobs"] == original["jobs"]  # the same failure, step by step
 
 
 @pytest.mark.parametrize("case_id", sorted(CASES))
