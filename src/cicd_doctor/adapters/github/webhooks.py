@@ -113,6 +113,7 @@ class _Repository(BaseModel):
     full_name: str
     private: bool
     default_branch: str
+    owner: _Owner
 
 
 class _HeadRepository(BaseModel):
@@ -224,6 +225,8 @@ def _diagnose_job(parsed: _WorkflowRunEvent, max_attempts: int) -> NewJob | None
         completed_at=run.updated_at,
         default_branch=repo.default_branch,
         private=repo.private,
+        account_login=repo.owner.login,
+        account_type=repo.owner.type,
     )
     return NewJob(
         kind=JobKind.DIAGNOSE_RUN,

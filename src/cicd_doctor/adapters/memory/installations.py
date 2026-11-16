@@ -16,6 +16,9 @@ class InMemoryInstallationStore:
     async def save_installation(self, installation: Installation) -> None:
         self._installations[installation.id] = installation
 
+    async def ensure_installation(self, installation: Installation) -> None:
+        self._installations.setdefault(installation.id, installation)
+
     async def save_repositories(self, repositories: Sequence[Repository]) -> None:
         for repo in repositories:
             if repo.installation_id not in self._installations:
