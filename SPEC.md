@@ -161,7 +161,7 @@ cicd-doctor/
 │   ├── worker/                  # runner.py: the job consumer (D-49); handlers.py: job → use case
 │   └── app/                     # composition root (D-39): cli.py, settings.py, container.py
 ├── scripts/                     # load_webhooks.py (NFR-01 load test)
-├── tests/                       # unit/, contract/, integration/, adapters/, live/ (only with -m live), fixtures/{webhooks,logs,rules}/ (conftest.py, pg.py, factories.py, scenarios.py, webhooks.py, logcases.py, llmcases.py, github_fake.py, redaction_corpus.py); e2e/ later
+├── tests/                       # unit/, contract/, integration/, adapters/, live/ (only with -m live), fixtures/{webhooks,logs,rules}/ (conftest.py, pg.py, factories.py, scenarios.py, webhooks.py, logcases.py, llmcases.py, github_fake.py, redaction_corpus.py); e2e/ (offline end to end, D-74), diagnose_world.py
 ├── evals/                       # python -m evals: runner/ (cases, variants, metrics, report, capture, injection, markdown_threats, live, cli), cases/{lab,injection}, .cache/, reports/; baseline.json in P4
 ├── lab/                         # source of the lab repo: workflows that fail on purpose + cases.yaml (D-61)
 ├── docker/                      # compose.yaml, initdb/01-extensions.sql; Dockerfile (P5)
@@ -173,15 +173,15 @@ cicd-doctor/
     alembic.ini                  # migrations live in adapters/postgres/migrations (D-50)
 ```
 
-Implemented so far (P1b: the log pipeline, rules and the LLM path, all offline; and the GitHub client, the persistence and the use case of P1c, not wired into the worker yet):
+Implemented so far (P1b: the log pipeline, rules and the LLM path, all offline; and P1c: the GitHub client, the persistence, the use case and, since D-74, the wiring into the worker, all verified offline only):
 - `core/` has `models.py` (with the checkpoint models of D-69: `DiagnosisUsage`, `StoredFailure`, `RunAnalysisRecord`, `failure_id_for`), `ports.py`, `errors.py`, `retry.py`, the use cases `usecases/track_installation.py` and `usecases/diagnose_failed_run.py` (the flow of §7.1 over the ports: D-70, D-71, D-75), `logs/` (selection, tail cap, slicing, cleaning, noise, excerpt and token budget, §7.3), `redaction.py` (§9.2), `signature.py` (§7.4), `rules/` (§10), `analysis.py` (D-60), `policy.py` (§9.4), `diagnosis/` (prompt, schema, validation, merge, cost and the `DiagnoseJob` pipeline, D-66) and `render.py` (§9.5, D-64).
 - `evals/` has the runner with the `rules`, `llm` and `llm+hints` variants, the lab capture command (§11, D-61), the injection suite and its judge (D-64) and the live and cache plumbing (D-65); `lab/` has the lab repository sources.
 - `adapters/` has `clock.py`, `wakeup.py`, `github/webhooks.py`, `github/jobs.py`, `github/http.py` (D-67), `github/auth.py` (D-68), `github/logs.py` (D-71), `github/reporter.py` (the check run and the sticky comment, D-70, D-76), `github/pulls.py` (the PR of a run, D-72), `llm/tiktoken_counter.py`, `llm/openai_client.py` (D-63) and `llm/cache.py`; in `memory/`, the `FailureStore`, `FakeEmbedder`, `JobQueue`, `InstallationStore`, `CharTokenCounter`, `InMemoryUsageLedger`, `FakeLLM` and the GitHub fakes (`FakeLogSource`, `FakeReporter`, `FakePullRequests`); in `postgres/`, the `PostgresJobQueue`, the `PostgresInstallationStore`, the `PostgresFailureStore` (every method but `similar`, which needs the embeddings of P2; D-69), the `PostgresUsageLedger` and migrations `0001` (the whole §6 schema), `0002` and `0003` (the analysis checkpoint). The use case that calls the log source, the reporter and the pull request lookup exists and is tested on the in-memory fakes; the handler, the container and the end-to-end tests belong to the next step of P1c.
 - `api/` serves `GET /health`, `GET /ready` and `POST /webhooks/github`.
-- `worker/` has the consumer and the `sync_installation` handler; every other job kind still has a placeholder handler (D-49).
+- `worker/` has the consumer, the `sync_installation` handler and the `diagnose_run` handler (D-74: it publishes "Could not diagnose" when a job gives up); the other job kinds still have a placeholder handler (D-49).
 - `app/` has the CLI (`api`, `worker`), the settings and the composition root.
 
-The `embeddings/` package under `adapters/` exists as an empty placeholder. The GitHub client, the app authentication, the reporter and the pull request lookup exist and are tested against a fake, but nothing is wired to them: nothing calls GitHub yet and the worker does not run the use case (`diagnose_run` still has its placeholder handler; P1c). Everything else in the tree arrives in the phase that owns it (§13).
+The `embeddings/` package under `adapters/` exists as an empty placeholder. The worker now runs the diagnosis for real: `app/container.py` builds the GitHub client, the app authentication, the log source, the reporter, the pull request lookup, the Postgres store, ledger and installation store, and the use case (D-74). All of it is tested against `FakeGitHub` and `FakeLLM` only (`tests/e2e`, `tests/integration/test_diagnose_*.py`): nothing has called the real GitHub or OpenAI yet, which is what the open boxes of P1c in §13 are for. Everything else in the tree arrives in the phase that owns it (§13).
 
 ### 4.3 Ports
 
@@ -257,12 +257,12 @@ class Clock(Protocol):
 | Component | Process | Responsibilities |
 |---|---|---|
 | API | `cicd-doctor api` (uvicorn factory `cicd_doctor.app.container:create_api` on a selector event loop, D-55; `api/`) | `POST /webhooks/github` (§7.1 step 1, D-56), `GET /health` (process up, D-40), `GET /ready` (the database answers `SELECT 1` within 2 s, D-53). Body limit 25 MB. |
-| Worker | `cicd-doctor worker` (`worker/runner.py`, wired in `app/container.py`) | N concurrent asyncio consumers (default 4); wakes on `LISTEN jobs_new`, polls every 5 s as fallback; extends each lease every `lease / 3` while a job runs; drains running jobs for 30 s on SIGTERM or Ctrl+C (D-49); runs use cases (placeholder handlers until they exist); schedules the purge job daily (P2). |
+| Worker | `cicd-doctor worker` (`worker/runner.py`, wired in `app/container.py`) | N concurrent asyncio consumers (default 4); wakes on `LISTEN jobs_new`, polls every 5 s as fallback; extends each lease every `lease / 3` while a job runs; drains running jobs for 30 s on SIGTERM or Ctrl+C (D-49); runs the use cases (`sync_installation`, and `diagnose_run` with its give-up publication, D-74; the other kinds are placeholders until they exist); schedules the purge job daily (P2). It refuses to start without `GITHUB_APP_ID` and `GITHUB_PRIVATE_KEY`, and has no LLM client unless `OPENAI_API_KEY` and `OPENAI_MODEL` are both set (the diagnosis is then rules-only, `disabled`). |
 | Postgres 17 + pgvector | Compose locally (`pgvector/pgvector:pg17`, host port 5433, D-38, D-41); RDS for PostgreSQL in prod (D-46) | Queue, deliveries, failures, diagnoses, publications, usage ledger, embeddings. |
 
 ### 4.5 Configuration
 
-Settings come from the environment (`pydantic-settings` in `app/settings.py`; `.env` locally, AWS Secrets Manager in prod). `.env.example` is committed, `.env` is not, and a unit test keeps the two lists of variables equal. Empty values count as unset. Secrets, `DATABASE_URL` included, are `SecretStr`, so they never show up in a `repr`. The `POSTGRES_*` variables are read only by Docker Compose. The GitHub and OpenAI variables are optional in the settings until the adapters that need them arrive (P1b, P1c).
+Settings come from the environment (`pydantic-settings` in `app/settings.py`; `.env` locally, AWS Secrets Manager in prod). `.env.example` is committed, `.env` is not, and a unit test keeps the two lists of variables equal. Empty values count as unset. Secrets, `DATABASE_URL` included, are `SecretStr`, so they never show up in a `repr`. The `POSTGRES_*` variables are read only by Docker Compose. The GitHub and OpenAI variables are optional in the settings, but the worker checks at start that the GitHub App ones are set (the message names the variable, never its value) and the LLM client exists only when both OpenAI ones are (D-74) (P1b, P1c).
 
 | Variable | Default | Notes |
 |---|---|---|
@@ -293,14 +293,14 @@ Copy-Item .env.example .env
 docker compose up -d db         # from the repo root; same as: docker compose -f docker/compose.yaml up -d db
 uv run alembic upgrade head     # creates the §6 schema
 uv run cicd-doctor api          # terminal 1, http://localhost:8000 (GET /health)
-uv run cicd-doctor worker       # terminal 2 (placeholder handlers until the use cases exist)
+uv run cicd-doctor worker       # terminal 2 (needs GITHUB_APP_ID and GITHUB_PRIVATE_KEY in .env; diagnoses for real)
 npx smee-client --url https://smee.io/<dev-channel> --target http://127.0.0.1:8000/webhooks/github   # terminal 3 (127.0.0.1, D-52)
 uv run python scripts/load_webhooks.py --cleanup   # NFR-01 load test against the running API
 uv run pytest                   # integration tests are skipped while the database is down
 uv run pre-commit install       # once per clone: enables the commit gate (§12)
 ```
 
-As of P1a-2 the database, the migrations, the API (`/health`, `/ready`, `/webhooks/github`), the worker, the smee relay and the tests work. A failing run becomes a `diagnose_run` job, which the worker still completes with a placeholder handler until P1c.
+As of P1a-2 the database, the migrations, the API (`/health`, `/ready`, `/webhooks/github`), the worker, the smee relay and the tests work. A failing run becomes a `diagnose_run` job, which the worker diagnoses and publishes (D-74; verified against a fake GitHub only, until the live boxes of P1c are ticked).
 
 The **dev GitHub App** points its webhook URL at the smee channel; the **prod GitHub App** points at the public HTTPS endpoint of the API in AWS (D-30, D-46).
 
@@ -729,6 +729,8 @@ sequenceDiagram
 
 **Order and retries in the use case** (`DiagnoseFailedRun`, D-70). The installation and repository rows are ensured first (D-75). Then: guard (a newer attempt already published the check run: nothing to do); start the check run under the publication lock and store its id at once (step 3); the stored analysis of the attempt, or else steps 4 to 10 (jobs, logs, excerpts, rules, the LLM per job, at most three at a time, then `save_run_analysis`, whose commit is the checkpoint); complete the check run under the lock, guarded again, from the stored analysis; the comment under the lock of `(repo, PR, workflow)`, guarded by `(run_id, attempt)`, when the run has a PR (P1c has no repository config: comments are on and `llm` is `auto`). The LLM is only ever called before the checkpoint: a retry after it downloads no log, calls no LLM and reserves no budget. A run attempt with no failed job stores an empty checkpoint, publishes the neutral "Could not diagnose" (`no_failed_job`) and finishes normally. One INFO line per publication gives `run_id`, `attempt` and the seconds since the run's `completed_at` (NFR-02); it never carries log text.
 
+**When a job gives up** (`diagnose_run_handler`, D-74). The handler runs the use case. On a `PermanentError`, or on any error in the last attempt (`attempts >= max_attempts`), it completes the check run as "Could not diagnose" with the reason (`logs_expired`, `permission`, `internal_error`), as a best effort under its own 30 s timeout that never hides the original error, guarded by the newer-attempt rule, and then re-raises so the worker records `failed` or `dead`. A suspended or uninstalled installation has no token and gets nothing.
+
 ### 7.2 Re-runs, success and resolution (P2)
 
 - **Re-run of failed jobs** (same `run_id`, `run_attempt + 1`). If it fails again, there is a new `diagnose_run` job (different dedupe key); the same check run (keyed by `run_id`) and the same comment (keyed by PR and workflow) are **edited**, and the comment shows "Attempt N".
@@ -818,9 +820,9 @@ The embedding (P2) is computed on `canonical`, so the exact match and the simila
 | Worker | GitHub 5xx or 408, network error, timeout, DB error | `TransientError` → retry with exponential backoff + full jitter: base 30 s, ×4, capped at 30 min (≈30 s, 2 min, 8 min, 30 min). |
 | Worker | GitHub 429 / secondary rate limit / `x-ratelimit-remaining: 0` | Transient. `run_after` = `Retry-After`, else `x-ratelimit-reset`, else 60 s for a secondary limit without a header; kept between 1 s and 1 h (D-67). |
 | Worker | GitHub 401 (token expired) | Refresh the installation token once and send the request again (D-67, D-68), then treat as transient. |
-| Worker | GitHub 403 (permission), 404/410 (run or logs gone), 422, installation suspended or uninstalled | `PermanentError` → job `failed`. A job log that is gone is `LogsUnavailable` (a `PermanentError` with the status); the use case treats a 404 within 10 minutes of `completed_at` as transient and a 410 always as permanent (D-71). A 403 from the log blob is transient (the signed URL expired). Publish a neutral check "Could not diagnose: \<reason\>" when the check can still be written. A 403 names the permission GitHub says was missing (`x-accepted-github-permissions`) when it has a safe shape (D-67). |
+| Worker | GitHub 403 (permission), 404/410 (run or logs gone), 422, installation suspended or uninstalled | `PermanentError` → job `failed`. A job log that is gone is `LogsUnavailable` (a `PermanentError` with the status); the use case treats a 404 within 10 minutes of `completed_at` as transient and a 410 always as permanent (D-71). A 403 from the log blob is transient (the signed URL expired). Publish a neutral check "Could not diagnose: \<reason\>" when the check can still be written (the handler does it, D-74; a suspended or uninstalled installation has no token, so nothing is published). A 403 names the permission GitHub says was missing (`x-accepted-github-permissions`) when it has a safe shape (D-67). |
 | Worker | Any other exception (a bug, or a library error that was not wrapped) | Treated as transient: retried with the same backoff, logged with its traceback (D-49). |
-| Worker | Attempts used up (`attempts = max_attempts`, default 5) | Job `dead`, `ERROR` structured log with the full context. The check run gets "Could not diagnose (internal error)" (from P1c). |
+| Worker | Attempts used up (`attempts = max_attempts`, default 5) | Job `dead`, `ERROR` structured log with the full context. The check run gets "Could not diagnose (internal error)" (the handler publishes it in the last attempt, D-74; a job buried by the lease sweep never reaches the handler and its check stays `in_progress`). |
 | Worker | Crash or kill mid-job | Lease (`JOB_LEASE_S` = 300 s) expires and another worker re-leases the job; while a worker is alive it extends the lease every `lease / 3` (D-47). If the expired attempt was the last one, the job becomes `dead` instead. Side effects are idempotent (§6, newer-attempt guard). |
 | Worker | Shutdown (SIGTERM, Ctrl+C) | Stop leasing; running jobs get 30 s, then are cancelled and left to their lease (D-49). |
 | LLM | Timeout, 5xx, 429, connection error | Retried in-job twice (1 s, 4 s). Then rules fallback (`llm_error`). Never a job retry. |
@@ -1056,7 +1058,7 @@ The fake LLM adapter (`FakeLLM`) can script: valid responses, raw and malformed 
 - `pre-commit` (local hooks run through `uv run`): ruff (lint + format) and `pytest -m "unit or contract" -x -q` (memory adapters only, target < 30 s). A commit with a failing test is rejected. mypy is not part of pre-commit (D-42).
 - Claude Code hook (`.claude/settings.json` → `.claude/hooks/post_edit.py`): after each edit to a Python file or `pyproject.toml`, it runs `ruff check`, `ruff format --check` and the same fast tests, and reports failures back to Claude. It only checks and never rewrites files.
 - The `core/` import rule is a unit test (`tests/unit/test_architecture.py`), so it runs in all of the above (D-43).
-- CI (`.github/workflows/ci.yml`, on every push and pull request): three parallel jobs: lint (`ruff check`, `ruff format --check`), types (`mypy`, strict) and tests. The tests job runs a `pgvector/pgvector:pg17` service container, `uv run alembic upgrade head`, and then `pytest`, the whole suite (unit, contract, adapter and integration tests), with the `core/` coverage gate (`--cov=cicd_doctor.core --cov-fail-under=90`, since P1b). Added in later phases: the e2e tests; offline evals (P4); a Docker build (P5).
+- CI (`.github/workflows/ci.yml`, on every push and pull request): three parallel jobs: lint (`ruff check`, `ruff format --check`), types (`mypy`, strict) and tests. The tests job runs a `pgvector/pgvector:pg17` service container, `uv run alembic upgrade head`, and then `pytest`, the whole suite (unit, contract, adapter, integration and e2e tests), with the `core/` coverage gate (`--cov=cicd_doctor.core --cov-fail-under=90`, since P1b). Added in later phases: offline evals (P4); a Docker build (P5).
 - The dev app is installed on this repository, so CICD Doctor diagnoses its own CI failures.
 
 ---
@@ -1084,7 +1086,7 @@ Scope: FR-01…FR-14 and the FR-22 skeleton. Live on the dev app via smee.
 - [x] The same delivery posted 3 times creates exactly 1 `webhook_deliveries` row and 1 job (test: same file, through the endpoint).
 - [x] Load script: 100 deliveries → p99 acknowledgement < 1 s on the dev machine (`scripts/load_webhooks.py`: p99 109 to 139 ms over three runs, 10 concurrent, Windows 11 + Compose; all 202).
 - [x] A worker killed mid-job (lease 2 s in the test) → the job is re-leased and completes once (`tests/integration/test_worker_crash.py`: a real worker process is killed).
-- [ ] … and exactly one check run is created for it (integration test with the fake reporter). Needs the diagnose handler and the publication guard (P1c).
+- [x] … and exactly one check run is created for it. `tests/integration/test_diagnose_crash.py` (Postgres, in process): the handler of worker A is cancelled while it is blocked downloading the log blob, which happens after the check run `POST`; the fake clock passes the lease, worker B leases the job (attempt 2) and finishes it. `FakeGitHub` saw exactly one check run `POST` (B reopened the same check run by the id stored in `check_publications`), one comment `POST`, one LLM call, and the job is `done` once. The real-process kill is covered for the queue by `test_worker_crash.py`; the fake GitHub does not cross processes.
 - [x] A job failing with a transient error is retried with increasing `run_after`. After the max attempts it is `dead` (test with a fake clock, on the in-memory and the Postgres queue).
 
 *P1b — Pipeline (offline, fixtures)*

@@ -332,7 +332,9 @@ class DiagnoseFailedRun:
                 "the job log is not available yet", retry_after=self._config.logs_retry_after
             ) from exc
         await self.publish_could_not_diagnose(payload.run, "logs_expired", payload.completed_at)
-        raise PermanentError("the job log is no longer available") from exc
+        raise LogsUnavailable(
+            "the job log is no longer available", status_code=exc.status_code
+        ) from exc
 
     async def _diagnose_all(
         self, run: RunRef, analyses: list[JobAnalysis]
