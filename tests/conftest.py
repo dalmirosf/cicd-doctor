@@ -9,10 +9,10 @@ import pytest
 from tests.pg import database_url_for_tests, ensure_database, migrate_to_head, reset_tables
 
 _TESTS_DIR = Path(__file__).parent
-_MARKED_DIRECTORIES = {"unit", "contract", "integration", "e2e"}
+_MARKED_DIRECTORIES = {"unit", "contract", "integration", "e2e", "live"}
 
 
-def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
+def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
     """Mark every test with the marker named after its top-level directory under ``tests/``.
 
     This keeps ``pytest -m "unit or contract"`` (the fast pre-commit suite, SPEC D-29) in sync
@@ -20,7 +20,11 @@ def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
 
     A test that is already marked ``integration`` (the Postgres parameter of a contract suite)
     keeps only that marker, so the fast suite never needs a database (D-51).
+
+    ``live`` tests call OpenAI and cost money: they run only when ``-m`` names ``live`` (D-65).
     """
+    live_requested = "live" in (config.getoption("-m") or "")
+    skip_live = pytest.mark.skip(reason="calls OpenAI: run it on demand with `pytest -m live`")
     for item in items:
         relative = item.path.relative_to(_TESTS_DIR)
         top_level = relative.parts[0]
@@ -29,6 +33,8 @@ def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
         if top_level != "integration" and item.get_closest_marker("integration"):
             continue
         item.add_marker(getattr(pytest.mark, top_level))
+        if top_level == "live" and not live_requested:
+            item.add_marker(skip_live)
 
 
 def pytest_asyncio_loop_factories(

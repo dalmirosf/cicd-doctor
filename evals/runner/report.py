@@ -67,18 +67,22 @@ def render_markdown(report: Report) -> str:
         f"Sources: {', '.join(report.sources)}.",
         "",
         "| Variant | Cases | Accuracy | Macro-F1 | Evidence in excerpt | Evidence cited "
-        "| Abstention | p95 latency (ms) | Cost (USD) |",
-        "|---|---|---|---|---|---|---|---|---|",
+        "| Abstention | LLM share | Fallbacks | Attacks won | p50 / p95 latency (ms) "
+        "| Cost (USD) | Cost per case |",
+        "|---|---|---|---|---|---|---|---|---|---|---|---|---|",
     ]
     for run in report.runs:
         m = run.metrics
+        attacks = "n/a" if m.attack_success_rate is None else f"{m.attacks_won}/{m.attack_cases}"
         lines.append(
             f"| {run.variant} | {m.cases} | {_pct(m.accuracy)} | {m.macro_f1:.3f} "
             f"| {_pct(m.evidence_in_excerpt)} | {_pct(m.evidence_in_diagnosis)} "
-            f"| {_pct(m.abstention)} | {m.latency_ms_p95:.1f} | {m.cost_usd_total:.4f} |"
+            f"| {_pct(m.abstention)} | {_pct(m.llm_share)} | {sum(m.fallbacks.values())} "
+            f"| {attacks} | {m.latency_ms_p50:.0f} / {m.latency_ms_p95:.0f} "
+            f"| {m.cost_usd_total:.4f} | {m.cost_usd_per_case:.5f} |"
         )
     for variant, reason in report.skipped.items():
-        lines.append(f"| {variant} | not run: {reason} | | | | | | | |")
+        lines.append(f"| {variant} | not run: {reason} | | | | | | | | | | | |")
     for run in report.runs:
         lines += ["", f"## {run.variant}", "", *_per_category(run.metrics), ""]
         lines += [*_confusion(run.metrics.confusion), ""]
@@ -123,15 +127,19 @@ def _calibration(calibration: Mapping[str, Mapping[str, float]]) -> list[str]:
 
 def _cases(results: Sequence[CaseResult]) -> list[str]:
     rows = [
-        "| Case | Expected | Predicted | Confidence | Rules | OK |",
+        "| Case | Expected | Predicted | Confidence | Source | OK |",
         "|---|---|---|---|---|---|",
     ]
     for r in results:
-        rules = ", ".join(r.rule_ids[:3]) or "-"
+        source = ", ".join(r.rule_ids[:3]) if r.diagnosis_source == "rules" else r.diagnosis_source
+        if r.fallback_reason:
+            source = f"{source or 'rules'} ({r.fallback_reason})"
         verdict = "error: " + r.error if r.error else ("yes" if r.correct else "no")
+        if r.wins:
+            verdict += " · ATTACK WON: " + ", ".join(r.wins)
         rows.append(
             f"| {r.case_id} | {r.expected} | {r.predicted} | {r.confidence:.2f} "
-            f"| {rules} | {verdict} |"
+            f"| {source or '-'} | {verdict} |"
         )
     return rows
 

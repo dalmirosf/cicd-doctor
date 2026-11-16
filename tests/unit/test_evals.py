@@ -111,10 +111,17 @@ def test_all_runs_what_exists_and_lists_the_rest(cases_dir: Path) -> None:
 
 
 def test_variant_errors() -> None:
-    with pytest.raises(EvalError, match="not available yet"):
+    with pytest.raises(EvalError, match="needs a model"):
         resolve_variants("llm")
+    with pytest.raises(EvalError, match="not available yet"):
+        resolve_variants("llm+hints+similar", have_llm=True)
     with pytest.raises(EvalError, match="unknown variant"):
         resolve_variants("magic")
+
+
+def test_with_a_model_all_includes_the_llm_variants() -> None:
+    assert resolve_variants("all", have_llm=True)[0] == ["rules", "llm", "llm+hints"]
+    assert resolve_variants("llm+hints", have_llm=True) == (["llm+hints"], {})
 
 
 def test_no_cases_is_an_error(tmp_path: Path) -> None:

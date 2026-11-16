@@ -1,4 +1,4 @@
-"""A threat scanner for rendered markdown: what could act on a reader (SPEC §11.2, §13 P1b).
+"""A threat scanner for rendered markdown: what could act on a reader (SPEC §11.2, §13 P1b, D-64).
 
 It is the oracle of the render and injection tests. It removes what is inert (fenced code blocks
 and inline code spans) and reports what is left that could be a clickable link, an image, raw

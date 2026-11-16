@@ -37,8 +37,8 @@ from cicd_doctor.core.render import (
     render_could_not_diagnose,
     render_title,
 )
+from evals.runner.markdown_threats import threats
 from tests.factories import make_failure, make_run_ref
-from tests.markdown_scan import threats
 from tests.redaction_corpus import planted_secrets
 
 
