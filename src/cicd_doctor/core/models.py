@@ -397,6 +397,13 @@ class LLMResult(DomainModel):
 # --- Reporter port types (P0 placeholders) ------------------------------------------------
 
 
+class CheckOutput(DomainModel):
+    """The title and the markdown summary of a check run (already rendered and safe)."""
+
+    title: str
+    summary: str
+
+
 class CommentTarget(DomainModel):
     run: RunRef
     pr_number: int

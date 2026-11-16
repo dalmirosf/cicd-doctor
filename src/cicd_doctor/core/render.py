@@ -10,12 +10,13 @@ diagnosis: never a clickable phishing link, a notification, or markup that chang
 """
 
 import re
+import unicodedata
 from collections.abc import Sequence
-from dataclasses import dataclass
 from urllib.parse import urlsplit
 
 from cicd_doctor.core.logs.clean import strip_terminal_controls
 from cicd_doctor.core.models import (
+    CheckOutput,
     Diagnosis,
     DiagnosisReport,
     Failure,
@@ -30,6 +31,9 @@ MAX_SUMMARY_CHARS = 60_000  # the Checks API limit for a check run summary
 MAX_COMMENT_CHARS = 20_000  # well below GitHub's 65,536 for a comment
 COMMENT_EVIDENCE_LINES = 3
 COMMENT_FIX_CHARS = 500
+CHECK_NAME_PREFIX = "CICD Doctor"
+CHECK_NAME_WORKFLOW_CHARS = 60
+MAX_CHECK_NAME_CHARS = 80
 FOOTER = "Diagnosis generated automatically from untrusted logs; verify before acting."
 
 ALLOWED_HOSTS = frozenset(
@@ -83,6 +87,8 @@ MAX_URL_CODE_CHARS = 200
 def flatten(text: str, limit: int) -> str:
     """Redact secrets, drop control and invisible characters, make one line, cut to ``limit``."""
     clean = _INVISIBLE.sub("", strip_terminal_controls(redact(text)))
+    # Every format character (Cf) is invisible too: the soft hyphen, for one, is not in the list.
+    clean = "".join(char for char in clean if unicodedata.category(char) != "Cf")
     return " ".join(clean.split())[:limit]
 
 
@@ -185,10 +191,19 @@ def confidence_label(confidence: float) -> str:
     return "medium" if confidence >= MEDIUM_CONFIDENCE else "low"
 
 
-@dataclass(frozen=True)
-class CheckOutput:
-    title: str
-    summary: str
+def check_name(workflow_name: str) -> str:
+    """``CICD Doctor: <workflow>`` for the name of the check run (D-76).
+
+    The workflow name is untrusted: it is flattened (secrets redacted, control, invisible and bidi
+    characters dropped, one line) and cut to 60 characters, with ``…`` when it was cut. The Checks
+    API takes plain text, so there is no markdown escaping. Nothing left gives ``CICD Doctor``.
+    """
+    flat = flatten(workflow_name, 10_000)
+    if len(flat) > CHECK_NAME_WORKFLOW_CHARS:
+        flat = flat[: CHECK_NAME_WORKFLOW_CHARS - 1].rstrip() + "…"
+    if not flat:
+        return CHECK_NAME_PREFIX
+    return f"{CHECK_NAME_PREFIX}: {flat}"[:MAX_CHECK_NAME_CHARS]
 
 
 def render_title(report: DiagnosisReport) -> str:
@@ -205,20 +220,22 @@ def render_check(report: DiagnosisReport) -> CheckOutput:
     sections = [_job_section(report, failure, diagnosis) for failure, diagnosis in report.items]
     if not sections:
         sections = ["No failed job was found in this run attempt."]
-    return CheckOutput(render_title(report), _join(sections, MAX_SUMMARY_CHARS))
+    return CheckOutput(title=render_title(report), summary=_join(sections, MAX_SUMMARY_CHARS))
 
 
 def render_comment(report: DiagnosisReport) -> str:
     """The sticky PR comment: the same content, shorter, starting with the hidden marker."""
     run = report.run
     marker = f"<!-- cicd-doctor:v1 pr={int(run.pr_number or 0)} workflow={int(run.workflow_id)} -->"
-    heading = f"### CICD Doctor: {render_title(report)}"
+    workflow = inline(run.workflow_name, CHECK_NAME_WORKFLOW_CHARS)
+    heading = f"### CICD Doctor: {workflow}" if workflow else "### CICD Doctor"
+    title = render_title(report)
     attempt = f"Attempt {int(run.run_attempt)}" if run.run_attempt > 1 else ""
     body = [
         _job_section(report, failure, diagnosis, compact=True)
         for failure, diagnosis in report.items
     ]
-    head = "\n".join([marker, heading] + ([attempt] if attempt else []))
+    head = "\n".join([marker, heading, f"**{title}**"] + ([attempt] if attempt else []))
     return _join([head, *body], MAX_COMMENT_CHARS)
 
 
@@ -226,7 +243,7 @@ def render_could_not_diagnose(reason: str) -> CheckOutput:
     """A neutral message for a run that cannot be analysed. ``reason`` is a key of
     ``COULD_NOT_DIAGNOSE``; anything else gets the generic text, never echoed."""
     text = COULD_NOT_DIAGNOSE.get(reason, COULD_NOT_DIAGNOSE["internal_error"])
-    return CheckOutput("Could not diagnose", f"{text}\n\n---\n_{FOOTER}_")
+    return CheckOutput(title="Could not diagnose", summary=f"{text}\n\n---\n_{FOOTER}_")
 
 
 def _join(sections: Sequence[str], limit: int) -> str:

@@ -51,7 +51,7 @@ Each requirement is delivered in the phase noted in brackets (see §13).
 | FR-08b | Compute a 384-d embedding of the signature text and store it. | P2 |
 | FR-09 | Run the rule-based diagnoser on every excerpt. | P1 |
 | FR-10 | When allowed (§9.4), call the LLM with the redacted excerpt and rule hints. Validate the JSON output against the schema and verify evidence lines against the excerpt. On LLM error, invalid output, budget exhaustion or policy, fall back to the rules diagnosis and record the reason. | P1 |
-| FR-11 | Create a check run named `CICD Doctor` on the run's `head_sha` (`in_progress` when work starts, then `completed` with `neutral`). Re-runs update the same check run. | P1 |
+| FR-11 | Create a check run named `CICD Doctor: <workflow>` (the workflow name sanitised and cut, D-76; plain `CICD Doctor` when it is empty) on the run's `head_sha` (`in_progress` when work starts, then `completed` with `neutral`). Re-runs update the same check run. | P1 |
 | FR-12 | If the run has an associated PR (including fork PRs, resolved by head repo + branch), create or update one sticky comment per (PR, workflow), identified by a hidden marker and by its stored id. Never post a second comment for the same (PR, workflow). | P1 |
 | FR-13 | Enforce LLM cost limits: one LLM call per failed job per attempt, output-token cap, 30 LLM diagnoses per installation per UTC day, and a global daily USD budget (default 2 USD). | P1 |
 | FR-14 | For runs from fork PRs, publish the rules diagnosis only (no automatic LLM call). | P1 |
@@ -176,12 +176,12 @@ cicd-doctor/
 Implemented so far (P1b: the log pipeline, rules and the LLM path, all offline; and the GitHub client and the persistence of P1c, not wired into the worker yet):
 - `core/` has `models.py` (with the checkpoint models of D-69: `DiagnosisUsage`, `StoredFailure`, `RunAnalysisRecord`, `failure_id_for`), `ports.py`, `errors.py`, `retry.py`, the use case `usecases/track_installation.py`, `logs/` (selection, tail cap, slicing, cleaning, noise, excerpt and token budget, §7.3), `redaction.py` (§9.2), `signature.py` (§7.4), `rules/` (§10), `analysis.py` (D-60), `policy.py` (§9.4), `diagnosis/` (prompt, schema, validation, merge, cost and the `DiagnoseJob` pipeline, D-66) and `render.py` (§9.5, D-64).
 - `evals/` has the runner with the `rules`, `llm` and `llm+hints` variants, the lab capture command (§11, D-61), the injection suite and its judge (D-64) and the live and cache plumbing (D-65); `lab/` has the lab repository sources.
-- `adapters/` has `clock.py`, `wakeup.py`, `github/webhooks.py`, `github/jobs.py`, `github/http.py` (D-67), `github/auth.py` (D-68), `llm/tiktoken_counter.py`, `llm/openai_client.py` (D-63) and `llm/cache.py`; in `memory/`, the `FailureStore`, `FakeEmbedder`, `JobQueue`, `InstallationStore`, `CharTokenCounter`, `InMemoryUsageLedger` and `FakeLLM`; in `postgres/`, the `PostgresJobQueue`, the `PostgresInstallationStore`, the `PostgresFailureStore` (every method but `similar`, which needs the embeddings of P2; D-69), the `PostgresUsageLedger` and migrations `0001` (the whole §6 schema), `0002` and `0003` (the analysis checkpoint). The GitHub log source and reporter belong to P1c.
+- `adapters/` has `clock.py`, `wakeup.py`, `github/webhooks.py`, `github/jobs.py`, `github/http.py` (D-67), `github/auth.py` (D-68), `github/reporter.py` (the check run and the sticky comment, D-70, D-76), `github/pulls.py` (the PR of a run, D-72), `llm/tiktoken_counter.py`, `llm/openai_client.py` (D-63) and `llm/cache.py`; in `memory/`, the `FailureStore`, `FakeEmbedder`, `JobQueue`, `InstallationStore`, `CharTokenCounter`, `InMemoryUsageLedger` and `FakeLLM`; in `postgres/`, the `PostgresJobQueue`, the `PostgresInstallationStore`, the `PostgresFailureStore` (every method but `similar`, which needs the embeddings of P2; D-69), the `PostgresUsageLedger` and migrations `0001` (the whole §6 schema), `0002` and `0003` (the analysis checkpoint). The GitHub log source belongs to P1c.
 - `api/` serves `GET /health`, `GET /ready` and `POST /webhooks/github`.
 - `worker/` has the consumer and the `sync_installation` handler; every other job kind still has a placeholder handler (D-49).
 - `app/` has the CLI (`api`, `worker`), the settings and the composition root.
 
-The `embeddings/` package under `adapters/` exists as an empty placeholder. The GitHub client and the app authentication exist and are tested against a fake, but nothing is wired to them: nothing calls GitHub yet and nothing calls the pipeline from the worker (P1c). Everything else in the tree arrives in the phase that owns it (§13).
+The `embeddings/` package under `adapters/` exists as an empty placeholder. The GitHub client, the app authentication, the reporter and the pull request lookup exist and are tested against a fake, but nothing is wired to them: nothing calls GitHub yet and nothing calls the pipeline from the worker (P1c). Everything else in the tree arrives in the phase that owns it (§13).
 
 ### 4.3 Ports
 
@@ -214,12 +214,15 @@ class FailureStore(Protocol):
 class LLMClient(Protocol):
     async def diagnose(self, request: DiagnosisRequest) -> LLMResult: ...  # raw JSON + usage + latency
 
-class Reporter(Protocol):
-    async def start_check(self, run: RunRef) -> int: ...
-    async def complete_check(self, check_run_id: int, report: DiagnosisReport) -> None: ...
-    async def upsert_comment(self, target: CommentTarget, body: str, known_id: int | None) -> int: ...
+class Reporter(Protocol):     # callers hold the publication lock and keep the ids (D-70)
+    async def start_check(self, run: RunRef, known_id: int | None) -> int: ...   # known id, else by external_id, else a new check run
+    async def complete_check(self, run: RunRef, check_run_id: int, output: CheckOutput) -> None: ...   # neutral (D-18)
+    async def upsert_comment(self, target: CommentTarget, body: str, known_id: int | None) -> int: ...   # known id, else the bot's comment with the marker, else a new one
     async def post_suggestion(self, target: CommentTarget, suggestion: Suggestion) -> None: ...  # P3
     async def react(self, comment: CommentRef, reaction: str) -> None: ...                     # P3
+
+class PullRequestSource(Protocol):
+    async def find(self, run: RunRef) -> int | None: ...   # the open PR of a run, forks included (D-72)
 
 class JobQueue(Protocol):      # a lease is (job.id, job.attempts); False = that lease is gone (D-47)
     async def enqueue(self, job: NewJob, delivery: Delivery | None) -> bool: ...   # False on duplicate
@@ -687,7 +690,7 @@ sequenceDiagram
     API->>DB: INSERT delivery + job in one tx (ON CONFLICT DO NOTHING)
     API-->>GH: 202 Accepted (duplicate delivery: 200)
     W->>DB: lease job (FOR UPDATE SKIP LOCKED)
-    W->>GH: create check run CICD Doctor (in_progress)
+    W->>GH: create check run (CICD Doctor + workflow name, in_progress)
     W->>GH: list jobs of run attempt
     W->>GH: download failed job logs (max 3 jobs, 20 MB each)
     W->>W: slice failed step, clean, excerpt, redact, signature
@@ -712,8 +715,8 @@ sequenceDiagram
 **Step details**
 
 1. **Accept.** Verify the signature on the raw body, parse it, record the delivery, enqueue the job, respond. Nothing else happens in the request path.
-2. **Context.** Resolve the `RunRef`. `is_fork = head_repository.id != repository.id`. The PR is `workflow_run.pull_requests[0]` when present. For forks, that list is empty, so the PR is looked up with `GET /repos/{owner}/{repo}/pulls?head={head_owner}:{head_branch}&state=open`, matching `head.sha`.
-3. **Start check.** Create (or, for a new attempt of the same run, update) the check run with status `in_progress` and the title "Analyzing failure…".
+2. **Context.** Resolve the `RunRef`. `is_fork = head_repository.id != repository.id`. The PR is the first entry of `workflow_run.pull_requests` whose `base.repo.id` is this repository (GitHub may list PRs of another repository with the same branch name). For forks, and for runs whose list is empty, `PullRequestSource.find` looks the PR up with `GET /repos/{owner}/{repo}/pulls?head={head_owner}:{head_branch}&state=open`, accepting only a PR whose `head.sha` and `head.repo.full_name` match the run, and the lowest number if several do; a deleted fork or no match gives no comment (D-72).
+3. **Start check.** Find the check run by its stored id, else by `external_id = "cicd-doctor:run:{run_id}"` among the check runs of the commit written by this app, else create it, with status `in_progress`, the name `CICD Doctor: <workflow>` (D-76) and the title "Analyzing failure…". For a new attempt of the same run the check run is updated, its name too; if GitHub refuses to take a completed check run back to `in_progress`, only its output changes (D-70, U10).
 4. **Jobs.** `GET /repos/{o}/{r}/actions/runs/{run_id}/attempts/{attempt}/jobs` (paginated), normalised into `WorkflowJob`s by the adapter (`LogSource.jobs`). `core/logs/select.py` keeps the jobs with conclusion `failure` or `timed_out`, earliest `completed_at` first (ties by job id), at most `LOG_MAX_JOBS`. For each one, the failed step is the first step with conclusion `failure`, else the first `timed_out` or `cancelled` one (a timed-out job), else none and the whole job log is used (D-58).
 5. **Logs.** `GET /repos/{o}/{r}/actions/jobs/{job_id}/logs` returns a redirect to a signed blob URL. The redirect is followed **without** the `Authorization` header. If `Content-Length > LOG_MAX_BYTES`, an HTTP `Range` request fetches the last 20 MB. Otherwise the log is streamed into a ring buffer that keeps the last 20 MB, with a hard stop at 100 MB read. `truncated` is set accordingly. A 404 or 410 (logs expired or deleted) is a permanent error.
 6. **Excerpt** (§7.3), **redaction** (§9.2), **signature** (§7.4).
@@ -783,7 +786,7 @@ The embedding (P2) is computed on `canonical`, so the exact match and the simila
 
 ### 7.5 Published output
 
-**Check run** (`name: CICD Doctor`, `conclusion: neutral`, `details_url` = run URL):
+**Check run** (`name: CICD Doctor: <workflow>` (D-76: the workflow name is flattened, cut to 60 characters with `…`, at most 80 characters in all, plain text without markdown escaping; `external_id: cicd-doctor:run:{run_id}`), `conclusion: neutral`, `details_url` = run URL):
 
 - `title`: `Likely cause: dependency (high confidence)`, or `Could not diagnose` for permanent errors.
 - `summary` (markdown, ≤ 60,000 chars) has one section per failed job, with:
@@ -796,7 +799,7 @@ The embedding (P2) is computed on `canonical`, so the exact match and the simila
   - Similar past failures (P2).
   - A footer: "Diagnosis generated automatically from untrusted logs; verify before acting."
 
-**Sticky comment:** a shorter version of the same content, starting with the hidden marker `<!-- cicd-doctor:v1 pr={n} workflow={workflow_id} -->`. The comment is found by the id stored in `comment_publications`. If that id is missing or 404s, the adapter searches the PR comments for the marker in comments authored by the app's bot user. If none is found, it creates the comment and stores the id.
+**Sticky comment:** a shorter version of the same content, starting with the hidden marker `<!-- cicd-doctor:v1 pr={n} workflow={workflow_id} -->`, then the heading `### CICD Doctor: <workflow>` (the workflow name through `inline`) and the title in bold. The comment is found by the id stored in `comment_publications`. If that id is missing or 404s, the adapter searches the PR comments (at most 10 pages) for a comment whose author is the app's bot user (`<slug>[bot]`) and whose first line is exactly the marker of that (PR, workflow); a comment of anyone else is never edited, whatever it contains. If none is found, it creates the comment and stores the id.
 
 ---
 
@@ -1092,7 +1095,7 @@ Scope: FR-01…FR-14 and the FR-22 skeleton. Live on the dev app via smee.
 - [ ] Injection suite, live: no case forces the attacker's category. **Open:** only the real model can show it (an obedient fake model does force it, by design: no check in `core` can tell a true category from a forced one). `tests/live/test_live_injection.py` and `python -m evals run --sources injection --live` measure it.
 
 *P1c — GitHub integration (dev app, lab repo)*
-- [ ] Running a failing lab workflow from a PR → the `CICD Doctor` check run is completed with `neutral` within 90 s, and a sticky comment exists.
+- [ ] Running a failing lab workflow from a PR → the `CICD Doctor: <workflow>` check run is completed with `neutral` within 90 s, and a sticky comment exists.
 - [ ] "Re-run failed jobs" → the check run and the comment are **edited**: `gh api repos/{o}/{r}/issues/{pr}/comments` shows exactly 1 bot comment for that workflow.
 - [ ] A PR from a fork → a rules-only diagnosis labeled "LLM not used for fork PRs".
 - [ ] An invalid `OPENAI_API_KEY` → a rules diagnosis published with `fallback_reason = llm_error`.

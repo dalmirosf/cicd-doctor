@@ -11,11 +11,11 @@ from typing import Protocol
 from uuid import UUID
 
 from cicd_doctor.core.models import (
+    CheckOutput,
     CommentRef,
     CommentTarget,
     Delivery,
     Diagnosis,
-    DiagnosisReport,
     DiagnosisRequest,
     Failure,
     FailureStatus,
@@ -136,13 +136,24 @@ class LLMClient(Protocol):
 
 
 class Reporter(Protocol):
-    async def start_check(self, run: RunRef) -> int: ...
+    """Writes the check run and the sticky comment (D-70). The caller holds the publication lock
+    and keeps the ids; an id it passes is a hint that may be stale (a 404 falls back to a search).
+    """
 
-    async def complete_check(self, check_run_id: int, report: DiagnosisReport) -> None: ...
+    async def start_check(self, run: RunRef, known_id: int | None) -> int:
+        """Put the check run of this run in progress and return its id: the known one, else the
+        one found by ``external_id``, else a new one."""
+        ...
 
-    async def upsert_comment(
-        self, target: CommentTarget, body: str, known_id: int | None
-    ) -> int: ...
+    async def complete_check(self, run: RunRef, check_run_id: int, output: CheckOutput) -> None:
+        """Complete the check run as ``neutral`` with ``output`` (D-18)."""
+        ...
+
+    async def upsert_comment(self, target: CommentTarget, body: str, known_id: int | None) -> int:
+        """Update the sticky comment and return its id: the known one, else the bot's comment
+        with the marker of ``body``, else a new one. Never touches a comment the bot did not
+        write."""
+        ...
 
     async def post_suggestion(self, target: CommentTarget, suggestion: Suggestion) -> None:
         """P3."""
@@ -150,6 +161,12 @@ class Reporter(Protocol):
 
     async def react(self, comment: CommentRef, reaction: str) -> None:
         """P3."""
+        ...
+
+
+class PullRequestSource(Protocol):
+    async def find(self, run: RunRef) -> int | None:
+        """The number of the open pull request this run belongs to, or None (D-72)."""
         ...
 
 
