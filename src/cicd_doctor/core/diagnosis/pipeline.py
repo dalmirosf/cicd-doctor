@@ -1,4 +1,4 @@
-"""The diagnosis of one failed job: policy, budget, LLM call, validation, fallbacks (SPEC §7.1 8-9).
+"""One failed job's diagnosis: policy, budget, LLM call, validation, fallbacks (SPEC §7.1, D-66).
 
 ``DiagnoseJob.run`` takes the offline analysis of a job (excerpt, rules, signature) and decides
 what to publish. The rules diagnosis always exists. The LLM is used only when the policy allows

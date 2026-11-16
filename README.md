@@ -8,9 +8,11 @@ as a check run and a sticky PR comment.
 > and the worker exist, and installations are tracked. The log pipeline (failed job selection,
 > redacted excerpt, error signature), the rule-based diagnoser and the eval runner exist and are
 > tested offline and on 24 cases captured from real lab runs (`evals/cases/lab`; the lab's
-> sources are in `lab/`). The LLM diagnosis and the GitHub
-> output do not exist yet, so a failed run becomes a `diagnose_run` job that the worker
-> completes with a placeholder handler.
+> sources are in `lab/`). The LLM path exists too (policy, prompt, validation, budget, fallbacks,
+> the OpenAI client and the safe renderer) and is tested offline with a fake model and an
+> injection suite of 16 cases; it has not run against OpenAI yet (`pytest -m live` waits for an
+> `OPENAI_API_KEY`, and the model is chosen by a mini-eval, D-65). Nothing calls GitHub yet, so a
+> failed run becomes a `diagnose_run` job that the worker completes with a placeholder handler.
 > See [SPEC.md](SPEC.md) for the design and phases, and [DECISIONS.md](DECISIONS.md) for the
 > reasoning behind each decision.
 
@@ -61,6 +63,7 @@ Stop the database with `docker compose down` (add `-v` to also delete its data).
 | Tests (all) | `uv run pytest` |
 | Fast tests (what pre-commit runs, no database) | `uv run pytest -m "unit or contract"` |
 | Postgres tests (need `docker compose up -d db`) | `uv run pytest -m integration` |
+| Real OpenAI calls (need `OPENAI_API_KEY` and `OPENAI_MODEL` in `.env`; skipped otherwise, on demand only) | `uv run pytest -m live` |
 | Migrate / roll back the schema | `uv run alembic upgrade head` / `uv run alembic downgrade base` |
 | Lint / format check | `uv run ruff check .` / `uv run ruff format --check .` |
 | Types | `uv run mypy` |
@@ -76,13 +79,14 @@ database and never touch your development data.
 
 ```
 src/cicd_doctor/
-├── core/       # domain models, ports, errors, retry rules. Never imports adapters (tests/unit/test_architecture.py)
-├── adapters/   # port implementations: github (webhooks), postgres (queue, installations, migrations), memory, clock
+├── core/       # models, ports, logs, redaction, signature, rules, diagnosis pipeline, policy, render. Never imports adapters (tests/unit/test_architecture.py)
+├── adapters/   # port implementations: github (webhooks), llm (OpenAI, tiktoken, eval cache), postgres (queue, installations, migrations), memory (incl. fake LLM), clock
 ├── api/        # FastAPI app: GET /health, GET /ready, POST /webhooks/github
 ├── worker/     # job consumer and handlers
 └── app/        # composition root, settings and CLI
 scripts/        # load_webhooks.py (webhook latency check)
-tests/          # unit/, contract/, integration/, fixtures/webhooks/ (synthetic payloads)
-evals/          # eval harness (P1 skeleton, P4)
+tests/          # unit/, contract/, adapters/, integration/, e2e/, live/ (only with -m live), fixtures/ (synthetic)
+evals/          # eval harness: lab and injection cases, variants rules / llm / llm+hints (README inside)
+lab/            # sources of the lab repository (workflows that fail on purpose)
 docker/         # compose.yaml (+ Dockerfile in P5)
 ```
