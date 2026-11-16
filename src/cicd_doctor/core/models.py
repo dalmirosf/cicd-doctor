@@ -510,6 +510,10 @@ class DiagnoseRunPayload(DomainModel):
     completed_at: datetime  # workflow_run.updated_at
     default_branch: str
     private: bool
+    # The account of the installation (``repository.owner``, D-75). Optional because the jobs
+    # queued before P1c carry no account.
+    account_login: str | None = None
+    account_type: str | None = None
 
 
 # --- Installations (FR-03, D-54) ----------------------------------------------------------

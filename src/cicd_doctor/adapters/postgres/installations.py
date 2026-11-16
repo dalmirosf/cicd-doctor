@@ -21,6 +21,13 @@ _SAVE_INSTALLATION = text(
         suspended_at = EXCLUDED.suspended_at, deleted_at = EXCLUDED.deleted_at
     """
 )
+_ENSURE_INSTALLATION = text(
+    """
+    INSERT INTO installations (id, account_login, account_type, suspended_at, deleted_at)
+    VALUES (:id, :account_login, :account_type, :suspended_at, :deleted_at)
+    ON CONFLICT (id) DO NOTHING
+    """
+)
 _SAVE_REPOSITORY = text(
     """
     INSERT INTO repositories (id, installation_id, full_name, private, default_branch, removed_at)
@@ -64,6 +71,11 @@ class PostgresInstallationStore:
         with transient_db_errors():
             async with self._engine.begin() as conn:
                 await conn.execute(_SAVE_INSTALLATION, installation.model_dump())
+
+    async def ensure_installation(self, installation: Installation) -> None:
+        with transient_db_errors():
+            async with self._engine.begin() as conn:
+                await conn.execute(_ENSURE_INSTALLATION, installation.model_dump())
 
     async def save_repositories(self, repositories: Sequence[Repository]) -> None:
         if not repositories:

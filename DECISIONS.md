@@ -89,6 +89,7 @@ New decisions are appended. A superseded decision is marked `Superseded by D-NN`
 | D-70 | The boundary between persisting and publishing: compute once, publish from what is stored, exactly one comment | Proposed |
 | D-71 | Log download: a redirect fetched without credentials, an offset `Range`, a ring buffer behind it | Proposed |
 | D-72 | The pull request of a run, forks included: only PRs whose base is this repository, else a search by head | Proposed |
+| D-75 | The `diagnose_run` payload carries the account; the use case makes sure the installation and repository rows exist | Proposed |
 | D-76 | The check run is named `CICD Doctor: <workflow>`, with the name sanitised and cut. Amends D-18 | Proposed |
 
 ---
@@ -837,6 +838,13 @@ In every case, the sticky comment is edited to show the resolution.
 **Why:** `pull_requests` is empty for fork pull requests and for `workflow_dispatch`, and it may list a pull request of another repository, on which the bot would comment by mistake. Matching the head commit and the head repository means a push that arrived while the job waited, or another fork with the same branch name, never receives somebody else's diagnosis. The measurement on the real API (a read-only spike) showed the empty list for a `workflow_dispatch` and the listing endpoint answering with a list; the fork case was not observed yet, so the tests build it on FakeGitHub from the documented shape.
 **Alternatives:** `GET /repos/{o}/{r}/commits/{sha}/pulls` (pull requests by commit, but for forks it depends on the commit being in the base repository, which is less documented); trusting `pull_requests[0]` without the filter (it would comment on the wrong pull request).
 **Consequences:** `workflow_run.pull_requests[].base.repo.id` becomes a required field of the parsed webhook (an invalid payload without it is refused, as any other missing field); a small change to the normalised payload (D-56) and a new synthetic fixture, `workflow_run_completed_foreign_pr.json`. The `PullRequestSource` port joins SPEC §4.3. Nothing calls it yet: the use case comes in a later step of P1c.
+
+## D-75 — The `diagnose_run` payload carries the account; the use case makes sure the installation and repository rows exist
+**Origin:** Proposed (completes D-54)
+**Decision:** `DiagnoseRunPayload` gains `account_login` and `account_type` (from `repository.owner` of the webhook), optional because the jobs queued before P1c lack them. The use case `core/usecases/diagnose_failed_run.py` inserts the installation if it has no row (`InstallationStore.ensure_installation`: insert if missing, and never overwrites a row, so a stored `suspended_at` or `deleted_at` stays) and upserts the repository with `default_branch` and `private` from the payload. The plan was to do this after getting the installation token (proof that the repository is still installed); the credential belongs to the adapters, so the use case does it as the first thing it does, before any call to GitHub. A job without account whose installation has no row cannot be diagnosed: it ends as a `PermanentError` (nothing tracks that installation, and the run and failure rows need it).
+**Why:** `repositories.installation_id` references `installations`, and `workflow_runs` and `failures` reference `repositories`, so the rows have to exist before the analysis is saved; D-54 left that to P1c. The webhook already has the account.
+**Alternatives:** `GET /app/installations/{id}` with the app JWT (one more call per job for something the webhook already carries); requiring the `installation` event to have been seen (installations that predate P1a have no row).
+**Consequences:** `InstallationStore` gets `ensure_installation` in the port, the in-memory and the Postgres adapters (`ON CONFLICT DO NOTHING`), and the contract suite covers both. `repository.owner` becomes a required field of the parsed `workflow_run` webhook. The use case (D-70, D-71) is tested on in-memory fakes only (`adapters/memory/github.py`: `FakeLogSource`, `FakeReporter`, `FakePullRequests`); nothing is wired to the worker until the next step of P1c.
 
 ## D-76 — The check run is named `CICD Doctor: <workflow>`, with the name sanitised and cut
 **Origin:** Proposed (amends D-18)

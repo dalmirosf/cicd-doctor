@@ -214,6 +214,11 @@ class InstallationStore(Protocol):
 
     async def save_installation(self, installation: Installation) -> None: ...
 
+    async def ensure_installation(self, installation: Installation) -> None:
+        """Insert the installation if it has no row; change nothing otherwise, so a stored
+        ``suspended_at`` or ``deleted_at`` is never overwritten (D-75)."""
+        ...
+
     async def save_repositories(self, repositories: Sequence[Repository]) -> None:
         """Upsert. A ``None`` ``default_branch`` keeps the stored one."""
         ...

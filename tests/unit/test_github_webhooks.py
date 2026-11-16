@@ -95,6 +95,7 @@ def test_a_failed_run_becomes_a_diagnose_job_with_the_attempt_dedupe_key() -> No
         True,
     )
     assert payload.completed_at.isoformat() == "2026-11-12T12:03:21+00:00"
+    assert (payload.account_login, payload.account_type) == ("acme", "Organization")
 
 
 def test_the_job_payload_does_not_carry_the_raw_github_payload() -> None:

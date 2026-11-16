@@ -102,3 +102,20 @@ async def test_empty_batches_are_no_ops(store: InstallationStore) -> None:
     await store.remove_repositories([], T0)
 
     assert await store.repository(100) is None
+
+
+async def test_ensure_inserts_a_missing_installation(store: InstallationStore) -> None:
+    await store.ensure_installation(INSTALLATION)
+
+    assert await store.installation(10) == INSTALLATION
+
+
+async def test_ensure_changes_nothing_when_the_installation_exists(
+    store: InstallationStore,
+) -> None:
+    deleted = INSTALLATION.model_copy(update={"suspended_at": T0, "deleted_at": T0})
+    await store.save_installation(deleted)
+
+    await store.ensure_installation(INSTALLATION.model_copy(update={"account_login": "other"}))
+
+    assert await store.installation(10) == deleted  # not even its account, never its timestamps
