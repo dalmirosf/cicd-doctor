@@ -111,6 +111,24 @@ What GitHub does, as measured by hand (SPEC §13, D-70, D-76):
   check run keeps its id and its status, and only its text changes.
 - The check run name is shown as literal plain text, and `neutral` checks count as "passed".
 
+### Before you start
+
+Real mistakes of the first live run (2026-11-16). Go through them once:
+
+1. **Check the prompt before any `git` command.** The lab clone (`$env:TEMP\lab-p1c`) is not the
+   project (`C:\dev\cicd-doctor`). A branch pushed from the project folder goes to the project
+   repository, and it happened. Read the path in the prompt, or run `git remote get-url origin`,
+   before every `git switch`, `git commit` and `git push`.
+2. **Stop old `cicd-doctor` processes first** (`Get-Process | Where-Object { $_.Path -like '*cicd-doctor*' }`
+   or look at the terminals). An old worker with placeholder handlers takes the job and marks it
+   done without a diagnosis. The symptom that gave it away was error 32 (file in use) on `uv sync`.
+3. **Update before you migrate:** `git switch main`, `git pull`, `uv sync`, and only then
+   `uv run alembic upgrade head`. From an old branch alembic sees the old migrations and reports
+   nothing to do.
+4. **`cmd /c "git show ... > file"` creates an empty file even when git fails.** Check the size of
+   the destination (`(Get-Item file).Length`) before you use it.
+5. **PowerShell variable names ignore case:** `$run` and `$RUN` are the same variable.
+
 ### 0. Variables and start-up (once per PowerShell session)
 
 Replace `OWNER`, `SLUG` and `ORG`. `SLUG` is the app's slug (`GET /app`); `ORG` is the
@@ -396,6 +414,12 @@ $comments6 = gh api "repos/$ME/issues/$PR6/comments?per_page=100" | ConvertFrom-
 
 Criterion: a check `CICD Doctor: CI`, `neutral`, with a title that starts `Likely cause: broken_test`,
 and one comment of the bot on the pull request.
+
+What the first live run showed (2026-11-16): the push and the `pull_request` runs of CI both fail, so
+there are two runs of the same PR and workflow; they produce **one** comment, edited by the second.
+The job `Types (mypy --strict)` fails too, because mypy rejects `assert 1 == 2` (`comparison-overlap`)
+before the test even runs, so the check names two failed jobs (`PY-MYPY` and `PY-PYTEST-FAIL`) and
+the title ends with `(+1 more)`.
 
 ### 7. Clean-up
 
