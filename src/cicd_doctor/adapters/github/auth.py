@@ -31,6 +31,7 @@ from cicd_doctor.adapters.github.http import (
     GitHubPermanentError,
     GitHubTransientError,
 )
+from cicd_doctor.core.errors import InstallationUnavailable
 from cicd_doctor.core.ports import Clock
 
 logger = logging.getLogger(__name__)
@@ -72,6 +73,12 @@ class _TokenResponse(BaseModel):
 
     token: SecretStr
     expires_at: AwareDatetime
+
+
+class InstallationTokenRefused(  # noqa: N818  (a state, like ``InstallationUnavailable``)
+    GitHubPermanentError, InstallationUnavailable
+):
+    """GitHub refused to issue an installation token: nothing can be published (D-74)."""
 
 
 @dataclass(frozen=True)
@@ -210,7 +217,7 @@ class GitHubAppAuth:
             reason = _TOKEN_REFUSED.get(exc.status_code or 0)
             if reason is None:
                 raise
-            raise GitHubPermanentError(
+            raise InstallationTokenRefused(
                 f"installation token refused, {reason}: {exc}", status_code=exc.status_code
             ) from exc
         issued = _parse(_TokenResponse, response, f"POST {_TOKEN_PATH}")

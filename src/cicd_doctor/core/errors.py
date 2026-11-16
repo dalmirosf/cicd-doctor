@@ -23,6 +23,12 @@ class PermanentError(CicdDoctorError):
     """Retrying cannot help: missing permission, expired logs, suspended installation."""
 
 
+class InstallationUnavailable(PermanentError):  # noqa: N818  (a state, like ``PolicyBlocked``)
+    """GitHub refuses a token for the installation (suspended, uninstalled, or the repository was
+    removed from it): nothing can be read or published for this run, so the worker publishes
+    nothing either (D-74)."""
+
+
 class LogsUnavailable(PermanentError):  # noqa: N818  (a state, like ``PolicyBlocked``)
     """GitHub no longer has the log of a job (404: not there, 410: expired or deleted).
 

@@ -21,7 +21,7 @@ import httpx2
 from cicd_doctor.adapters.github.auth import DIAGNOSIS_PERMISSIONS, GitHubAppAuth
 from cicd_doctor.adapters.github.http import Credential, GitHubHttp, GitHubPermanentError
 from cicd_doctor.core.errors import PermanentError, TransientError
-from cicd_doctor.core.models import CheckOutput, CommentTarget, RunRef
+from cicd_doctor.core.models import CheckOutput, CommentRef, CommentTarget, RunRef, Suggestion
 from cicd_doctor.core.ports import Clock
 from cicd_doctor.core.render import check_name
 
@@ -219,6 +219,14 @@ class GitHubReporter:
             and isinstance(item.get("id"), int)
         ]
         return min(ours) if ours else None
+
+    # --- P3 ---------------------------------------------------------------------------------
+
+    async def post_suggestion(self, target: CommentTarget, suggestion: Suggestion) -> None:
+        raise NotImplementedError("P3")
+
+    async def react(self, comment: CommentRef, reaction: str) -> None:
+        raise NotImplementedError("P3")
 
     # --- helpers ---------------------------------------------------------------------------
 

@@ -12,8 +12,11 @@ as a check run and a sticky PR comment.
 > the OpenAI client and the safe renderer) and is tested offline with a fake model and an
 > injection suite of 16 cases; it has not run against OpenAI yet (`pytest -m live` waits for an
 > `OPENAI_API_KEY`, and the model is chosen by a mini-eval, D-65). The GitHub client and the app
-> authentication exist (D-67, D-68) but nothing is wired to them: nothing calls GitHub yet, so a
-> failed run becomes a `diagnose_run` job that the worker completes with a placeholder handler.
+> authentication, the log source, the reporter and the persistence exist (D-67 to D-76) and the
+> worker now runs them (D-74): a failed run becomes a `diagnose_run` job that is diagnosed and
+> published as a check run and a sticky comment. That is verified only against a fake GitHub and a
+> fake model; nothing has talked to the real GitHub or OpenAI yet, so the live boxes of P1c stay
+> open and the worker needs `GITHUB_APP_ID` and `GITHUB_PRIVATE_KEY` to start.
 > See [SPEC.md](SPEC.md) for the design and phases, and [DECISIONS.md](DECISIONS.md) for the
 > reasoning behind each decision.
 
@@ -34,7 +37,7 @@ In another terminal:
 ```powershell
 Invoke-RestMethod http://127.0.0.1:8000/health      # -> status: ok (liveness)
 Invoke-RestMethod http://127.0.0.1:8000/ready       # -> status: ready (the database answers)
-uv run cicd-doctor worker                            # job worker; Ctrl+C stops it cleanly
+uv run cicd-doctor worker                            # job worker (needs GITHUB_APP_ID and GITHUB_PRIVATE_KEY); Ctrl+C stops it cleanly
 uv run pytest                                        # all tests (integration ones need the db)
 ```
 
