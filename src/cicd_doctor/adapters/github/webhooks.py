@@ -120,8 +120,17 @@ class _HeadRepository(BaseModel):
     full_name: str
 
 
+class _BaseRepo(BaseModel):
+    id: int
+
+
+class _PullRequestBase(BaseModel):
+    repo: _BaseRepo
+
+
 class _PullRequest(BaseModel):
     number: int
+    base: _PullRequestBase
 
 
 class _WorkflowRun(BaseModel):
@@ -205,8 +214,9 @@ def _diagnose_job(parsed: _WorkflowRunEvent, max_attempts: int) -> NewJob | None
         head_repo_full_name=head.full_name if head is not None else "",
         event=run.event,
         is_fork=is_fork,
-        # Fork PRs are not listed here; P1c looks them up by head repo and branch (SPEC §7.1).
-        pr_number=run.pull_requests[0].number if run.pull_requests else None,
+        # Fork PRs are not listed here; ``PullRequestSource`` looks them up by head repo and
+        # branch (SPEC §7.1, D-72).
+        pr_number=_own_pull_request(run, repo.id),
     )
     payload = DiagnoseRunPayload(
         run=run_ref,
@@ -221,6 +231,13 @@ def _diagnose_job(parsed: _WorkflowRunEvent, max_attempts: int) -> NewJob | None
         dedupe_key=diagnose_dedupe_key(run.id, run.run_attempt),
         max_attempts=max_attempts,
     )
+
+
+def _own_pull_request(run: _WorkflowRun, repo_id: int) -> int | None:
+    """GitHub may list pull requests of another repository with the same branch name: only a PR
+    whose base is this repository counts (D-72)."""
+    own = [pr.number for pr in run.pull_requests if pr.base.repo.id == repo_id]
+    return own[0] if own else None
 
 
 def _installation_job(

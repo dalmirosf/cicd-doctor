@@ -73,11 +73,9 @@ def _strip_inline_code(line: str) -> str:
     return "".join(out)
 
 
-_HEADING = re.compile(
-    r"^### CICD Doctor: (?:Likely cause: [a-z_]+ \((?:high|medium|low) confidence\)"
-    r"(?: \(\+\d+ more\))?|Could not diagnose)$",
-    re.MULTILINE,
-)
+# Only the fixed prefix of the comment heading is allowed through: the workflow name after it is
+# untrusted text and stays scanned (D-76).
+_HEADING = re.compile(r"^### CICD Doctor(?=: |$)(?:: )?", re.MULTILINE)
 _RULE_LINE = re.compile(r"^---$", re.MULTILINE)
 _SIMILAR_PREFIX = re.compile(r"^- `[a-z_]+` \(score \d\.\d\d\): ", re.MULTILINE)
 

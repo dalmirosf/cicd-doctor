@@ -117,6 +117,37 @@ def test_a_fork_run_is_marked_as_fork_without_a_pr_number() -> None:
     assert payload.run.branch_key == "drive-by/widgets:fix-typo"
 
 
+def test_a_pull_request_of_another_repository_is_not_the_pr_of_the_run() -> None:
+    job = route("workflow_run", load("workflow_run_completed_foreign_pr"))
+
+    assert job is not None
+    payload = DiagnoseRunPayload.model_validate(job.payload)
+    assert (payload.run.event, payload.run.is_fork, payload.run.pr_number) == (
+        "pull_request",
+        False,
+        None,
+    )
+
+
+def test_the_pull_request_of_this_repository_is_kept_among_foreign_ones() -> None:
+    payload = load("workflow_run_completed_foreign_pr")
+    own = load("workflow_run_completed_failure")["workflow_run"]["pull_requests"]
+    payload["workflow_run"]["pull_requests"].extend(own)
+
+    job = route("workflow_run", payload)
+
+    assert job is not None
+    assert DiagnoseRunPayload.model_validate(job.payload).run.pr_number == 12
+
+
+def test_a_listed_pull_request_without_its_base_repository_is_an_invalid_payload() -> None:
+    payload = load("workflow_run_completed_failure")
+    del payload["workflow_run"]["pull_requests"][0]["base"]
+
+    with pytest.raises(InvalidPayloadError, match="base"):
+        route("workflow_run", payload)
+
+
 def test_a_run_without_head_repository_is_treated_as_a_fork() -> None:
     payload = load("workflow_run_completed_fork")
     payload["workflow_run"]["head_repository"] = None

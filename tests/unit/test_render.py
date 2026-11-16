@@ -2,6 +2,7 @@
 guarantee that untrusted text becomes no link, no mention and no markup."""
 
 import re
+import unicodedata
 from typing import Any
 from uuid import uuid4
 
@@ -20,13 +21,16 @@ from cicd_doctor.core.models import (
 )
 from cicd_doctor.core.render import (
     ALLOWED_HOSTS,
+    CHECK_NAME_PREFIX,
     COULD_NOT_DIAGNOSE,
     FALLBACK_TEXT,
     FOOTER,
+    MAX_CHECK_NAME_CHARS,
     MAX_COMMENT_CHARS,
     MAX_SUMMARY_CHARS,
     ZWJ,
     allowed_url,
+    check_name,
     code,
     confidence_label,
     fenced,
@@ -39,7 +43,7 @@ from cicd_doctor.core.render import (
 )
 from evals.runner.markdown_threats import threats
 from tests.factories import make_failure, make_run_ref
-from tests.redaction_corpus import planted_secrets
+from tests.redaction_corpus import Planted, planted_secrets
 
 
 def diagnosis(**changes: Any) -> Diagnosis:
@@ -383,9 +387,87 @@ def test_the_comment_starts_with_the_hidden_marker() -> None:
     comment = render_comment(report())
 
     assert comment.startswith("<!-- cicd-doctor:v1 pr=12 workflow=7 -->\n")
-    assert "### CICD Doctor: Likely cause: dependency (high confidence)" in comment
+    assert comment.splitlines()[1:3] == [
+        "### CICD Doctor: CI",
+        "**Likely cause: dependency (high confidence)**",
+    ]
     assert comment.rstrip().endswith(f"_{FOOTER}_")
     assert threats(comment, document=True) == []
+
+
+def test_the_comment_heading_names_the_workflow_inertly() -> None:
+    hostile = "# [x](https://evil.example) @octocat <b>ci</b> #12"
+    rep = DiagnosisReport(run=make_run_ref(workflow_name=hostile), items=report().items)
+
+    comment = render_comment(rep)
+
+    heading = comment.splitlines()[1]
+    assert heading.startswith("### CICD Doctor: ")
+    assert threats(comment, document=True) == []
+    assert comment.splitlines()[2].startswith("**Likely cause")  # the heading is one line
+
+
+def test_a_workflow_without_a_name_leaves_the_heading_plain() -> None:
+    rep = DiagnosisReport(run=make_run_ref(workflow_name="  ​ "), items=report().items)
+
+    assert render_comment(rep).splitlines()[1] == "### CICD Doctor"
+
+
+# --- the name of the check run (D-76) --------------------
+
+
+def test_the_check_name_is_the_workflow_name_after_the_prefix() -> None:
+    assert check_name("CI") == "CICD Doctor: CI"
+    assert check_name("  Build   and\ttest\nnow ") == "CICD Doctor: Build and test now"
+
+
+def test_a_long_workflow_name_is_cut_with_an_ellipsis() -> None:
+    name = check_name("w" * 200)
+
+    assert name == "CICD Doctor: " + "w" * 59 + "…"
+    assert len(name) <= MAX_CHECK_NAME_CHARS
+    assert check_name("w" * 60) == "CICD Doctor: " + "w" * 60  # exactly at the limit: not cut
+
+
+def test_a_workflow_name_with_markup_is_plain_text_not_escaped() -> None:
+    assert check_name("<b>ci</b> & **deploy** @octocat https://x.example/a") == (
+        "CICD Doctor: <b>ci</b> & **deploy** @octocat https://x.example/a"
+    )
+
+
+def test_a_workflow_name_with_nothing_visible_gives_the_bare_prefix() -> None:
+    assert check_name("") == "CICD Doctor"
+    assert check_name(" \t\n\u200b\u202e\x1b[0m ") == "CICD Doctor"
+
+
+def test_a_secret_in_the_workflow_name_does_not_reach_the_check_name() -> None:
+    for planted in planted_secrets():
+        assert planted.secret not in check_name(f"deploy {planted.line}")
+
+
+@settings(max_examples=300, deadline=None)
+@given(name=st.text(max_size=300))
+def test_the_check_name_is_always_short_one_line_and_clean(name: str) -> None:
+    result = check_name(name)
+
+    assert result.startswith(CHECK_NAME_PREFIX)
+    assert len(result) <= MAX_CHECK_NAME_CHARS
+    assert result == check_name(name)  # deterministic
+    assert result == " ".join(result.split())  # one line, no odd whitespace
+    assert all(unicodedata.category(c) not in {"Cc", "Cf", "Zl", "Zp"} for c in result)
+    assert result == result.strip()
+
+
+@settings(max_examples=100, deadline=None)
+@given(
+    planted=st.sampled_from(planted_secrets()),
+    before=st.text(max_size=30),
+    after=st.text(max_size=30),
+)
+def test_a_planted_secret_never_comes_out_of_the_check_name(
+    planted: Planted, before: str, after: str
+) -> None:
+    assert planted.secret not in check_name(f"{before} {planted.line} {after}")
 
 
 def test_the_comment_shows_the_attempt_only_after_the_first() -> None:
@@ -523,4 +605,12 @@ def test_no_report_built_from_fuzzed_text_is_unsafe(
     )
 
     assert threats(render_check(rep).summary, document=True) == []
+    assert threats(render_comment(rep), document=True) == []
+
+
+@settings(max_examples=150, deadline=None)
+@given(name=st.one_of(FUZZ_TEXT, st.text(max_size=100)))
+def test_no_workflow_name_makes_the_comment_unsafe(name: str) -> None:
+    rep = DiagnosisReport(run=make_run_ref(workflow_name=name), items=report().items)
+
     assert threats(render_comment(rep), document=True) == []

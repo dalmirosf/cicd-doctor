@@ -29,7 +29,7 @@ from collections.abc import AsyncIterator, Awaitable, Callable, Mapping
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Any, Literal
-from urllib.parse import parse_qsl, unquote
+from urllib.parse import parse_qsl, quote, unquote
 
 import httpx2
 import jwt
@@ -396,6 +396,355 @@ class FakeGitHub:
 
 def _json_body(request: httpx2.Request) -> Any:
     return json.loads(request.content) if request.content else None
+
+
+# ==== P1c (c): check runs, issue comments and pulls ======================================
+# Self-contained: ``FakeRepoWrites(github)`` registers its routes with ``add_route`` and keeps the
+# state they read and write. Shapes follow what the spike measured on the real API (check run
+# objects, ``Link`` headers); the bot comment shape is the documented one (``user.login`` is
+# ``<slug>[bot]``, ``user.type`` is ``Bot``), never observed yet.
+
+CHECK_STATUSES = frozenset({"queued", "in_progress", "completed"})
+MAX_CHECK_SUMMARY = 65_535  # the Checks API limit
+MAX_COMMENT_BODY = 65_536
+
+
+def _timestamp(moment: datetime) -> str:
+    return moment.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+@dataclass
+class FakeRepoWrites:
+    """The write side of the repository API: check runs, issue comments, and the pulls listing.
+
+    ``allow_reopen=False`` makes ``PATCH`` refuse (422) to take a completed check run back to
+    ``in_progress``: nobody has verified yet what GitHub does (U10), so tests run both.
+    """
+
+    github: FakeGitHub
+    allow_reopen: bool = True
+    page_cap: int = 100  # lower it to make a listing paginate with a few items
+    check_runs: dict[int, dict[str, Any]] = field(default_factory=dict)
+    comments: dict[int, dict[str, Any]] = field(default_factory=dict)
+    pulls: list[dict[str, Any]] = field(default_factory=list)
+    _next_id: int = 9000
+
+    def __post_init__(self) -> None:
+        base = "/repos/{owner}/{repo}"
+        add = self.github.add_route
+        add("POST", f"{base}/check-runs", self._create_check_run)
+        add("PATCH", f"{base}/check-runs/{{check_run_id}}", self._update_check_run)
+        add("GET", f"{base}/commits/{{ref}}/check-runs", self._list_check_runs)
+        add("GET", f"{base}/issues/{{issue_number}}/comments", self._list_comments)
+        add("POST", f"{base}/issues/{{issue_number}}/comments", self._create_comment)
+        add("PATCH", f"{base}/issues/comments/{{comment_id}}", self._update_comment)
+        add("GET", f"{base}/pulls", self._list_pulls)
+
+    # --- state the tests set up ----------------------------------------------------------
+
+    def add_check_run(
+        self,
+        *,
+        repo: str = "acme/widgets",
+        name: str = "run",
+        head_sha: str,
+        external_id: str | None = None,
+        status: str = "completed",
+        conclusion: str | None = "success",
+        app_id: int | None = None,
+    ) -> dict[str, Any]:
+        """A check run somebody else (or an earlier run of ours) already made."""
+        run = self._check_run_object(repo, name, head_sha, external_id, status, app_id)
+        run["conclusion"] = conclusion if status == "completed" else None
+        return run
+
+    def add_user_comment(
+        self, pr_number: int, body: str, *, login: str = "mallory", repo: str = "acme/widgets"
+    ) -> dict[str, Any]:
+        """A comment written by a person (or any account that is not the bot)."""
+        return self._comment_object(repo, pr_number, body, login=login, user_type="User")
+
+    def add_bot_comment(
+        self, pr_number: int, body: str, *, repo: str = "acme/widgets"
+    ) -> dict[str, Any]:
+        return self._comment_object(
+            repo, pr_number, body, login=f"{self.github.app_slug}[bot]", user_type="Bot"
+        )
+
+    def add_pull(
+        self,
+        number: int,
+        *,
+        head_repo: str,
+        head_ref: str,
+        head_sha: str,
+        base_repo_id: int = REPO_ID,
+        state: str = "open",
+        repo: str = "acme/widgets",
+    ) -> dict[str, Any]:
+        """A pull request; ``head_repo=""`` is a fork that was deleted (``head.repo`` is null)."""
+        owner = head_repo.split("/")[0] if head_repo else "ghost"
+        pull = {
+            "number": number,
+            "state": state,
+            "head": {
+                "ref": head_ref,
+                "sha": head_sha,
+                "repo": {"full_name": head_repo} if head_repo else None,
+                "label": f"{owner}:{head_ref}",
+            },
+            "base": {"ref": "main", "repo": {"id": base_repo_id, "full_name": repo}},
+            "_repo": repo,
+        }
+        self.pulls.append(pull)
+        return pull
+
+    def requests_by(self, method: str, template: str) -> list[RecordedRequest]:
+        return self.github.requests_to(method, template)
+
+    # --- objects -------------------------------------------------------------------------
+
+    def _new_id(self) -> int:
+        self._next_id += 1
+        return self._next_id
+
+    def _check_run_object(
+        self,
+        repo: str,
+        name: str,
+        head_sha: str,
+        external_id: str | None,
+        status: str,
+        app_id: int | None,
+    ) -> dict[str, Any]:
+        check_id = self._new_id()
+        run = {
+            "id": check_id,
+            "name": name,
+            "head_sha": head_sha,
+            "external_id": external_id if external_id is not None else f"uuid-{check_id}",
+            "status": status,
+            "conclusion": None,
+            "started_at": _timestamp(self.github.clock.now()),
+            "completed_at": None,
+            "details_url": None,
+            "output": {
+                "title": None,
+                "summary": None,
+                "text": None,
+                "annotations_count": 0,
+                "annotations_url": f"https://api.github.com/repos/{repo}/check-runs/{check_id}"
+                "/annotations",
+            },
+            "check_suite": {"id": 8000 + check_id},
+            "app": {
+                "id": self.github.app_id if app_id is None else app_id,
+                "slug": self.github.app_slug if app_id is None else f"app-{app_id}",
+            },
+            "_repo": repo,
+        }
+        self.check_runs[check_id] = run
+        return run
+
+    def _comment_object(
+        self, repo: str, pr_number: int, body: str, *, login: str, user_type: str
+    ) -> dict[str, Any]:
+        comment_id = self._new_id()
+        now = _timestamp(self.github.clock.now())
+        comment: dict[str, Any] = {
+            "id": comment_id,
+            "body": body,
+            "user": {"login": login, "type": user_type},
+            "performed_via_github_app": (
+                {"id": self.github.app_id, "slug": self.github.app_slug}
+                if user_type == "Bot"
+                else None
+            ),
+            "created_at": now,
+            "updated_at": now,
+            "_repo": repo,
+            "_pr": pr_number,
+        }
+        self.comments[comment_id] = comment
+        return comment
+
+    # --- permissions ---------------------------------------------------------------------
+
+    def _lacks(
+        self, request: RecordedRequest, permission: str, level: str
+    ) -> httpx2.Response | None:
+        """403 when the installation token was not requested with ``permission`` at ``level``."""
+        header = request.header("authorization") or ""
+        token = header.removeprefix("Bearer ")
+        issued = next((i for i in self.github.issued if i.token == token), None)
+        granted = _LEVELS.get((issued.permissions if issued else {}).get(permission, ""), 0)
+        if granted < _LEVELS[level]:
+            return error_response(403, f"Resource not accessible: needs {permission}={level}")
+        return None
+
+    # --- check runs ----------------------------------------------------------------------
+
+    def _create_check_run(self, request: RecordedRequest) -> httpx2.Response:
+        if (denied := self._lacks(request, "checks", "write")) is not None:
+            return denied
+        body = request.json if isinstance(request.json, dict) else {}
+        status = body.get("status", "queued")
+        if not body.get("name") or not body.get("head_sha") or status not in CHECK_STATUSES:
+            return error_response(422, "Validation Failed")
+        repo = f"{request.params['owner']}/{request.params['repo']}"
+        problem = self._check_output_problem(body.get("output"))
+        if problem is not None:
+            return problem
+        run = self._check_run_object(
+            repo, body["name"], body["head_sha"], body.get("external_id"), status, None
+        )
+        run["details_url"] = body.get("details_url")
+        self._apply_output(run, body.get("output"))
+        return json_response(201, _public(run))
+
+    def _update_check_run(self, request: RecordedRequest) -> httpx2.Response:
+        if (denied := self._lacks(request, "checks", "write")) is not None:
+            return denied
+        run = self.check_runs.get(int(request.params["check_run_id"]))
+        if run is None:
+            return error_response(404, "Not Found")
+        body = request.json if isinstance(request.json, dict) else {}
+        status = body.get("status", run["status"])
+        if status not in CHECK_STATUSES:
+            return error_response(422, "Validation Failed")
+        if "conclusion" in body and status != "completed":
+            return error_response(422, "conclusion needs status completed")
+        if run["status"] == "completed" and status != "completed" and not self.allow_reopen:
+            return error_response(422, "A completed check run cannot be reopened")
+        problem = self._check_output_problem(body.get("output"))
+        if problem is not None:
+            return problem
+        self._apply_output(run, body.get("output"))
+        for key in ("name", "details_url", "conclusion", "completed_at", "external_id"):
+            if key in body:
+                run[key] = body[key]
+        if status != "completed":
+            run["conclusion"], run["completed_at"] = None, None
+        run["status"] = status
+        return json_response(200, _public(run))
+
+    @staticmethod
+    def _check_output_problem(output: Any) -> httpx2.Response | None:
+        if output is None:
+            return None
+        if not isinstance(output, dict) or not output.get("title") or "summary" not in output:
+            return error_response(422, "output needs a title and a summary")
+        if len(output["summary"]) > MAX_CHECK_SUMMARY:
+            return error_response(422, "output.summary is too long")
+        return None
+
+    @staticmethod
+    def _apply_output(run: dict[str, Any], output: Any) -> None:
+        if output is not None:
+            run["output"] = {
+                **run["output"],
+                "title": output["title"],
+                "summary": output["summary"],
+            }
+
+    def _list_check_runs(self, request: RecordedRequest) -> httpx2.Response:
+        if (denied := self._lacks(request, "checks", "read")) is not None:
+            return denied
+        repo = f"{request.params['owner']}/{request.params['repo']}"
+        query = request.query
+        found = [
+            run
+            for run in self.check_runs.values()
+            if run["_repo"] == repo
+            and run["head_sha"] == request.params["ref"]
+            and ("app_id" not in query or str(run["app"]["id"]) == query["app_id"])
+            and ("check_name" not in query or run["name"] == query["check_name"])
+        ]
+        page, link = _page(request, self.page_cap, [_public(run) for run in found])
+        return json_response(200, {"total_count": len(found), "check_runs": page}, link)
+
+    # --- comments ------------------------------------------------------------------------
+
+    def _list_comments(self, request: RecordedRequest) -> httpx2.Response:
+        if (denied := self._lacks(request, "pull_requests", "write")) is not None:
+            return denied
+        repo = f"{request.params['owner']}/{request.params['repo']}"
+        number = int(request.params["issue_number"])
+        found = [c for c in self.comments.values() if c["_repo"] == repo and c["_pr"] == number]
+        page, link = _page(request, self.page_cap, [_public(c) for c in found])
+        return json_response(200, page, link)
+
+    def _create_comment(self, request: RecordedRequest) -> httpx2.Response:
+        if (denied := self._lacks(request, "pull_requests", "write")) is not None:
+            return denied
+        body = request.json if isinstance(request.json, dict) else {}
+        text = body.get("body")
+        if not isinstance(text, str) or not text or len(text) > MAX_COMMENT_BODY:
+            return error_response(422, "Validation Failed")
+        repo = f"{request.params['owner']}/{request.params['repo']}"
+        comment = self._comment_object(
+            repo,
+            int(request.params["issue_number"]),
+            text,
+            login=f"{self.github.app_slug}[bot]",
+            user_type="Bot",
+        )
+        return json_response(201, _public(comment))
+
+    def _update_comment(self, request: RecordedRequest) -> httpx2.Response:
+        if (denied := self._lacks(request, "pull_requests", "write")) is not None:
+            return denied
+        comment = self.comments.get(int(request.params["comment_id"]))
+        if comment is None:
+            return error_response(404, "Not Found")
+        if comment["user"]["login"] != f"{self.github.app_slug}[bot]":
+            return error_response(403, "Resource not accessible by integration")
+        body = request.json if isinstance(request.json, dict) else {}
+        text = body.get("body")
+        if not isinstance(text, str) or not text or len(text) > MAX_COMMENT_BODY:
+            return error_response(422, "Validation Failed")
+        comment["body"] = text
+        comment["updated_at"] = _timestamp(self.github.clock.now())
+        return json_response(200, _public(comment))
+
+    # --- pulls ---------------------------------------------------------------------------
+
+    def _list_pulls(self, request: RecordedRequest) -> httpx2.Response:
+        if (denied := self._lacks(request, "pull_requests", "write")) is not None:
+            return denied
+        repo = f"{request.params['owner']}/{request.params['repo']}"
+        query = request.query
+        state = query.get("state", "open")
+        head = query.get("head")
+        found = [
+            pull
+            for pull in self.pulls
+            if pull["_repo"] == repo
+            and (state == "all" or pull["state"] == state)
+            and (head is None or pull["head"]["label"] == head)
+        ]
+        page, link = _page(request, self.page_cap, [_public(pull) for pull in found])
+        return json_response(200, page, link)
+
+
+def _public(obj: dict[str, Any]) -> dict[str, Any]:
+    """The object as GitHub shows it: our bookkeeping keys (``_repo``, ``_pr``) stay hidden."""
+    return {key: value for key, value in obj.items() if not key.startswith("_")}
+
+
+def _page(request: RecordedRequest, cap: int, items: list[Any]) -> tuple[list[Any], dict[str, str]]:
+    """One page of ``items`` and its ``Link`` header (``next`` only when there is another page)."""
+    query = request.query
+    per_page = max(1, min(int(query.get("per_page", 30)), cap))
+    number = max(1, int(query.get("page", 1)))
+    chunk = items[(number - 1) * per_page : number * per_page]
+    if number * per_page >= len(items):
+        return chunk, {}
+    following = {**query, "page": str(number + 1)}
+    url = f"https://{API_HOST}{request.path}?" + "&".join(
+        f"{key}={quote(value, safe='')}" for key, value in following.items()
+    )
+    return chunk, {"Link": f'<{url}>; rel="next"'}
 
 
 # === Jobs, job logs and blobs (P1c b2, D-71) ==================================================
