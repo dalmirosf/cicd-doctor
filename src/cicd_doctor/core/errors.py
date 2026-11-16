@@ -23,6 +23,18 @@ class PermanentError(CicdDoctorError):
     """Retrying cannot help: missing permission, expired logs, suspended installation."""
 
 
+class LogsUnavailable(PermanentError):  # noqa: N818  (a state, like ``PolicyBlocked``)
+    """GitHub no longer has the log of a job (404: not there, 410: expired or deleted).
+
+    ``status_code`` keeps which one it was: the use case treats a 404 just after the job ended as
+    transient (the log may not be ready yet) and a 410 as final (D-71).
+    """
+
+    def __init__(self, message: str = "", *, status_code: int | None = None) -> None:
+        super().__init__(message)
+        self.status_code = status_code
+
+
 class LLMError(CicdDoctorError):
     """The LLM call failed in a way retrying cannot fix: a bad key, a rejected request, a refusal.
 

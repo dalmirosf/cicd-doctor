@@ -48,7 +48,12 @@ class LogSource(Protocol):
         ...
 
     async def job_log(self, job: JobRef, max_bytes: int) -> RawLog:
-        """Tail-biased download; the result is never persisted."""
+        """Tail-biased download of the last ``max_bytes`` of a job log; never persisted.
+
+        ``RawLog.truncated`` is true whenever bytes were dropped. Raises ``LogsUnavailable``
+        (a ``PermanentError`` that keeps ``status_code``: 404 or 410) when GitHub no longer has
+        the log, and ``TransientError`` for network errors, 5xx, rate limits and an expired
+        download URL (a retry asks for a new one, D-71)."""
         ...
 
 

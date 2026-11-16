@@ -24,7 +24,8 @@ import asyncio
 import inspect
 import json
 import re
-from collections.abc import Awaitable, Callable, Mapping
+import uuid
+from collections.abc import AsyncIterator, Awaitable, Callable, Mapping
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Any, Literal
@@ -72,6 +73,10 @@ class RecordedRequest:
 
     def header(self, name: str) -> str | None:
         return self.headers.get(name.lower())
+
+    @property
+    def has_authorization(self) -> bool:
+        return "authorization" in self.headers
 
     def has_header(self, name: str) -> bool:
         return name.lower() in self.headers
@@ -393,7 +398,7 @@ def _json_body(request: httpx2.Request) -> Any:
     return json.loads(request.content) if request.content else None
 
 
-# ==== P1c (c): check runs, issue comments and pulls =============================================
+# ==== P1c (c): check runs, issue comments and pulls ======================================
 # Self-contained: ``FakeRepoWrites(github)`` registers its routes with ``add_route`` and keeps the
 # state they read and write. Shapes follow what the spike measured on the real API (check run
 # objects, ``Link`` headers); the bot comment shape is the documented one (``user.login`` is
@@ -740,3 +745,155 @@ def _page(request: RecordedRequest, cap: int, items: list[Any]) -> tuple[list[An
         f"{key}={quote(value, safe='')}" for key, value in following.items()
     )
     return chunk, {"Link": f'<{url}>; rel="next"'}
+
+
+# === Jobs, job logs and blobs (P1c b2, D-71) ==================================================
+# Everything for the log source lives in this section; the routes are added with ``add_route``
+# by ``GitHubLogsFake(github)``, so the other route families do not touch it.
+
+BLOB_HOST = "productionresultssa7.blob.core.windows.net"
+JOBS_TEMPLATE = "/repos/{owner}/{repo}/actions/runs/{run_id}/attempts/{attempt}/jobs"
+LOG_TEMPLATE = "/repos/{owner}/{repo}/actions/jobs/{job_id}/logs"
+BLOB_TEMPLATE = "/actions-results/{blob_id}/workflow-job-run-{run_uuid}/logs/job/job-logs.txt"
+BLOB_CHUNK = 64 * 1024
+
+
+def signed_query(n: int) -> str:
+    """The shape of an Azure SAS query. Each redirect gets a new signature."""
+    return f"sv=2023-11-03&se=2026-11-12T12%3A10%3A00Z&sp=r&sig=fake-signature-{n:03d}"
+
+
+class _Stream(httpx2.AsyncByteStream):
+    def __init__(self, chunks: AsyncIterator[bytes]) -> None:
+        self._chunks = chunks
+
+    async def __aiter__(self) -> AsyncIterator[bytes]:
+        async for chunk in self._chunks:
+            yield chunk
+
+
+@dataclass
+class BlobState:
+    """One log as the blob host serves it. ``body`` is what travels (already compressed for a
+    ``Content-Encoding``); ``stream`` replaces it with chunks of unknown total length."""
+
+    body: bytes = b""
+    stream: Callable[[], AsyncIterator[bytes]] | None = None
+    headers: dict[str, str] = field(default_factory=dict)
+    ignore_range: bool = False  # answer 200 with everything, as Azure does for ``bytes=-N``
+    content_length: bool = True
+    served: int = 0  # bytes handed to the client so far
+
+
+def jobs_json(
+    job_ids: list[int], *, run_attempt: int = 1, conclusion: str = "failure"
+) -> list[Any]:
+    """Jobs in the shape of the jobs API (the fields ``jobs.py`` reads, plus ``run_attempt``)."""
+    return [
+        {
+            "id": job_id,
+            "name": f"job-{job_id}",
+            "run_attempt": run_attempt,
+            "conclusion": conclusion,
+            "started_at": "2026-11-12T12:00:00Z",
+            "completed_at": "2026-11-12T12:05:00Z",
+            "labels": ["ubuntu-latest"],
+            "steps": [
+                {
+                    "number": 1,
+                    "name": "Run tests",
+                    "conclusion": conclusion,
+                    "started_at": "2026-11-12T12:01:00Z",
+                    "completed_at": "2026-11-12T12:04:00Z",
+                }
+            ],
+        }
+        for job_id in job_ids
+    ]
+
+
+class GitHubLogsFake:
+    """The jobs listing, the log endpoint (302) and the blob host, on top of ``FakeGitHub``."""
+
+    def __init__(self, github: FakeGitHub) -> None:
+        self.github = github
+        self.blobs: dict[int, BlobState] = {}  # by job id
+        self.redirect_host = BLOB_HOST
+        self.redirect_scheme = "https"
+        self._jobs: dict[tuple[int, int], tuple[list[Any], int]] = {}
+        self._blob_ids: dict[str, int] = {}  # blob id in the URL -> job id
+        self._redirects = 0
+        github.add_route("GET", JOBS_TEMPLATE, self._list_jobs)
+        github.add_route("GET", LOG_TEMPLATE, self._log_redirect)
+        github.add_route("GET", BLOB_TEMPLATE, self._blob, auth="none")
+
+    def set_jobs(
+        self, run_id: int, attempt: int, jobs: list[Any], *, page_size: int | None = None
+    ) -> None:
+        """The jobs of an attempt; ``page_size`` overrides ``per_page`` to force several pages."""
+        self._jobs[(run_id, attempt)] = (jobs, page_size or 0)
+
+    def set_log(self, job_id: int, body: bytes | None = None, **options: Any) -> BlobState:
+        state = BlobState(body=body or b"", **options)
+        self.blobs[job_id] = state
+        return state
+
+    # --- routes --------------------------------------------------------------------------
+
+    def _list_jobs(self, request: RecordedRequest) -> httpx2.Response:
+        key = (int(request.params["run_id"]), int(request.params["attempt"]))
+        if key not in self._jobs:
+            return error_response(404, "Not Found")
+        jobs, forced = self._jobs[key]
+        query = request.query
+        size = forced or int(query.get("per_page", "30"))
+        page = int(query.get("page", "1"))
+        chunk = jobs[(page - 1) * size : page * size]
+        headers: dict[str, str] = {}
+        if page * size < len(jobs):
+            base = f"https://{API_HOST}{request.path}"
+            headers["Link"] = f'<{base}?per_page={size}&page={page + 1}>; rel="next"'
+        return json_response(200, {"total_count": len(jobs), "jobs": chunk}, headers)
+
+    def _log_redirect(self, request: RecordedRequest) -> httpx2.Response:
+        job_id = int(request.params["job_id"])
+        if job_id not in self.blobs:
+            return error_response(404, "Not Found")
+        blob_id = str(uuid.uuid5(uuid.NAMESPACE_URL, f"blob-{job_id}"))
+        self._blob_ids[blob_id] = job_id
+        self._redirects += 1
+        path = BLOB_TEMPLATE.format(blob_id=blob_id, run_uuid=blob_id)
+        location = (
+            f"{self.redirect_scheme}://{self.redirect_host}{path}?{signed_query(self._redirects)}"
+        )
+        return httpx2.Response(302, headers={"Location": location})
+
+    def _blob(self, request: RecordedRequest) -> httpx2.Response:
+        job_id = self._blob_ids.get(request.params["blob_id"])
+        if request.host == API_HOST or job_id is None or "sig" not in request.query:
+            return error_response(404, "Not Found")
+        state = self.blobs[job_id]
+        headers = {"Content-Type": "text/plain", "Accept-Ranges": "bytes", **state.headers}
+        body = state.body
+        status = 200
+        range_header = request.header("range")
+        match = re.fullmatch(r"bytes=(\d+)-", range_header or "")
+        if match and not state.ignore_range and state.stream is None:  # a suffix is ignored
+            start = int(match.group(1))
+            status = 206
+            headers["Content-Range"] = f"bytes {start}-{len(body) - 1}/{len(body)}"
+            body = body[start:]
+        if state.stream is None and state.content_length:
+            headers["Content-Length"] = str(len(body))
+        return httpx2.Response(status, headers=headers, stream=_Stream(self._chunks(state, body)))
+
+    async def _chunks(self, state: BlobState, body: bytes) -> AsyncIterator[bytes]:
+        if state.stream is not None:
+            async for chunk in state.stream():
+                state.served += len(chunk)
+                yield chunk
+            return
+        for start in range(0, len(body), BLOB_CHUNK):
+            chunk = body[start : start + BLOB_CHUNK]
+            state.served += len(chunk)
+            yield chunk
