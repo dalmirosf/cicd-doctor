@@ -1,12 +1,15 @@
 """Builders for domain objects with sensible defaults. Override fields with keyword arguments."""
 
+from collections.abc import Sequence
 from datetime import UTC, datetime
+from decimal import Decimal
 from typing import Any
 from uuid import UUID, uuid4
 
 from cicd_doctor.core.models import (
     Category,
     Diagnosis,
+    DiagnosisUsage,
     Evidence,
     FailedJob,
     Failure,
@@ -14,8 +17,14 @@ from cicd_doctor.core.models import (
     JobRef,
     LogExcerpt,
     LogLine,
+    RunAnalysisRecord,
+    RunAttempt,
     RunRef,
     Signature,
+    StoredFailure,
+    Suggestion,
+    WorkflowRun,
+    failure_id_for,
 )
 
 T0 = datetime(2026, 11, 12, 12, 0, tzinfo=UTC)
@@ -90,3 +99,123 @@ def make_diagnosis(**changes: Any) -> Diagnosis:
         source="llm",
     )
     return base.model_copy(update=changes)
+
+
+# --- run attempt analyses (D-69) ----------------------------------------------------------
+
+
+def make_workflow_run(run: RunRef | None = None) -> WorkflowRun:
+    """The run-level data of a ``RunRef``."""
+    run = run or make_run_ref()
+    return WorkflowRun(
+        id=run.run_id,
+        repo_id=run.repo_id,
+        workflow_id=run.workflow_id,
+        workflow_name=run.workflow_name,
+        head_sha=run.head_sha,
+        head_branch=run.head_branch,
+        head_repo_full_name=run.head_repo_full_name,
+        event=run.event,
+        is_fork=run.is_fork,
+        pr_number=run.pr_number,
+    )
+
+
+def make_run_attempt(run: RunRef | None = None, conclusion: str = "failure") -> RunAttempt:
+    run = run or make_run_ref()
+    return RunAttempt(
+        run_id=run.run_id, attempt=run.run_attempt, conclusion=conclusion, completed_at=T0
+    )
+
+
+def make_usage(**changes: Any) -> DiagnosisUsage:
+    base = DiagnosisUsage(
+        model="gpt-test",
+        calls=2,
+        input_tokens=1800,
+        output_tokens=240,
+        latency_ms=2100,
+        cost_usd=Decimal("0.001234"),
+        failed_calls=1,
+    )
+    return base.model_copy(update=changes)
+
+
+def make_rules_diagnosis(**changes: Any) -> Diagnosis:
+    """What the rule engine produces: no model, no fallback reason."""
+    return make_diagnosis(
+        source="rules", confidence=0.85, rule_ids=["PY-MODNF"], evidence_verified=True, **changes
+    )
+
+
+def make_stored_failure(
+    *,
+    run: RunRef | None = None,
+    job_id: int = 1,
+    published: Diagnosis | None = None,
+    usage: DiagnosisUsage | None = None,
+    **failure_changes: Any,
+) -> StoredFailure:
+    """A failure whose id is ``failure_id_for(...)`` with the diagnosis of an LLM answer.
+
+    Without ``published`` it is a valid LLM diagnosis (confidence 0.855 on purpose: it must
+    survive the database exactly) and, without ``usage``, the usage of its two calls.
+    """
+    run = run or make_run_ref()
+    failure = make_failure(
+        run=run,
+        job_id=job_id,
+        failure_id=failure_id_for(run.run_id, run.run_attempt, job_id),
+        **failure_changes,
+    )
+    if published is None:
+        published = make_diagnosis(
+            model="gpt-test",
+            prompt_version="v1",
+            confidence=0.855,
+            rule_ids=["PY-MODNF"],
+            suggestion=Suggestion(
+                path="pyproject.toml", start_line=12, end_line=12, replacement='"requests",'
+            ),
+        )
+        usage = usage or make_usage()
+    return StoredFailure(
+        failure=failure, published=published, rules=make_rules_diagnosis(), usage=usage
+    )
+
+
+def make_run_analysis(
+    run: RunRef | None = None,
+    items: Sequence[StoredFailure] | None = None,
+    *,
+    conclusion: str = "failure",
+) -> RunAnalysisRecord:
+    """The checkpoint of a run attempt. By default three failures, one of each kind:
+
+    1. an LLM diagnosis with its usage;
+    2. a rules fallback of a job whose calls were billed (``invalid_output``): the usage is on
+       the published rules row;
+    3. a rules fallback with no call at all (``fork_policy``).
+    """
+    run = run or make_run_ref()
+    if items is None:
+        rules = make_rules_diagnosis()
+        items = [
+            make_stored_failure(run=run, job_id=1),
+            make_stored_failure(
+                run=run,
+                job_id=2,
+                published=rules.model_copy(update={"fallback_reason": "invalid_output"}),
+                usage=make_usage(cost_usd=Decimal("0.000900"), failed_calls=0),
+                signature_hash="2" * 64,
+            ),
+            make_stored_failure(
+                run=run,
+                job_id=3,
+                published=rules.model_copy(update={"fallback_reason": "fork_policy"}),
+                signature_hash="3" * 64,
+            ),
+        ]
+    return RunAnalysisRecord(
+        run=make_workflow_run(run), attempt=make_run_attempt(run, conclusion), items=list(items)
+    )

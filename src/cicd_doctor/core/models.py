@@ -8,9 +8,9 @@ from datetime import date, datetime
 from decimal import Decimal
 from enum import StrEnum
 from typing import Any, Literal, Self
-from uuid import UUID
+from uuid import UUID, uuid5
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class DomainModel(BaseModel):
@@ -211,6 +211,16 @@ class Failure(DomainModel):
     fix_commit_sha: str | None
 
 
+# A fixed namespace: the same job of the same attempt gets the same failure id in every adapter
+# and in every retry (D-69). It is not a secret.
+FAILURE_ID_NAMESPACE = UUID("c3a1f0d2-6b7e-5c48-9d1a-2e4f8b6a7c90")
+
+
+def failure_id_for(run_id: int, attempt: int, job_id: int) -> UUID:
+    """The id of the failure of ``job_id`` in ``attempt`` of ``run_id`` (UUIDv5, D-69)."""
+    return uuid5(FAILURE_ID_NAMESPACE, f"{run_id}:{attempt}:{job_id}")
+
+
 # --- Diagnosis ----------------------------------------------------------------------------
 
 
@@ -265,6 +275,104 @@ class DiagnosisReport(DomainModel):
     items: list[tuple[Failure, Diagnosis]]
     similar: dict[UUID, list[SimilarFailure]] = Field(default_factory=dict)
     rules_baseline: dict[UUID, Diagnosis] = Field(default_factory=dict)  # shown on disagreement
+
+
+# --- What a run attempt leaves behind: the analysis checkpoint (D-69) ----------------------
+
+
+class DiagnosisUsage(DomainModel):
+    """What the LLM calls of one job used. It lives on the published ``diagnoses`` row, also when
+    the published diagnosis is the rules fallback of a job whose calls failed, so
+    ``SUM(cost_usd)`` is the real spend."""
+
+    model: str | None = None  # of the last answer; None when no call answered
+    calls: int = 0  # calls that answered (they are billed)
+    input_tokens: int = 0
+    output_tokens: int = 0
+    latency_ms: int = 0
+    cost_usd: Decimal = Decimal(0)
+    failed_calls: int = 0  # attempts that raised, retried or not: they cost nothing
+
+
+class StoredFailure(DomainModel):
+    """A failure with the diagnoses of its job: the one that is published and the rules one."""
+
+    failure: Failure
+    published: Diagnosis  # what the check run and the comment show
+    rules: Diagnosis  # always computed (D-35)
+    usage: DiagnosisUsage | None = None  # None when no LLM call was made
+
+    @model_validator(mode="after")
+    def _check_rows(self) -> Self:
+        """The invariants that let the store keep a diagnosis as one row per source (D-69)."""
+        published, rules = self.published, self.rules
+        if rules.source != "rules" or rules.model is not None or rules.fallback_reason is not None:
+            raise ValueError("the rules diagnosis must be a plain rules diagnosis")
+        if published.source == "rules":
+            if (
+                published.model is not None
+                or published.model_copy(update={"fallback_reason": None}) != rules
+            ):
+                raise ValueError("a published rules diagnosis is the rules one plus a reason")
+        elif published.source == "cache" and self.usage is not None:
+            raise ValueError("a cached diagnosis made no LLM call")
+        elif (
+            published.source == "llm"
+            and self.usage is not None
+            and self.usage.model != published.model
+        ):
+            raise ValueError("the usage of an LLM diagnosis names the model that produced it")
+        return self
+
+    def diagnosis_rows(self) -> list[tuple[Diagnosis, bool]]:
+        """The diagnoses to keep, one per source, each with whether it is the published one.
+
+        The rules diagnosis is always kept. The LLM (or cache) diagnosis is kept when it is the
+        published one; a published rules fallback is the rules row itself, and exactly one row is
+        published (D-69). The usage belongs to the published row.
+        """
+        if self.published.source == "rules":
+            return [(self.published, True)]
+        return [(self.rules, False), (self.published, True)]
+
+
+class RunAnalysisRecord(DomainModel):
+    """The analysis of one run attempt: the checkpoint that makes publishing repeatable (D-69).
+
+    ``items`` is ordered by job id, whatever the order it was built in, so a record that goes
+    through any adapter and comes back is equal to itself. A failure-less attempt (items empty)
+    is a valid checkpoint.
+    """
+
+    run: WorkflowRun
+    attempt: RunAttempt
+    items: list[StoredFailure] = Field(default_factory=list)
+
+    @field_validator("items")
+    @classmethod
+    def _sort_items(cls, items: list[StoredFailure]) -> list[StoredFailure]:
+        return sorted(items, key=lambda item: item.failure.job.job.job_id)
+
+    @model_validator(mode="after")
+    def _check_scope(self) -> Self:
+        if self.attempt.run_id != self.run.id:
+            raise ValueError("the attempt belongs to another run")
+        seen: set[int] = set()
+        for item in self.items:
+            failure_run = item.failure.job.job.run
+            job_id = item.failure.job.job.job_id
+            if (
+                failure_run.run_id != self.run.id
+                or failure_run.run_attempt != self.attempt.attempt
+                or failure_run.repo_id != self.run.repo_id
+            ):
+                raise ValueError(f"the failure of job {job_id} belongs to another run attempt")
+            if item.failure.id != failure_id_for(self.run.id, self.attempt.attempt, job_id):
+                raise ValueError(f"the failure id of job {job_id} is not failure_id_for(...)")
+            if job_id in seen:
+                raise ValueError(f"job {job_id} appears twice")
+            seen.add(job_id)
+        return self
 
 
 # --- LLM port types (P0 placeholders) -----------------------------------------------------
@@ -342,6 +450,12 @@ class Publication(DomainModel):
     external_id: int  # GitHub check_run_id or comment_id
     run_id: int
     attempt: int
+
+    @model_validator(mode="after")
+    def _check_run(self) -> Self:
+        if self.key.kind is PublicationKind.CHECK and self.run_id != self.key.run_id:
+            raise ValueError("a check publication belongs to the run of its key")
+        return self
 
 
 # --- Queue, config and budget port types (P0 placeholders) --------------------------------

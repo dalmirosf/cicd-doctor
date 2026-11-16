@@ -155,7 +155,7 @@ cicd-doctor/
 │   │   ├── llm/                 # tiktoken_counter.py (TokenCounter, D-57); openai_client.py (D-63); cache.py (the eval answer cache, D-65)
 │   │   ├── embeddings/fastembed_embedder.py
 │   │   ├── wakeup.py            # fan-out wake-up shared by the queue adapters
-│   │   ├── postgres/            # engine.py, queue.py, installations.py, migrations/ (Alembic, D-50); store.py, ledger.py later
+│   │   ├── postgres/            # engine.py, queue.py, installations.py, store.py (FailureStore, D-69), ledger.py (UsageLedger), migrations/ (Alembic, D-50)
 │   │   └── memory/              # store.py, embedder.py (FakeEmbedder), queue.py, installations.py, tokens.py (CharTokenCounter), ledger.py (InMemoryUsageLedger), llm.py (FakeLLM); fake log source later
 │   ├── api/                     # main.py (create_app, GET /health, GET /ready), webhooks.py (POST /webhooks/github), deps.py (D-55)
 │   ├── worker/                  # runner.py: the job consumer (D-49); handlers.py: job → use case
@@ -173,10 +173,10 @@ cicd-doctor/
     alembic.ini                  # migrations live in adapters/postgres/migrations (D-50)
 ```
 
-Implemented as of P1b (log pipeline, rules and the LLM path, all offline) and the GitHub client of P1c (not wired yet):
-- `core/` has `models.py`, `ports.py`, `errors.py`, `retry.py`, the use case `usecases/track_installation.py`, `logs/` (selection, tail cap, slicing, cleaning, noise, excerpt and token budget, §7.3), `redaction.py` (§9.2), `signature.py` (§7.4), `rules/` (§10), `analysis.py` (D-60), `policy.py` (§9.4), `diagnosis/` (prompt, schema, validation, merge, cost and the `DiagnoseJob` pipeline, D-66) and `render.py` (§9.5, D-64).
+Implemented so far (P1b: the log pipeline, rules and the LLM path, all offline; and the GitHub client and the persistence of P1c, not wired into the worker yet):
+- `core/` has `models.py` (with the checkpoint models of D-69: `DiagnosisUsage`, `StoredFailure`, `RunAnalysisRecord`, `failure_id_for`), `ports.py`, `errors.py`, `retry.py`, the use case `usecases/track_installation.py`, `logs/` (selection, tail cap, slicing, cleaning, noise, excerpt and token budget, §7.3), `redaction.py` (§9.2), `signature.py` (§7.4), `rules/` (§10), `analysis.py` (D-60), `policy.py` (§9.4), `diagnosis/` (prompt, schema, validation, merge, cost and the `DiagnoseJob` pipeline, D-66) and `render.py` (§9.5, D-64).
 - `evals/` has the runner with the `rules`, `llm` and `llm+hints` variants, the lab capture command (§11, D-61), the injection suite and its judge (D-64) and the live and cache plumbing (D-65); `lab/` has the lab repository sources.
-- `adapters/` has `clock.py`, `wakeup.py`, `github/webhooks.py`, `github/jobs.py`, `github/http.py` (D-67), `github/auth.py` (D-68), `llm/tiktoken_counter.py`, `llm/openai_client.py` (D-63) and `llm/cache.py`; in `memory/`, the `FailureStore`, `FakeEmbedder`, `JobQueue`, `InstallationStore`, `CharTokenCounter`, `InMemoryUsageLedger` and `FakeLLM`; in `postgres/`, the `PostgresJobQueue`, the `PostgresInstallationStore` and migrations `0001` (the whole §6 schema) and `0002`. The Postgres `UsageLedger` and the GitHub log source and reporter belong to P1c.
+- `adapters/` has `clock.py`, `wakeup.py`, `github/webhooks.py`, `github/jobs.py`, `github/http.py` (D-67), `github/auth.py` (D-68), `llm/tiktoken_counter.py`, `llm/openai_client.py` (D-63) and `llm/cache.py`; in `memory/`, the `FailureStore`, `FakeEmbedder`, `JobQueue`, `InstallationStore`, `CharTokenCounter`, `InMemoryUsageLedger` and `FakeLLM`; in `postgres/`, the `PostgresJobQueue`, the `PostgresInstallationStore`, the `PostgresFailureStore` (every method but `similar`, which needs the embeddings of P2; D-69), the `PostgresUsageLedger` and migrations `0001` (the whole §6 schema), `0002` and `0003` (the analysis checkpoint). The GitHub log source and reporter belong to P1c.
 - `api/` serves `GET /health`, `GET /ready` and `POST /webhooks/github`.
 - `worker/` has the consumer and the `sync_installation` handler; every other job kind still has a placeholder handler (D-49).
 - `app/` has the CLI (`api`, `worker`), the settings and the composition root.
@@ -201,12 +201,15 @@ class FailureStore(Protocol):
     async def save_run(self, run: WorkflowRun, attempt: RunAttempt) -> None: ...
     async def save_failure(self, failure: Failure) -> None: ...
     async def save_diagnosis(self, failure_id: UUID, diagnosis: Diagnosis) -> None: ...
+    async def save_run_analysis(self, record: RunAnalysisRecord) -> RunAnalysisRecord: ...   # the checkpoint of a run attempt, one transaction; first writer wins, a second call gets what is stored (D-69)
+    async def run_analysis(self, run_id: int, attempt: int) -> RunAnalysisRecord | None: ...  # None if the attempt was never analysed
     async def cached_diagnosis(self, repo_id: int, signature_hash: str, max_age: timedelta) -> Diagnosis | None: ...
     async def similar(self, repo_id: int, embedding: Sequence[float], k: int, min_score: float) -> list[SimilarFailure]: ...
     async def open_failures(self, repo_id: int, workflow_id: int, branch_key: str) -> list[Failure]: ...
     async def resolve(self, failure_ids: Sequence[UUID], status: FailureStatus, fix_commit_sha: str | None) -> None: ...
     async def publication(self, key: PublicationKey) -> Publication | None: ...
     async def save_publication(self, pub: Publication) -> bool: ...   # False if a newer attempt already published
+    def publication_lock(self, key: PublicationKey) -> AbstractAsyncContextManager[None]: ...   # one writer per output across workers; TransientError after 30 s (D-70)
 
 class LLMClient(Protocol):
     async def diagnose(self, request: DiagnosisRequest) -> LLMResult: ...  # raw JSON + usage + latency
@@ -425,7 +428,8 @@ The ports in §4.3 refer to types that §5 does not define. They exist in `core/
 | `RawLog` | `LogSource` | `text` (excluded from `repr`, so it cannot leak into log lines) and `truncated` |
 | `DiagnosisRequest`, `LLMResult` | `LLMClient` | Request: job, excerpt, rule hints, similar failures, repair error. Result: raw JSON, model, token counts, latency |
 | `CommentTarget`, `CommentRef` | `Reporter` | Target: run + PR number. Ref: installation, repository, comment id |
-| `PublicationKey`, `Publication` | `FailureStore.publication`, `save_publication` | Key: `check` (repo, run) or `comment` (repo, PR, workflow), validated per kind. Publication: key, GitHub id, run id, attempt. A publication is newer when its `(run_id, attempt)` pair is larger; the contract test fixes this ordering |
+| `PublicationKey`, `Publication` | `FailureStore.publication`, `save_publication` | Key: `check` (repo, run) or `comment` (repo, PR, workflow), validated per kind. Publication: key, GitHub id, run id (a check's is its key's), attempt. A publication is newer when its `(run_id, attempt)` pair is larger; the contract test fixes this ordering, and the Postgres guard is the same comparison in SQL |
+| `DiagnosisUsage`, `StoredFailure`, `RunAnalysisRecord` (+ `failure_id_for`) | `DiagnoseJob`, `FailureStore.save_run_analysis`, `run_analysis` (D-69) | Usage: the model, answered and failed calls, tokens, latency and cost of one job's LLM calls. Stored failure: the failure, its published diagnosis, its rules diagnosis and the usage. Record: the run, the attempt and the stored failures, ordered by job id; an empty list is a valid checkpoint. `failure_id_for(run_id, attempt, job_id)` is a UUIDv5, the same in every adapter and retry. The models refuse a record whose failures belong to another attempt or whose ids are not `failure_id_for`'s |
 | `Delivery`, `NewJob`, `Job` | `JobQueue` | The columns of `webhook_deliveries` and `jobs` |
 | `DiagnoseRunPayload`, `InstallationEvent` (+ `InstallationAction`) | job payloads (D-56) | `diagnose_run`: `RunRef`, conclusion, `completed_at`, default branch, `private`. `sync_installation`: action, installation, repositories added, ids removed, time received. Key: `diagnose_dedupe_key(run_id, attempt)` |
 | `Installation`, `Repository` | `InstallationStore` (D-54) | The columns of `installations` and `repositories` |
@@ -518,6 +522,7 @@ CREATE TABLE run_attempts (
     attempt      int    NOT NULL,
     conclusion   text   NOT NULL,                      -- failure | timed_out | success | ...
     completed_at timestamptz NOT NULL,
+    analyzed_at  timestamptz,                          -- the checkpoint mark (0003, D-69): set with the analysis
     PRIMARY KEY (run_id, attempt)
 );
 
@@ -540,6 +545,14 @@ CREATE TABLE failures (
     fix_commit_sha  char(40),
     resolved_at     timestamptz,
     created_at      timestamptz NOT NULL DEFAULT now(),
+    -- 0003 (D-69): what a FailedJob needs to be rebuilt from the row. The id is failure_id_for(...),
+    -- the excerpt does not repeat the job (it is the row's own).
+    conclusion         text        NOT NULL,           -- failure | timed_out
+    runner_os          text,
+    started_at         timestamptz NOT NULL,
+    completed_at       timestamptz NOT NULL,
+    step_started_at    timestamptz,
+    step_completed_at  timestamptz,
     FOREIGN KEY (run_id, run_attempt) REFERENCES run_attempts(run_id, attempt) ON DELETE CASCADE,
     UNIQUE (run_id, run_attempt, job_id)
 );
@@ -559,20 +572,25 @@ CREATE TABLE diagnoses (
     evidence_verified boolean NOT NULL DEFAULT true,
     suggested_fix   text  NOT NULL,
     suggestion      jsonb,
-    confidence      numeric(3,2) NOT NULL CHECK (confidence BETWEEN 0 AND 1),
+    confidence      double precision NOT NULL CHECK (confidence BETWEEN 0 AND 1),  -- numeric(3,2) until 0003: it rounded
     rule_ids        text[] NOT NULL DEFAULT '{}',
     cached_from     uuid REFERENCES diagnoses(id) ON DELETE SET NULL,
-    model           text,
+    model           text,                              -- the answer's; on a rules row, the model of its failed calls
     prompt_version  text,
-    input_tokens    int,
+    input_tokens    int,                               -- the usage of the job: only on the published row (D-69)
     output_tokens   int,
     cost_usd        numeric(10,6),
     latency_ms      int,
+    llm_calls       int,                               -- 0003: calls that answered (billed)
+    llm_failed_calls int,                              -- 0003: attempts that raised (they cost nothing)
     fallback_reason text,
     created_at      timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX diagnoses_failure_idx ON diagnoses (failure_id);
--- Both the rules and the LLM diagnosis are stored for every failure (online comparison data).
+CREATE UNIQUE INDEX diagnoses_published_idx ON diagnoses (failure_id) WHERE published;  -- 0003: one published row
+-- Both the rules and the LLM diagnosis are stored for every failure (online comparison data):
+-- always a `rules` row; an `llm` (or `cache`) row only when that is the published diagnosis. A published
+-- rules fallback is the rules row itself, with its fallback_reason. SUM(cost_usd) is the real spend.
 
 -- Publication bookkeeping (idempotent outputs) --------------------------------
 CREATE TABLE check_publications (
@@ -617,7 +635,7 @@ CREATE TABLE command_invocations (
 CREATE INDEX command_invocations_pr_idx ON command_invocations (repository_id, pr_number, created_at DESC);
 ```
 
-**Key queries** (`adapters/postgres/queue.py`). `:now` comes from the injected `Clock`, not from SQL `now()` (D-48).
+**Key queries** (`adapters/postgres/queue.py`, `store.py` and `ledger.py`). `:now` comes from the injected `Clock`, not from SQL `now()` (D-48); the cache window, `created_at`, `analyzed_at` and the budget day follow it too.
 
 - *Lease* (one transaction, two statements). First, jobs whose last allowed attempt never finished are buried instead of being run again:
   ```sql
@@ -644,8 +662,10 @@ CREATE INDEX command_invocations_pr_idx ON command_invocations (repository_id, p
   A `running` job whose lease expired (crashed worker) is leased again, at most `max_attempts` times in total. A row whose `kind` is not a known `JobKind` is set to `failed` instead of being returned.
 - *Fenced transitions* (D-47): `heartbeat` (`locked_until = :now + lease`), `complete` (`done`), `retry` (`queued`, `run_after`, `last_error`) and `fail` (`failed` or `dead`, `last_error`) all end in `WHERE id = :id AND attempts = :attempts AND status = 'running'`. 0 rows means the caller's lease is gone, and nothing changes.
 - *Enqueue with idempotency*: `INSERT INTO webhook_deliveries … ON CONFLICT DO NOTHING RETURNING delivery_id`. If no row is returned, it is a duplicate and the request is a 200 no-op. Otherwise `INSERT INTO jobs … ON CONFLICT (dedupe_key) DO NOTHING RETURNING id` and `SELECT pg_notify('jobs_new', '')`, all in one transaction. A duplicate dedupe key also returns False.
-- *Newer-attempt guard*: `UPDATE check_publications SET … WHERE … AND last_attempt <= $attempt`. If 0 rows are affected, the result is stale and is not published.
-- *Budget reservation*: inside a transaction holding `pg_advisory_xact_lock(hashtext('llm_budget'))`, check the installation's `calls < limit` and that `SUM(reserved_usd + spent_usd)` for today plus the estimate stays within the global budget; then increment `calls` and `reserved_usd`. `settle` moves the reservation to `spent_usd` with the actual cost.
+- *Newer-attempt guard* (`save_publication`, D-70): one statement, `INSERT … ON CONFLICT (…) DO UPDATE … WHERE (last_run_id, last_attempt) <= (EXCLUDED.last_run_id, EXCLUDED.last_attempt) RETURNING 1` for a comment, and `WHERE last_attempt <= EXCLUDED.last_attempt` for a check run (its run id is the key). No returned row means a newer attempt already published: the result is stale, nothing is stored and `save_publication` returns False. This is the same `(run_id, attempt)` order as the in-memory adapter.
+- *Analysis checkpoint* (`save_run_analysis`, D-69): one transaction. Upsert `workflow_runs`; upsert `run_attempts` (`… DO UPDATE … WHERE analyzed_at IS NULL`: an analysed attempt is final); claim it with `UPDATE run_attempts SET analyzed_at = :now WHERE run_id = :r AND attempt = :a AND analyzed_at IS NULL`. One affected row means this caller is the first writer: it upserts the failures and inserts their diagnoses (`rules` always; `llm` or `cache` only when published; exactly one `published`, which carries the usage). Zero rows means another writer got there first: nothing is written. Either way the record is read back from the rows and returned. A concurrent writer waits on the row lock of the first one, then finds `analyzed_at` set. `run_analysis` reads the same rows (the failures joined to their run and repository, the diagnoses of the attempt) and returns None while `analyzed_at` is NULL.
+- *Publication lock* (`publication_lock`, D-70): a session-level `pg_advisory_lock(hashtextextended(<text of the key>, 0))` on a pooled connection that stays checked out for the whole critical section. The wait is bounded by `set_config('lock_timeout', …, true)` (transaction-local, so it does not outlive the acquisition), and a timeout becomes `TransientError`. It is released on exit; a connection that died took its lock with it. A statement that was cut short (a cancelled waiter) discards its connection instead of returning it to the pool.
+- *Budget reservation*: inside a transaction holding `pg_advisory_xact_lock(hashtext('llm_budget'))`, check the installation's `calls < limit` and that `SUM(reserved_usd + spent_usd)` for today plus the estimate stays within the global budget; then increment `calls` and `reserved_usd` (`INSERT … ON CONFLICT (day, installation_id) DO UPDATE`, so a refusal leaves no row). `settle` is one `UPDATE` that moves the reservation to `spent_usd` with the actual cost. A budget of 0 or a cap of 0 calls refuses everything without a query.
 
 ---
 
@@ -1018,9 +1038,9 @@ Variants: `rules`, `llm` (no hints), `llm+hints` (production behavior in P1), `l
 | Layer | Scope | Tools | Runs in |
 |---|---|---|---|
 | Unit | Pure `core/`: noise filters, slicing, windowing, token budget, redaction, normalization/signature, each rule (positive and negative), policy, render/sanitization, outcome state machine, use cases with in-memory adapters + fake LLM | pytest, hypothesis (normalization idempotence, redaction never leaks pattern-shaped secrets), golden files for excerpts and rendered markdown | pre-commit + CI |
-| Contract | One shared test suite for `FailureStore`, `JobQueue` and `UsageLedger`, run against both the in-memory and the Postgres adapters (today: `JobQueue` on both, `FailureStore` on memory) | pytest parametrized fixtures; the Postgres parameter is marked `integration` (D-51) | memory in pre-commit; both in CI |
+| Contract | One shared test suite for `FailureStore`, `JobQueue`, `InstallationStore` and `UsageLedger`, run against both the in-memory and the Postgres adapters (today: all of them on both, except `FailureStore.similar`, which is P2 and runs on memory only) | pytest parametrized fixtures; the Postgres parameter is marked `integration` (D-51) | memory in pre-commit; both in CI |
 | Adapter | GitHub client (JWT, token scoping, pagination, rate-limit headers and the error mapping: `tests/adapters/test_github_{http,auth}.py`, today; redirect without auth, Range tail and comment upsert by marker later in P1c), OpenAI client (schema, error mapping, retries and repair through the pipeline: `tests/adapters/test_openai_client.py`, today), fastembed (dims, determinism), tiktoken counts (`tests/adapters/`, today); webhook signature, routing and the jobs JSON parser (unit tests today) | `httpx2.MockTransport` for OpenAI (the SDK runs on `httpx2`, D-63) and for GitHub, where `tests/github_fake.py` is a stateful FakeGitHub (D-67; no respx); responses built inline, recorded fixtures of the real API arrive with the PRs that need them; synthetic webhook payloads in `tests/fixtures/webhooks/` (D-56); synthetic job logs in `tests/fixtures/logs/` | CI |
-| Integration | API + worker + real Postgres: migrations, webhook (401 with no rows, delivery idempotency, 503 and `/ready` with the database unreachable), installation events through the worker, idempotency, lease expiry after a killed worker process, heartbeats, concurrent workers (no double processing), NOTIFY wake-ups, newer-attempt guard, budget under concurrency | Compose / CI service container `pgvector/pgvector:pg17`; own `<db>_test` databases; skipped locally when Postgres is down, failing in CI (D-51) | CI (`-m integration`), and locally with Compose up |
+| Integration | API + worker + real Postgres: migrations, webhook (401 with no rows, delivery idempotency, 503 and `/ready` with the database unreachable), installation events through the worker, idempotency, lease expiry after a killed worker process, heartbeats, concurrent workers (no double processing), NOTIFY wake-ups, newer-attempt guard, budget under concurrency (two engines, 40 racing reservations), the analysis checkpoint (atomic, first writer wins) and the publication lock (a waiter, a dead connection, a cancelled waiter) | Compose / CI service container `pgvector/pgvector:pg17`; own `<db>_test` databases; skipped locally when Postgres is down, failing in CI (D-51) | CI (`-m integration`), and locally with Compose up |
 | E2E (offline) | Replay a recorded `workflow_run` delivery through the API → worker → FakeGitHub (`tests/github_fake.py`, D-67) and assert the exact check run and comment calls | pytest | CI |
 | Live smoke | OpenAI (5 lab cases and the injection suite, `tests/live/`, from P1b); dev app + lab repo (P1c) | `-m live`; skipped without `OPENAI_API_KEY` and `OPENAI_MODEL`; at most 40 calls per test (D-65) | On demand |
 

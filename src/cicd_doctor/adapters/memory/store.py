@@ -1,45 +1,64 @@
 """In-memory ``FailureStore``: reference behaviour for the contract tests and offline runs."""
 
+import asyncio
 import math
-from collections.abc import Sequence
+from collections.abc import AsyncIterator, Sequence
+from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from uuid import UUID
 
 from cicd_doctor.adapters.clock import SystemClock
+from cicd_doctor.core.errors import TransientError
 from cicd_doctor.core.models import (
     Diagnosis,
+    DiagnosisUsage,
     Failure,
     FailureStatus,
     Publication,
     PublicationKey,
+    RunAnalysisRecord,
     RunAttempt,
     SimilarFailure,
+    StoredFailure,
     WorkflowRun,
 )
 from cicd_doctor.core.ports import Clock
 
+DEFAULT_LOCK_WAIT = timedelta(seconds=30)
+
 
 @dataclass(frozen=True)
-class _StoredDiagnosis:
+class StoredDiagnosis:
+    """One ``diagnoses`` row: a diagnosis, whether it is the published one, and its usage."""
+
     diagnosis: Diagnosis
     created_at: datetime
+    published: bool = False
+    usage: DiagnosisUsage | None = None  # only on the published row (D-69)
 
 
 class InMemoryFailureStore:
     """Implements ``FailureStore``. Every lookup is scoped by ``repo_id`` (D-10)."""
 
-    def __init__(self, clock: Clock | None = None) -> None:
+    def __init__(
+        self, clock: Clock | None = None, *, lock_wait: timedelta = DEFAULT_LOCK_WAIT
+    ) -> None:
         self._clock: Clock = clock or SystemClock()
+        self._lock_wait = lock_wait
         self._runs: dict[int, WorkflowRun] = {}
         self._attempts: dict[tuple[int, int], RunAttempt] = {}
         self._failures: dict[UUID, Failure] = {}
-        self._diagnoses: dict[UUID, list[_StoredDiagnosis]] = {}
+        self._diagnoses: dict[UUID, list[StoredDiagnosis]] = {}
         self._publications: dict[PublicationKey, Publication] = {}
+        # The checkpoints: (run id, attempt) -> the stored failures, as they were saved.
+        self._analyses: dict[tuple[int, int], list[StoredFailure]] = {}
+        self._locks: dict[PublicationKey, asyncio.Lock] = {}
 
     async def save_run(self, run: WorkflowRun, attempt: RunAttempt) -> None:
         self._runs[run.id] = run
-        self._attempts[(attempt.run_id, attempt.attempt)] = attempt
+        if (attempt.run_id, attempt.attempt) not in self._analyses:  # an analysed attempt is final
+            self._attempts[(attempt.run_id, attempt.attempt)] = attempt
 
     async def save_failure(self, failure: Failure) -> None:
         self._failures[failure.id] = failure
@@ -47,8 +66,42 @@ class InMemoryFailureStore:
     async def save_diagnosis(self, failure_id: UUID, diagnosis: Diagnosis) -> None:
         if failure_id not in self._failures:
             raise KeyError(f"unknown failure {failure_id}")
-        stored = _StoredDiagnosis(diagnosis, self._clock.now())
+        stored = StoredDiagnosis(diagnosis, self._clock.now())
         self._diagnoses.setdefault(failure_id, []).append(stored)
+
+    async def save_run_analysis(self, record: RunAnalysisRecord) -> RunAnalysisRecord:
+        key = (record.run.id, record.attempt.attempt)
+        if key not in self._analyses:  # the first writer wins
+            await self.save_run(record.run, record.attempt)
+            now = self._clock.now()
+            for item in record.items:
+                self._failures[item.failure.id] = item.failure
+                self._diagnoses[item.failure.id] = [
+                    StoredDiagnosis(diagnosis, now, published, item.usage if published else None)
+                    for diagnosis, published in item.diagnosis_rows()
+                ]
+            self._analyses[key] = list(record.items)
+        stored = await self.run_analysis(*key)
+        assert stored is not None
+        return stored
+
+    async def run_analysis(self, run_id: int, attempt: int) -> RunAnalysisRecord | None:
+        items = self._analyses.get((run_id, attempt))
+        if items is None:
+            return None
+        return RunAnalysisRecord(
+            run=self._runs[run_id],
+            attempt=self._attempts[(run_id, attempt)],
+            # The failure is read again: ``resolve`` may have changed its status since.
+            items=[
+                item.model_copy(update={"failure": self._failures[item.failure.id]})
+                for item in items
+            ],
+        )
+
+    def diagnosis_rows(self, failure_id: UUID) -> list[StoredDiagnosis]:
+        """The ``diagnoses`` rows of a failure (tests, operations)."""
+        return list(self._diagnoses.get(failure_id, []))
 
     async def cached_diagnosis(
         self, repo_id: int, signature_hash: str, max_age: timedelta
@@ -108,6 +161,9 @@ class InMemoryFailureStore:
         status: FailureStatus,
         fix_commit_sha: str | None,
     ) -> None:
+        unknown = [failure_id for failure_id in failure_ids if failure_id not in self._failures]
+        if unknown:  # all or nothing, like the Postgres transaction
+            raise KeyError("unknown failure among " + ", ".join(map(str, unknown)))
         for failure_id in failure_ids:
             failure = self._failures[failure_id]
             self._failures[failure_id] = failure.model_copy(
@@ -123,6 +179,21 @@ class InMemoryFailureStore:
             return False
         self._publications[pub.key] = pub
         return True
+
+    @asynccontextmanager
+    async def publication_lock(self, key: PublicationKey) -> AsyncIterator[None]:
+        lock = self._locks.setdefault(key, asyncio.Lock())
+        try:
+            async with asyncio.timeout(self._lock_wait.total_seconds()):
+                await lock.acquire()
+        except TimeoutError as exc:
+            raise TransientError(
+                f"publication lock busy: waited {self._lock_wait.total_seconds():g} s"
+            ) from exc
+        try:
+            yield
+        finally:
+            lock.release()
 
     def _latest_diagnosis(self, failure_id: UUID) -> Diagnosis | None:
         stored = self._diagnoses.get(failure_id)

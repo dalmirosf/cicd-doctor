@@ -1,7 +1,8 @@
 """In-memory ``UsageLedger``: reference behaviour for the contract tests (SPEC §6 ``llm_usage``).
 
 One row per (UTC day, installation), like the table: ``calls``, ``reserved_usd`` and
-``spent_usd``. The Postgres ledger arrives with the diagnose use case (P1c).
+``spent_usd``. ``PostgresUsageLedger`` (``adapters/postgres/ledger.py``) must behave the same: the
+contract suite runs against both (D-69).
 """
 
 from dataclasses import dataclass
@@ -40,8 +41,8 @@ class InMemoryUsageLedger:
 
     async def reserve(self, installation_id: int, est_cost_usd: Decimal) -> Reservation | None:
         day = self._clock.now().astimezone(UTC).date()
-        row = self._rows.setdefault((day, installation_id), UsageRow())
-        if row.calls >= self._calls_per_installation or self._daily_budget_usd <= 0:
+        existing = self._rows.get((day, installation_id), UsageRow())
+        if existing.calls >= self._calls_per_installation or self._daily_budget_usd <= 0:
             return None
         committed = sum(
             (r.reserved_usd + r.spent_usd for (d, _), r in self._rows.items() if d == day),
@@ -49,12 +50,13 @@ class InMemoryUsageLedger:
         )
         if committed + est_cost_usd > self._daily_budget_usd:
             return None
+        row = self._rows.setdefault((day, installation_id), existing)  # a refusal leaves no row
         row.calls += 1
         row.reserved_usd += est_cost_usd
         return Reservation(installation_id=installation_id, day=day, est_cost_usd=est_cost_usd)
 
     async def settle(self, reservation: Reservation, actual_cost_usd: Decimal) -> None:
-        row = self._rows[(reservation.day, reservation.installation_id)]
+        row = self._rows[(reservation.day, reservation.installation_id)]  # KeyError: not reserved
         row.reserved_usd -= reservation.est_cost_usd
         row.spent_usd += actual_cost_usd
 
