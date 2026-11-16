@@ -1,7 +1,8 @@
 """The GitHub ``Reporter`` (D-70, D-76): the check run and the sticky comment, on FakeGitHub.
 
-Nobody has verified yet whether GitHub lets a completed check run go back to ``in_progress`` (U10),
-so the check run tests run against both behaviours of the fake (``allow_reopen``).
+GitHub does not reopen a completed check run (U10, measured by hand): the ``PATCH`` answers 200 and
+the check stays ``completed`` while ``name`` and ``output`` change. FakeGitHub behaves that way; the
+422 branch of the reporter is defensive and has its own test (``refuse_reopen``).
 """
 
 import pytest
@@ -167,10 +168,9 @@ async def test_a_hostile_workflow_name_is_sanitised_in_the_check_name(
     assert len(name) <= 80
 
 
-async def test_a_completed_check_run_goes_back_to_in_progress_when_github_allows_it(
-    reporter: GitHubReporter, repo: FakeRepoWrites
+async def test_a_completed_check_run_stays_completed_while_name_and_output_change(
+    reporter: GitHubReporter, repo: FakeRepoWrites, github: FakeGitHub
 ) -> None:
-    repo.allow_reopen = True
     existing = repo.add_check_run(
         name="CICD Doctor: CI",
         head_sha=SHA,
@@ -179,17 +179,24 @@ async def test_a_completed_check_run_goes_back_to_in_progress_when_github_allows
         conclusion="neutral",
     )
 
-    await reporter.start_check(make_run(run_attempt=2), existing["id"])
+    check_id = await reporter.start_check(
+        make_run(run_attempt=2, workflow_name="Renamed"), existing["id"]
+    )
 
-    assert existing["status"] == "in_progress"
-    assert existing["conclusion"] is None
+    assert check_id == existing["id"]
+    assert existing["status"] == "completed"  # U10: GitHub answers 200 and does not reopen it
+    assert existing["conclusion"] == "neutral"
+    assert existing["name"] == "CICD Doctor: Renamed"
     assert existing["output"]["summary"] == "Analyzing failure… (attempt 2)"
+    assert len(github.requests_to("PATCH", CHECK_RUN)) == 1  # no second request, no retry
+    assert github.requests_to("POST", CHECK_RUNS) == []
 
 
-async def test_when_github_refuses_to_reopen_only_the_output_changes_and_it_stays_completed(
+async def test_defensive_branch_when_github_refuses_a_reopen_with_422_only_the_output_changes(
     reporter: GitHubReporter, repo: FakeRepoWrites, github: FakeGitHub
 ) -> None:
-    repo.allow_reopen = False
+    """GitHub has never been seen answering 422 here (U10); the branch is kept just in case."""
+    repo.refuse_reopen = True
     existing = repo.add_check_run(
         name="CICD Doctor: CI",
         head_sha=SHA,

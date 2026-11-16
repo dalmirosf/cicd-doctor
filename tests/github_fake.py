@@ -417,12 +417,15 @@ def _timestamp(moment: datetime) -> str:
 class FakeRepoWrites:
     """The write side of the repository API: check runs, issue comments, and the pulls listing.
 
-    ``allow_reopen=False`` makes ``PATCH`` refuse (422) to take a completed check run back to
-    ``in_progress``: nobody has verified yet what GitHub does (U10), so tests run both.
+    Like the real API (measured by hand on 2026-11-16, U10), a ``PATCH`` that asks a completed
+    check run for ``status: in_progress`` answers 200 and leaves it ``completed`` with its
+    conclusion, while ``name`` and ``output`` are applied. ``refuse_reopen=True`` makes it answer
+    422 instead: GitHub has never been seen doing that, it only exercises the defensive branch of
+    the reporter.
     """
 
     github: FakeGitHub
-    allow_reopen: bool = True
+    refuse_reopen: bool = False
     page_cap: int = 100  # lower it to make a listing paginate with a few items
     check_runs: dict[int, dict[str, Any]] = field(default_factory=dict)
     comments: dict[int, dict[str, Any]] = field(default_factory=dict)
@@ -614,7 +617,8 @@ class FakeRepoWrites:
             return error_response(422, "Validation Failed")
         if "conclusion" in body and status != "completed":
             return error_response(422, "conclusion needs status completed")
-        if run["status"] == "completed" and status != "completed" and not self.allow_reopen:
+        reopening = run["status"] == "completed" and status != "completed"
+        if reopening and self.refuse_reopen:
             return error_response(422, "A completed check run cannot be reopened")
         problem = self._check_output_problem(body.get("output"))
         if problem is not None:
@@ -623,9 +627,10 @@ class FakeRepoWrites:
         for key in ("name", "details_url", "conclusion", "completed_at", "external_id"):
             if key in body:
                 run[key] = body[key]
-        if status != "completed":
-            run["conclusion"], run["completed_at"] = None, None
-        run["status"] = status
+        if not reopening:  # U10: a completed check run stays completed, its conclusion too
+            if status != "completed":
+                run["conclusion"], run["completed_at"] = None, None
+            run["status"] = status
         return json_response(200, _public(run))
 
     @staticmethod

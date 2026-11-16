@@ -15,8 +15,10 @@ as a check run and a sticky PR comment.
 > authentication, the log source, the reporter and the persistence exist (D-67 to D-76) and the
 > worker now runs them (D-74): a failed run becomes a `diagnose_run` job that is diagnosed and
 > published as a check run and a sticky comment. That is verified only against a fake GitHub and a
-> fake model; nothing has talked to the real GitHub or OpenAI yet, so the live boxes of P1c stay
-> open and the worker needs `GITHUB_APP_ID` and `GITHUB_PRIVATE_KEY` to start.
+> fake model (plus 19 sanitized responses of the real GitHub API in `tests/fixtures/github/`);
+> nothing has run against the real GitHub or OpenAI yet, so the live boxes of P1c stay open (the
+> runbook is "Live verification (P1c)" in `lab/README.md`) and the worker needs `GITHUB_APP_ID`
+> and `GITHUB_PRIVATE_KEY` to start.
 > See [SPEC.md](SPEC.md) for the design and phases, and [DECISIONS.md](DECISIONS.md) for the
 > reasoning behind each decision.
 
@@ -89,8 +91,8 @@ src/cicd_doctor/
 ├── worker/     # job consumer and handlers
 └── app/        # composition root, settings and CLI
 scripts/        # load_webhooks.py (webhook latency check)
-tests/          # unit/, contract/, adapters/, integration/, e2e/, live/ (only with -m live), fixtures/ (synthetic)
+tests/          # unit/, contract/, adapters/, integration/, e2e/, live/ (only with -m live), fixtures/ (synthetic, and recorded GitHub responses in fixtures/github/)
 evals/          # eval harness: lab and injection cases, variants rules / llm / llm+hints (README inside)
-lab/            # sources of the lab repository (workflows that fail on purpose)
+lab/            # sources of the lab repository (workflows that fail on purpose) and the live runbook of P1c
 docker/         # compose.yaml (+ Dockerfile in P5)
 ```

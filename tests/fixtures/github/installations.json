@@ -1,0 +1,51 @@
+[
+  {
+    "id": 90000003,
+    "account": {
+      "login": "acme",
+      "id": 90000002,
+      "node_id": "NODE_ID",
+      "avatar_url": "https://avatars.example.invalid/u",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/acme",
+      "html_url": "https://github.com/acme",
+      "followers_url": "https://api.github.com/users/acme/followers",
+      "following_url": "https://api.github.com/users/acme/following{/other_user}",
+      "gists_url": "https://api.github.com/users/acme/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/acme/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/acme/subscriptions",
+      "organizations_url": "https://api.github.com/users/acme/orgs",
+      "repos_url": "https://api.github.com/users/acme/repos",
+      "events_url": "https://api.github.com/users/acme/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/acme/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "repository_selection": "selected",
+    "access_tokens_url": "https://api.github.com/app/installations/90000003/access_tokens",
+    "repositories_url": "https://api.github.com/installation/repositories",
+    "html_url": "https://github.com/settings/installations/90000003",
+    "app_id": 90000001,
+    "app_slug": "cicd-doctor-dev",
+    "target_id": 90000002,
+    "target_type": "User",
+    "permissions": {
+      "checks": "write",
+      "actions": "read",
+      "contents": "read",
+      "metadata": "read",
+      "pull_requests": "write"
+    },
+    "events": [
+      "workflow_run"
+    ],
+    "created_at": "2026-11-13T13:45:07.000Z",
+    "updated_at": "2026-11-16T11:47:48.000Z",
+    "single_file_name": null,
+    "has_multiple_single_files": false,
+    "single_file_paths": [],
+    "suspended_by": null,
+    "suspended_at": null
+  }
+]
