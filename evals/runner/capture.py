@@ -9,6 +9,11 @@ The log is untrusted data: it is stripped of terminal controls and redacted, wri
 never executed, and never printed. Real logs carry ANSI colours, so ``gh api`` refuses to output
 them unless it is given ``--allow-escape-sequences``; the escape sequences are removed before
 anything else touches the text (D-62).
+
+A job that exceeds its ``timeout-minutes`` ends ``cancelled`` and only the annotations of its check
+run say so (D-73): for every cancelled job the capture also reads those annotations (``GET``,
+redacted) into ``annotations.json``, and the same rule as the use case promotes the job to
+``timed_out``.
 """
 
 import json
@@ -24,7 +29,7 @@ import yaml
 from pydantic import BaseModel, ConfigDict, Field
 
 from cicd_doctor.adapters.github.jobs import parse_jobs
-from cicd_doctor.core.logs import select_failed_jobs, strip_terminal_controls
+from cicd_doctor.core.logs import cancelled_jobs, select_failed_jobs, strip_terminal_controls
 from cicd_doctor.core.logs.parse import parse_log, slice_step
 from cicd_doctor.core.models import Category, FailedJob, RunRef, WorkflowJob
 from cicd_doctor.core.redaction import redact_text
@@ -33,6 +38,7 @@ from evals.runner.cases import DEFAULT_CASES_DIR
 
 DEFAULT_MANIFEST = Path(__file__).resolve().parents[2] / "lab" / "cases.yaml"
 GH_TIMEOUT_S = 120
+ANNOTATIONS_FILE = "annotations.json"  # {job id: [annotation messages]} of the cancelled jobs
 # Only these fields of the jobs API are kept in jobs.json (no runner names, URLs or user data).
 _JOB_FIELDS = (
     "id",
@@ -114,6 +120,23 @@ def fetch_job_log(gh: Gh, repo: str, job_id: int) -> str:
     return strip_terminal_controls(raw.decode("utf-8", errors="replace"))
 
 
+def fetch_annotations(gh: Gh, repo: str, job_id: int) -> list[str]:
+    """The messages of the annotations of a job's check run (the job id is the check run id).
+
+    Read only (``GET``). Only the ``message`` texts are kept, redacted like the log: they come
+    from the same untrusted run.
+    """
+    raw = gh(["api", f"repos/{repo}/check-runs/{job_id}/annotations?per_page=100"])
+    items = json.loads(raw)
+    if not isinstance(items, list):
+        raise CaptureError(f"annotations of job {job_id}: unexpected answer from gh")
+    return [
+        redact_text(strip_terminal_controls(item["message"])).text
+        for item in items
+        if isinstance(item, dict) and isinstance(item.get("message"), str)
+    ]
+
+
 @dataclass(frozen=True)
 class Captured:
     path: Path
@@ -141,7 +164,10 @@ def capture(
     )
     jobs = parse_jobs(payload)
     run_url = f"https://github.com/{repo}/actions/runs/{run_id}/attempts/{attempt}"
-    failed = _failed_job(repo, run_id, attempt, jobs, lab)
+    annotations = {
+        job.job_id: fetch_annotations(gh, repo, job.job_id) for job in cancelled_jobs(jobs)
+    }
+    failed = _failed_job(repo, run_id, attempt, jobs, lab, annotations)
     redacted = redact_text(fetch_job_log(gh, repo, failed.job.job_id))
     evidence, missing = find_evidence(redacted.text, failed, lab.evidence)
 
@@ -151,6 +177,13 @@ def capture(
     (case_dir / "jobs.json").write_text(
         json.dumps(trim_jobs_payload(payload), indent=2) + "\n", encoding="utf-8", newline="\n"
     )
+    if annotations:
+        (case_dir / ANNOTATIONS_FILE).write_text(
+            json.dumps({str(job_id): notes for job_id, notes in annotations.items()}, indent=2)
+            + "\n",
+            encoding="utf-8",
+            newline="\n",
+        )
     case_yaml = {
         "id": case_dir.name,
         "source": "lab",
@@ -184,7 +217,12 @@ def capture(
 
 
 def _failed_job(
-    repo: str, run_id: int, attempt: int, jobs: Sequence[WorkflowJob], lab: LabCase
+    repo: str,
+    run_id: int,
+    attempt: int,
+    jobs: Sequence[WorkflowJob],
+    lab: LabCase,
+    annotations: dict[int, list[str]],
 ) -> FailedJob:
     run = RunRef(
         installation_id=0,
@@ -201,7 +239,7 @@ def _failed_job(
         is_fork=False,
         pr_number=None,
     )
-    failed = select_failed_jobs(run, jobs, limit=max(1, len(jobs)))
+    failed = select_failed_jobs(run, jobs, limit=max(1, len(jobs)), annotations=annotations)
     if not failed:
         raise CaptureError(f"run {run_id} attempt {attempt} has no failed or timed-out job")
     wanted = normalize_job_name(lab.job)
@@ -254,7 +292,8 @@ def _next_case_dir(out_dir: Path, lab_id: str) -> Path:
 
 
 RUN_LIST_LIMIT = 30
-FAILED_CONCLUSIONS = frozenset({"failure", "timed_out"})
+# ``cancelled`` runs are tried too: only those with a job timeout can be captured (D-73).
+FAILED_CONCLUSIONS = frozenset({"failure", "timed_out", "cancelled"})
 
 
 def captured_runs(out_dir: Path) -> dict[str, list[str]]:
@@ -298,7 +337,7 @@ def capture_all(
             ]
         )  # fmt: skip
         runs = json.loads(listing)
-        cancelled = sum(run.get("conclusion") == "cancelled" for run in runs)
+        not_timeouts = 0  # cancelled runs without a job timeout (manual cancellations)
         for run in runs:
             if len(have) >= case.captures:
                 break
@@ -308,21 +347,25 @@ def capture_all(
             url = f"https://github.com/{repo}/actions/runs/{run_id}/attempts/{attempt}"
             if url in have:
                 continue
-            captured = capture(
-                repo, run_id, case.id, attempt=attempt, manifest=lab, out_dir=out_dir, gh=gh,
-                now=now,
-            )  # fmt: skip
+            try:
+                captured = capture(
+                    repo, run_id, case.id, attempt=attempt, manifest=lab, out_dir=out_dir, gh=gh,
+                    now=now,
+                )  # fmt: skip
+            except CaptureError:
+                if run.get("conclusion") != "cancelled":
+                    raise
+                not_timeouts += 1  # a manual cancellation, or another job than the case's
+                continue
             new.append(captured)
             have.append(url)
         if len(have) < case.captures:
             missing = f"{case.id}: {len(have)} of {case.captures} captures"
-            if cancelled and not have:
-                # GitHub ends a job that hits its timeout-minutes as `cancelled`, like a manual
-                # cancellation, and the pipeline only diagnoses failure and timed_out (SPEC §14).
+            if not_timeouts and not have:
                 notes.append(
-                    f"{missing}; its {cancelled} run(s) ended cancelled, which capture does not "
-                    f"take (a job that hits timeout-minutes ends cancelled, SPEC §14), so running "
-                    f"{case.workflow} again will not help"
+                    f"{missing}; {not_timeouts} cancelled run(s) were skipped: no job of "
+                    f"{case.workflow} reports a timeout in its annotations (a manual "
+                    f"cancellation?), so run it again and let it reach its timeout-minutes"
                 )
             else:
                 notes.append(f"{missing}; run {case.workflow} again")

@@ -112,6 +112,7 @@ class StubUseCase:
         self.publish_error = publish_error
         self.ran: list[DiagnoseRunPayload] = []
         self.published: list[tuple[RunRef, str, datetime | None]] = []
+        self.only_if_started: list[bool] = []
         self.hang = False
 
     async def run(self, payload: DiagnoseRunPayload) -> None:
@@ -120,8 +121,14 @@ class StubUseCase:
             raise self.error
 
     async def publish_could_not_diagnose(
-        self, run: RunRef, reason: str, completed_at: datetime | None = None
+        self,
+        run: RunRef,
+        reason: str,
+        completed_at: datetime | None = None,
+        *,
+        only_if_started: bool = False,
     ) -> bool:
+        self.only_if_started.append(only_if_started)
         if self.hang:
             await asyncio.sleep(3600)
         if self.publish_error is not None:
@@ -187,6 +194,19 @@ async def test_an_unexpected_error_on_the_last_attempt_is_reported_too() -> None
         await diagnose_run_handler(use_case)(diagnose_job(attempts=3, max_attempts=3))
 
     assert [reason for _, reason, _ in use_case.published] == ["internal_error"]
+
+
+@pytest.mark.parametrize(("conclusion", "expected"), [("failure", False), ("cancelled", True)])
+async def test_a_cancelled_run_only_gives_up_on_a_check_that_already_started(
+    conclusion: str, expected: bool
+) -> None:
+    use_case = StubUseCase(error=PermanentError("annotations: 404"))
+    body = make_payload().model_copy(update={"conclusion": conclusion})
+
+    with pytest.raises(PermanentError):
+        await diagnose_run_handler(use_case)(diagnose_job(payload=body.model_dump(mode="json")))
+
+    assert use_case.only_if_started == [expected]
 
 
 async def test_a_transient_error_before_the_last_attempt_publishes_nothing() -> None:

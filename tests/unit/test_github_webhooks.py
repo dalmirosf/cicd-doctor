@@ -160,8 +160,25 @@ def test_a_run_without_head_repository_is_treated_as_a_fork() -> None:
     assert (run.is_fork, run.head_repo_full_name) == (True, "")
 
 
+def test_a_cancelled_run_is_enqueued_with_its_conclusion_and_the_same_dedupe_key() -> None:
+    payload = load("workflow_run_completed_failure")
+    payload["workflow_run"]["conclusion"] = "cancelled"
+
+    job = route("workflow_run", payload)
+    again = route("workflow_run", payload)
+
+    assert job is not None
+    assert job.kind is JobKind.DIAGNOSE_RUN
+    assert job.dedupe_key == "diagnose:5000:1"  # a duplicate delivery makes no second job
+    assert again is not None
+    assert again.dedupe_key == job.dedupe_key
+    parsed = DiagnoseRunPayload.model_validate(job.payload)
+    assert parsed.conclusion == "cancelled"
+    assert (parsed.run.run_id, parsed.run.run_attempt, parsed.run.pr_number) == (5000, 1, 12)
+
+
 @pytest.mark.parametrize(
-    "conclusion", ["success", "cancelled", "skipped", "neutral", "action_required", None]
+    "conclusion", ["success", "skipped", "neutral", "stale", "action_required", None]
 )
 def test_other_conclusions_create_no_job(conclusion: str | None) -> None:
     payload = load("workflow_run_completed_failure")

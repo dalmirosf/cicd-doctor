@@ -4,7 +4,7 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from cicd_doctor.core.logs import failed_step, select_failed_jobs
+from cicd_doctor.core.logs import cancelled_jobs, failed_step, is_job_timeout, select_failed_jobs
 from cicd_doctor.core.models import WorkflowJob, WorkflowStep
 from tests.factories import make_run_ref
 from tests.logcases import load_log_case
@@ -116,3 +116,74 @@ def test_failed_job_carries_the_run_the_step_and_its_times() -> None:
     assert failed.step_completed_at == T0 + timedelta(seconds=3)
     assert failed.started_at == failed.completed_at == T0 + timedelta(seconds=30)  # no start time
     assert failed.runner_os == "Linux"
+
+
+# --- job-level timeouts (D-73) -------------------------------------------------------------
+
+TIMEOUT_NOTES = [
+    "The job has exceeded the maximum execution time of 1m0s",
+    "The operation was canceled.",
+]
+
+
+@pytest.mark.parametrize(
+    ("messages", "expected"),
+    [
+        (TIMEOUT_NOTES, True),
+        (["THE JOB HAS EXCEEDED THE MAXIMUM EXECUTION TIME OF 6H"], True),
+        (["The operation was canceled."], False),
+        ([], False),
+    ],
+)
+def test_a_job_timeout_is_an_annotation_that_says_so(messages: list[str], expected: bool) -> None:
+    assert is_job_timeout(messages) is expected
+
+
+def test_a_cancelled_job_with_the_timeout_annotation_counts_as_timed_out() -> None:
+    job = _job(1, "cancelled", 5, [_step(1, "success"), _step(2, "cancelled", "sleep")])
+
+    [selected] = select_failed_jobs(make_run_ref(), [job], 3, {1: TIMEOUT_NOTES})
+
+    assert selected.conclusion == "timed_out"
+    assert (selected.step_name, selected.step_number) == ("sleep", 2)
+
+
+def test_a_cancelled_job_without_the_annotation_is_still_not_selected() -> None:
+    jobs = [_job(1, "cancelled", 5, []), _job(2, "cancelled", 6, [])]
+
+    selected = select_failed_jobs(make_run_ref(), jobs, 3, {1: ["The operation was canceled."]})
+
+    assert selected == []  # job 2 has no annotations at all
+
+
+def test_the_annotations_of_another_job_do_not_promote_a_cancelled_job() -> None:
+    jobs = [_job(1, "cancelled", 5, []), _job(2, "cancelled", 6, [])]
+
+    selected = select_failed_jobs(make_run_ref(), jobs, 3, {2: TIMEOUT_NOTES})
+
+    assert [job.job.job_id for job in selected] == [2]
+
+
+def test_timeout_annotations_never_change_other_conclusions() -> None:
+    jobs = [_job(1, "failure", 5, []), _job(2, "success", 6, []), _job(3, "cancelled", 7, [])]
+    notes = {1: TIMEOUT_NOTES, 2: TIMEOUT_NOTES, 3: TIMEOUT_NOTES}
+
+    selected = select_failed_jobs(make_run_ref(), jobs, 3, notes)
+
+    assert [(job.job.job_id, job.conclusion) for job in selected] == [
+        (1, "failure"),
+        (3, "timed_out"),
+    ]
+
+
+def test_cancelled_jobs_are_listed_earliest_first_and_capped() -> None:
+    jobs = [
+        _job(1, "failure", 1, []),
+        _job(2, "cancelled", 9, []),
+        _job(3, "cancelled", 4, []),
+        _job(4, "cancelled", None, []),  # never completed
+        _job(5, "cancelled", 4, []),
+    ]
+
+    assert [job.job_id for job in cancelled_jobs(jobs)] == [3, 5, 2]
+    assert [job.job_id for job in cancelled_jobs(jobs, limit=2)] == [3, 5]

@@ -22,7 +22,7 @@ and regexes that mark its evidence lines.
 | dependency | `py-modnf` (also `pr-py-modnf`, see below), `py-resolve`, `pip-no-dist`, `docker-base`, `tf-init` |
 | network | `dns`, `conn-refused` |
 | config_or_secrets | `missing-input`, `secret-misspelled`, `docker-copy`, `tf-validate`, `aws-no-credentials` |
-| timeout | `job-timeout` (ends `cancelled`, so it is not captured: SPEC §14), `step-timeout` |
+| timeout | `job-timeout` (ends `cancelled`; captured with the annotations of its job, D-73), `step-timeout` |
 | infra_or_deploy | `oom-137`, `disk-full` |
 | flaky | `flaky-random`, `flaky-timing` (each fails about half of the time) |
 | unknown | `opaque-exit`, `obscure-tool` |
@@ -81,6 +81,7 @@ For each case it takes the latest failed runs it has not captured yet, until the
 
 - `log.txt`: the failed job's log, with terminal colours and other control characters stripped, then redacted (line numbers match GitHub's);
 - `jobs.json`: the job and step metadata, trimmed;
+- `annotations.json` (only when a job ended `cancelled`): the redacted annotation messages of the cancelled jobs, by job id. A `cancelled` job that says `has exceeded the maximum execution time` counts as `timed_out` (D-73), which is how `job-timeout` is captured; a manual cancellation is skipped;
 - `case.yaml`: the labels from `cases.yaml`, plus the evidence line numbers found by its regexes.
 
 It reads through your own `gh` login (the log is requested with `--allow-escape-sequences`, because GitHub's logs carry ANSI colours) and never prints log content. It warns when an evidence
@@ -430,3 +431,75 @@ gh pr close $PR3 --repo $LAB --delete-branch
 ```
 
 The check runs that were written cannot be deleted; they hang from commits of throwaway branches.
+
+## Job timeouts (D-73)
+
+A job that exceeds its `timeout-minutes` ends `cancelled`, like a manual cancellation. CICD Doctor
+tells them apart by the job's annotations (`The job has exceeded the maximum execution time of …`):
+a timeout gets a diagnosis (`timeout`), a manual cancellation or a `concurrency: cancel-in-progress`
+gets nothing at all. This section checks both against the real GitHub (SPEC §13, the last P1c box).
+
+Preconditions: go through *Before you start* above first (above all: the right folder, no old
+`cicd-doctor` processes, `git pull` + `uv sync` + `uv run alembic upgrade head` on this code), and
+run step 0 of *Live verification (P1c)* (the `$LAB` and `$BOT` variables, the database, the API,
+the worker and smee). `job-timeout.yml` must be on `main` of the lab repository (see *Publish*).
+The workflow runs on `main` without a pull request, so there is a check run and **no** comment.
+
+### A. A job that exceeds its timeout is diagnosed as `timeout`
+
+Action (the job sleeps 5 minutes with `timeout-minutes: 1`; the run ends in about 1 minute):
+
+```powershell
+gh workflow run job-timeout.yml --repo $LAB --ref main
+Start-Sleep -Seconds 10
+$toRun = gh run list --repo $LAB --workflow job-timeout.yml --limit 1 --json databaseId --jq '.[0].databaseId'
+gh run watch $toRun --repo $LAB
+```
+
+Verification (wait about 20 s after the run ends, then):
+
+```powershell
+gh run view $toRun --repo $LAB --json conclusion --jq .conclusion
+$toSha = gh run view $toRun --repo $LAB --json headSha --jq .headSha
+$toJob = gh run view $toRun --repo $LAB --json jobs --jq '.jobs[0].databaseId'
+gh api "repos/$LAB/check-runs/$toJob/annotations" --jq '.[].message'
+$toChecks = gh api "repos/$LAB/commits/$toSha/check-runs?per_page=100" | ConvertFrom-Json
+$toMine = @($toChecks.check_runs | Where-Object { $_.external_id -eq "cicd-doctor:run:$toRun" })
+$toMine | Select-Object id, name, status, conclusion
+$toMine[0].output.title
+```
+
+Criterion: the run's `conclusion` is `cancelled`; the annotations include
+`The job has exceeded the maximum execution time of 1m0s`; exactly one check run of CICD Doctor
+for this run, named `CICD Doctor: job-timeout`, `status = completed`, `conclusion = neutral`, and
+a title that starts with `Likely cause: timeout`. There is no pull request, so no comment.
+
+### B. A manual cancellation publishes nothing
+
+Action (cancel it by hand before the minute is up):
+
+```powershell
+gh workflow run job-timeout.yml --repo $LAB --ref main
+Start-Sleep -Seconds 12
+$mcRun = gh run list --repo $LAB --workflow job-timeout.yml --limit 1 --json databaseId --jq '.[0].databaseId'
+gh run cancel $mcRun --repo $LAB
+gh run watch $mcRun --repo $LAB
+```
+
+Verification (wait about 30 s, so the webhook and the worker have time to act):
+
+```powershell
+Start-Sleep -Seconds 30
+gh run view $mcRun --repo $LAB --json conclusion --jq .conclusion
+$mcSha = gh run view $mcRun --repo $LAB --json headSha --jq .headSha
+$mcJob = gh run view $mcRun --repo $LAB --json jobs --jq '.jobs[0].databaseId'
+gh api "repos/$LAB/check-runs/$mcJob/annotations" --jq '.[].message'
+$mcChecks = gh api "repos/$LAB/commits/$mcSha/check-runs?per_page=100" | ConvertFrom-Json
+@($mcChecks.check_runs | Where-Object { $_.external_id -eq "cicd-doctor:run:$mcRun" }).Count
+```
+
+Criterion: the run's `conclusion` is `cancelled`; the annotations (if any) do **not** mention
+`maximum execution time`; the last line prints **0** (run B is on the same commit as run A, so
+count by `external_id`, not by name). In the worker terminal there is a line
+`cancelled without a job timeout, nothing to publish` and the job finished (`done`), without
+retries.

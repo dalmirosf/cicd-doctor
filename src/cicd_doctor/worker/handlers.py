@@ -43,7 +43,12 @@ class DiagnoseUseCase(Protocol):
     async def run(self, payload: DiagnoseRunPayload) -> None: ...
 
     async def publish_could_not_diagnose(
-        self, run: RunRef, reason: str, completed_at: datetime | None = None
+        self,
+        run: RunRef,
+        reason: str,
+        completed_at: datetime | None = None,
+        *,
+        only_if_started: bool = False,
     ) -> bool: ...
 
 
@@ -56,6 +61,10 @@ def diagnose_run_handler(
     attempt, the check run would stay ``in_progress`` for ever, so the handler completes it as
     "Could not diagnose" with the reason, as a best effort, and then re-raises the original
     error so the worker records ``failed`` or ``dead`` (D-49).
+
+    A ``cancelled`` run has no check run until the use case decides it was a job timeout
+    (D-73), so for it nothing is published unless the check run of this attempt already
+    started: a manual cancellation stays silent even when reading its annotations failed.
     """
 
     async def handle(job: Job) -> None:
@@ -93,7 +102,12 @@ async def _give_up(
     """Best effort: nothing that goes wrong here may hide the error that got us here."""
     try:
         async with asyncio.timeout(timeout_s):
-            await use_case.publish_could_not_diagnose(payload.run, reason, payload.completed_at)
+            await use_case.publish_could_not_diagnose(
+                payload.run,
+                reason,
+                payload.completed_at,
+                only_if_started=payload.conclusion == "cancelled",
+            )
     except Exception:  # not CancelledError: a shutdown must still stop the job
         logger.warning(
             "run_id=%d attempt=%d: could not publish 'Could not diagnose' (%s)",

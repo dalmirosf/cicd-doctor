@@ -65,10 +65,10 @@ def app_key() -> rsa.RSAPrivateKey:
     return rsa.generate_private_key(public_exponent=65537, key_size=2048)
 
 
-def log_bytes() -> bytes:
+def log_bytes(body: Sequence[str] = LOG_BODY) -> bytes:
     lines = [
         f"{(LOG_START + timedelta(milliseconds=100 * i)).strftime('%Y-%m-%dT%H:%M:%S.%f')}0Z {line}"
-        for i, line in enumerate(LOG_BODY)
+        for i, line in enumerate(body)
     ]
     return "\n".join(lines).encode()
 
@@ -77,11 +77,14 @@ def job_id_for(run_id: int, attempt: int) -> int:
     return run_id * 10 + attempt
 
 
-def workflow_run_payload(run_id: int = 5000, attempt: int = 1) -> dict[str, Any]:
+def workflow_run_payload(
+    run_id: int = 5000, attempt: int = 1, conclusion: str = "failure"
+) -> dict[str, Any]:
     """The signed-webhook fixture of a failed run, as another run (attempt) of the same PR."""
     payload = load("workflow_run_completed_failure")
     payload["workflow_run"]["id"] = run_id
     payload["workflow_run"]["run_attempt"] = attempt
+    payload["workflow_run"]["conclusion"] = conclusion
     return payload
 
 
@@ -110,6 +113,27 @@ class DiagnoseWorld:
         job_id = job_id_for(run_id, attempt)
         self.logs.set_jobs(run_id, attempt, jobs_json([job_id], run_attempt=attempt))
         self.logs.set_log(job_id, body if body is not None else log_bytes())
+        return job_id
+
+    def add_cancelled_run(
+        self, run_id: int = 5000, attempt: int = 1, annotations: list[str] | None = None
+    ) -> int:
+        """A cancelled attempt: one cancelled job with its annotations (D-73) and its log, which
+        only says the operation was cancelled. Returns the job id."""
+        job_id = job_id_for(run_id, attempt)
+        self.logs.set_jobs(
+            run_id, attempt, jobs_json([job_id], run_attempt=attempt, conclusion="cancelled")
+        )
+        self.logs.set_annotations(
+            job_id,
+            [
+                {"annotation_level": "failure", "message": message, "title": "", "path": ".github"}
+                for message in annotations or []
+            ],
+        )
+        self.logs.set_log(
+            job_id, log_bytes(["Run sleep 300", "##[error]The operation was canceled."])
+        )
         return job_id
 
     async def enqueue(self, run_id: int = 5000, attempt: int = 1) -> None:

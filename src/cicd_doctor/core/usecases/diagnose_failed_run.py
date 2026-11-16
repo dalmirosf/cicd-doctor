@@ -11,6 +11,13 @@ what is stored:
 4. the check run is completed from the stored analysis (under the lock, guarded again);
 5. the sticky comment is upserted from the stored analysis (under the lock of its own key).
 
+A ``cancelled`` run (D-73) goes through a gate before step 1 writes anything: the jobs of the
+attempt are listed and the annotations of its cancelled jobs are read, and only when one says the
+job exceeded its ``timeout-minutes`` does the flow continue (that job then counts as
+``timed_out``). Otherwise the call returns at once, with no check run, comment, checkpoint or
+budget reservation: a manual cancellation or a ``concurrency: cancel-in-progress`` stays silent.
+The gate is recomputed on a retry, unless the analysis is already stored.
+
 Steps 2, 4 and 5 are idempotent, so a failure while publishing is retried by running the use case
 again. Nothing here imports an adapter: the ports and the small ``DiagnoseConfig`` are injected.
 Logs, excerpts and the text of a diagnosis are never logged.
@@ -27,7 +34,7 @@ from cicd_doctor.core.diagnosis.merge import baseline_to_show
 from cicd_doctor.core.diagnosis.pipeline import DiagnoseJob, DiagnosisContext, JobDiagnosis
 from cicd_doctor.core.errors import LogsUnavailable, PermanentError, TransientError
 from cicd_doctor.core.logs import ExcerptConfig
-from cicd_doctor.core.logs.select import select_failed_jobs
+from cicd_doctor.core.logs.select import cancelled_jobs, is_job_timeout, select_failed_jobs
 from cicd_doctor.core.models import (
     CheckOutput,
     CommentTarget,
@@ -37,6 +44,7 @@ from cicd_doctor.core.models import (
     Failure,
     FailureStatus,
     Installation,
+    JobRef,
     Publication,
     PublicationKey,
     RawLog,
@@ -46,6 +54,7 @@ from cicd_doctor.core.models import (
     RunAttempt,
     RunRef,
     StoredFailure,
+    WorkflowJob,
     WorkflowRun,
     failure_id_for,
 )
@@ -85,6 +94,14 @@ class DiagnoseConfig:
     concurrency: int = 3  # jobs diagnosed at the same time
 
 
+@dataclass(frozen=True)
+class _Examined:
+    """What the gate of a cancelled run read: the jobs and the annotations of the cancelled ones."""
+
+    jobs: list[WorkflowJob]
+    annotations: dict[int, list[str]]
+
+
 class DiagnoseFailedRun:
     def __init__(
         self,
@@ -116,8 +133,16 @@ class DiagnoseFailedRun:
         is not an error: the neutral check is published and the call returns.
         """
         run = payload.run
-        await self._ensure_rows(payload)
         check_key = PublicationKey.check(run.repo_id, run.run_id)
+        examined: _Examined | None = None
+        if payload.conclusion == "cancelled":
+            # Nothing is written before the decision: a manual cancellation stays silent (D-73).
+            if await self._superseded(check_key, run):
+                return
+            examined = await self._examine_cancelled(run)
+            if examined is None:
+                return
+        await self._ensure_rows(payload)
         if await self._superseded(check_key, run):
             return
         check_id = await self._start_check(run, check_key)
@@ -125,25 +150,37 @@ class DiagnoseFailedRun:
             return
         record = await self._store.run_analysis(run.run_id, run.run_attempt)
         if record is None:
-            record = await self._analyze(payload)
+            record = await self._analyze(payload, examined)
         report = self._report(payload, record)
         if not await self._complete_check(payload, record, report, check_id, check_key):
             return
         await self._comment(payload, record, report)
 
     async def publish_could_not_diagnose(
-        self, run: RunRef, reason: str, completed_at: datetime | None = None
+        self,
+        run: RunRef,
+        reason: str,
+        completed_at: datetime | None = None,
+        *,
+        only_if_started: bool = False,
     ) -> bool:
         """Complete the check run of ``run`` as "Could not diagnose" (``COULD_NOT_DIAGNOSE``
         keys: ``logs_expired``, ``no_failed_job``, ``permission``, ``internal_error``).
 
         It writes nothing when a newer attempt already published the check run, and returns
         whether it published. The handler uses it for the errors the worker gives up on (D-74).
+        With ``only_if_started`` it also writes nothing unless this attempt already started the
+        check run: a cancelled run that failed before the timeout decision must stay silent
+        (D-73).
         """
         key = PublicationKey.check(run.repo_id, run.run_id)
         async with self._store.publication_lock(key):
             existing = await self._store.publication(key)
             if _newer(existing, run):
+                return False
+            if only_if_started and (
+                existing is None or (existing.run_id, existing.attempt) != _id_of(run)
+            ):
                 return False
             check_id = (
                 existing.external_id if existing else await self._reporter.start_check(run, None)
@@ -192,6 +229,33 @@ class DiagnoseFailedRun:
                 )
             ]
         )
+
+    # --- cancelled runs ---------------------------------------------------------------------
+
+    async def _examine_cancelled(self, run: RunRef) -> _Examined | None:
+        """Decide whether a cancelled run is a job-level timeout (D-73); None means stay silent.
+
+        Reads the jobs of the attempt and the annotations of each cancelled job (at most
+        ``MAX_ANNOTATION_JOBS``). It is skipped when the analysis of this attempt is already
+        stored: that proves an earlier call passed the gate. Errors propagate: a retry decides
+        again.
+        """
+        if await self._store.run_analysis(run.run_id, run.run_attempt) is not None:
+            return _Examined(jobs=[], annotations={})
+        jobs = await self._logs.jobs(run)
+        annotations: dict[int, list[str]] = {}
+        for job in cancelled_jobs(jobs):
+            annotations[job.job_id] = await self._logs.job_annotations(
+                JobRef(run=run, job_id=job.job_id, job_name=job.name)
+            )
+            if is_job_timeout(annotations[job.job_id]):
+                return _Examined(jobs=jobs, annotations=annotations)
+        logger.info(
+            "run_id=%d attempt=%d: cancelled without a job timeout, nothing to publish",
+            run.run_id,
+            run.run_attempt,
+        )
+        return None
 
     # --- the check run ----------------------------------------------------------------------
 
@@ -275,11 +339,13 @@ class DiagnoseFailedRun:
 
     # --- the analysis -----------------------------------------------------------------------
 
-    async def _analyze(self, payload: DiagnoseRunPayload) -> RunAnalysisRecord:
+    async def _analyze(
+        self, payload: DiagnoseRunPayload, examined: _Examined | None = None
+    ) -> RunAnalysisRecord:
         """Jobs, logs, excerpts, rules and the LLM; store the result and return what was stored
         (the first writer wins, so a concurrent attempt of the same job gives the same record)."""
         try:
-            run, logs = await self._read_logs(payload.run)
+            run, logs = await self._read_logs(payload.run, examined)
         except LogsUnavailable as exc:
             await self._logs_unavailable(payload, exc)
         except PermanentError as exc:
@@ -308,18 +374,24 @@ class DiagnoseFailedRun:
         )
         return await self._store.save_run_analysis(record)
 
-    async def _read_logs(self, run: RunRef) -> tuple[RunRef, list[tuple[FailedJob, RawLog]]]:
+    async def _read_logs(
+        self, run: RunRef, examined: _Examined | None = None
+    ) -> tuple[RunRef, list[tuple[FailedJob, RawLog]]]:
         """The failed jobs of the attempt with their logs, and the run with its pull request.
+        A cancelled run brings the jobs and annotations its gate already read (D-73).
 
         The pull request is looked up only when there is something to diagnose and before any
         log is downloaded, so a lookup that fails wastes nothing. Logs are downloaded one after
         the other (at most ``max_jobs``).
         """
-        jobs = await self._logs.jobs(run)
-        failed = select_failed_jobs(run, jobs, self._config.max_jobs)
+        if examined is not None:
+            jobs, annotations = examined.jobs, examined.annotations
+        else:
+            jobs, annotations = await self._logs.jobs(run), {}
+        failed = select_failed_jobs(run, jobs, self._config.max_jobs, annotations)
         if failed and run.pr_number is None:
             run = run.model_copy(update={"pr_number": await self._pulls.find(run)})
-            failed = select_failed_jobs(run, jobs, self._config.max_jobs)
+            failed = select_failed_jobs(run, jobs, self._config.max_jobs, annotations)
         logs = [(job, await self._logs.job_log(job.job, self._config.max_bytes)) for job in failed]
         return run, logs
 
@@ -391,6 +463,10 @@ def _newer(existing: Publication | None, run: RunRef) -> bool:
         run.run_id,
         run.run_attempt,
     )
+
+
+def _id_of(run: RunRef) -> tuple[int, int]:
+    return (run.run_id, run.run_attempt)
 
 
 def _workflow_run(run: RunRef) -> WorkflowRun:

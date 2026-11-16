@@ -57,7 +57,9 @@ npx smee-client --url https://smee.io/<your-channel> --target http://127.0.0.1:8
 With the worker running too (`uv run cicd-doctor worker`, in its own terminal), a failed workflow run
 becomes a `diagnose_run` job that is diagnosed and published as a check run and a sticky comment.
 It shows up first as a row in `webhook_deliveries`. The step-by-step live check is "Live
-verification (P1c)" in [lab/README.md](lab/README.md).
+verification (P1c)" in [lab/README.md](lab/README.md). A run that ends `cancelled` is diagnosed only
+when one of its jobs exceeded its `timeout-minutes` (D-73, "Job timeouts (D-73)" in the same file);
+a manual cancellation publishes nothing.
 `uv run python scripts/load_webhooks.py --cleanup` measures the acknowledgement latency with 100
 signed deliveries (p99 must stay under 1 s).
 

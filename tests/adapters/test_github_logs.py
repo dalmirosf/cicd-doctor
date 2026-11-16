@@ -7,8 +7,11 @@ exception message or a log line.
 """
 
 import gzip
+import json
 import logging
 from collections.abc import AsyncIterator, Iterator
+from datetime import timedelta
+from pathlib import Path
 
 import httpx2
 import pytest
@@ -19,11 +22,12 @@ from cicd_doctor.adapters.github.logs import GitHubLogSource
 from cicd_doctor.app.container import HTTP_LOGGERS, configure_logging
 from cicd_doctor.core.errors import LogsUnavailable, PermanentError, TransientError
 from cicd_doctor.core.logs.parse import parse_log
-from cicd_doctor.core.logs.select import select_failed_jobs
+from cicd_doctor.core.logs.select import is_job_timeout, select_failed_jobs
 from cicd_doctor.core.logs.tail import HARD_READ_LIMIT
 from cicd_doctor.core.models import JobRef
 from tests.factories import make_run_ref
 from tests.github_fake import (
+    ANNOTATIONS_TEMPLATE,
     API_HOST,
     BLOB_HOST,
     BLOB_TEMPLATE,
@@ -43,6 +47,7 @@ RUN = make_run_ref(
 )
 JOB = JobRef(run=RUN, job_id=77, job_name="build")
 SIG = "fake-signature-"
+FIXTURES = Path(__file__).resolve().parents[1] / "fixtures" / "github"
 FIRST_LINE = "2026-11-12T12:00:00."
 
 
@@ -76,6 +81,90 @@ async def source(
 
 def blob_requests(github: FakeGitHub) -> list[RecordedRequest]:
     return github.requests_to("GET", BLOB_TEMPLATE)
+
+
+# --- annotations (D-73) ----------------------------------------------------------------------
+
+
+def note(message: str) -> dict[str, str]:
+    return {"annotation_level": "failure", "title": "", "path": ".github", "message": message}
+
+
+async def test_the_annotations_of_a_real_job_timeout_are_read_by_the_check_run_id(
+    source: GitHubLogSource, fake: GitHubLogsFake, github: FakeGitHub
+) -> None:
+    real = json.loads((FIXTURES / "annotations_job_timeout.json").read_text("utf-8"))
+    fake.set_annotations(JOB.job_id, real)
+
+    messages = await source.job_annotations(JOB)
+
+    assert messages == [
+        "The job has exceeded the maximum execution time of 1m0s",
+        "The operation was canceled.",
+    ]
+    assert is_job_timeout(messages)
+    [request] = github.requests_to("GET", ANNOTATIONS_TEMPLATE)
+    assert request.params["job_id"] == str(JOB.job_id)
+    assert request.has_authorization
+
+
+async def test_a_manual_cancellation_has_no_timeout_annotation(
+    source: GitHubLogSource, fake: GitHubLogsFake
+) -> None:
+    fake.set_annotations(JOB.job_id, [note("The operation was canceled.")])
+
+    assert not is_job_timeout(await source.job_annotations(JOB))
+
+
+async def test_a_job_without_annotations_answers_an_empty_list(source: GitHubLogSource) -> None:
+    assert await source.job_annotations(JOB) == []
+
+
+async def test_annotations_follow_the_pages_and_keep_only_the_messages(
+    source: GitHubLogSource, fake: GitHubLogsFake, github: FakeGitHub
+) -> None:
+    fake.set_annotations(JOB.job_id, [note(f"message {n}") for n in range(5)], page_size=2)
+
+    messages = await source.job_annotations(JOB)
+
+    assert messages == [f"message {n}" for n in range(5)]
+    assert len(github.requests_to("GET", ANNOTATIONS_TEMPLATE)) == 3
+
+
+@pytest.mark.parametrize("status", [500, 502, 503])
+async def test_a_5xx_while_reading_the_annotations_is_transient(
+    source: GitHubLogSource, github: FakeGitHub, status: int
+) -> None:
+    github.fail("GET", ANNOTATIONS_TEMPLATE, status)
+
+    with pytest.raises(TransientError) as excinfo:
+        await source.job_annotations(JOB)
+
+    assert CANARY not in str(excinfo.value)
+
+
+async def test_a_rate_limit_while_reading_the_annotations_is_transient_with_retry_after(
+    source: GitHubLogSource, github: FakeGitHub
+) -> None:
+    github.fail("GET", ANNOTATIONS_TEMPLATE, 429, headers={"retry-after": "42"})
+
+    with pytest.raises(TransientError) as excinfo:
+        await source.job_annotations(JOB)
+
+    assert excinfo.value.retry_after == timedelta(seconds=42)
+
+
+@pytest.mark.parametrize("status", [403, 404])
+async def test_a_403_or_404_while_reading_the_annotations_is_permanent(
+    source: GitHubLogSource, github: FakeGitHub, status: int
+) -> None:
+    github.fail("GET", ANNOTATIONS_TEMPLATE, status)
+
+    with pytest.raises(PermanentError) as excinfo:
+        await source.job_annotations(JOB)
+
+    assert not isinstance(excinfo.value, LogsUnavailable)
+    assert CANARY not in str(excinfo.value)
 
 
 # --- jobs -----------------------------------------------------------------------------------

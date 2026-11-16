@@ -33,9 +33,10 @@ class FakeLogSource:
         self._logs: dict[int, RawLog] = {}
         self._jobs_error: Exception | None = None
         self._log_errors: dict[int, Exception] = {}
-        self.calls: list[
-            tuple[str, int, int]
-        ] = []  # ("jobs", run_id, attempt), ("job_log", job, 0)
+        self._annotations: dict[int, list[str]] = {}
+        self._annotation_errors: dict[int, Exception] = {}
+        # ("jobs", run_id, attempt), ("job_log", job, 0), ("job_annotations", job, 0)
+        self.calls: list[tuple[str, int, int]] = []
         self.max_bytes: list[int] = []
         self._journal = journal
 
@@ -44,6 +45,16 @@ class FakeLogSource:
 
     def add_log(self, job_id: int, text: str, *, truncated: bool = False) -> None:
         self._logs[job_id] = RawLog(text=text, truncated=truncated)
+
+    def add_annotations(self, job_id: int, messages: Sequence[str]) -> None:
+        self._annotations[job_id] = list(messages)
+
+    def fail_annotations(self, job_id: int, error: Exception | None) -> None:
+        """Make ``job_annotations`` of ``job_id`` raise ``error`` (``None``: stop failing)."""
+        if error is None:
+            self._annotation_errors.pop(job_id, None)
+        else:
+            self._annotation_errors[job_id] = error
 
     def fail_jobs(self, error: Exception | None) -> None:
         """Make ``jobs`` raise ``error`` (``None``: stop failing)."""
@@ -68,6 +79,15 @@ class FakeLogSource:
         if self._jobs_error is not None:
             raise self._jobs_error
         return list(self._jobs.get((run.run_id, run.run_attempt), []))
+
+    async def job_annotations(self, job: JobRef) -> list[str]:
+        self.calls.append(("job_annotations", job.job_id, 0))
+        _note(self._journal, "log_source.job_annotations")
+        await asyncio.sleep(0)
+        error = self._annotation_errors.get(job.job_id)
+        if error is not None:
+            raise error
+        return list(self._annotations.get(job.job_id, []))
 
     async def job_log(self, job: JobRef, max_bytes: int) -> RawLog:
         self.calls.append(("job_log", job.job_id, 0))

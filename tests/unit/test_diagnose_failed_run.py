@@ -713,3 +713,295 @@ async def test_could_not_diagnose_respects_a_newer_attempt() -> None:
 
     assert not published
     assert world.reporter.calls == []
+
+
+# --- job-level timeouts: cancelled runs (D-73) -----------------------------------------------
+
+TIMEOUT_NOTES = [
+    "The job has exceeded the maximum execution time of 1m0s",
+    "The operation was canceled.",
+]
+MANUAL_NOTES = ["The operation was canceled."]
+
+
+def timeout_log() -> str:
+    """The log of a job that hit its limit: GitHub only says the operation was cancelled."""
+    return "\n".join(
+        f"{stamp(T0 + timedelta(seconds=31) + timedelta(milliseconds=100 * i))} {line}"
+        for i, line in enumerate(["Run sleep 300", "##[error]The operation was canceled."])
+    )
+
+
+def add_cancelled_jobs(world: World, run: RunRef, *notes_by_job: tuple[int, Sequence[str]]) -> None:
+    jobs = [workflow_job(job_id, "cancelled", name=f"job-{job_id}") for job_id, _ in notes_by_job]
+    world.logs.add_jobs(run, [workflow_job(900, "success"), *jobs])
+    for job_id, notes in notes_by_job:
+        world.logs.add_annotations(job_id, notes)
+        world.logs.add_log(job_id, timeout_log())
+
+
+def cancelled_world(*notes_by_job: tuple[int, Sequence[str]]) -> World:
+    """A world whose run has the given cancelled jobs (job id and annotations) and a success."""
+    world = World(jobs=False, with_llm=False)
+    add_cancelled_jobs(world, world.run, *notes_by_job)
+    return world
+
+
+async def run_cancelled(world: World, run: RunRef | None = None) -> None:
+    await world.run_once(run, conclusion="cancelled")
+
+
+async def test_a_cancelled_run_with_a_job_timeout_is_diagnosed_as_a_timeout() -> None:
+    world = cancelled_world((11, TIMEOUT_NOTES))
+
+    await run_cancelled(world)
+
+    [check] = world.reporter.checks.values()
+    assert check.status == "completed"
+    assert check.output is not None
+    assert check.output.title.startswith("Likely cause: timeout")
+    record = await world.record()
+    [item] = record.items
+    assert item.failure.job.conclusion == "timed_out"
+    assert item.rules.rule_ids[0] == "GHA-TIMEOUT"
+    assert record.attempt.conclusion == "cancelled"
+    [comment] = world.reporter.comments.values()
+    assert comment.body.splitlines()[0] == MARKER
+
+
+async def test_the_gate_reads_the_annotations_before_the_check_starts() -> None:
+    world = cancelled_world((11, TIMEOUT_NOTES))
+
+    await run_cancelled(world)
+
+    assert world.journal == [
+        "log_source.jobs",
+        "log_source.job_annotations",
+        "reporter.start_check",
+        "log_source.job_log",
+        "reporter.complete_check",
+        "reporter.upsert_comment",
+    ]  # the jobs are listed once: the gate hands them to the analysis
+
+
+async def test_a_manual_cancellation_publishes_and_stores_nothing() -> None:
+    world = cancelled_world((11, MANUAL_NOTES), (12, []))
+
+    await run_cancelled(world)  # returns normally: the job is done
+
+    assert world.reporter.calls == []
+    assert world.reporter.checks == {}
+    assert world.llm.calls == []
+    assert world.logs.downloads == 0
+    assert world.pulls.calls == []
+    assert world.calls_made() == (0, 0, 0)
+    assert await world.store.run_analysis(5000, 1) is None
+    assert await world.store.publication(world.check_key()) is None
+    assert await world.installations.repository(100) is None  # not even the rows
+
+
+async def test_a_cancelled_run_without_any_cancelled_job_is_silent() -> None:
+    world = World(jobs=False, with_llm=False)
+    world.logs.add_jobs(world.run, [workflow_job(1, "success"), workflow_job(2, "skipped")])
+
+    await run_cancelled(world)
+
+    assert [call[0] for call in world.logs.calls] == ["jobs"]  # no annotation was read
+    assert world.reporter.calls == []
+
+
+async def test_only_the_job_that_timed_out_is_diagnosed_in_a_mixed_run() -> None:
+    world = cancelled_world((11, MANUAL_NOTES), (12, TIMEOUT_NOTES), (13, MANUAL_NOTES))
+
+    await run_cancelled(world)
+
+    [item] = (await world.record()).items
+    assert item.failure.job.job.job_id == 12
+    assert world.logs.downloads == 1
+
+
+async def test_a_failed_job_next_to_a_timed_out_one_are_both_diagnosed() -> None:
+    world = cancelled_world((12, TIMEOUT_NOTES))
+    world.logs.add_jobs(
+        world.run, [workflow_job(11, "failure"), workflow_job(12, "cancelled", name="job-12")]
+    )
+    world.logs.add_log(11, log_text())
+
+    await run_cancelled(world)
+
+    record = await world.record()
+    assert sorted(item.failure.job.job.job_id for item in record.items) == [11, 12]
+
+
+async def test_the_gate_stops_reading_at_the_first_timeout() -> None:
+    world = cancelled_world((11, TIMEOUT_NOTES), (12, MANUAL_NOTES))
+
+    await run_cancelled(world)
+
+    assert [call for call in world.logs.calls if call[0] == "job_annotations"] == [
+        ("job_annotations", 11, 0)
+    ]
+
+
+async def test_at_most_ten_cancelled_jobs_are_read() -> None:
+    world = cancelled_world(*[(job_id, MANUAL_NOTES) for job_id in range(101, 116)])
+
+    await run_cancelled(world)
+
+    reads = [call for call in world.logs.calls if call[0] == "job_annotations"]
+    assert len(reads) == 10
+    assert world.reporter.calls == []
+
+
+async def test_a_transient_annotation_error_creates_nothing_and_a_retry_decides_again() -> None:
+    world = cancelled_world((11, TIMEOUT_NOTES))
+    world.logs.fail_annotations(11, TransientError("502"))
+
+    with pytest.raises(TransientError):
+        await run_cancelled(world)
+    assert world.reporter.calls == []
+    assert await world.store.publication(world.check_key()) is None
+
+    world.logs.fail_annotations(11, None)
+    await run_cancelled(world)
+
+    [check] = world.reporter.checks.values()
+    assert check.status == "completed"
+    assert check.output is not None
+    assert check.output.title.startswith("Likely cause: timeout")
+
+
+async def test_a_permanent_annotation_error_propagates_and_publishes_nothing() -> None:
+    world = cancelled_world((11, TIMEOUT_NOTES))
+    world.logs.fail_annotations(11, GitHubPermanentError("GET annotations: 404", status_code=404))
+
+    with pytest.raises(PermanentError):
+        await run_cancelled(world)
+
+    assert world.reporter.calls == []
+    assert await world.store.run_analysis(5000, 1) is None
+
+
+async def test_could_not_diagnose_of_a_cancelled_run_needs_a_started_check() -> None:
+    world = cancelled_world((11, TIMEOUT_NOTES))
+
+    published = await world.usecase.publish_could_not_diagnose(
+        world.run, "internal_error", only_if_started=True
+    )
+
+    assert not published
+    assert world.reporter.calls == []
+
+
+async def test_could_not_diagnose_of_a_cancelled_run_publishes_once_the_check_started() -> None:
+    world = cancelled_world((11, TIMEOUT_NOTES))
+    world.reporter.fail_next("complete_check", TransientError("502"))
+    with pytest.raises(TransientError):
+        await run_cancelled(world)  # the check was started, then publishing failed
+
+    published = await world.usecase.publish_could_not_diagnose(
+        world.run, "internal_error", only_if_started=True
+    )
+
+    assert published
+    [check] = world.reporter.checks.values()
+    assert check.output is not None
+    assert check.output.title == "Could not diagnose"
+
+
+async def test_could_not_diagnose_of_attempt_2_ignores_the_check_of_attempt_1() -> None:
+    world = cancelled_world((11, TIMEOUT_NOTES))
+    await world.store.save_publication(
+        Publication(key=world.check_key(), external_id=9001, run_id=5000, attempt=1)
+    )
+    second = make_run_ref(run_attempt=2)
+
+    published = await world.usecase.publish_could_not_diagnose(
+        second, "internal_error", only_if_started=True
+    )
+
+    assert not published  # attempt 2 never started a check: a manual cancellation stays silent
+    assert world.reporter.calls == []
+
+
+async def test_a_retry_after_the_checkpoint_does_not_read_or_call_anything_again() -> None:
+    world = cancelled_world((11, TIMEOUT_NOTES))
+    world.reporter.fail_next("complete_check", TransientError("502"))
+    with pytest.raises(TransientError):
+        await run_cancelled(world)  # after the checkpoint, before the check completed
+    before = world.calls_made()
+    calls_before = list(world.logs.calls)
+
+    await run_cancelled(world)
+
+    assert len(world.reporter.checks) == 1
+    [check] = world.reporter.checks.values()
+    assert check.status == "completed"
+    assert world.calls_made() == before  # no log, no LLM, no reservation again
+    assert world.logs.calls == calls_before  # the stored analysis proves the gate passed
+
+
+async def test_a_retry_before_the_checkpoint_decides_again_and_keeps_one_check() -> None:
+    world = cancelled_world((11, TIMEOUT_NOTES))
+    world.logs.fail_log(11, TransientError("blob 503"))
+    with pytest.raises(TransientError):
+        await run_cancelled(world)
+    assert len(world.reporter.checks) == 1  # started, in progress
+    assert await world.store.run_analysis(5000, 1) is None
+
+    world.logs.fail_log(11, None)
+    await run_cancelled(world)
+
+    [check] = world.reporter.checks.values()
+    assert check.status == "completed"
+    assert [call[0] for call in world.logs.calls].count("job_annotations") == 2
+
+
+async def test_attempt_2_of_a_cancelled_run_edits_the_check_of_attempt_1() -> None:
+    world = cancelled_world((11, TIMEOUT_NOTES))
+    await run_cancelled(world)
+    second = make_run_ref(run_attempt=2)
+    add_cancelled_jobs(world, second, (21, TIMEOUT_NOTES))
+
+    await run_cancelled(world, second)
+
+    [check] = world.reporter.checks.values()
+    assert check.status == "completed"
+    [comment] = world.reporter.comments.values()
+    assert "Attempt 2" in comment.body
+    assert (await world.record(second)).attempt.attempt == 2
+
+
+async def test_an_attempt_2_that_is_a_manual_cancellation_leaves_attempt_1_alone() -> None:
+    world = cancelled_world((11, TIMEOUT_NOTES))
+    await run_cancelled(world)
+    published = list(world.reporter.calls)
+    second = make_run_ref(run_attempt=2)
+    add_cancelled_jobs(world, second, (21, MANUAL_NOTES))
+
+    await run_cancelled(world, second)
+
+    assert world.reporter.calls == published
+    assert await world.store.run_analysis(5000, 2) is None
+
+
+async def test_an_older_cancelled_attempt_reads_nothing_when_a_newer_one_published() -> None:
+    world = cancelled_world((11, TIMEOUT_NOTES))
+    await world.store.save_publication(
+        Publication(key=world.check_key(), external_id=9001, run_id=5000, attempt=2)
+    )
+
+    await run_cancelled(world)  # attempt 1
+
+    assert world.reporter.calls == []
+    assert world.logs.calls == []  # not even the jobs: the guard comes first
+
+
+async def test_a_failure_run_never_reads_annotations_and_starts_the_check_first() -> None:
+    world = World()
+    world.logs.add_annotations(11, TIMEOUT_NOTES)
+
+    await world.run_once()
+
+    assert not any(call[0] == "job_annotations" for call in world.logs.calls)
+    assert world.journal[0] == "reporter.start_check"

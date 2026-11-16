@@ -47,6 +47,13 @@ class LogSource(Protocol):
         (D-58)."""
         ...
 
+    async def job_annotations(self, job: JobRef) -> list[str]:
+        """The ``message`` of every annotation of the job's check run (the job id is the check
+        run id). A job that hits its ``timeout-minutes`` ends ``cancelled`` and only its
+        annotations say so (D-73). Transient errors (5xx, rate limits) raise ``TransientError``;
+        403 and 404 raise ``PermanentError``."""
+        ...
+
     async def job_log(self, job: JobRef, max_bytes: int) -> RawLog:
         """Tail-biased download of the last ``max_bytes`` of a job log; never persisted.
 

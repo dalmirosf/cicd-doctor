@@ -8,7 +8,7 @@ arrives in P2, and the CI gate in P4.
 
 ```
 evals/
-├── cases/<source>/<case_id>/   # lab | public | injection: case.yaml, log.txt, jobs.json (fix.diff for public)
+├── cases/<source>/<case_id>/   # lab | public | injection: case.yaml, log.txt, jobs.json (fix.diff for public; annotations.json when a job ended cancelled, D-73)
 ├── runner/                     # cases, variants, metrics, report, capture, injection, markdown_threats, live, cli
 ├── .cache/                     # LLM answers keyed by (model, prompt version, request); empty until a live run
 ├── reports/                    # <date>-<git-sha>.{json,md}

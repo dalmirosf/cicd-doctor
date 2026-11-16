@@ -506,7 +506,8 @@ class DiagnoseRunPayload(DomainModel):
     """Payload of a ``diagnose_run`` job: what the webhook knew, never the raw GitHub JSON."""
 
     run: RunRef
-    conclusion: Literal["failure", "timed_out"]
+    # ``cancelled`` runs are examined only to find a job-level timeout (D-73).
+    conclusion: Literal["failure", "timed_out", "cancelled"]
     completed_at: datetime  # workflow_run.updated_at
     default_branch: str
     private: bool
