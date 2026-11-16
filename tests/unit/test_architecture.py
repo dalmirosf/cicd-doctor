@@ -27,6 +27,9 @@ FORBIDDEN_EXTERNAL = frozenset(
         "starlette",
         "uvicorn",
         "httpx",
+        "httpx2",  # the GitHub client (D-67)
+        "jwt",  # PyJWT, the app authentication (D-68)
+        "cryptography",
         "sqlalchemy",
         "psycopg",
         "alembic",
@@ -101,6 +104,10 @@ def test_core_does_not_import_adapters_or_io_libraries() -> None:
         ("from cicd_doctor.worker import main", "imports cicd_doctor.worker"),
         ("import fastapi", "imports fastapi"),
         ("from httpx import Client", "imports httpx"),
+        ("import httpx2", "imports httpx2"),
+        ("from httpx2 import AsyncClient", "imports httpx2"),
+        ("import jwt", "imports jwt"),
+        ("from cryptography.hazmat.primitives import serialization", "imports cryptography"),
         ("from sqlalchemy.ext.asyncio import AsyncSession", "imports sqlalchemy.ext.asyncio"),
         ("from alembic import op", "imports alembic"),
         ("from pydantic_settings import BaseSettings", "imports pydantic_settings"),

@@ -11,7 +11,8 @@ as a check run and a sticky PR comment.
 > sources are in `lab/`). The LLM path exists too (policy, prompt, validation, budget, fallbacks,
 > the OpenAI client and the safe renderer) and is tested offline with a fake model and an
 > injection suite of 16 cases; it has not run against OpenAI yet (`pytest -m live` waits for an
-> `OPENAI_API_KEY`, and the model is chosen by a mini-eval, D-65). Nothing calls GitHub yet, so a
+> `OPENAI_API_KEY`, and the model is chosen by a mini-eval, D-65). The GitHub client and the app
+> authentication exist (D-67, D-68) but nothing is wired to them: nothing calls GitHub yet, so a
 > failed run becomes a `diagnose_run` job that the worker completes with a placeholder handler.
 > See [SPEC.md](SPEC.md) for the design and phases, and [DECISIONS.md](DECISIONS.md) for the
 > reasoning behind each decision.
