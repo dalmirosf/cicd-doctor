@@ -80,10 +80,13 @@ def migrate_to_head(url: str) -> None:
 
 
 def reset_tables(url: str) -> None:
-    """Empty the tables the tests write to (CASCADE reaches everything that references them)."""
+    """Empty the tables the tests write to (CASCADE reaches everything that references them).
+
+    ``llm_usage`` references nothing, so it is named.
+    """
     with psycopg.connect(libpq_url(url), autocommit=True, connect_timeout=5) as conn:
         conn.execute(
-            "TRUNCATE jobs, webhook_deliveries, installations, repositories "
+            "TRUNCATE jobs, webhook_deliveries, installations, repositories, llm_usage "
             "RESTART IDENTITY CASCADE"
         )
 

@@ -4,6 +4,7 @@ Adapters implement these Protocols; use cases receive them by injection.
 """
 
 from collections.abc import Sequence
+from contextlib import AbstractAsyncContextManager
 from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Protocol
@@ -30,6 +31,7 @@ from cicd_doctor.core.models import (
     RepoRef,
     Repository,
     Reservation,
+    RunAnalysisRecord,
     RunAttempt,
     RunRef,
     SimilarFailure,
@@ -64,11 +66,33 @@ class Embedder(Protocol):
 
 
 class FailureStore(Protocol):
-    async def save_run(self, run: WorkflowRun, attempt: RunAttempt) -> None: ...
+    """Everything the diagnosis flow persists. Every lookup is scoped by repository (D-10)."""
 
-    async def save_failure(self, failure: Failure) -> None: ...
+    async def save_run(self, run: WorkflowRun, attempt: RunAttempt) -> None:
+        """Upsert the run and the attempt; the run and its repository must be known."""
+        ...
 
-    async def save_diagnosis(self, failure_id: UUID, diagnosis: Diagnosis) -> None: ...
+    async def save_failure(self, failure: Failure) -> None:
+        """Upsert one failure (the attempt must have been saved)."""
+        ...
+
+    async def save_diagnosis(self, failure_id: UUID, diagnosis: Diagnosis) -> None:
+        """Add one unpublished diagnosis row; ``KeyError`` for an unknown failure."""
+        ...
+
+    async def save_run_analysis(self, record: RunAnalysisRecord) -> RunAnalysisRecord:
+        """Store the analysis of a run attempt atomically: the run, the attempt, the failures and
+        their diagnoses in one transaction, which marks the attempt as analysed (D-69).
+
+        The first writer wins: when the attempt is already analysed nothing changes and the
+        stored record is returned, so every caller continues with the same record.
+        """
+        ...
+
+    async def run_analysis(self, run_id: int, attempt: int) -> RunAnalysisRecord | None:
+        """The stored analysis of an attempt, or None if it was never analysed. An attempt
+        without failures is a valid checkpoint."""
+        ...
 
     async def cached_diagnosis(
         self, repo_id: int, signature_hash: str, max_age: timedelta
@@ -92,7 +116,16 @@ class FailureStore(Protocol):
     async def publication(self, key: PublicationKey) -> Publication | None: ...
 
     async def save_publication(self, pub: Publication) -> bool:
-        """Return False (and store nothing) if a newer attempt already published."""
+        """Return False (and store nothing) if a newer attempt already published.
+
+        "Newer" is ordered by ``(run_id, attempt)`` (the run id is the same for a check run).
+        """
+        ...
+
+    def publication_lock(self, key: PublicationKey) -> AbstractAsyncContextManager[None]:
+        """Serialise the writers of one output across workers and runs (D-70): the second owner
+        waits for the first. Waiting more than the adapter's limit (30 s) raises
+        ``TransientError``. The lock is released on exit, or when its connection dies."""
         ...
 
 

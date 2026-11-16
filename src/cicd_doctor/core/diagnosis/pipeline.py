@@ -21,6 +21,7 @@ from cicd_doctor.core.errors import LLMError, LLMTransientError
 from cicd_doctor.core.models import (
     Diagnosis,
     DiagnosisRequest,
+    DiagnosisUsage,
     FallbackReason,
     LLMResult,
 )
@@ -47,7 +48,8 @@ class DiagnosisContext:
 
 @dataclass
 class LLMUsage:
-    """What the calls of one job used, for the ``diagnoses`` row and the ledger."""
+    """What the calls of one job used so far, while they happen. The result of the job carries
+    it frozen as a ``DiagnosisUsage``, for the ``diagnoses`` row and the ledger (D-69)."""
 
     model: str | None = None
     calls: int = 0
@@ -65,12 +67,23 @@ class LLMUsage:
         self.latency_ms += result.latency_ms
         self.cost_usd += cost
 
+    def freeze(self) -> DiagnosisUsage:
+        return DiagnosisUsage(
+            model=self.model,
+            calls=self.calls,
+            input_tokens=self.input_tokens,
+            output_tokens=self.output_tokens,
+            latency_ms=self.latency_ms,
+            cost_usd=self.cost_usd,
+            failed_calls=self.failed_calls,
+        )
+
 
 @dataclass(frozen=True)
 class JobDiagnosis:
     published: Diagnosis  # what the check run and the comment show
     rules: Diagnosis  # always computed (D-35); equal to ``published`` minus the reason on fallback
-    usage: LLMUsage | None = None  # None when no call was made
+    usage: DiagnosisUsage | None = None  # None when no call was made
     notes: list[str] = field(default_factory=list)  # why a fallback happened, for logs and tests
 
 
@@ -158,7 +171,7 @@ class DiagnoseJob:
                 error = str(exc)
                 logger.info("LLM answer %d is invalid: %s", attempt, error)
                 continue
-            return JobDiagnosis(diagnosis, rules, usage)
+            return JobDiagnosis(diagnosis, rules, usage.freeze())
         return self._fallback(rules, "invalid_output", usage, error or "")
 
     async def _call(self, request: DiagnosisRequest, usage: LLMUsage) -> LLMResult:
@@ -188,4 +201,5 @@ class DiagnoseJob:
         note: str = "",
     ) -> JobDiagnosis:
         published = rules.model_copy(update={"fallback_reason": reason})
-        return JobDiagnosis(published, rules, usage, [note] if note else [])
+        frozen = usage.freeze() if usage is not None else None
+        return JobDiagnosis(published, rules, frozen, [note] if note else [])

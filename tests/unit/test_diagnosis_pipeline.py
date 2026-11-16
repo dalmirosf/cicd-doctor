@@ -11,6 +11,7 @@ from datetime import timedelta
 from decimal import Decimal
 
 import pytest
+from pydantic import ValidationError
 
 from cicd_doctor.adapters.clock import FakeClock
 from cicd_doctor.adapters.memory import FakeLLM, InMemoryUsageLedger
@@ -35,8 +36,14 @@ from cicd_doctor.core.diagnosis.cost import CostModel
 from cicd_doctor.core.diagnosis.pipeline import DiagnoseJob, DiagnosisContext
 from cicd_doctor.core.diagnosis.prompt import CANARY
 from cicd_doctor.core.errors import LLMError
-from cicd_doctor.core.models import Category, DiagnosisRequest, LLMResult
-from tests.factories import T0
+from cicd_doctor.core.models import (
+    Category,
+    DiagnosisRequest,
+    DiagnosisUsage,
+    LLMResult,
+    StoredFailure,
+)
+from tests.factories import T0, make_failure
 from tests.llmcases import analysis_for
 from tests.llmcases import raw as llm_raw
 
@@ -471,3 +478,49 @@ async def test_replies_can_be_scripted_with_custom_usage(analysis: JobAnalysis) 
 
     assert result.usage is not None
     assert result.usage.cost_usd == PRICES.cost(10_000, 0)
+
+
+# --- what the checkpoint stores (D-69) ------------------------------------------------------------
+
+
+async def test_the_usage_of_a_job_is_a_frozen_diagnosis_usage(analysis: JobAnalysis) -> None:
+    result = await Harness([valid()]).job.run(analysis, CONTEXT)
+
+    assert isinstance(result.usage, DiagnosisUsage)
+    assert result.usage.model == "fake-model"
+    with pytest.raises(ValidationError, match="frozen"):
+        result.usage.calls = 9  # type: ignore[misc]
+
+
+async def test_every_outcome_of_the_pipeline_is_a_storable_failure(analysis: JobAnalysis) -> None:
+    """What ``DiagnoseJob`` returns is what ``save_run_analysis`` stores, whichever way it ends:
+    one published row, the usage with it, and the invariants of ``StoredFailure`` hold."""
+    no_budget = InMemoryUsageLedger(FakeClock(T0), daily_budget_usd=Decimal(0))
+    fork = DiagnosisContext(installation_id=1, is_fork=True)
+    off = DiagnosisContext(installation_id=1, is_fork=False, repo_llm="off")
+    cached = (await Harness([valid()]).job.run(analysis, CONTEXT)).published
+    scenarios = [
+        ("llm", Harness([valid()]), CONTEXT),
+        ("invalid_output", Harness([malformed(), malformed()]), CONTEXT),
+        ("llm_error", Harness([timeout(), timeout(), timeout()]), CONTEXT),
+        ("llm_error", Harness([unauthorized()]), CONTEXT),
+        ("budget", Harness([], ledger=no_budget), CONTEXT),
+        ("fork_policy", Harness([]), fork),
+        ("config_off", Harness([]), off),
+        ("disabled", Harness(llm=None), CONTEXT),
+        ("cache", Harness([]), DiagnosisContext(installation_id=1, is_fork=False, cached=cached)),
+    ]
+
+    for expected, harness, context in scenarios:
+        result = await harness.job.run(analysis, context)
+        stored = StoredFailure(
+            failure=make_failure(),
+            published=result.published,
+            rules=result.rules,
+            usage=result.usage,
+        )
+
+        rows = stored.diagnosis_rows()
+        assert [published for _, published in rows].count(True) == 1, expected
+        assert rows[-1][0] == result.published, expected
+        assert (result.published.fallback_reason or result.published.source) == expected
