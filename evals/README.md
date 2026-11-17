@@ -1,10 +1,9 @@
 # Evals
 
-The eval harness (SPEC §11, FR-22). As of P1b it has the `rules`, `llm` and `llm+hints`
-variants, the P1b subset of the metrics (no cause-match judge yet), JSON and Markdown reports, the
+The eval harness (SPEC §11, FR-22). It has the `rules`, `llm`, `llm+hints` and
+`llm+hints+similar` variants, the P1b subset of the metrics (no cause-match judge yet), JSON and Markdown reports, the
 lab capture command and the prompt-injection suite. `evals/cases/lab` holds 25 cases captured from
-real runs of the lab, and `evals/cases/injection` 16 synthetic ones. Similarity (`llm+hints+similar`)
-arrives in P2, and the CI gate in P4.
+real runs of the lab, and `evals/cases/injection` 16 synthetic ones. The CI gate arrives in P4.
 
 ```
 evals/
@@ -22,8 +21,8 @@ uv run python -m evals capture --repo <owner>/cicd-doctor-lab --all   # see lab/
 uv run python -m evals write-injection                     # regenerate evals/cases/injection
 ```
 
-`run` exits with an error when no case exists for the requested sources, or when the variant is
-not available yet. Reports list case ids, categories and rule ids, never log text.
+`run` exits with an error when no case exists for the requested sources, or when an LLM variant
+has no model. Reports list case ids, categories and rule ids, never log text.
 
 ## The LLM variants
 
@@ -49,6 +48,28 @@ holds only the answer. `--live` is the only way this runner spends money.
 compare their `llm+hints` rows by macro-F1, then attacks won (must be 0), then cost per case and
 p95 latency. Record the winner, its price and the numbers as a new entry in DECISIONS.md, and set
 `OPENAI_MODEL` and the prices in `.env`. This has not been done yet: it waits for the API key.
+
+## The memory variant
+
+`llm+hints+similar` is `llm+hints` plus what P2 gives the app: the exact-signature cache and the
+similar past failures in the prompt (D-81, D-82, D-86). The eval has no database, so it builds the
+history as it goes (`runner/history.py`): the cases of one `repo` run in the order of
+`captured_at`, each published diagnosis is stored in an in-memory store with its embedding, and the
+next case looks there. A case never finds itself or a job of its own run, a fake clock follows
+`captured_at` so the cache TTL applies, and `injection` cases have no history. Embeddings come from
+the real production model, which the CLI loads (it downloads 66 MB into `.cache/fastembed` the first
+time; `EMBEDDING_CACHE_DIR` moves it); the unit tests use `FakeEmbedder`.
+
+```powershell
+uv run python -m evals run --variant all --model <model>            # the column is listed even offline
+uv run python -m evals run --variant llm+hints+similar --model <model> --live
+```
+
+The report adds `Cache hits` and `Similar hits` columns and an "Effect of the memory" section with
+the accuracy (percentage points) and cost difference against `llm+hints`. **Read it with care:** the
+lab has 23 distinct failures, so the effect shows almost only on the repeated captures (py-assert,
+py-modnf); the public cases of P4 are what will give it signal. Without `--live` the answer cache is
+empty today, so the numbers are fallbacks; the real ones wait for the OpenAI key.
 
 ## Injection suite
 

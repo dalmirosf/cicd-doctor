@@ -11,7 +11,7 @@ from pathlib import Path
 import pytest
 
 from cicd_doctor.adapters.llm.cache import CachedLLMClient
-from cicd_doctor.adapters.memory import CharTokenCounter, FakeLLM
+from cicd_doctor.adapters.memory import CharTokenCounter, FakeEmbedder, FakeLLM
 from cicd_doctor.adapters.memory.llm import obeys_injection, unauthorized, valid
 from cicd_doctor.core.diagnosis.cost import CostModel
 from cicd_doctor.core.diagnosis.prompt import PROMPT_VERSION
@@ -57,7 +57,9 @@ def setup_for(fake: FakeLLM, label: str = "model-a") -> LLMSetup:
 
 
 async def run(variant: str, cases: Path, *llms: LLMSetup, sources: str = "lab") -> Report:
-    return await run_evals_async(variant, [sources], cases, COUNTER, llms=llms)
+    return await run_evals_async(
+        variant, [sources], cases, COUNTER, llms=llms, embedder=FakeEmbedder()
+    )
 
 
 # --- the cache ------------------------------------------------------------------------------------
@@ -179,11 +181,16 @@ async def test_a_damaged_entry_is_a_miss_that_live_mode_overwrites(tmp_path: Pat
 async def test_the_llm_variants_run_the_pipeline_and_are_named_after_the_model(
     cases_dir: Path,
 ) -> None:
-    fake = FakeLLM([valid()] * len(SYNTHETIC) * 2)
+    fake = FakeLLM([valid()] * len(SYNTHETIC) * 3)
 
     report = await run("all", cases_dir, setup_for(fake))
 
-    assert [r.variant for r in report.runs] == ["rules", "llm [model-a]", "llm+hints [model-a]"]
+    assert [r.variant for r in report.runs] == [
+        "rules",
+        "llm [model-a]",
+        "llm+hints [model-a]",
+        "llm+hints+similar [model-a]",
+    ]
     llm = report.runs[1]
     assert llm.metrics.cases == len(SYNTHETIC)
     assert llm.metrics.llm_share == 1.0
@@ -193,13 +200,13 @@ async def test_the_llm_variants_run_the_pipeline_and_are_named_after_the_model(
     assert (llm.metrics.input_tokens, llm.metrics.output_tokens) == (2000 * 5, 300 * 5)
     assert llm.metrics.fallbacks == {}
     assert all(r.diagnosis_source == "llm" for r in llm.results)
-    assert report.skipped == {"llm+hints+similar": "arrives with similarity search (P2)"}
+    assert report.skipped == {}
 
 
 async def test_the_llm_variant_withholds_the_hints_and_llm_plus_hints_sends_them(
     cases_dir: Path,
 ) -> None:
-    fake = FakeLLM([valid()] * len(SYNTHETIC) * 2)
+    fake = FakeLLM([valid()] * len(SYNTHETIC) * 3)
 
     await run("all", cases_dir, setup_for(fake))
 
