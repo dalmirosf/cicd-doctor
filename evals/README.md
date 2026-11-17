@@ -2,7 +2,7 @@
 
 The eval harness (SPEC §11, FR-22). As of P1b it has the `rules`, `llm` and `llm+hints`
 variants, the P1b subset of the metrics (no cause-match judge yet), JSON and Markdown reports, the
-lab capture command and the prompt-injection suite. `evals/cases/lab` holds 24 cases captured from
+lab capture command and the prompt-injection suite. `evals/cases/lab` holds 25 cases captured from
 real runs of the lab, and `evals/cases/injection` 16 synthetic ones. Similarity (`llm+hints+similar`)
 arrives in P2, and the CI gate in P4.
 

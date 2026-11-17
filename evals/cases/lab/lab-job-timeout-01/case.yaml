@@ -1,0 +1,18 @@
+id: lab-job-timeout-01
+source: lab
+repo: dalmirosf/cicd-doctor-lab
+run_url: https://github.com/dalmirosf/cicd-doctor-lab/actions/runs/44098408459/attempts/1
+job_id: 134091606516
+lab_case: job-timeout
+expected:
+  category: timeout
+  cause: The job's timeout-minutes (1) is shorter than the 5-minute sleep.
+  evidence_lines:
+  - 123
+fix:
+  summary: Raise the job's timeout-minutes, or make the work shorter.
+flaky: false
+tags:
+- actions
+- timeout
+captured_at: '2026-11-17T14:25:39+00:00'

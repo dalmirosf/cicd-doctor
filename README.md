@@ -7,7 +7,7 @@ as a check run and a sticky PR comment.
 > **Status: Phase 1c done, verified live; the OpenAI parts still never run.** The signed webhook,
 > the Postgres job queue and the worker exist, and installations are tracked. The log pipeline
 > (failed job selection, redacted excerpt, error signature), the rule-based diagnoser and the eval
-> runner exist and are tested offline and on 24 cases captured from real lab runs
+> runner exist and are tested offline and on 25 cases captured from real lab runs
 > (`evals/cases/lab`; the lab's sources are in `lab/`). The LLM path exists too (policy, prompt,
 > validation, budget, fallbacks, the OpenAI client and the safe renderer) and is tested offline
 > with a fake model and an injection suite of 16 cases; it has not run against OpenAI yet

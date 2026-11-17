@@ -26,7 +26,7 @@ npx smee-client --url https://smee.io/<dev-channel> --target http://127.0.0.1:80
 Invoke-RestMethod http://127.0.0.1:8000/ready    # from a second terminal; expect status "ready"
 uv run python scripts/load_webhooks.py --cleanup # webhook load test against the running API (p99 < 1 s)
 uv run pytest -m live                    # real OpenAI calls (smoke + injection); skipped without OPENAI_API_KEY and OPENAI_MODEL in .env, costs money, on demand only
-uv run python -m evals run --variant rules        # eval report on evals/cases/lab (24 cases captured from real lab runs)
+uv run python -m evals run --variant rules        # eval report on evals/cases/lab (25 cases captured from real lab runs)
 uv run python -m evals run --variant llm+hints --model <id> [--live --price <id>=IN,OUT]   # LLM variants: cache only, or --live calls OpenAI (D-65)
 uv run python -m evals write-injection   # regenerate evals/cases/injection from evals/runner/injection.py (a test checks they match)
 uv run python -m evals capture --repo <owner>/cicd-doctor-lab --all   # lab runs -> eval cases (lab/README.md); a cancelled job's annotations go to annotations.json (D-73)
