@@ -9,6 +9,7 @@ import asyncio
 from collections.abc import Sequence
 from datetime import timedelta
 from decimal import Decimal
+from uuid import UUID
 
 import pytest
 from pydantic import ValidationError
@@ -37,6 +38,7 @@ from cicd_doctor.core.diagnosis.pipeline import DiagnoseJob, DiagnosisContext
 from cicd_doctor.core.diagnosis.prompt import CANARY
 from cicd_doctor.core.errors import LLMError
 from cicd_doctor.core.models import (
+    CachedDiagnosis,
     Category,
     DiagnosisRequest,
     DiagnosisUsage,
@@ -50,6 +52,7 @@ from tests.llmcases import raw as llm_raw
 PRICES = CostModel(input_per_mtok=Decimal("0.40"), output_per_mtok=Decimal("1.60"))
 CALL_COST = Decimal("0.001280")  # a FakeLLM reply: 2000 tokens in, 300 out, at PRICES
 CONTEXT = DiagnosisContext(installation_id=1, is_fork=False)
+ORIGIN = UUID("00000000-0000-4000-8000-0000000000aa")
 
 
 class Harness:
@@ -422,12 +425,17 @@ async def test_a_cached_diagnosis_is_used_without_a_call(analysis: JobAnalysis) 
     cached = Harness([valid()])
     first = await cached.job.run(analysis, CONTEXT)
     harness = Harness([])  # no call allowed
-    context = DiagnosisContext(installation_id=1, is_fork=False, cached=first.published)
+    context = DiagnosisContext(
+        installation_id=1,
+        is_fork=False,
+        cached=CachedDiagnosis(diagnosis=first.published, origin_id=ORIGIN),
+    )
 
     result = await harness.job.run(analysis, context)
 
     assert result.published.source == "cache"
     assert result.published.category == first.published.category
+    assert result.cached_from == ORIGIN
     assert harness.fake.calls == []
     assert harness.usage().calls == 0
 
@@ -498,7 +506,9 @@ async def test_every_outcome_of_the_pipeline_is_a_storable_failure(analysis: Job
     no_budget = InMemoryUsageLedger(FakeClock(T0), daily_budget_usd=Decimal(0))
     fork = DiagnosisContext(installation_id=1, is_fork=True)
     off = DiagnosisContext(installation_id=1, is_fork=False, repo_llm="off")
-    cached = (await Harness([valid()]).job.run(analysis, CONTEXT)).published
+    cached = CachedDiagnosis(
+        diagnosis=(await Harness([valid()]).job.run(analysis, CONTEXT)).published, origin_id=ORIGIN
+    )
     scenarios = [
         ("llm", Harness([valid()]), CONTEXT),
         ("invalid_output", Harness([malformed(), malformed()]), CONTEXT),

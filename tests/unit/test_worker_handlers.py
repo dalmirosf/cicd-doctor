@@ -361,6 +361,7 @@ def test_prices_and_limits_come_from_the_settings() -> None:
         log_max_jobs=2,
         log_max_bytes=1000,
         excerpt_max_tokens=500,
+        cache_ttl_days=3,
     )
 
     assert container.cost_model(settings) == CostModel(
@@ -373,6 +374,7 @@ def test_prices_and_limits_come_from_the_settings() -> None:
         1000,
         500,
     )
+    assert config.cache_ttl_days == 3
     assert container.cost_model(settings_with()) == CostModel()
 
 

@@ -1,7 +1,7 @@
 """The models of the analysis checkpoint (D-69): ids, invariants and ordering."""
 
 from decimal import Decimal
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import pytest
 from pydantic import ValidationError
@@ -176,3 +176,13 @@ def test_a_comment_publication_may_name_a_newer_run_than_its_key_does() -> None:
     key = PublicationKey.comment(repo_id=1, pr_number=2, workflow_id=3)
 
     assert Publication(key=key, external_id=9, run_id=5001, attempt=1).run_id == 5001
+
+
+def test_only_a_cached_diagnosis_can_have_an_origin() -> None:
+    origin = uuid4()
+    cached = make_stored_failure(published=make_diagnosis(source="cache"))
+    llm = make_stored_failure(published=make_diagnosis(source="llm"))
+
+    assert StoredFailure.model_validate(cached.model_dump() | {"cached_from": origin}).cached_from
+    with pytest.raises(ValidationError, match="only a cached diagnosis has an origin"):
+        StoredFailure.model_validate(llm.model_dump() | {"cached_from": origin})

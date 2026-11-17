@@ -101,16 +101,27 @@ def verified_evidence(items: Sequence[LLMEvidence], excerpt: LogExcerpt) -> list
         line_text = lines.get(item.line)
         if line_text is None:
             continue
-        quoted = _normalise(_LINE_PREFIX.sub("", item.text.strip(), count=1))
+        quoted = normalise_quote(item.text)
         if not quoted:
             continue
-        haystacks = (_normalise(line_text), _normalise(escape_untrusted(line_text)))
         key = (item.line, quoted)
-        if key in seen or not any(quoted in haystack for haystack in haystacks):
+        if key in seen or not quotes_line(quoted, line_text):
             continue
         seen.add(key)
         kept.append(Evidence(line=item.line, text=_clean(quoted, _EVIDENCE_TEXT_MAX)))
     return kept
+
+
+def normalise_quote(text: str) -> str:
+    """A quoted text as it is compared: without a copied ``L<n>:`` prefix, whitespace collapsed."""
+    return _normalise(_LINE_PREFIX.sub("", text.strip(), count=1))
+
+
+def quotes_line(quoted: str, line_text: str) -> bool:
+    """Whether ``quoted`` (from ``normalise_quote``, non-empty) is a substring of the line, either
+    as it is in the excerpt or as the prompt shows it (with the block tag escaped)."""
+    haystacks = (_normalise(line_text), _normalise(escape_untrusted(line_text)))
+    return any(quoted in haystack for haystack in haystacks)
 
 
 def checked_suggestion(suggestion: LLMSuggestion | None) -> Suggestion | None:
