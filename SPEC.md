@@ -58,7 +58,7 @@ Each requirement is delivered in the phase noted in brackets (see §13).
 | FR-15 | Reuse an existing diagnosis when the same repository has the same `signature_hash` diagnosed by the LLM in the last 7 days (no LLM call; source `cache`). | P2 |
 | FR-16 | Find the top-3 similar past failures in the same repository (cosine similarity ≥ 0.85) and show them, with their fix commit if known, in the report. Also pass them to the LLM as additional untrusted context. | P2 |
 | FR-17 | On `workflow_run.completed` with `success`: if the same `head_sha` failed in an earlier attempt of the same run, mark those failures `resolved_flaky`; otherwise, if the same workflow and branch had open failures at a different `head_sha`, mark them `resolved_by_commit` with `fix_commit_sha`. Update the sticky comment to the resolved state. | P2 |
-| FR-18 | Purge data past retention (deliveries 30 days, failures and diagnoses 90 days) with a scheduled job. | P2 |
+| FR-18 | Purge data past retention with a daily job at 03:00 UTC: deliveries 30 days, finished jobs (`done`, `failed`, `dead`) 30 days, run attempts with their failures, diagnoses and publication records 90 days, the data of an uninstalled installation or a removed repository 7 days after the uninstall; open failures older than 30 days become `stale` (D-85). | P2 |
 | FR-19 | `/cicd-doctor explain` on a PR (by `OWNER`, `MEMBER` or `COLLABORATOR`) acknowledges with a 👀 reaction and diagnoses the latest failed runs of the PR head with the LLM, including fork PRs; rate limited to 1 per PR per 5 minutes. | P3 |
 | FR-20 | When the LLM proposes a code change whose lines are inside the PR diff, post it as a review comment with a ```` ```suggestion ```` block; otherwise show it only as text. | P3 |
 | FR-21 | Read optional per-repo settings from `.github/cicd-doctor.yml` **on the default branch** (`comment`, `llm: auto|on_demand|off`, `ignore_workflows`). | P3 |
@@ -257,7 +257,7 @@ class Clock(Protocol):
 | Component | Process | Responsibilities |
 |---|---|---|
 | API | `cicd-doctor api` (uvicorn factory `cicd_doctor.app.container:create_api` on a selector event loop, D-55; `api/`) | `POST /webhooks/github` (§7.1 step 1, D-56), `GET /health` (process up, D-40), `GET /ready` (the database answers `SELECT 1` within 2 s, D-53). Body limit 25 MB. |
-| Worker | `cicd-doctor worker` (`worker/runner.py`, wired in `app/container.py`) | N concurrent asyncio consumers (default 4); wakes on `LISTEN jobs_new`, polls every 5 s as fallback; extends each lease every `lease / 3` while a job runs; drains running jobs for 30 s on SIGTERM or Ctrl+C (D-49); runs the use cases (`sync_installation`, and `diagnose_run` with its give-up publication, D-74; the other kinds are placeholders until they exist); schedules the purge job daily (P2). It loads the embedding model (fastembed, `bge-small-en-v1.5`) in a background thread that nothing waits for: until it is loaded the failures are stored without an embedding (D-77, D-78). It refuses to start without `GITHUB_APP_ID` and `GITHUB_PRIVATE_KEY`, and has no LLM client unless `OPENAI_API_KEY` and `OPENAI_MODEL` are both set (the diagnosis is then rules-only, `disabled`). |
+| Worker | `cicd-doctor worker` (`worker/runner.py`, wired in `app/container.py`) | N concurrent asyncio consumers (default 4); wakes on `LISTEN jobs_new`, polls every 5 s as fallback; extends each lease every `lease / 3` while a job runs; drains running jobs for 30 s on SIGTERM or Ctrl+C (D-49); runs the use cases (`sync_installation`, and `diagnose_run` with its give-up publication, D-74; the other kinds are placeholders until they exist); schedules the purge job daily at `PURGE_HOUR_UTC` with the key `purge:<UTC date>`, so N workers create one job per day (`worker/scheduler.py`), and runs it (`purge_handler`, batches of 1 000 rows, counts only in the log; D-85). It loads the embedding model (fastembed, `bge-small-en-v1.5`) in a background thread that nothing waits for: until it is loaded the failures are stored without an embedding (D-77, D-78). It refuses to start without `GITHUB_APP_ID` and `GITHUB_PRIVATE_KEY`, and has no LLM client unless `OPENAI_API_KEY` and `OPENAI_MODEL` are both set (the diagnosis is then rules-only, `disabled`). |
 | Postgres 17 + pgvector | Compose locally (`pgvector/pgvector:0.8.7-pg17`, pinned in D-79; host port 5433, D-38, D-41); RDS for PostgreSQL in prod (D-46) | Queue, deliveries, failures, diagnoses, publications, usage ledger, embeddings. |
 
 ### 4.5 Configuration
@@ -283,6 +283,9 @@ Settings come from the environment (`pydantic-settings` in `app/settings.py`; `.
 | `EMBEDDINGS_ENABLED` | `true` | `false` = the worker does not load the model and stores no embeddings (D-77, D-78) |
 | `EMBEDDING_CACHE_DIR` | `.cache/fastembed` | Where fastembed keeps the model (66 MB) instead of the system temporary directory; git-ignored (D-78) |
 | `EMBEDDING_THREADS` | unset | ONNX threads; unset = onnxruntime decides |
+| `PURGE_ENABLED` / `PURGE_HOUR_UTC` | `true` / `3` | The scheduler of the daily purge job; the hour is UTC (D-85) |
+| `RETENTION_DELIVERIES_DAYS` / `RETENTION_JOBS_DAYS` / `RETENTION_FAILURES_DAYS` | `30` / `30` / `90` | FR-18 (D-85) |
+| `STALE_AFTER_DAYS` / `UNINSTALL_GRACE_DAYS` | `30` / `7` | An open failure turns `stale`; grace before the data of an uninstall is purged (D-85) |
 | `CACHE_TTL_DAYS` | `7` | Days an `llm` diagnosis can be reused for the same signature in the same repository; `0` turns the cache off (P2, D-81) |
 | `SIMILAR_K` / `SIMILAR_MIN_SCORE` | `3` / `0.85` | P2; 0.85 was measured and stays (D-80) |
 | `SIMILAR_USE_HNSW` | `false` | P2. The similarity search is exact per repository; `true` uses the HNSW index with iterative scans (pgvector ≥ 0.8) for a repository of tens of thousands of rows (D-79) |
@@ -512,6 +515,13 @@ CREATE TABLE jobs (
     updated_at   timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX jobs_ready_idx ON jobs (run_after) WHERE status IN ('queued', 'running');
+-- 0005, retention indexes of the daily purge (D-85):
+CREATE INDEX webhook_deliveries_received_idx ON webhook_deliveries (received_at);
+CREATE INDEX jobs_finished_idx ON jobs (updated_at) WHERE status IN ('done', 'failed', 'dead');
+CREATE INDEX run_attempts_completed_idx ON run_attempts (completed_at);
+CREATE INDEX failures_open_created_idx ON failures (created_at) WHERE status = 'open';
+CREATE INDEX check_publications_updated_idx ON check_publications (updated_at);
+CREATE INDEX comment_publications_updated_idx ON comment_publications (updated_at);
 
 -- Runs and failures -----------------------------------------------------------
 CREATE TABLE workflow_runs (
@@ -753,7 +763,7 @@ stateDiagram-v2
     [*] --> open: failure diagnosed
     open --> resolved_flaky: success on a later attempt of the same run (same head_sha)
     open --> resolved_by_commit: success on same workflow and branch with a different head_sha
-    open --> stale: no resolution after 30 days
+    open --> stale: no resolution after 30 days (set by the daily purge, D-85)
     resolved_flaky --> [*]
     resolved_by_commit --> [*]
     stale --> [*]
@@ -1131,7 +1141,7 @@ Scope: FR-08b, FR-15…FR-18.
 - [x] Isolation test: similarity and cache never return failures from another `repository_id`. Evidence (store level; the flow repeats it in later steps): `tests/contract/test_failure_store.py` on the memory and the Postgres adapters: the same vector in two repositories, 1 000 closer rows of another repository do not change the result, a cached diagnosis of repository 100 is not served to 200 (D-79, D-81).
 - [ ] Flaky lab workflow: fail then re-run success → the failure is `resolved_flaky` and the comment shows the flaky message.
 - [ ] Fix flow: a failing PR, then a fixing commit, then green → `resolved_by_commit` with the right `fix_commit_sha`, and the comment shows "Fixed by …".
-- [ ] Purge job with a fake clock deletes deliveries older than 30 days and failures older than 90 days.
+- [x] Purge job with a fake clock deletes deliveries older than 30 days and failures older than 90 days. Evidence (2026-11-17): `tests/unit/test_purge.py` and `tests/unit/test_scheduler.py` (31-day deliveries go and 29-day ones stay; 91-day failures go with their diagnoses and 89-day ones stay; `stale` at 31 days; 8 days of grace; one job per day with three schedulers), the contract suites on memory and Postgres, and `tests/integration/test_purge_postgres.py` (5 000 old rows, no orphans, two simultaneous purges without deadlock).
 - [ ] Eval variant `llm+hints+similar` is added to the report.
 
 ### P3 — Commands, suggestions, repo config

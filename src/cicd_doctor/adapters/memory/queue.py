@@ -10,13 +10,14 @@ from datetime import datetime, timedelta
 
 from cicd_doctor.adapters.clock import SystemClock
 from cicd_doctor.adapters.wakeup import Wakeup
-from cicd_doctor.core.models import Delivery, Job, JobStatus, NewJob
+from cicd_doctor.core.models import Delivery, Job, JobStatus, NewJob, PurgeCounts
 from cicd_doctor.core.ports import Clock
 from cicd_doctor.core.retry import truncate_error
 
 logger = logging.getLogger(__name__)
 
 _ACTIVE = (JobStatus.QUEUED, JobStatus.RUNNING)
+_FINISHED = (JobStatus.DONE, JobStatus.FAILED, JobStatus.DEAD)
 EXHAUSTED_ERROR = "no attempts left: the last attempt did not finish before its lease expired"
 
 
@@ -28,6 +29,8 @@ class InMemoryJobQueue:
         self._jobs: dict[int, Job] = {}
         self._dedupe_keys: set[str] = set()
         self.deliveries: dict[str, Delivery] = {}  # by delivery id; read by tests
+        self._received_at: dict[str, datetime] = {}
+        self._updated_at: dict[int, datetime] = {}  # ``jobs.updated_at``
         self._next_id = 1
         self._wakeup = Wakeup()
 
@@ -39,6 +42,7 @@ class InMemoryJobQueue:
             if key in self.deliveries:
                 return False
             self.deliveries[key] = delivery
+            self._received_at[key] = self._clock.now()
         if job.dedupe_key is not None:
             if job.dedupe_key in self._dedupe_keys:
                 return False
@@ -58,6 +62,7 @@ class InMemoryJobQueue:
             locked_by=None,
             last_error=None,
         )
+        self._updated_at[job_id] = self._clock.now()
         self._wakeup.notify_all()
         return True
 
@@ -72,6 +77,7 @@ class InMemoryJobQueue:
                         "last_error": EXHAUSTED_ERROR,
                     }
                 )
+                self._updated_at[job.id] = now
                 logger.error("job %s (%s) is dead: %s", job.id, job.kind, EXHAUSTED_ERROR)
         ready = [
             job
@@ -93,6 +99,7 @@ class InMemoryJobQueue:
             }
         )
         self._jobs[leased.id] = leased
+        self._updated_at[leased.id] = now
         return leased
 
     async def heartbeat(self, job: Job, lease: timedelta) -> bool:
@@ -122,6 +129,29 @@ class InMemoryJobQueue:
     async def wait_for_jobs(self, max_wait: timedelta) -> bool:
         return await self._wakeup.wait(max_wait)
 
+    async def purge(
+        self, deliveries_before: datetime, finished_jobs_before: datetime
+    ) -> PurgeCounts:
+        old_jobs = [
+            job
+            for job in self._jobs.values()
+            if job.status in _FINISHED and self._updated_at[job.id] < finished_jobs_before
+        ]
+        for job in old_jobs:  # the dedupe key goes with the row, like the UNIQUE constraint
+            del self._jobs[job.id]
+            del self._updated_at[job.id]
+            if job.dedupe_key is not None:
+                self._dedupe_keys.discard(job.dedupe_key)
+        old_deliveries = [
+            key for key, received in self._received_at.items() if received < deliveries_before
+        ]
+        for key in old_deliveries:
+            del self.deliveries[key]
+            del self._received_at[key]
+        return PurgeCounts(
+            deleted={"jobs": len(old_jobs), "webhook_deliveries": len(old_deliveries)}
+        )
+
     # --- Inspection (tests, operations) -----------------------------------------------------
 
     async def get(self, job_id: int) -> Job | None:
@@ -136,6 +166,7 @@ class InMemoryJobQueue:
         ):
             return False
         self._jobs[job.id] = current.model_copy(update=changes)
+        self._updated_at[job.id] = self._clock.now()
         return True
 
 

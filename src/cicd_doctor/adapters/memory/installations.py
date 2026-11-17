@@ -37,5 +37,16 @@ class InMemoryInstallationStore:
     async def installation(self, installation_id: int) -> Installation | None:
         return self._installations.get(installation_id)
 
+    async def gone_repositories(self, deleted_before: datetime) -> list[int]:
+        gone: list[int] = []
+        for repo in self._repositories.values():
+            installation = self._installations.get(repo.installation_id)
+            deleted_at = None if installation is None else installation.deleted_at
+            if (repo.removed_at is not None and repo.removed_at < deleted_before) or (
+                deleted_at is not None and deleted_at < deleted_before
+            ):
+                gone.append(repo.id)
+        return sorted(gone)
+
     async def repository(self, repo_id: int) -> Repository | None:
         return self._repositories.get(repo_id)

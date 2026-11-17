@@ -47,6 +47,20 @@ INDEXES = {
     "diagnoses_published_idx",  # 0003
     "diagnoses_cache_idx",  # 0004
     "command_invocations_pr_idx",
+    "webhook_deliveries_received_idx",  # 0005
+    "jobs_finished_idx",  # 0005
+    "run_attempts_completed_idx",  # 0005
+    "failures_open_created_idx",  # 0005
+    "check_publications_updated_idx",  # 0005
+    "comment_publications_updated_idx",  # 0005
+}
+INDEXES_0005 = {
+    "webhook_deliveries_received_idx",
+    "jobs_finished_idx",
+    "run_attempts_completed_idx",
+    "failures_open_created_idx",
+    "check_publications_updated_idx",
+    "comment_publications_updated_idx",
 }
 # What 0003 adds, as (table, column) -> (data_type, is_nullable) (D-69).
 COLUMNS_0003 = {
@@ -154,6 +168,23 @@ def test_upgrade_creates_the_spec_schema(migrations_url: str) -> None:
     cache = str(indexes["diagnoses_cache_idx"])
     assert "(failure_id) WHERE (source = 'llm'::diagnosis_source)" in cache  # 0004 (D-81)
     assert "USING hnsw (embedding vector_cosine_ops)" in str(indexes["failures_emb_idx"])  # kept
+    assert "(updated_at) WHERE (status = ANY" in str(indexes["jobs_finished_idx"])  # 0005 (D-85)
+    assert "(created_at) WHERE (status = 'open'::failure_status)" in str(
+        indexes["failures_open_created_idx"]
+    )
+
+
+def test_0005_rolls_back_to_0004_and_forward_again(migrations_url: str) -> None:
+    config = alembic_config(migrations_url)
+    command.upgrade(config, "head")
+
+    command.downgrade(config, "0004")
+
+    indexes = _pairs(migrations_url, "SELECT indexname, indexdef FROM pg_indexes")
+    assert not INDEXES_0005 & set(indexes)
+    assert "diagnoses_cache_idx" in indexes  # 0004 is untouched
+    command.upgrade(config, "head")
+    assert set(_pairs(migrations_url, "SELECT indexname, indexdef FROM pg_indexes")) >= INDEXES_0005
 
 
 def test_0003_rolls_back_to_0002_and_forward_again(migrations_url: str) -> None:

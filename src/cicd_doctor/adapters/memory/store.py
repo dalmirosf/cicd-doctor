@@ -18,6 +18,7 @@ from cicd_doctor.core.models import (
     FailureStatus,
     Publication,
     PublicationKey,
+    PurgeCounts,
     RunAnalysisRecord,
     RunAttempt,
     SimilarFailure,
@@ -54,6 +55,10 @@ class InMemoryFailureStore:
         self._failures: dict[UUID, Failure] = {}
         self._diagnoses: dict[UUID, list[StoredDiagnosis]] = {}
         self._publications: dict[PublicationKey, Publication] = {}
+        # What the database stamps: ``created_at`` of failures and ``updated_at`` of publications.
+        # The retention rules of D-85 read them.
+        self._failure_created: dict[UUID, datetime] = {}
+        self._publication_updated: dict[PublicationKey, datetime] = {}
         # The checkpoints: (run id, attempt) -> the stored failures, as they were saved.
         self._analyses: dict[tuple[int, int], list[StoredFailure]] = {}
         self._locks: dict[PublicationKey, asyncio.Lock] = {}
@@ -65,6 +70,7 @@ class InMemoryFailureStore:
 
     async def save_failure(self, failure: Failure) -> None:
         self._failures[failure.id] = failure
+        self._failure_created.setdefault(failure.id, self._clock.now())
 
     async def save_diagnosis(self, failure_id: UUID, diagnosis: Diagnosis) -> None:
         if failure_id not in self._failures:
@@ -79,6 +85,7 @@ class InMemoryFailureStore:
             now = self._clock.now()
             for item in record.items:
                 self._failures[item.failure.id] = item.failure
+                self._failure_created.setdefault(item.failure.id, now)
                 self._diagnoses[item.failure.id] = [
                     StoredDiagnosis(
                         diagnosis,
@@ -218,7 +225,87 @@ class InMemoryFailureStore:
         if existing is not None and (existing.run_id, existing.attempt) > (pub.run_id, pub.attempt):
             return False
         self._publications[pub.key] = pub
+        self._publication_updated[pub.key] = self._clock.now()
         return True
+
+    async def mark_stale(self, before: datetime, now: datetime) -> int:
+        stale = [
+            failure_id
+            for failure_id, failure in self._failures.items()
+            if failure.status is FailureStatus.OPEN and self._failure_created[failure_id] < before
+        ]
+        for failure_id in stale:
+            self._failures[failure_id] = self._failures[failure_id].model_copy(
+                update={"status": FailureStatus.STALE}
+            )
+        return len(stale)
+
+    async def purge(self, attempts_before: datetime, publications_before: datetime) -> PurgeCounts:
+        old = [
+            key for key, attempt in self._attempts.items() if attempt.completed_at < attempts_before
+        ]
+        counts = self._drop_attempts(old)
+        orphans = [
+            run_id
+            for run_id in {key[0] for key in old}
+            if not any(key[0] == run_id for key in self._attempts)
+        ]
+        for run_id in orphans:
+            self._drop_run(run_id)
+        old_publications = [
+            key
+            for key, updated in self._publication_updated.items()
+            if updated < publications_before
+        ]
+        for key in old_publications:
+            self._drop_publication(key)
+        return counts + PurgeCounts(
+            deleted={"workflow_runs": len(orphans), "publications": len(old_publications)}
+        )
+
+    async def purge_repositories(self, repo_ids: Sequence[int]) -> PurgeCounts:
+        wanted = set(repo_ids)
+        run_ids = {run_id for run_id, run in self._runs.items() if run.repo_id in wanted}
+        counts = self._drop_attempts([key for key in self._attempts if key[0] in run_ids])
+        for run_id in run_ids:
+            self._drop_run(run_id)
+        keys = [key for key in self._publications if key.repo_id in wanted]
+        for key in keys:
+            self._drop_publication(key)
+        return counts + PurgeCounts(
+            deleted={"workflow_runs": len(run_ids), "publications": len(keys)}
+        )
+
+    def _drop_attempts(self, keys: Sequence[tuple[int, int]]) -> PurgeCounts:
+        """Delete attempts with what the cascade takes: their failures and diagnoses."""
+        gone = set(keys)
+        failure_ids = [
+            failure_id
+            for failure_id, failure in self._failures.items()
+            if (failure.job.job.run.run_id, failure.job.job.run.run_attempt) in gone
+        ]
+        diagnoses = 0
+        for failure_id in failure_ids:
+            diagnoses += len(self._diagnoses.pop(failure_id, []))
+            del self._failures[failure_id]
+            del self._failure_created[failure_id]
+        for key in gone:
+            self._attempts.pop(key, None)
+            self._analyses.pop(key, None)
+        return PurgeCounts(
+            deleted={
+                "run_attempts": len(gone),
+                "failures": len(failure_ids),
+                "diagnoses": diagnoses,
+            }
+        )
+
+    def _drop_run(self, run_id: int) -> None:
+        del self._runs[run_id]
+
+    def _drop_publication(self, key: PublicationKey) -> None:
+        del self._publications[key]
+        del self._publication_updated[key]
 
     @asynccontextmanager
     async def publication_lock(self, key: PublicationKey) -> AsyncIterator[None]:

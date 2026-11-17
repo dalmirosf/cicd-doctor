@@ -27,6 +27,7 @@ from cicd_doctor.core.models import (
     NewJob,
     Publication,
     PublicationKey,
+    PurgeCounts,
     RawLog,
     RepoConfig,
     RepoRef,
@@ -139,6 +140,22 @@ class FailureStore(Protocol):
         fix_commit_sha: str | None,
     ) -> None: ...
 
+    async def mark_stale(self, before: datetime, now: datetime) -> int:
+        """Mark as ``stale`` every ``open`` failure created before ``before``; the resolved ones
+        are never touched. Returns how many changed (D-85)."""
+        ...
+
+    async def purge(self, attempts_before: datetime, publications_before: datetime) -> PurgeCounts:
+        """Delete the run attempts completed before ``attempts_before`` with their failures and
+        diagnoses, the runs that are left without attempts, and the publications last updated
+        before ``publications_before``. In batches, one transaction each (D-85)."""
+        ...
+
+    async def purge_repositories(self, repo_ids: Sequence[int]) -> PurgeCounts:
+        """Delete every run, attempt, failure, diagnosis and publication of these repositories
+        (D-34, D-85). The repository rows stay."""
+        ...
+
     async def publication(self, key: PublicationKey) -> Publication | None: ...
 
     async def save_publication(self, pub: Publication) -> bool:
@@ -229,6 +246,14 @@ class JobQueue(Protocol):
         after ``max_wait``. Callers still poll: a wake-up is a hint, not a guarantee."""
         ...
 
+    async def purge(
+        self, deliveries_before: datetime, finished_jobs_before: datetime
+    ) -> PurgeCounts:
+        """Delete the deliveries received before ``deliveries_before`` and the ``done``,
+        ``failed`` and ``dead`` jobs last updated before ``finished_jobs_before``; queued and
+        running jobs are never touched. In batches, one transaction each (D-85)."""
+        ...
+
 
 class InstallationStore(Protocol):
     """Installations and repositories tracked from webhooks (FR-03, D-54). Upserts only."""
@@ -247,6 +272,11 @@ class InstallationStore(Protocol):
     async def remove_repositories(self, repo_ids: Sequence[int], removed_at: datetime) -> None: ...
 
     async def installation(self, installation_id: int) -> Installation | None: ...
+
+    async def gone_repositories(self, deleted_before: datetime) -> list[int]:
+        """The ids of the repositories removed from an installation, or whose installation was
+        deleted, before ``deleted_before`` (D-34, D-85)."""
+        ...
 
     async def repository(self, repo_id: int) -> Repository | None: ...
 

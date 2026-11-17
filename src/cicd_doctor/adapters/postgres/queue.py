@@ -20,13 +20,14 @@ from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 from cicd_doctor.adapters.postgres.engine import (
     CONNECT_TIMEOUT_S,
+    PURGE_BATCH,
     libpq_url,
     make_engine,
     ping,
     transient_db_errors,
 )
 from cicd_doctor.adapters.wakeup import Wakeup
-from cicd_doctor.core.models import Delivery, Job, JobKind, JobStatus, NewJob
+from cicd_doctor.core.models import Delivery, Job, JobKind, JobStatus, NewJob, PurgeCounts
 from cicd_doctor.core.ports import Clock
 from cicd_doctor.core.retry import truncate_error
 
@@ -123,13 +124,42 @@ _FAIL = text(
 )
 _GET = text(f"SELECT {_JOB_COLUMNS} FROM jobs WHERE id = :id")
 
+# Retention (D-85): one batch per transaction; SKIP LOCKED lets two purges (the daily one and a
+# manual one) take different rows instead of waiting for each other. The jobs go first, so the
+# deliveries that are left carry fewer ``ON DELETE SET NULL`` updates.
+_PURGE_JOBS = text(
+    """
+    DELETE FROM jobs WHERE id IN (
+        SELECT id FROM jobs
+        WHERE status IN ('done', 'failed', 'dead') AND updated_at < :before
+        ORDER BY updated_at
+        LIMIT :batch
+        FOR UPDATE SKIP LOCKED
+    )
+    """
+)
+_PURGE_DELIVERIES = text(
+    """
+    DELETE FROM webhook_deliveries WHERE delivery_id IN (
+        SELECT delivery_id FROM webhook_deliveries
+        WHERE received_at < :before
+        ORDER BY received_at
+        LIMIT :batch
+        FOR UPDATE SKIP LOCKED
+    )
+    """
+)
+
 
 class PostgresJobQueue:
     """Implements ``JobQueue``. Create it with ``PostgresJobQueue.connect(...)``."""
 
-    def __init__(self, engine: AsyncEngine, clock: Clock) -> None:
+    def __init__(
+        self, engine: AsyncEngine, clock: Clock, *, purge_batch: int = PURGE_BATCH
+    ) -> None:
         self._engine = engine
         self._clock = clock
+        self._purge_batch = purge_batch
         self._wakeup = Wakeup()
         self._listening = asyncio.Event()
 
@@ -239,6 +269,26 @@ class PostgresJobQueue:
 
     async def wait_for_jobs(self, max_wait: timedelta) -> bool:
         return await self._wakeup.wait(max_wait)
+
+    async def purge(
+        self, deliveries_before: datetime, finished_jobs_before: datetime
+    ) -> PurgeCounts:
+        jobs = await self._delete_in_batches(_PURGE_JOBS, finished_jobs_before)
+        deliveries = await self._delete_in_batches(_PURGE_DELIVERIES, deliveries_before)
+        return PurgeCounts(deleted={"jobs": jobs, "webhook_deliveries": deliveries})
+
+    async def _delete_in_batches(self, statement: Any, before: datetime) -> int:
+        """Repeat one batch, each in its own transaction, until a batch comes back short."""
+        total = 0
+        while True:
+            with transient_db_errors():
+                async with self._engine.begin() as conn:
+                    result = await conn.execute(
+                        statement, {"before": before, "batch": self._purge_batch}
+                    )
+            total += result.rowcount
+            if result.rowcount < self._purge_batch:
+                return total
 
     # --- Inspection (tests, operations) -----------------------------------------------------
 

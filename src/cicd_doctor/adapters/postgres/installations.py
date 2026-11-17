@@ -42,6 +42,13 @@ _SAVE_REPOSITORY = text(
 _REMOVE_REPOSITORIES = text(
     "UPDATE repositories SET removed_at = :removed_at WHERE id = ANY(CAST(:ids AS bigint[]))"
 )
+_GONE_REPOSITORIES = text(
+    """
+    SELECT r.id FROM repositories r JOIN installations i ON i.id = r.installation_id
+    WHERE r.removed_at < :before OR i.deleted_at < :before
+    ORDER BY r.id
+    """
+)
 _GET_INSTALLATION = text(
     "SELECT id, account_login, account_type, suspended_at, deleted_at FROM installations "
     "WHERE id = :id"
@@ -96,6 +103,12 @@ class PostgresInstallationStore:
     async def installation(self, installation_id: int) -> Installation | None:
         row = await self._one(_GET_INSTALLATION, installation_id)
         return None if row is None else Installation.model_validate(dict(row))
+
+    async def gone_repositories(self, deleted_before: datetime) -> list[int]:
+        with transient_db_errors():
+            async with self._engine.connect() as conn:
+                rows = await conn.execute(_GONE_REPOSITORIES, {"before": deleted_before})
+        return [row[0] for row in rows]
 
     async def repository(self, repo_id: int) -> Repository | None:
         row = await self._one(_GET_REPOSITORY, repo_id)

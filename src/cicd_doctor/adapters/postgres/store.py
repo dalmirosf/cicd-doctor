@@ -29,7 +29,7 @@ from sqlalchemy import RowMapping, text
 from sqlalchemy import exc as sa_exc
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
-from cicd_doctor.adapters.postgres.engine import make_engine, transient_db_errors
+from cicd_doctor.adapters.postgres.engine import PURGE_BATCH, make_engine, transient_db_errors
 from cicd_doctor.core.errors import TransientError
 from cicd_doctor.core.models import (
     CachedDiagnosis,
@@ -45,6 +45,7 @@ from cicd_doctor.core.models import (
     Publication,
     PublicationKey,
     PublicationKind,
+    PurgeCounts,
     RunAnalysisRecord,
     RunAttempt,
     RunRef,
@@ -311,6 +312,129 @@ _SAVE_COMMENT_PUBLICATION = text(
     """
 )
 
+# --- retention (D-85) ---------------------------------------------------------------------
+# Every batch is one short transaction and takes its rows with FOR UPDATE SKIP LOCKED, so two
+# purges at once work on different rows and never wait for each other. The cascade of the schema
+# would remove the failures and diagnoses of an attempt, but the explicit deletes make them
+# countable.
+
+_MARK_STALE = text(
+    """
+    UPDATE failures SET status = 'stale', resolved_at = :now
+    WHERE id IN (
+        SELECT id FROM failures
+        WHERE status = 'open' AND created_at < :before
+        ORDER BY created_at
+        LIMIT :batch
+        FOR UPDATE SKIP LOCKED
+    )
+    """
+)
+_OLD_ATTEMPTS = text(
+    """
+    SELECT run_id, attempt FROM run_attempts
+    WHERE completed_at < :before
+    ORDER BY completed_at, run_id, attempt
+    LIMIT :batch
+    FOR UPDATE SKIP LOCKED
+    """
+)
+_ATTEMPT_KEYS = "unnest(CAST(:run_ids AS bigint[]), CAST(:attempts AS int[])) AS k(run_id, attempt)"
+_DELETE_ATTEMPT_DIAGNOSES = text(
+    f"""
+    DELETE FROM diagnoses d USING failures f, {_ATTEMPT_KEYS}
+    WHERE d.failure_id = f.id AND f.run_id = k.run_id AND f.run_attempt = k.attempt
+    """
+)
+_DELETE_ATTEMPT_FAILURES = text(
+    f"""
+    DELETE FROM failures f USING {_ATTEMPT_KEYS}
+    WHERE f.run_id = k.run_id AND f.run_attempt = k.attempt
+    """
+)
+_DELETE_ATTEMPTS = text(
+    f"""
+    DELETE FROM run_attempts a USING {_ATTEMPT_KEYS}
+    WHERE a.run_id = k.run_id AND a.attempt = k.attempt
+    """
+)
+# A run goes with its last attempt. The candidates are the runs of the attempts just deleted, so
+# there is no scan of ``workflow_runs``; the check runs after those attempts were committed, so
+# whichever of two concurrent purges finishes last sees that none is left and removes the run.
+_DELETE_EMPTY_RUNS = text(
+    """
+    DELETE FROM workflow_runs WHERE id IN (
+        SELECT r.id FROM workflow_runs r
+        WHERE r.id = ANY(CAST(:run_ids AS bigint[]))
+          AND NOT EXISTS (SELECT 1 FROM run_attempts a WHERE a.run_id = r.id)
+        FOR UPDATE OF r SKIP LOCKED
+    )
+    """
+)
+# Both purges take the attempts first (the same order, SKIP LOCKED) and delete what hangs from
+# them (diagnoses, failures), so two of them never wait for each other in a cycle.
+_REPOSITORY_ATTEMPTS = text(
+    """
+    SELECT a.run_id, a.attempt FROM run_attempts a
+    JOIN workflow_runs r ON r.id = a.run_id
+    WHERE r.repository_id = ANY(CAST(:repo_ids AS bigint[]))
+    ORDER BY a.run_id, a.attempt
+    LIMIT :batch
+    FOR UPDATE OF a SKIP LOCKED
+    """
+)
+# Runs of the repository that never had an attempt, or whose attempts are gone.
+_REPOSITORY_EMPTY_RUNS = text(
+    """
+    DELETE FROM workflow_runs WHERE id IN (
+        SELECT r.id FROM workflow_runs r
+        WHERE r.repository_id = ANY(CAST(:repo_ids AS bigint[]))
+          AND NOT EXISTS (SELECT 1 FROM run_attempts a WHERE a.run_id = r.id)
+        LIMIT :batch
+        FOR UPDATE OF r SKIP LOCKED
+    )
+    """
+)
+# ``ctid`` names the rows of a table whose key is composite; the lock keeps it stable.
+_PURGE_PUBLICATIONS = {
+    "check_publications": text(
+        """
+        DELETE FROM check_publications WHERE ctid IN (
+            SELECT ctid FROM check_publications WHERE updated_at < :before
+            LIMIT :batch FOR UPDATE SKIP LOCKED
+        )
+        """
+    ),
+    "comment_publications": text(
+        """
+        DELETE FROM comment_publications WHERE ctid IN (
+            SELECT ctid FROM comment_publications WHERE updated_at < :before
+            LIMIT :batch FOR UPDATE SKIP LOCKED
+        )
+        """
+    ),
+}
+_PURGE_REPOSITORY_PUBLICATIONS = {
+    "check_publications": text(
+        """
+        DELETE FROM check_publications WHERE ctid IN (
+            SELECT ctid FROM check_publications
+            WHERE repository_id = ANY(CAST(:repo_ids AS bigint[]))
+            LIMIT :batch FOR UPDATE SKIP LOCKED
+        )
+        """
+    ),
+    "comment_publications": text(
+        """
+        DELETE FROM comment_publications WHERE ctid IN (
+            SELECT ctid FROM comment_publications
+            WHERE repository_id = ANY(CAST(:repo_ids AS bigint[]))
+            LIMIT :batch FOR UPDATE SKIP LOCKED
+        )
+        """
+    ),
+}
+
 # lock_timeout bounds the wait of pg_advisory_lock; ``true`` keeps the setting local to the
 # transaction, so it never leaks to the next user of the pooled connection.
 _SET_LOCK_TIMEOUT = text("SELECT set_config('lock_timeout', :milliseconds, true)")
@@ -328,7 +452,9 @@ class PostgresFailureStore:
         *,
         lock_wait: timedelta = DEFAULT_LOCK_WAIT,
         use_hnsw: bool = False,
+        purge_batch: int = PURGE_BATCH,
     ) -> None:
+        self._purge_batch = purge_batch
         self._engine = engine
         self._clock = clock
         self._lock_wait = lock_wait
@@ -523,6 +649,112 @@ class PostgresFailureStore:
                 result = await conn.execute(_RESOLVE, params)
                 if result.rowcount != len(ids):  # raising rolls the whole update back
                     raise KeyError("unknown failure among " + ", ".join(map(str, ids)))
+
+    # --- retention (D-85) -------------------------------------------------------------------
+
+    async def mark_stale(self, before: datetime, now: datetime) -> int:
+        total = 0
+        while True:
+            with transient_db_errors():
+                async with self._engine.begin() as conn:
+                    result = await conn.execute(
+                        _MARK_STALE, {"before": before, "now": now, "batch": self._purge_batch}
+                    )
+            total += result.rowcount
+            if result.rowcount < self._purge_batch:
+                return total
+
+    async def purge(self, attempts_before: datetime, publications_before: datetime) -> PurgeCounts:
+        counts, touched_runs = await self._delete_attempts(
+            _OLD_ATTEMPTS, {"before": attempts_before}
+        )
+        return counts + PurgeCounts(
+            deleted={
+                "workflow_runs": await self._delete_empty_runs(sorted(touched_runs)),
+                "publications": await self._purge_publications(
+                    _PURGE_PUBLICATIONS, {"before": publications_before}
+                ),
+            }
+        )
+
+    async def purge_repositories(self, repo_ids: Sequence[int]) -> PurgeCounts:
+        ids = sorted(set(repo_ids))
+        if not ids:
+            return PurgeCounts()
+        counts, touched_runs = await self._delete_attempts(_REPOSITORY_ATTEMPTS, {"repo_ids": ids})
+        empty = await self._delete_empty_runs(sorted(touched_runs))
+        while True:  # runs that had no attempt at all
+            with transient_db_errors():
+                async with self._engine.begin() as conn:
+                    result = await conn.execute(
+                        _REPOSITORY_EMPTY_RUNS, {"repo_ids": ids, "batch": self._purge_batch}
+                    )
+            empty += result.rowcount
+            if result.rowcount < self._purge_batch:
+                break
+        publications = await self._purge_publications(
+            _PURGE_REPOSITORY_PUBLICATIONS, {"repo_ids": ids}
+        )
+        return counts + PurgeCounts(deleted={"workflow_runs": empty, "publications": publications})
+
+    async def _delete_attempts(
+        self, select: Any, params: dict[str, Any]
+    ) -> tuple[PurgeCounts, set[int]]:
+        """Delete the attempts ``select`` picks, a batch per transaction, with their diagnoses and
+        failures. Returns what was deleted and the runs those attempts belonged to."""
+        counts = PurgeCounts()
+        touched_runs: set[int] = set()
+        while True:
+            with transient_db_errors():
+                async with self._engine.begin() as conn:
+                    keys = (
+                        await conn.execute(select, {**params, "batch": self._purge_batch})
+                    ).all()
+                    if keys:
+                        touched_runs.update(key[0] for key in keys)
+                        batch = {
+                            "run_ids": [key[0] for key in keys],
+                            "attempts": [key[1] for key in keys],
+                        }
+                        counts += PurgeCounts(
+                            deleted={
+                                "diagnoses": (
+                                    await conn.execute(_DELETE_ATTEMPT_DIAGNOSES, batch)
+                                ).rowcount,
+                                "failures": (
+                                    await conn.execute(_DELETE_ATTEMPT_FAILURES, batch)
+                                ).rowcount,
+                                "run_attempts": (
+                                    await conn.execute(_DELETE_ATTEMPTS, batch)
+                                ).rowcount,
+                            }
+                        )
+            if len(keys) < self._purge_batch:
+                return counts, touched_runs
+
+    async def _delete_empty_runs(self, run_ids: Sequence[int]) -> int:
+        total = 0
+        for start in range(0, len(run_ids), self._purge_batch):
+            chunk = list(run_ids[start : start + self._purge_batch])
+            with transient_db_errors():
+                async with self._engine.begin() as conn:
+                    total += (await conn.execute(_DELETE_EMPTY_RUNS, {"run_ids": chunk})).rowcount
+        return total
+
+    async def _purge_publications(self, statements: dict[str, Any], params: dict[str, Any]) -> int:
+        """Both publication tables, batch by batch; the count is of both together."""
+        total = 0
+        for statement in statements.values():
+            while True:
+                with transient_db_errors():
+                    async with self._engine.begin() as conn:
+                        result = await conn.execute(
+                            statement, {**params, "batch": self._purge_batch}
+                        )
+                total += result.rowcount
+                if result.rowcount < self._purge_batch:
+                    break
+        return total
 
     # --- publications -----------------------------------------------------------------------
 
