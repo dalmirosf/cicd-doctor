@@ -106,7 +106,7 @@ async def test_a_valid_answer_is_published(analysis: JobAnalysis) -> None:
     assert published.category is Category.DEPENDENCY  # the fake follows the rule hint
     assert published.fallback_reason is None
     assert published.evidence_verified is True
-    assert (published.model, published.prompt_version) == ("fake-model", "diag-v1")
+    assert (published.model, published.prompt_version) == ("fake-model", "diag-v2")
     assert published.confidence == 0.9
     assert len(harness.fake.calls) == 1
 
