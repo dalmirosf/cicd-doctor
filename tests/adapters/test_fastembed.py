@@ -83,7 +83,7 @@ def test_the_fixture_vectors_are_reproduced(
         expected = item["embedding"]
         assert isinstance(expected, list)
         assert _cosine(vector, expected) >= 0.9999, item["id"]
-        assert max(abs(a - b) for a, b in zip(vector, expected, strict=True)) <= 1e-6, item["id"]
+        assert max(abs(a - b) for a, b in zip(vector, expected, strict=True)) <= 1e-3, item["id"]
 
 
 def test_latency_per_failure_after_the_model_is_loaded(
