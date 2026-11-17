@@ -46,12 +46,14 @@ from cicd_doctor.core.models import (
     PublicationKey,
     PublicationKind,
     PurgeCounts,
+    ResolvedBy,
     RunAnalysisRecord,
     RunAttempt,
     RunRef,
     Signature,
     SimilarFailure,
     StoredFailure,
+    SuccessRef,
     Suggestion,
     WorkflowRun,
 )
@@ -265,8 +267,47 @@ _RESOLVE = text(
     """
     UPDATE failures
     SET status = CAST(:status AS failure_status), fix_commit_sha = :fix_commit_sha,
-        resolved_at = :resolved_at
+        resolved_at = :resolved_at, resolved_by_run_id = :resolved_by_run_id,
+        resolved_by_attempt = :resolved_by_attempt
     WHERE id = ANY(CAST(:ids AS uuid[]))
+    """
+)
+_RESOLVED_BY = text(
+    f"""
+    SELECT {_FAILURE_COLUMNS} {_FAILURE_JOINS}
+    WHERE f.repository_id = :repo_id AND f.resolved_by_run_id = :run_id
+      AND f.resolved_by_attempt = :attempt
+    ORDER BY f.created_at, f.id
+    """
+)
+# The run is inserted only when it has no row: a diagnosis may already have found its pr_number,
+# which the success must not erase (D-83). The attempt is never rewritten either.
+_INSERT_SUCCESS_RUN = text(
+    """
+    INSERT INTO workflow_runs (id, repository_id, workflow_id, workflow_name, head_sha,
+                               head_branch, head_repo_full_name, event, is_fork, pr_number,
+                               created_at)
+    VALUES (:id, :repository_id, :workflow_id, :workflow_name, :head_sha, :head_branch,
+            :head_repo_full_name, :event, :is_fork, :pr_number, :now)
+    ON CONFLICT (id) DO NOTHING
+    """
+)
+_INSERT_SUCCESS_ATTEMPT = text(
+    """
+    INSERT INTO run_attempts (run_id, attempt, conclusion, completed_at)
+    VALUES (:run_id, :attempt, :conclusion, :completed_at)
+    ON CONFLICT (run_id, attempt) DO NOTHING
+    """
+)
+_LATER_SUCCESSES = text(
+    """
+    SELECT a.run_id, a.attempt, r.head_sha
+    FROM run_attempts a JOIN workflow_runs r ON r.id = a.run_id
+    WHERE r.repository_id = :repo_id AND r.workflow_id = :workflow_id
+      AND r.head_repo_full_name || ':' || COALESCE(r.head_branch, '') = :branch_key
+      AND a.conclusion = 'success'
+      AND (a.run_id, a.attempt) > (:after_run_id, :after_attempt)
+    ORDER BY a.run_id, a.attempt
     """
 )
 
@@ -629,11 +670,64 @@ class PostgresFailureStore:
                 rows = (await conn.execute(_OPEN_FAILURES, params)).mappings().all()
         return [_to_failure(row) for row in rows]
 
+    async def record_success(self, run: WorkflowRun, attempt: RunAttempt) -> None:
+        run_params = {
+            "id": run.id,
+            "repository_id": run.repo_id,
+            "workflow_id": run.workflow_id,
+            "workflow_name": run.workflow_name,
+            "head_sha": run.head_sha,
+            "head_branch": run.head_branch,
+            "head_repo_full_name": run.head_repo_full_name,
+            "event": run.event,
+            "is_fork": run.is_fork,
+            "pr_number": run.pr_number,
+            "now": self._clock.now(),
+        }
+        attempt_params = {
+            "run_id": attempt.run_id,
+            "attempt": attempt.attempt,
+            "conclusion": attempt.conclusion,
+            "completed_at": attempt.completed_at,
+        }
+        with transient_db_errors():
+            async with self._engine.begin() as conn:
+                await conn.execute(_INSERT_SUCCESS_RUN, run_params)
+                await conn.execute(_INSERT_SUCCESS_ATTEMPT, attempt_params)
+
+    async def later_successes(
+        self,
+        repo_id: int,
+        workflow_id: int,
+        branch_key: str,
+        after_run_id: int,
+        after_attempt: int,
+    ) -> list[SuccessRef]:
+        params = {
+            "repo_id": repo_id,
+            "workflow_id": workflow_id,
+            "branch_key": branch_key,
+            "after_run_id": after_run_id,
+            "after_attempt": after_attempt,
+        }
+        with transient_db_errors():
+            async with self._engine.connect() as conn:
+                rows = (await conn.execute(_LATER_SUCCESSES, params)).all()
+        return [SuccessRef(run_id=row[0], attempt=row[1], head_sha=row[2]) for row in rows]
+
+    async def resolved_by(self, repo_id: int, run_id: int, attempt: int) -> list[Failure]:
+        params = {"repo_id": repo_id, "run_id": run_id, "attempt": attempt}
+        with transient_db_errors():
+            async with self._engine.connect() as conn:
+                rows = (await conn.execute(_RESOLVED_BY, params)).mappings().all()
+        return [_to_failure(row) for row in rows]
+
     async def resolve(
         self,
         failure_ids: Sequence[UUID],
         status: FailureStatus,
         fix_commit_sha: str | None,
+        resolved_by: ResolvedBy | None = None,
     ) -> None:
         ids = list(dict.fromkeys(failure_ids))
         if not ids:
@@ -643,6 +737,8 @@ class PostgresFailureStore:
             "status": status.value,
             "fix_commit_sha": fix_commit_sha,
             "resolved_at": None if status is FailureStatus.OPEN else self._clock.now(),
+            "resolved_by_run_id": None if resolved_by is None else resolved_by.run_id,
+            "resolved_by_attempt": None if resolved_by is None else resolved_by.attempt,
         }
         with transient_db_errors():
             async with self._engine.begin() as conn:

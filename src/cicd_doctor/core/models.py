@@ -282,6 +282,21 @@ class SimilarFailure(DomainModel):
         return round(value, 3)
 
 
+class SuccessRef(DomainModel):
+    """A recorded successful attempt of a workflow run (D-83): what the late resolution reads."""
+
+    run_id: int
+    attempt: int = Field(ge=1)
+    head_sha: str
+
+
+class ResolvedBy(DomainModel):
+    """The successful attempt that resolved a failure (``failures.resolved_by_*``, D-83, D-84)."""
+
+    run_id: int
+    attempt: int = Field(ge=1)
+
+
 class CachedDiagnosis(DomainModel):
     """An earlier LLM diagnosis served from the cache, with the ``diagnoses`` row it came from
     (stored in ``cached_from``, D-81)."""

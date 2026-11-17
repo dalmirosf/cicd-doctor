@@ -33,10 +33,12 @@ from cicd_doctor.core.models import (
     RepoRef,
     Repository,
     Reservation,
+    ResolvedBy,
     RunAnalysisRecord,
     RunAttempt,
     RunRef,
     SimilarFailure,
+    SuccessRef,
     Suggestion,
     WorkflowJob,
     WorkflowRun,
@@ -133,12 +135,38 @@ class FailureStore(Protocol):
         self, repo_id: int, workflow_id: int, branch_key: str
     ) -> list[Failure]: ...
 
+    async def record_success(self, run: WorkflowRun, attempt: RunAttempt) -> None:
+        """Record a successful attempt (D-83): the run only if it has no row (so the
+        ``pr_number`` a diagnosis found is never overwritten) and the attempt with its
+        ``success`` conclusion. Idempotent; creates no failure. The repository must be known."""
+        ...
+
+    async def later_successes(
+        self,
+        repo_id: int,
+        workflow_id: int,
+        branch_key: str,
+        after_run_id: int,
+        after_attempt: int,
+    ) -> list[SuccessRef]:
+        """The recorded successes of this workflow and branch key that come after
+        ``(after_run_id, after_attempt)``, ordered by ``(run_id, attempt)`` (D-83)."""
+        ...
+
     async def resolve(
         self,
         failure_ids: Sequence[UUID],
         status: FailureStatus,
         fix_commit_sha: str | None,
-    ) -> None: ...
+        resolved_by: ResolvedBy | None = None,
+    ) -> None:
+        """Set the status of the failures, all or nothing (``KeyError`` for an unknown id).
+        ``resolved_by`` is the success that resolved them (D-83, D-84)."""
+        ...
+
+    async def resolved_by(self, repo_id: int, run_id: int, attempt: int) -> list[Failure]:
+        """The failures of this repository that the success ``(run_id, attempt)`` resolved."""
+        ...
 
     async def mark_stale(self, before: datetime, now: datetime) -> int:
         """Mark as ``stale`` every ``open`` failure created before ``before``; the resolved ones

@@ -12,7 +12,7 @@ import asyncio
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Any
 from uuid import UUID
@@ -34,8 +34,10 @@ from cicd_doctor.core.models import (
     Publication,
     PublicationKey,
     Repository,
+    ResolvedBy,
     RunRef,
     StoredFailure,
+    SuccessRef,
     failure_id_for,
 )
 from cicd_doctor.core.ports import FailureStore
@@ -71,6 +73,7 @@ class Harness:
     prepare: Callable[[RunRef], Awaitable[None]]
     rows: Callable[[UUID], Awaitable[list[DiagnosisRow]]]
     ids: Callable[[UUID], Awaitable[list[UUID]]]  # the ids of the diagnoses rows, oldest first
+    resolution: Callable[[UUID], Awaitable[tuple[datetime | None, ResolvedBy | None]]]
 
 
 def _memory() -> Harness:
@@ -95,7 +98,17 @@ def _memory() -> Harness:
     async def ids(failure_id: UUID) -> list[UUID]:
         return [row.id for row in store.diagnosis_rows(failure_id)]
 
-    return Harness(store=store, clock=clock, prepare=prepare, rows=rows, ids=ids)
+    async def resolution(failure_id: UUID) -> tuple[datetime | None, ResolvedBy | None]:
+        return store.resolution(failure_id)
+
+    return Harness(
+        store=store,
+        clock=clock,
+        prepare=prepare,
+        rows=rows,
+        ids=ids,
+        resolution=resolution,
+    )
 
 
 @asynccontextmanager
@@ -141,8 +154,29 @@ async def _postgres(url: str) -> AsyncIterator[Harness]:
             )
         return [row[0] for row in result]
 
+    async def resolution(failure_id: UUID) -> tuple[datetime | None, ResolvedBy | None]:
+        async with engine.connect() as conn:
+            row = (
+                await conn.execute(
+                    text(
+                        "SELECT resolved_at, resolved_by_run_id, resolved_by_attempt "
+                        "FROM failures WHERE id = :id"
+                    ),
+                    {"id": failure_id},
+                )
+            ).one()
+        by = None if row[1] is None else ResolvedBy(run_id=row[1], attempt=row[2])
+        return row[0], by
+
     try:
-        yield Harness(store=store, clock=clock, prepare=prepare, rows=rows, ids=ids)
+        yield Harness(
+            store=store,
+            clock=clock,
+            prepare=prepare,
+            rows=rows,
+            ids=ids,
+            resolution=resolution,
+        )
     finally:
         await engine.dispose()
 
@@ -1046,3 +1080,175 @@ async def test_purge_repositories_removes_everything_of_those_repositories_only(
     assert await harness.store.publication(other.key) == other
     assert (await harness.store.purge_repositories([100])).total == 0
     assert (await harness.store.purge_repositories([])).total == 0
+
+
+# --- the success path (D-83, D-84) --------------------------------------------------------
+
+
+async def _repo(harness: Harness, repo_id: int = 100) -> None:
+    """Create the repository (and an unrelated failed attempt) without any success."""
+    await harness.prepare(make_run_ref(run_id=1, run_attempt=1, repo_id=repo_id))
+
+
+async def _succeed(
+    harness: Harness, run_id: int, attempt: int, sha: str = "b" * 40, **changes: Any
+) -> RunRef:
+    run = make_run_ref(run_id=run_id, run_attempt=attempt, head_sha=sha, **changes)
+    await harness.store.record_success(
+        make_workflow_run(run), make_run_attempt(run, conclusion="success")
+    )
+    return run
+
+
+async def _later(harness: Harness, after: tuple[int, int], repo_id: int = 100) -> list[SuccessRef]:
+    run = make_run_ref(repo_id=repo_id)
+    return await harness.store.later_successes(
+        repo_id, run.workflow_id, run.branch_key, after[0], after[1]
+    )
+
+
+async def test_record_success_keeps_the_pr_number_a_diagnosis_found(harness: Harness) -> None:
+    failed = make_run_ref(run_id=5000, run_attempt=1, pr_number=12)
+    await harness.prepare(failed)
+    await harness.store.save_failure(make_failure(run=failed))
+
+    await _succeed(harness, 5000, 2, sha=failed.head_sha, pr_number=None)
+
+    found = await harness.store.open_failures(100, failed.workflow_id, failed.branch_key)
+    assert [f.job.job.run.pr_number for f in found] == [12]
+
+
+async def test_record_success_stores_the_run_when_it_is_new(harness: Harness) -> None:
+    await _repo(harness)
+
+    await _succeed(harness, 5001, 1, pr_number=77)
+
+    assert await _later(harness, (0, 1)) == [SuccessRef(run_id=5001, attempt=1, head_sha="b" * 40)]
+
+
+async def test_record_success_is_idempotent_and_creates_no_failure(harness: Harness) -> None:
+    await _repo(harness)
+
+    await _succeed(harness, 5001, 1)
+    await _succeed(harness, 5001, 1)
+
+    assert await _later(harness, (0, 1)) == [SuccessRef(run_id=5001, attempt=1, head_sha="b" * 40)]
+    run = make_run_ref()
+    assert await harness.store.open_failures(100, run.workflow_id, run.branch_key) == []
+    assert await harness.store.run_analysis(5001, 1) is None
+
+
+async def test_later_successes_are_ordered_and_cut_after_the_failure(harness: Harness) -> None:
+    await _repo(harness)
+    await _succeed(harness, 5003, 1, "c" * 40)
+    await _succeed(harness, 5000, 2, "a" * 40)
+    await _succeed(harness, 5001, 2, "b" * 40)
+    await _succeed(harness, 5001, 1, "b" * 40)
+    await _succeed(harness, 4999, 1, "d" * 40)
+
+    found = await _later(harness, (5000, 1))
+
+    assert [(s.run_id, s.attempt) for s in found] == [(5000, 2), (5001, 1), (5001, 2), (5003, 1)]
+    assert [(s.run_id, s.attempt) for s in await _later(harness, (5001, 2))] == [(5003, 1)]
+    assert await _later(harness, (5003, 1)) == []
+
+
+async def test_later_successes_ignore_failed_attempts(harness: Harness) -> None:
+    await _repo(harness)
+    await _analyse(harness, 5002, 0)  # a failed attempt on the same branch
+
+    assert await _later(harness, (5000, 1)) == []
+
+
+async def test_later_successes_do_not_leak_across_workflow_branch_fork_or_repository(
+    harness: Harness,
+) -> None:
+    await _repo(harness)
+    await _repo(harness, 200)
+    await _succeed(harness, 5001, 1)  # the one that counts
+    await _succeed(harness, 5002, 1, workflow_id=8)
+    await _succeed(harness, 5003, 1, head_branch="other")
+    await _succeed(harness, 5004, 1, head_repo_full_name="alice/widgets", is_fork=True)
+    await _succeed(harness, 5005, 1, repo_id=200)
+    await _succeed(harness, 5006, 1, head_branch=None)
+    run = make_run_ref()
+
+    mine = await harness.store.later_successes(100, run.workflow_id, run.branch_key, 0, 1)
+    theirs = await harness.store.later_successes(200, run.workflow_id, run.branch_key, 0, 1)
+
+    assert [s.run_id for s in mine] == [5001]
+    assert [s.run_id for s in theirs] == [5005]
+    other_workflow = await harness.store.later_successes(100, 8, run.branch_key, 0, 1)
+    assert [s.run_id for s in other_workflow] == [5002]
+    assert await harness.store.later_successes(999, run.workflow_id, run.branch_key, 0, 1) == []
+
+
+async def test_resolve_stores_who_resolved_and_when(harness: Harness) -> None:
+    failure = make_failure()
+    await _save(harness, failure)
+    harness.clock.advance(timedelta(hours=2))
+    by = ResolvedBy(run_id=5001, attempt=1)
+
+    await harness.store.resolve([failure.id], FailureStatus.RESOLVED_BY_COMMIT, "b" * 40, by)
+
+    resolved_at, stored_by = await harness.resolution(failure.id)
+    assert resolved_at == harness.clock.now()
+    assert stored_by == by
+
+
+async def test_resolve_without_a_success_leaves_no_provenance(harness: Harness) -> None:
+    failure = make_failure()
+    await _save(harness, failure)
+
+    await harness.store.resolve([failure.id], FailureStatus.RESOLVED_FLAKY, None)
+
+    resolved_at, stored_by = await harness.resolution(failure.id)
+    assert resolved_at is not None
+    assert stored_by is None
+
+
+async def test_resolve_with_an_unknown_id_stores_no_provenance(harness: Harness) -> None:
+    failure = make_failure()
+    await _save(harness, failure)
+
+    with pytest.raises(KeyError):
+        await harness.store.resolve(
+            [failure.id, failure_id_for(1, 1, 1)],
+            FailureStatus.RESOLVED_FLAKY,
+            None,
+            ResolvedBy(run_id=5001, attempt=1),
+        )
+
+    assert await harness.resolution(failure.id) == (None, None)
+
+
+async def test_resolved_by_returns_only_what_that_success_resolved(harness: Harness) -> None:
+    first, second, untouched = (make_failure(job_id=n) for n in (1, 2, 3))
+    for failure in (first, second, untouched):
+        await _save(harness, failure)
+    await harness.store.resolve(
+        [first.id], FailureStatus.RESOLVED_FLAKY, None, ResolvedBy(run_id=5000, attempt=2)
+    )
+    await harness.store.resolve(
+        [second.id], FailureStatus.RESOLVED_BY_COMMIT, "b" * 40, ResolvedBy(run_id=5001, attempt=1)
+    )
+
+    found = await harness.store.resolved_by(100, 5000, 2)
+
+    assert [(f.id, f.status) for f in found] == [(first.id, FailureStatus.RESOLVED_FLAKY)]
+    assert [f.id for f in await harness.store.resolved_by(100, 5001, 1)] == [second.id]
+    assert await harness.store.resolved_by(100, 5000, 1) == []
+    assert await harness.store.resolved_by(100, 5001, 2) == []
+
+
+async def test_resolved_by_does_not_leak_across_repositories(harness: Harness) -> None:
+    mine = make_failure(run=make_run_ref(repo_id=100))
+    theirs = make_failure(run=make_run_ref(run_id=6000, repo_id=200), job_id=2)
+    await _save(harness, mine)
+    await _save(harness, theirs)
+    by = ResolvedBy(run_id=5001, attempt=1)
+    await harness.store.resolve([mine.id, theirs.id], FailureStatus.RESOLVED_FLAKY, None, by)
+
+    assert [f.id for f in await harness.store.resolved_by(100, 5001, 1)] == [mine.id]
+    assert [f.id for f in await harness.store.resolved_by(200, 5001, 1)] == [theirs.id]
+    assert await harness.store.resolved_by(300, 5001, 1) == []

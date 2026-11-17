@@ -146,7 +146,7 @@ cicd-doctor/
 │   │   ├── analysis.py          # excerpts + rules + signature for the failed jobs of a run (D-60)
 │   │   ├── diagnosis/           # prompt.py, schema.py, validate.py, merge.py, cost.py, pipeline.py (DiagnoseJob, D-66)
 │   │   ├── policy.py            # LLM allowed? (fork, config, cache; the budget is reserved by the pipeline)
-│   │   ├── outcomes.py          # flaky / fix-commit state machine
+│   │   ├── outcomes.py          # flaky / fix-commit state machine: decide, decide_late, is_stale (D-83)
 │   │   ├── render.py            # check run + comment markdown, output sanitization (D-64)
 │   │   └── usecases/            # track_installation.py, diagnose_failed_run.py (D-70, D-71, D-75); record_run_outcome.py, explain_command.py later
 │   ├── adapters/
@@ -174,9 +174,9 @@ cicd-doctor/
 ```
 
 Implemented so far (P1b: the log pipeline, rules and the LLM path, all offline; and P1c: the GitHub client, the persistence, the use case and, since D-74, the wiring into the worker; verified offline and, on 2026-11-16, live against the real GitHub with the dev app, except a fork PR, §13):
-- `core/` has `models.py` (with the checkpoint models of D-69: `DiagnosisUsage`, `StoredFailure`, `RunAnalysisRecord`, `failure_id_for`), `ports.py`, `errors.py`, `retry.py`, the use cases `usecases/track_installation.py` and `usecases/diagnose_failed_run.py` (the flow of §7.1 over the ports: D-70, D-71, D-75), `logs/` (selection, tail cap, slicing, cleaning, noise, excerpt and token budget, §7.3), `redaction.py` (§9.2), `signature.py` (§7.4), `rules/` (§10), `analysis.py` (D-60), `policy.py` (§9.4), `diagnosis/` (prompt, schema, validation, merge, cost and the `DiagnoseJob` pipeline, D-66) and `render.py` (§9.5, D-64).
+- `core/` has `models.py` (with the checkpoint models of D-69: `DiagnosisUsage`, `StoredFailure`, `RunAnalysisRecord`, `failure_id_for`), `ports.py`, `errors.py`, `retry.py`, the use cases `usecases/track_installation.py` and `usecases/diagnose_failed_run.py` (the flow of §7.1 over the ports: D-70, D-71, D-75), `logs/` (selection, tail cap, slicing, cleaning, noise, excerpt and token budget, §7.3), `redaction.py` (§9.2), `signature.py` (§7.4), `rules/` (§10), `analysis.py` (D-60), `policy.py` (§9.4), `outcomes.py` (the state machine of §7.2, pure, D-83), `diagnosis/` (prompt, schema, validation, merge, cost and the `DiagnoseJob` pipeline, D-66) and `render.py` (§9.5, D-64).
 - `evals/` has the runner with the `rules`, `llm` and `llm+hints` variants, the lab capture command (§11, D-61), the injection suite and its judge (D-64) and the live and cache plumbing (D-65); `lab/` has the lab repository sources.
-- `adapters/` has `clock.py`, `wakeup.py`, `github/webhooks.py`, `github/jobs.py`, `github/http.py` (D-67), `github/auth.py` (D-68), `github/logs.py` (D-71), `github/reporter.py` (the check run and the sticky comment, D-70, D-76), `github/pulls.py` (the PR of a run, D-72), `llm/tiktoken_counter.py`, `llm/openai_client.py` (D-63) and `llm/cache.py`; in `memory/`, the `FailureStore`, `FakeEmbedder`, `JobQueue`, `InstallationStore`, `CharTokenCounter`, `InMemoryUsageLedger`, `FakeLLM` and the GitHub fakes (`FakeLogSource`, `FakeReporter`, `FakePullRequests`); in `postgres/`, the `PostgresJobQueue`, the `PostgresInstallationStore`, the `PostgresFailureStore` (D-69; `similar` is an exact search per repository, D-79, and `cached_diagnosis` serves only verified LLM answers of the current prompt that are not from a fork, D-81), the `PostgresUsageLedger` and migrations `0001` (the whole §6 schema), `0002`, `0003` (the analysis checkpoint) and `0004` (the cache index). The use case that calls the log source, the reporter and the pull request lookup exists and is tested on the in-memory fakes; the handler, the container and the end-to-end tests belong to the next step of P1c.
+- `adapters/` has `clock.py`, `wakeup.py`, `github/webhooks.py`, `github/jobs.py`, `github/http.py` (D-67), `github/auth.py` (D-68), `github/logs.py` (D-71), `github/reporter.py` (the check run and the sticky comment, D-70, D-76), `github/pulls.py` (the PR of a run, D-72), `llm/tiktoken_counter.py`, `llm/openai_client.py` (D-63) and `llm/cache.py`; in `memory/`, the `FailureStore`, `FakeEmbedder`, `JobQueue`, `InstallationStore`, `CharTokenCounter`, `InMemoryUsageLedger`, `FakeLLM` and the GitHub fakes (`FakeLogSource`, `FakeReporter`, `FakePullRequests`); in `postgres/`, the `PostgresJobQueue`, the `PostgresInstallationStore`, the `PostgresFailureStore` (D-69; `similar` is an exact search per repository, D-79, and `cached_diagnosis` serves only verified LLM answers of the current prompt that are not from a fork, D-81), the `PostgresUsageLedger` and migrations `0001` (the whole §6 schema), `0002`, `0003` (the analysis checkpoint) `0004` (the cache index), `0005` (the retention indexes, D-85) and `0006` (the provenance of a resolution, D-83, D-84). The use case that calls the log source, the reporter and the pull request lookup exists and is tested on the in-memory fakes; the handler, the container and the end-to-end tests belong to the next step of P1c.
 - `api/` serves `GET /health`, `GET /ready` and `POST /webhooks/github`.
 - `worker/` has the consumer, the `sync_installation` handler and the `diagnose_run` handler (D-74: it publishes "Could not diagnose" when a job gives up); the other job kinds still have a placeholder handler (D-49).
 - `app/` has the CLI (`api`, `worker`), the settings and the composition root.
@@ -206,7 +206,10 @@ class FailureStore(Protocol):
     async def cached_diagnosis(self, repo_id: int, signature_hash: str, max_age: timedelta, prompt_version: str) -> CachedDiagnosis | None: ...  # source 'llm', evidence_verified, this prompt_version, not from a fork (D-81); origin_id is the diagnoses.id served
     async def similar(self, repo_id: int, embedding: Sequence[float], k: int, min_score: float, exclude_run_id: int | None = None) -> list[SimilarFailure]: ...  # exact, per repository, published diagnosis, no forks, not the same run (D-79)
     async def open_failures(self, repo_id: int, workflow_id: int, branch_key: str) -> list[Failure]: ...
-    async def resolve(self, failure_ids: Sequence[UUID], status: FailureStatus, fix_commit_sha: str | None) -> None: ...
+    async def record_success(self, run: WorkflowRun, attempt: RunAttempt) -> None: ...   # the run only if it has no row (never overwrites a pr_number), the attempt as success; idempotent, creates no failure (D-83)
+    async def later_successes(self, repo_id: int, workflow_id: int, branch_key: str, after_run_id: int, after_attempt: int) -> list[SuccessRef]: ...   # recorded successes after (run_id, attempt), ordered (D-83)
+    async def resolve(self, failure_ids: Sequence[UUID], status: FailureStatus, fix_commit_sha: str | None, resolved_by: ResolvedBy | None = None) -> None: ...   # all or nothing; resolved_by is the (run_id, attempt) of the success (D-83, D-84)
+    async def resolved_by(self, repo_id: int, run_id: int, attempt: int) -> list[Failure]: ...   # what that success resolved
     async def publication(self, key: PublicationKey) -> Publication | None: ...
     async def save_publication(self, pub: Publication) -> bool: ...   # False if a newer attempt already published
     def publication_lock(self, key: PublicationKey) -> AbstractAsyncContextManager[None]: ...   # one writer per output across workers; TransientError after 30 s (D-70)
@@ -450,6 +453,7 @@ The ports in §4.3 refer to types that §5 does not define. They exist in `core/
 | `DiagnoseRunPayload`, `InstallationEvent` (+ `InstallationAction`) | job payloads (D-56) | `diagnose_run`: `RunRef`, conclusion, `completed_at`, default branch, `private`, and the optional account of the installation (`account_login`, `account_type`; D-75). `sync_installation`: action, installation, repositories added, ids removed, time received. Key: `diagnose_dedupe_key(run_id, attempt)` |
 | `Installation`, `Repository` | `InstallationStore` (D-54) | The columns of `installations` and `repositories` |
 | `RepoRef`, `RepoConfig` | `RepoConfigSource` | `RepoConfig` has `comment`, `llm` and `ignore_workflows`, and rejects unknown keys (D-26) |
+| `SuccessRef`, `ResolvedBy` | `FailureStore.later_successes`, `resolve`, `resolved_by` | A recorded success (`run_id`, `attempt`, `head_sha`) and the `(run_id, attempt)` that resolved a failure (D-83, D-84). `core/outcomes.py` adds `Outcome` and `Resolution` |
 | `Reservation` | `UsageLedger` | Installation, UTC day, estimated cost |
 
 `RunRef.branch_key` (`head_repo_full_name:head_branch`) is the branch identity used by `FailureStore.open_failures` and by flaky and fix tracking (§7.2).
@@ -567,6 +571,8 @@ CREATE TABLE failures (
     status          failure_status NOT NULL DEFAULT 'open',
     fix_commit_sha  char(40),
     resolved_at     timestamptz,
+    resolved_by_run_id  bigint,                        -- 0006 (D-83, D-84): the success that resolved it; NULL while open or stale
+    resolved_by_attempt int,
     created_at      timestamptz NOT NULL DEFAULT now(),
     -- 0003 (D-69): what a FailedJob needs to be rebuilt from the row. The id is failure_id_for(...),
     -- the excerpt does not repeat the job (it is the row's own).
@@ -582,6 +588,7 @@ CREATE TABLE failures (
 CREATE INDEX failures_sig_idx  ON failures (repository_id, signature_hash, created_at DESC);
 CREATE INDEX failures_open_idx ON failures (repository_id, status) WHERE status = 'open';
 CREATE INDEX failures_emb_idx  ON failures USING hnsw (embedding vector_cosine_ops);
+CREATE INDEX failures_resolved_by_idx ON failures (resolved_by_run_id, resolved_by_attempt) WHERE resolved_by_run_id IS NOT NULL;  -- 0006
 -- Similarity queries always filter by repository_id (D-10). By default the search is exact: the inner query reads
 -- the rows of one repository (failures_sig_idx prefix) and orders by (embedding <=> q) + 0, which the HNSW index
 -- cannot serve; the HNSW index stays for SIMILAR_USE_HNSW with iterative scans (pgvector >= 0.8) (D-79).
@@ -762,7 +769,7 @@ sequenceDiagram
 stateDiagram-v2
     [*] --> open: failure diagnosed
     open --> resolved_flaky: success on a later attempt of the same run (same head_sha)
-    open --> resolved_by_commit: success on same workflow and branch with a different head_sha
+    open --> resolved_by_commit: success of a later run on same workflow and branch with a different head_sha
     open --> stale: no resolution after 30 days (set by the daily purge, D-85)
     resolved_flaky --> [*]
     resolved_by_commit --> [*]
@@ -770,8 +777,9 @@ stateDiagram-v2
 ```
 
   - `resolved_flaky`: the comment is edited to "✅ Passed on re-run without code changes — recorded as flaky".
-  - `resolved_by_commit`: `fix_commit_sha` is the first successful `head_sha`; the comment is edited to "✅ Fixed by `abc1234`". The compare URL failing_sha...fix_sha is stored for evals. The same branch key (`head_repo_full_name` + `head_branch`) is required, so a fix on another branch is not credited.
-  - Successful runs that match no open failure only record a `run_attempts` row (cheap, no GitHub calls).
+  - `resolved_by_commit`: `fix_commit_sha` is the `head_sha` of the success; the comment is edited to "✅ Fixed by `abc1234`". The compare URL failing_sha...fix_sha is **derived** when needed (the failing run's `workflow_runs.head_sha` and `fix_commit_sha`): it is not stored. The same branch key (`head_repo_full_name` + `head_branch`) is required, so a fix on another branch or another fork is not credited.
+  - Successful runs that match no open failure only record a `run_attempts` row (cheap, no GitHub calls): `record_success` inserts the run only if it has no row, so the `pr_number` a diagnosis found is never overwritten (D-83).
+  - **Rules (`core/outcomes.py`, D-83).** Runs are ordered by `(run_id, run_attempt)`. A success resolves only open failures of the same repository, workflow and branch key that come **before** it: the same `run_id` (an earlier attempt) is `resolved_flaky`; another `run_id` with another `head_sha` and a non-empty `head_branch` is `resolved_by_commit`. **Nothing resolves:** a success in another run with the **same** `head_sha` (another event can run other test code: the failure stays open until `stale`), an empty `head_branch` (tags, schedules: only a re-run of the same run can mark it flaky), a failure of a run **newer** than the success (the branch is still red) and a failure that is not `open`. `decide_late` reads the same rule from the failure for the successes recorded after it (a late diagnosis). A success records `resolved_by_run_id`/`resolved_by_attempt` on what it resolves (D-84).
 
 ### 7.3 Excerpt algorithm (`core/logs`)
 
