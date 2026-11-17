@@ -55,6 +55,17 @@ uv run python -m evals capture --repo <owner>/cicd-doctor-lab --all   # lab runs
 - To clean up after the merge: stop the API, the worker and smee of that worktree, `git worktree remove <path>` (if Windows refuses to delete `.venv\Scripts\cicd-doctor.exe`, stop the process, then `git worktree prune`), then `git branch -d <branch>` (`-D` when the merge was a squash).
 - Never commit `.env`, `plans/` or the deliberately broken tests of the live runs (`tests/integration/test_p1c_deliberate_failure.py`).
 
+## How a phase is built
+
+This is how P1c was built; follow it for the next phases. Branches and worktrees are in the section above.
+
+1. **A plan per phase.** Before any code, a written plan splits the phase into small PRs, each mergeable on its own with `main` green and the app still working. Each PR is a subsection with its scope, files, tests (which ones need Postgres), done criteria and the SPEC §13 box it closes. New decisions are drafted as `D-NN` with the alternatives considered; risks, unknowns and questions for the owner are listed explicitly. The plan is intent: `SPEC.md` and `DECISIONS.md` stay the authority, and a contradiction between SPEC and the code is stated in the plan, never chosen silently. Plans live outside git (the untracked `plans/` folder): never commit or link them.
+2. **A short spike before implementing,** read-only and local where possible, to measure what cannot be deduced by reading (real API shapes, library behaviour, versions, performance). The plan lists exactly what the spike would do, and the owner approves it (and each part of it) before it runs. Anything that writes to GitHub, spends money or touches `.env` or secrets is listed separately and needs explicit consent. The results go to the decisions that depend on them. Recorded responses are sanitized (logins, emails, ids, SHAs, tokens) and reviewed by the owner before they enter the repository; fixtures are never edited by hand afterwards.
+3. **One session and one branch per PR,** cut from an up-to-date `origin/main`, with a self-contained brief: task, files, what done looks like, limits. PRs that do not touch the same files can run in parallel; the plan says which files collide, and PRs merge in the planned order. A session does not commit, push or open a PR unless asked.
+4. **Verification before a PR is opened,** by someone other than the author: run the quality gates (`ruff`, `mypy`, the fast suite and the full suite with Postgres up, not skipped), read the diff for scope creep and for security-critical code (credentials, redaction, untrusted text, idempotency), and check that the docs match the code. A report from the author is not proof.
+5. **Docs in the same PR as the code:** the `D-NN` is written and `SPEC.md` and this file are aligned with what the PR does.
+6. **Live verification at the end of a phase,** against the real dev GitHub App and the lab, following the runbook in `lab/README.md` (its PowerShell blocks are parsed before they are handed over). The owner performs the writes; the reading is done with `gh`. A SPEC §13 box is ticked only with evidence that was observed (ids, times, rows). A box that could not be verified stays open with its reason written next to it.
+
 ## Rules
 
 - Never put secrets in code, and never commit `.env` or `*.pem` files.
