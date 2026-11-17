@@ -902,3 +902,147 @@ async def test_a_lock_is_released_when_its_owner_fails(harness: Harness) -> None
 
     async with harness.store.publication_lock(COMMENT_KEY):
         pass
+
+
+# --- retention (D-85) ---------------------------------------------------------------------
+
+DAY = timedelta(days=1)
+
+
+async def _analyse(
+    harness: Harness, run_id: int, age_days: int, *, attempt: int = 1, repo_id: int = 100
+) -> list[UUID]:
+    """Store the analysis of an attempt that completed ``age_days`` ago; return its failure ids."""
+    run = make_run_ref(run_id=run_id, run_attempt=attempt, repo_id=repo_id)
+    record = make_run_analysis(run)
+    record = record.model_copy(
+        update={
+            "attempt": record.attempt.model_copy(
+                update={"completed_at": harness.clock.now() - age_days * DAY}
+            )
+        }
+    )
+    await harness.prepare(run)
+    await harness.store.save_run_analysis(record)
+    return [item.failure.id for item in record.items]
+
+
+async def _status(harness: Harness, run_id: int, attempt: int = 1) -> FailureStatus:
+    record = await harness.store.run_analysis(run_id, attempt)
+    assert record is not None
+    return record.items[0].failure.status
+
+
+async def test_purge_removes_attempts_past_the_cut_with_their_failures_and_diagnoses(
+    harness: Harness,
+) -> None:
+    old = await _analyse(harness, 5000, 91)
+    new = await _analyse(harness, 5001, 89)
+    cut = harness.clock.now() - 90 * DAY
+    old_rows = sum([len(await harness.ids(failure_id)) for failure_id in old])
+
+    counts = await harness.store.purge(cut, cut)
+
+    assert counts.deleted["run_attempts"] == 1
+    assert counts.deleted["failures"] == 3
+    assert counts.deleted["workflow_runs"] == 1
+    assert await harness.store.run_analysis(5000, 1) is None
+    assert await harness.store.run_analysis(5001, 1) is not None
+    assert [await harness.ids(failure_id) for failure_id in old] == [[], [], []]
+    assert all([await harness.ids(failure_id) for failure_id in new])
+    assert counts.deleted["diagnoses"] == old_rows >= 3
+
+
+async def test_a_second_purge_finds_nothing_left(harness: Harness) -> None:
+    await _analyse(harness, 5000, 91)
+    cut = harness.clock.now() - 90 * DAY
+    await harness.store.purge(cut, cut)
+
+    again = await harness.store.purge(cut, cut)
+
+    assert again.total == 0
+
+
+async def test_a_run_stays_while_one_of_its_attempts_is_recent(harness: Harness) -> None:
+    await _analyse(harness, 5000, 91, attempt=1)
+    await _analyse(harness, 5000, 1, attempt=2)
+    cut = harness.clock.now() - 90 * DAY
+
+    counts = await harness.store.purge(cut, cut)
+
+    assert counts.deleted["run_attempts"] == 1
+    assert counts.deleted["workflow_runs"] == 0
+    assert await harness.store.run_analysis(5000, 1) is None
+    assert await harness.store.run_analysis(5000, 2) is not None
+
+
+async def test_purge_removes_only_publications_past_the_cut(harness: Harness) -> None:
+    await harness.prepare(make_run_ref())
+    await harness.store.save_publication(_publication(attempt=1, external_id=11))
+    await harness.store.save_publication(_check_publication(attempt=1, external_id=12))
+    harness.clock.advance(91 * DAY)
+    recent = Publication(
+        key=PublicationKey.comment(repo_id=100, pr_number=13, workflow_id=7),
+        external_id=13,
+        run_id=5000,
+        attempt=1,
+    )
+    await harness.store.save_publication(recent)
+    cut = harness.clock.now() - 90 * DAY
+
+    counts = await harness.store.purge(cut, cut)
+
+    assert counts.deleted["publications"] == 2
+    assert await harness.store.publication(_publication(attempt=1).key) is None
+    assert await harness.store.publication(_check_publication(attempt=1).key) is None
+    assert await harness.store.publication(recent.key) == recent
+
+
+async def test_mark_stale_changes_only_open_failures_past_the_cut(harness: Harness) -> None:
+    await _analyse(harness, 5000, 0)  # 31 days old when the cut is made
+    flaky = await _analyse(harness, 5002, 0)  # old and resolved: stays resolved
+    await harness.store.resolve(flaky[:1], FailureStatus.RESOLVED_FLAKY, None)
+    harness.clock.advance(2 * DAY)
+    await _analyse(harness, 5001, 0)  # 29 days old
+    harness.clock.advance(29 * DAY)
+    await _analyse(harness, 5003, 0)  # new
+    now = harness.clock.now()
+
+    changed = await harness.store.mark_stale(now - 30 * DAY, now)
+
+    assert changed == 5  # the 3 failures of run 5000 and the 2 still open of run 5002
+    assert await _status(harness, 5000) is FailureStatus.STALE
+    assert await _status(harness, 5002) is FailureStatus.RESOLVED_FLAKY
+    assert await _status(harness, 5001) is FailureStatus.OPEN
+    assert await _status(harness, 5003) is FailureStatus.OPEN
+    assert await harness.store.mark_stale(now - 30 * DAY, now) == 0
+
+
+async def test_purge_repositories_removes_everything_of_those_repositories_only(
+    harness: Harness,
+) -> None:
+    mine = await _analyse(harness, 5000, 1, repo_id=100)
+    theirs = await _analyse(harness, 6000, 1, repo_id=200)
+    await harness.store.save_publication(_publication(attempt=1))
+    other = Publication(
+        key=PublicationKey.comment(repo_id=200, pr_number=12, workflow_id=7),
+        external_id=33,
+        run_id=6000,
+        attempt=1,
+    )
+    await harness.store.save_publication(other)
+
+    counts = await harness.store.purge_repositories([100, 999])
+
+    assert counts.deleted["workflow_runs"] == 1
+    assert counts.deleted["run_attempts"] == 1
+    assert counts.deleted["failures"] == 3
+    assert counts.deleted["publications"] == 1
+    assert await harness.store.run_analysis(5000, 1) is None
+    assert [await harness.ids(failure_id) for failure_id in mine] == [[], [], []]
+    assert await harness.store.run_analysis(6000, 1) is not None
+    assert all([await harness.ids(failure_id) for failure_id in theirs])
+    assert await harness.store.publication(_publication(attempt=1).key) is None
+    assert await harness.store.publication(other.key) == other
+    assert (await harness.store.purge_repositories([100])).total == 0
+    assert (await harness.store.purge_repositories([])).total == 0

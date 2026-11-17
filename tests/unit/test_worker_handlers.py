@@ -1,17 +1,22 @@
 import asyncio
 import logging
 import threading
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Any
 
 import pytest
 from pydantic import SecretStr
 
+from cicd_doctor.adapters.clock import FakeClock
 from cicd_doctor.adapters.github.auth import InstallationTokenRefused
 from cicd_doctor.adapters.github.http import GitHubPermanentError
 from cicd_doctor.adapters.llm.openai_client import OpenAILLMClient
-from cicd_doctor.adapters.memory import InMemoryInstallationStore
+from cicd_doctor.adapters.memory import (
+    InMemoryFailureStore,
+    InMemoryInstallationStore,
+    InMemoryJobQueue,
+)
 from cicd_doctor.app import container
 from cicd_doctor.app.settings import Settings
 from cicd_doctor.core.diagnosis.cost import CostModel
@@ -26,8 +31,13 @@ from cicd_doctor.core.models import (
     JobStatus,
     RunRef,
 )
-from cicd_doctor.worker.handlers import diagnose_run_handler, sync_installation_handler
-from tests.factories import T0, make_run_ref
+from cicd_doctor.core.usecases.purge import PurgeConfig
+from cicd_doctor.worker.handlers import (
+    diagnose_run_handler,
+    purge_handler,
+    sync_installation_handler,
+)
+from tests.factories import T0, make_run_analysis, make_run_ref
 
 
 async def noop(job: Job) -> None:
@@ -68,14 +78,14 @@ async def test_a_malformed_payload_is_a_permanent_error() -> None:
         await sync_installation_handler(InMemoryInstallationStore())(job({"action": "nope"}))
 
 
-def test_only_sync_installation_and_diagnose_run_have_real_handlers() -> None:
-    registry = container.handlers(InMemoryInstallationStore(), noop)
+def test_only_sync_installation_diagnose_run_and_purge_have_real_handlers() -> None:
+    registry = container.handlers(InMemoryInstallationStore(), noop, noop)
 
     assert set(registry) == set(JobKind)
     real = {
         kind for kind, handler in registry.items() if handler is not container.placeholder_handler
     }
-    assert real == {JobKind.SYNC_INSTALLATION, JobKind.DIAGNOSE_RUN}
+    assert real == {JobKind.SYNC_INSTALLATION, JobKind.DIAGNOSE_RUN, JobKind.PURGE}
     assert registry[JobKind.DIAGNOSE_RUN] is noop
 
 
@@ -408,3 +418,36 @@ def test_the_warm_up_runs_in_a_daemon_thread_and_does_not_wait_for_the_model() -
     assert thread.is_alive()  # start_warming returned while the load is still going
     slow.release.set()
     thread.join(5)
+
+
+async def test_the_purge_handler_runs_the_purge_with_the_clock_and_the_config() -> None:
+    clock = FakeClock(T0)
+    store = InMemoryFailureStore(clock)
+    run = make_run_ref()
+    record = make_run_analysis(run)
+    old = record.attempt.model_copy(update={"completed_at": T0 - timedelta(days=11)})
+    await store.save_run_analysis(record.model_copy(update={"attempt": old}))
+    handler = purge_handler(
+        InMemoryJobQueue(clock),
+        store,
+        InMemoryInstallationStore(),
+        clock,
+        PurgeConfig(failures_days=10),
+    )
+
+    await handler(job({}))
+
+    assert await store.run_analysis(run.run_id, run.run_attempt) is None
+
+
+def test_the_purge_settings_have_the_decided_defaults_and_reach_the_config() -> None:
+    settings = Settings(database_url=SecretStr("postgresql+psycopg://x"))
+
+    assert (settings.purge_enabled, settings.purge_hour_utc) == (True, 3)
+    assert container.purge_config(settings) == PurgeConfig(
+        deliveries_days=30,
+        failures_days=90,
+        jobs_days=30,
+        stale_after_days=30,
+        uninstall_grace_days=7,
+    )

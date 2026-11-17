@@ -17,6 +17,9 @@ CONNECT_TIMEOUT_S = 10
 _TRANSIENT_DB_ERRORS = (sa_exc.OperationalError, sa_exc.InterfaceError, sa_exc.TimeoutError)
 
 
+PURGE_BATCH = 1000  # rows per transaction of a retention delete (D-85)
+
+
 def make_engine(database_url: str, *, pool_size: int = 5) -> AsyncEngine:
     """An async engine for a SQLAlchemy URL (``postgresql+psycopg://...``)."""
     return create_async_engine(

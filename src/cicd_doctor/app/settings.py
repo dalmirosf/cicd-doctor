@@ -59,6 +59,15 @@ class Settings(BaseSettings):
     embedding_cache_dir: Path = Path(".cache/fastembed")
     embedding_threads: int | None = Field(default=None, ge=1)  # unset: onnxruntime decides
 
+    # Retention (FR-18, D-85)
+    purge_enabled: bool = True
+    purge_hour_utc: int = Field(default=3, ge=0, le=23)
+    retention_deliveries_days: int = Field(default=30, ge=1)
+    retention_failures_days: int = Field(default=90, ge=1)
+    retention_jobs_days: int = Field(default=30, ge=1)
+    stale_after_days: int = Field(default=30, ge=1)
+    uninstall_grace_days: int = Field(default=7, ge=0)
+
     # Worker (SPEC §4.4, D-23)
     worker_concurrency: int = Field(default=4, ge=1)
     job_lease_s: int = Field(default=300, gt=0)

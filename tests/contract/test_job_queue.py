@@ -289,3 +289,83 @@ async def test_wait_for_jobs_wakes_up_on_enqueue(harness: Harness) -> None:
 
     async with asyncio.timeout(2):
         assert await waiter is True
+
+
+# --- retention (D-85) ---------------------------------------------------------------------
+
+DAY = timedelta(days=1)
+
+
+async def finish(h: Harness, how: str) -> Job:
+    """Run one job to ``done``, ``failed`` or ``dead``."""
+    await h.queue.enqueue(new_job(dedupe_key=f"finish:{how}:{h.clock.now()}"), None)
+    job = await lease(h)
+    if how == "done":
+        assert await h.queue.complete(job)
+    else:
+        assert await h.queue.fail(job, "boom", dead=how == "dead")
+    return job
+
+
+async def test_purge_removes_finished_jobs_past_the_cut_and_keeps_the_rest(
+    harness: Harness,
+) -> None:
+    old = [await finish(harness, how) for how in ("done", "failed", "dead")]
+    await harness.queue.enqueue(new_job(dedupe_key="running"), None)
+    running = await harness.queue.lease("w9", 365 * DAY)  # still ours a month later
+    assert running is not None
+    later = T0 + 365 * DAY  # never ready during the test, so ``finish`` does not lease it
+    await harness.queue.enqueue(new_job(dedupe_key="queued", run_after=later), None)
+    harness.clock.advance(31 * DAY)
+    recent = await finish(harness, "done")
+    now = harness.clock.now()
+
+    counts = await harness.queue.purge(now - 30 * DAY, now - 30 * DAY)
+
+    assert counts.deleted["jobs"] == 3
+    assert [await harness.get(job.id) for job in old] == [None, None, None]
+    assert await harness.get(recent.id) is not None
+    assert await harness.get(running.id) is not None  # old but still running
+    left = [job for job in [await harness.get(n) for n in range(1, 10)] if job is not None]
+    # the job that is running, the one still queued (old but not finished) and the recent one
+    assert sorted(job.status for job in left) == [
+        JobStatus.DONE,
+        JobStatus.QUEUED,
+        JobStatus.RUNNING,
+    ]
+
+
+async def test_purge_cuts_deliveries_and_jobs_by_their_own_dates(harness: Harness) -> None:
+    await harness.queue.enqueue(new_job(dedupe_key="a"), delivery())
+    harness.clock.advance(2 * DAY)
+    await harness.queue.enqueue(new_job(dedupe_key="b"), delivery())
+    harness.clock.advance(29 * DAY)  # the first delivery is 31 days old, the second 29
+    now = harness.clock.now()
+
+    counts = await harness.queue.purge(now - 30 * DAY, now - 30 * DAY)
+
+    assert counts.deleted["webhook_deliveries"] == 1
+    assert harness.delivery_count() == 1
+
+
+async def test_a_second_purge_finds_nothing_left(harness: Harness) -> None:
+    await finish(harness, "done")
+    await harness.queue.enqueue(new_job(dedupe_key="d"), delivery())
+    harness.clock.advance(31 * DAY)
+    now = harness.clock.now()
+    await harness.queue.purge(now - 30 * DAY, now - 30 * DAY)
+
+    assert (await harness.queue.purge(now - 30 * DAY, now - 30 * DAY)).total == 0
+
+
+async def test_a_purged_dedupe_key_can_be_enqueued_again(harness: Harness) -> None:
+    await finish(harness, "done")  # key finish:done:<time>
+    job = new_job(dedupe_key="purge:2026-11-12", kind=JobKind.PURGE)
+    await harness.queue.enqueue(job, None)
+    leased = await lease(harness)
+    await harness.queue.complete(leased)
+    harness.clock.advance(31 * DAY)
+    now = harness.clock.now()
+    await harness.queue.purge(now - 30 * DAY, now - 30 * DAY)
+
+    assert await harness.queue.enqueue(job, None) is True

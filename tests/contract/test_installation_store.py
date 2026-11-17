@@ -119,3 +119,47 @@ async def test_ensure_changes_nothing_when_the_installation_exists(
     await store.ensure_installation(INSTALLATION.model_copy(update={"account_login": "other"}))
 
     assert await store.installation(10) == deleted  # not even its account, never its timestamps
+
+
+# --- retention (D-85) ---------------------------------------------------------------------
+
+
+async def test_gone_repositories_are_those_removed_before_the_cut(store: InstallationStore) -> None:
+    await store.save_installation(INSTALLATION)
+    gadgets = WIDGETS.model_copy(update={"id": 101, "full_name": "acme/gadgets"})
+    gizmos = WIDGETS.model_copy(update={"id": 102, "full_name": "acme/gizmos"})
+    await store.save_repositories([WIDGETS, gadgets, gizmos])
+    await store.remove_repositories([100], T0 - timedelta(days=8))
+    await store.remove_repositories([101], T0 - timedelta(days=6))
+    cut = T0 - timedelta(days=7)
+
+    assert await store.gone_repositories(cut) == [100]
+
+
+async def test_the_repositories_of_a_deleted_installation_are_gone_after_the_cut(
+    store: InstallationStore,
+) -> None:
+    other = Installation(id=11, account_login="neighbour", account_type="User")
+    await store.save_installation(
+        INSTALLATION.model_copy(update={"deleted_at": T0 - timedelta(days=8)})
+    )
+    await store.save_installation(other)
+    await store.save_repositories(
+        [WIDGETS, WIDGETS.model_copy(update={"id": 200, "installation_id": 11, "full_name": "n/x"})]
+    )
+    cut = T0 - timedelta(days=7)
+
+    assert await store.gone_repositories(cut) == [100]
+    assert await store.gone_repositories(T0 - timedelta(days=9)) == []
+
+
+async def test_a_reinstalled_installation_has_no_gone_repositories(
+    store: InstallationStore,
+) -> None:
+    await store.save_installation(
+        INSTALLATION.model_copy(update={"deleted_at": T0 - timedelta(days=8)})
+    )
+    await store.save_repositories([WIDGETS])
+    await store.save_installation(INSTALLATION)  # reinstalled: deleted_at is cleared
+
+    assert await store.gone_repositories(T0 - timedelta(days=7)) == []

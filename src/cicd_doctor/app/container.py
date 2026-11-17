@@ -41,8 +41,14 @@ from cicd_doctor.core.diagnosis.pipeline import DiagnoseJob
 from cicd_doctor.core.models import Job, JobKind
 from cicd_doctor.core.ports import Clock, Embedder, InstallationStore, JobQueue, LLMClient
 from cicd_doctor.core.usecases.diagnose_failed_run import DiagnoseConfig, DiagnoseFailedRun
+from cicd_doctor.core.usecases.purge import PurgeConfig
 from cicd_doctor.worker import Handler, Worker
-from cicd_doctor.worker.handlers import diagnose_run_handler, sync_installation_handler
+from cicd_doctor.worker.handlers import (
+    diagnose_run_handler,
+    purge_handler,
+    sync_installation_handler,
+)
+from cicd_doctor.worker.scheduler import Scheduler
 
 logger = logging.getLogger(__name__)
 
@@ -195,10 +201,23 @@ def diagnose_config(settings: Settings) -> DiagnoseConfig:
     )
 
 
-def handlers(installations: InstallationStore, diagnose_run: Handler) -> dict[JobKind, Handler]:
+def purge_config(settings: Settings) -> PurgeConfig:
+    return PurgeConfig(
+        deliveries_days=settings.retention_deliveries_days,
+        failures_days=settings.retention_failures_days,
+        jobs_days=settings.retention_jobs_days,
+        stale_after_days=settings.stale_after_days,
+        uninstall_grace_days=settings.uninstall_grace_days,
+    )
+
+
+def handlers(
+    installations: InstallationStore, diagnose_run: Handler, purge: Handler
+) -> dict[JobKind, Handler]:
     registry: dict[JobKind, Handler] = dict.fromkeys(JobKind, placeholder_handler)
     registry[JobKind.SYNC_INSTALLATION] = sync_installation_handler(installations)
     registry[JobKind.DIAGNOSE_RUN] = diagnose_run
+    registry[JobKind.PURGE] = purge
     return registry
 
 
@@ -285,10 +304,20 @@ async def run_worker(settings: Settings, stop: asyncio.Event) -> None:
         PostgresInstallationStore.connect(
             url, pool_size=settings.worker_concurrency + 2
         ) as installations,
+        PostgresFailureStore.connect(url, clock, pool_size=2) as purge_store,
         diagnose_run_use_case(settings, clock, installations, embedder) as use_case,
     ):
-        registry = handlers(installations, diagnose_run_handler(use_case))
-        await build_worker(settings, queue, registry, clock).run(stop)
+        purge = purge_handler(queue, purge_store, installations, clock, purge_config(settings))
+        registry = handlers(installations, diagnose_run_handler(use_case), purge)
+        worker = build_worker(settings, queue, registry, clock)
+        if not settings.purge_enabled:
+            logger.warning("PURGE_ENABLED=false: the daily purge is not scheduled")
+            await worker.run(stop)
+            return
+        scheduler = Scheduler(queue, clock, hour_utc=settings.purge_hour_utc)
+        async with asyncio.TaskGroup() as group:
+            group.create_task(worker.run(stop))
+            group.create_task(scheduler.run(stop))
 
 
 def serve_worker() -> None:

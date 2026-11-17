@@ -488,6 +488,23 @@ class Publication(DomainModel):
 # --- Queue, config and budget port types (P0 placeholders) --------------------------------
 
 
+class PurgeCounts(DomainModel):
+    """Rows removed (or changed) by a retention step, by table. Only counts: a purge never reports
+    content (D-85)."""
+
+    deleted: dict[str, int] = Field(default_factory=dict)
+
+    def __add__(self, other: "PurgeCounts") -> "PurgeCounts":
+        merged = dict(self.deleted)
+        for table, count in other.deleted.items():
+            merged[table] = merged.get(table, 0) + count
+        return PurgeCounts(deleted=merged)
+
+    @property
+    def total(self) -> int:
+        return sum(self.deleted.values())
+
+
 class Delivery(DomainModel):
     delivery_id: UUID  # X-GitHub-Delivery
     event: str

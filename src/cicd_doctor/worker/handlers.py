@@ -9,7 +9,8 @@ from pydantic import ValidationError
 
 from cicd_doctor.core.errors import InstallationUnavailable, LogsUnavailable, PermanentError
 from cicd_doctor.core.models import DiagnoseRunPayload, InstallationEvent, Job, RunRef
-from cicd_doctor.core.ports import InstallationStore
+from cicd_doctor.core.ports import Clock, FailureStore, InstallationStore, JobQueue
+from cicd_doctor.core.usecases.purge import PurgeConfig, run_purge
 from cicd_doctor.core.usecases.track_installation import track_installation
 from cicd_doctor.worker.runner import Handler
 
@@ -33,6 +34,22 @@ def sync_installation_handler(store: InstallationStore) -> Handler:
                 f"invalid sync_installation payload ({exc.error_count()} errors)"
             ) from exc
         await track_installation(event, store)
+
+    return handle
+
+
+def purge_handler(
+    queue: JobQueue,
+    store: FailureStore,
+    installations: InstallationStore,
+    clock: Clock,
+    config: PurgeConfig,
+) -> Handler:
+    """``purge`` jobs (D-85). The payload is empty; the cuts come from the clock and the config.
+    A failure is retried by the worker, and every step is idempotent."""
+
+    async def handle(job: Job) -> None:
+        await run_purge(queue, store, installations, clock, config)
 
     return handle
 
