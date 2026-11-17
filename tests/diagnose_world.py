@@ -27,7 +27,7 @@ from cicd_doctor.adapters.memory.llm import ScriptItem, valid
 from cicd_doctor.core.diagnosis.cost import CostModel
 from cicd_doctor.core.diagnosis.pipeline import DiagnoseJob
 from cicd_doctor.core.models import Job, JobKind
-from cicd_doctor.core.ports import FailureStore, InstallationStore, JobQueue, UsageLedger
+from cicd_doctor.core.ports import Embedder, FailureStore, InstallationStore, JobQueue, UsageLedger
 from cicd_doctor.core.usecases.diagnose_failed_run import DiagnoseConfig, DiagnoseFailedRun
 from cicd_doctor.worker import Worker
 from cicd_doctor.worker.handlers import diagnose_run_handler
@@ -164,6 +164,7 @@ async def diagnose_world(
     ledger: UsageLedger,
     installations: InstallationStore,
     llm_script: Sequence[ScriptItem] | None = None,
+    embedder: Embedder | None = None,
     give_up_timeout_s: float = 5.0,
     lease: timedelta = timedelta(minutes=5),
 ) -> AsyncIterator[DiagnoseWorld]:
@@ -191,6 +192,7 @@ async def diagnose_world(
                     llm=llm, ledger=ledger, cost=PRICES, max_output_tokens=800, sleep=no_sleep
                 ),
                 clock=clock,
+                embedder=embedder,
                 config=DiagnoseConfig(),
             )
             handler = diagnose_run_handler(use_case, give_up_timeout_s=give_up_timeout_s)
