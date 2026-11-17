@@ -16,6 +16,7 @@ from cicd_doctor.core.models import (
     InstallationEvent,
     JobKind,
     NewJob,
+    RecordOutcomePayload,
 )
 from tests.factories import T0
 from tests.webhooks import SECRET, encode, load, sign
@@ -177,9 +178,58 @@ def test_a_cancelled_run_is_enqueued_with_its_conclusion_and_the_same_dedupe_key
     assert (parsed.run.run_id, parsed.run.run_attempt, parsed.run.pr_number) == (5000, 1, 12)
 
 
-@pytest.mark.parametrize(
-    "conclusion", ["success", "skipped", "neutral", "stale", "action_required", None]
-)
+def test_a_success_creates_a_record_outcome_job() -> None:
+    job = route("workflow_run", load("workflow_run_completed_success"))
+    again = route("workflow_run", load("workflow_run_completed_success"))
+
+    assert job is not None
+    assert job.kind is JobKind.RECORD_OUTCOME
+    assert job.dedupe_key == "outcome:5002:1"  # a duplicate delivery makes no second job
+    assert again is not None
+    assert again.dedupe_key == job.dedupe_key
+    parsed = RecordOutcomePayload.model_validate(job.payload)
+    run = parsed.run
+    assert (run.run_id, run.run_attempt, run.pr_number, run.is_fork) == (5002, 1, 12, False)
+    assert (run.head_sha, run.head_branch, run.branch_key) == (
+        "8b2d6f1a3c4e5970a1b2c3d4e5f60718293a4b5c",
+        "feature/x",
+        "acme/widgets:feature/x",
+    )
+    assert (parsed.default_branch, parsed.private, parsed.account_login) == (
+        "main",
+        True,
+        "acme",
+    )
+    assert parsed.completed_at.isoformat() == "2026-11-12T12:20:05+00:00"
+
+
+def test_the_success_of_a_fork_is_marked_as_a_fork_and_has_no_pull_request() -> None:
+    payload = load("workflow_run_completed_success")
+    payload["workflow_run"]["head_repository"] = {
+        "id": 777,
+        "name": "widgets",
+        "full_name": "mallory/widgets",
+    }
+    payload["workflow_run"]["pull_requests"] = []
+
+    job = route("workflow_run", payload)
+
+    assert job is not None
+    parsed = RecordOutcomePayload.model_validate(job.payload)
+    assert parsed.run.is_fork is True
+    assert parsed.run.pr_number is None
+    assert parsed.run.branch_key == "mallory/widgets:feature/x"
+
+
+def test_a_success_with_a_missing_field_is_an_invalid_payload() -> None:
+    payload = load("workflow_run_completed_success")
+    del payload["workflow_run"]["workflow_id"]
+
+    with pytest.raises(InvalidPayloadError, match="workflow_id"):
+        route("workflow_run", payload)
+
+
+@pytest.mark.parametrize("conclusion", ["skipped", "neutral", "stale", "action_required", None])
 def test_other_conclusions_create_no_job(conclusion: str | None) -> None:
     payload = load("workflow_run_completed_failure")
     payload["workflow_run"]["conclusion"] = conclusion
