@@ -48,6 +48,13 @@ uv run python -m evals capture --repo <owner>/cicd-doctor-lab --all   # lab runs
 - A run attempt is analysed once: `FailureStore.save_run_analysis` stores the run, the attempt, the failures and their diagnoses in one transaction (the checkpoint, first writer wins) and `run_analysis` rebuilds it; failure ids are `failure_id_for(run_id, attempt, job_id)`; `publication_lock(key)` serialises whoever writes one check or comment (D-69, D-70). The contract suites for `FailureStore` (except `similar`) and `UsageLedger` run on memory and on Postgres.
 - Async psycopg needs a selector event loop on Windows, and `DATABASE_URL` must use `127.0.0.1`, not `localhost` (D-52).
 
+## Branches and worktrees
+
+- One branch per change, cut from `origin/main`, with its own pull request; delete it when it is merged. Claude sessions work in their own worktree (`.claude/worktrees/<name>`): Git does not allow one branch in two folders, so never `git switch` to a branch that a worktree already has.
+- To check an unmerged branch against the real GitHub, run the API and the worker **from that branch's worktree** (the worker of `main` does not have the new code) after copying the real `.env` into it. The runbook in `lab/README.md` assumes this; stop old `cicd-doctor` processes first.
+- To clean up after the merge: stop the API, the worker and smee of that worktree, `git worktree remove <path>` (if Windows refuses to delete `.venv\Scripts\cicd-doctor.exe`, stop the process, then `git worktree prune`), then `git branch -d <branch>` (`-D` when the merge was a squash).
+- Never commit `.env`, `plans/` or the deliberately broken tests of the live runs (`tests/integration/test_p1c_deliberate_failure.py`).
+
 ## Rules
 
 - Never put secrets in code, and never commit `.env` or `*.pem` files.
