@@ -77,6 +77,9 @@ _ESCAPED = re.compile(r"([\\*_\[\]|~`])")
 _LEADING = re.compile(r"^(\s*)([#>+\-=]|\d+[.)])")  # heading, quote, list, setext underline
 _ASCII_NAME = re.compile(r"[^A-Za-z0-9._:/@+\- ]")
 _REPO = re.compile(r"[A-Za-z0-9._\-]+/[A-Za-z0-9._\-]+")
+_COMMIT_SHA = re.compile(r"[0-9a-f]{7,40}")
+MAX_CHECK_SIMILAR = 3
+MAX_COMMENT_SIMILAR = 1
 ZWJ = "‍"
 MAX_URL_CODE_CHARS = 200
 
@@ -285,8 +288,15 @@ def _job_section(
     if baseline is not None:
         lines.append(_baseline(baseline))
     similar = report.similar.get(failure.id, [])
-    if similar and not compact:
-        lines.append(_similar(similar))
+    if similar:
+        # The check run lists up to three earlier runs; the comment, one line (D-82).
+        lines.append(
+            _similar(
+                similar,
+                job.job.run.repo_full_name,
+                MAX_COMMENT_SIMILAR if compact else MAX_CHECK_SIMILAR,
+            )
+        )
     return "\n\n".join(lines)
 
 
@@ -347,10 +357,25 @@ def _baseline(rules: Diagnosis) -> str:
     )
 
 
-def _similar(similar: Sequence[SimilarFailure]) -> str:
+def _similar(similar: Sequence[SimilarFailure], repo: str, limit: int) -> str:
+    """The earlier runs that looked like this one (D-82).
+
+    The link to a run is built here from integers and a repository name checked like the one of
+    the step link, never from a stored string (D-64). The cause is untrusted prose and the commit
+    is shown as code. Without a valid repository name the run is shown without a link.
+    """
     rows = []
-    for item in similar[:3]:
-        fixed = f", fixed by {code(item.fix_commit_sha, 12)}" if item.fix_commit_sha else ""
+    for item in similar[:limit]:
+        run_id = int(item.run_id)
+        label = f"run #{run_id}"
+        ref = (
+            f"[{label}](https://github.com/{repo}/actions/runs/{run_id})"
+            if _REPO.fullmatch(repo)
+            else label
+        )
+        sha = item.fix_commit_sha
+        fixed = f", fixed by {code(sha, 12)}" if sha and _COMMIT_SHA.fullmatch(sha) else ""
         cause = inline(item.probable_cause, 200)
-        rows.append(f"- `{item.category.value}` (score {item.score:.2f}): {cause}{fixed}")
-    return "**Similar past failures:**\n" + "\n".join(rows)
+        rows.append(f"- {ref} · `{item.category.value}` (score {item.score:.2f}): {cause}{fixed}")
+    heading = "**Similar past failure:**" if limit == 1 else "**Similar past failures:**"
+    return heading + "\n" + "\n".join(rows)

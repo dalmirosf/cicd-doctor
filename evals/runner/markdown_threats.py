@@ -4,7 +4,8 @@ It is the oracle of the render and injection tests. It removes what is inert (fe
 and inline code spans) and reports what is left that could be a clickable link, an image, raw
 HTML, a live mention, an issue reference, an HTML entity or markup that changes the page. The
 only things it lets through are the ones the renderer writes on purpose: autolinks to allowlisted
-hosts, the link to the failed step on github.com, and the hidden marker of the sticky comment.
+hosts, the links to a failed step and to an earlier run on github.com, and the hidden marker
+of the sticky comment.
 """
 
 import re
@@ -15,6 +16,9 @@ _HOSTS = "|".join(re.escape(host) for host in sorted(ALLOWED_HOSTS))
 _ALLOWED_AUTOLINK = re.compile(rf"<https://(?:{_HOSTS})(?:[/?#][^\s<>]*)?>")
 _STEP_LINK = re.compile(
     r"\[open the step\]\(https://github\.com/[\w.\-]+/[\w.\-]+/actions/runs/\d+/job/\d+#step:\d+:1\)"
+)
+_RUN_LINK = re.compile(
+    r"\[run #\d+\]\(https://github\.com/[A-Za-z0-9._\-]+/[A-Za-z0-9._\-]+/actions/runs/\d+\)"
 )
 _MARKER = re.compile(r"<!-- cicd-doctor:v1 pr=\d+ workflow=\d+ -->")
 _FENCE = re.compile(r"^\s{0,3}(`{3,})")
@@ -77,7 +81,11 @@ def _strip_inline_code(line: str) -> str:
 # untrusted text and stays scanned (D-76).
 _HEADING = re.compile(r"^### CICD Doctor(?=: |$)(?:: )?", re.MULTILINE)
 _RULE_LINE = re.compile(r"^---$", re.MULTILINE)
-_SIMILAR_PREFIX = re.compile(r"^- `[a-z_]+` \(score \d\.\d\d\): ", re.MULTILINE)
+_SIMILAR_PREFIX = re.compile(
+    r"^- (?:\[run #\d+\]\(https://github\.com/[A-Za-z0-9._\-]+/[A-Za-z0-9._\-]+/actions/runs/\d+\)"
+    r"|run #\d+) · `[a-z_]+` \(score \d\.\d\d\): ",
+    re.MULTILINE,
+)
 
 
 def threats(markdown: str, *, document: bool = False) -> list[str]:
@@ -96,6 +104,7 @@ def threats(markdown: str, *, document: bool = False) -> list[str]:
     text = _MARKER.sub("", text)
     text = _ALLOWED_AUTOLINK.sub("", text)
     text = _STEP_LINK.sub("", text)
+    text = _RUN_LINK.sub("run", text)
     found: list[str] = []
     checks = {
         "raw html or comment": r"<[A-Za-z/!?]",

@@ -26,6 +26,7 @@ from cicd_doctor.core.models import (
     DiagnosisUsage,
     FallbackReason,
     LLMResult,
+    SimilarFailure,
 )
 from cicd_doctor.core.policy import PolicyInput, decide
 from cicd_doctor.core.ports import LLMClient, UsageLedger
@@ -48,6 +49,8 @@ class DiagnosisContext:
     # The reused LLM diagnosis of the same signature, already re-anchored to this excerpt, with the
     # row it came from (D-81). The use case only sets it when the policy would otherwise say llm.
     cached: CachedDiagnosis | None = None
+    # Past failures like this job's (D-82): untrusted context for the prompt, never evidence.
+    similar: list[SimilarFailure] = field(default_factory=list)
 
 
 @dataclass
@@ -145,19 +148,24 @@ class DiagnoseJob:
 
         usage = LLMUsage()
         try:
-            return await self._diagnose(analysis, use_hints, usage)
+            return await self._diagnose(analysis, use_hints, usage, context.similar)
         finally:
             # Settle with what was really spent, also when the call is cancelled or a bug raises.
             await self._ledger.settle(reservation, usage.cost_usd)
 
     async def _diagnose(
-        self, analysis: JobAnalysis, use_hints: bool, usage: LLMUsage
+        self,
+        analysis: JobAnalysis,
+        use_hints: bool,
+        usage: LLMUsage,
+        similar: Sequence[SimilarFailure] = (),
     ) -> JobDiagnosis:
         rules = analysis.rules
         request = DiagnosisRequest(
             job=analysis.job,
             excerpt=analysis.excerpt,
             rule_hints=list(analysis.matches) if use_hints else [],
+            similar=list(similar),
         )
         error: str | None = None
         for attempt in (1, 2):  # the call and, at most, one repair of an invalid answer

@@ -26,6 +26,7 @@ from tests.diagnose_world import (
     diagnose_world,
     job_id_for,
 )
+from tests.e2e.test_similar_e2e import add_similar_runs, assert_second_run_lists_the_first
 from tests.pg import libpq_url
 
 CHECKS = "/repos/{owner}/{repo}/check-runs"
@@ -205,3 +206,29 @@ async def test_an_identical_failure_in_the_next_run_is_served_from_the_cache(
     assert (record.items[0].cached_from_run_id, record.items[0].published.source) == (5000, "cache")
     [check] = world.requests("PATCH", CHECK)[1:]
     assert "cached from run #5000" in check.json["output"]["summary"]
+
+
+async def test_a_similar_failure_is_found_by_pgvector_and_listed_in_the_report(
+    pg_clean: str, clock: FakeClock
+) -> None:
+    async with (
+        PostgresJobQueue.connect(pg_clean, clock, listen=False) as queue,
+        PostgresFailureStore.connect(pg_clean, clock) as store,
+        PostgresUsageLedger.connect(pg_clean, clock) as ledger,
+        PostgresInstallationStore.connect(pg_clean) as installations,
+        diagnose_world(
+            clock=clock,
+            queue=queue,
+            store=store,
+            ledger=ledger,
+            installations=installations,
+            embedder=FakeEmbedder(),
+        ) as world,
+    ):
+        add_similar_runs(world)
+        await world.enqueue(5000)
+        assert await world.worker.run_one("pg")
+        await world.enqueue(5001)
+        assert await world.worker.run_one("pg")
+
+        assert_second_run_lists_the_first(world)

@@ -48,7 +48,7 @@ def test_a_valid_answer_becomes_a_published_llm_diagnosis() -> None:
 
 
 def test_the_prompt_version_is_diag_v1() -> None:
-    assert PROMPT_VERSION == "diag-v1"
+    assert PROMPT_VERSION == "diag-v2"
 
 
 # --- rule 1: evidence must quote the excerpt --------------------------------------------------

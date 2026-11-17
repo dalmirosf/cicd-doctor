@@ -356,29 +356,75 @@ def test_the_rule_baseline_is_shown_when_the_report_carries_it() -> None:
     assert "Rule baseline" not in render_check(report((failure, llm))).summary
 
 
-def test_similar_failures_are_listed_in_the_check_but_not_in_the_comment() -> None:
+def _similar(run_id: int, **changes: object) -> SimilarFailure:
+    fields: dict[str, object] = {
+        "failure_id": uuid4(),
+        "run_id": run_id,
+        "run_attempt": 1,
+        "score": 0.91,
+        "category": Category.DEPENDENCY,
+        "probable_cause": "requests was missing; see https://evil.example/x @octocat",
+        "fix_commit_sha": "abc1234",
+    }
+    return SimilarFailure(**(fields | changes))  # type: ignore[arg-type]
+
+
+def test_the_check_lists_up_to_three_similar_runs_with_a_link_built_from_ids() -> None:
     failure, diag = item()
-    similar = SimilarFailure(
-        failure_id=uuid4(),
-        run_id=1,
-        run_attempt=1,
-        score=0.91,
-        category=Category.DEPENDENCY,
-        probable_cause="requests was missing; see https://evil.example/x @octocat",
-        fix_commit_sha="abc1234",
-    )
-    rep = report((failure, diag), similar={failure.id: [similar]})
+    found = [_similar(900 + i) for i in range(4)]
+    rep = report((failure, diag), similar={failure.id: found})
 
     summary = render_check(rep).summary
 
     assert "**Similar past failures:**" in summary
+    repo = failure.job.job.run.repo_full_name
+    for run_id in (900, 901, 902):
+        assert f"[run #{run_id}](https://github.com/{repo}/actions/runs/{run_id})" in summary
+    assert "run #903" not in summary
     assert (
-        "- `dependency` (score 0.91): requests was missing; see `https://evil.example/x` @"
+        " · `dependency` (score 0.91): requests was missing; see `https://evil.example/x` @"
         in summary
     )
     assert "fixed by `abc1234`" in summary
     assert threats(summary, document=True) == []
-    assert "Similar past failures" not in render_comment(rep)
+
+
+def test_the_comment_lists_only_the_best_similar_run_on_one_line() -> None:
+    failure, diag = item()
+    rep = report((failure, diag), similar={failure.id: [_similar(900), _similar(901)]})
+
+    comment = render_comment(rep)
+
+    assert "**Similar past failure:**" in comment
+    assert "run #900" in comment
+    assert "run #901" not in comment
+    assert threats(comment, document=True) == []
+
+
+def test_a_bad_commit_or_repository_name_never_makes_a_link_or_markup() -> None:
+    failure, diag = item()
+    bad = _similar(900, fix_commit_sha="abc](https://evil.example/x)")
+    rep = report((failure, diag), similar={failure.id: [bad]})
+
+    assert "fixed by" not in render_check(rep).summary
+    run = failure.job.job.run.model_copy(update={"repo_full_name": "evil.example/x)(y"})
+    odd = failure.model_copy(
+        update={
+            "job": failure.job.model_copy(
+                update={"job": failure.job.job.model_copy(update={"run": run})}
+            )
+        }
+    )
+    rep = report((odd, diag), similar={odd.id: [_similar(900)]})
+
+    summary = render_check(rep).summary
+    assert "[run #900](" not in summary
+    assert "run #900" in summary
+    assert threats(summary, document=True) == []
+
+
+def test_no_similar_section_without_similar_failures() -> None:
+    assert "Similar past" not in render_check(report()).summary
 
 
 # --- the sticky comment --------------------
