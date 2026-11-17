@@ -12,6 +12,7 @@ import psycopg
 import pytest
 
 from cicd_doctor.adapters.clock import FakeClock
+from cicd_doctor.adapters.memory import FakeEmbedder
 from cicd_doctor.adapters.postgres.installations import PostgresInstallationStore
 from cicd_doctor.adapters.postgres.ledger import PostgresUsageLedger
 from cicd_doctor.adapters.postgres.queue import PostgresJobQueue
@@ -104,6 +105,37 @@ async def test_the_happy_path_leaves_every_row_behind(world: DiagnoseWorld, pg_c
     assert calls == 1
     assert reserved == 0  # the reservation was settled
     assert spent > 0
+
+
+async def test_the_embedding_goes_through_the_checkpoint_and_comes_back_equal(
+    pg_clean: str, clock: FakeClock
+) -> None:
+    embedder = FakeEmbedder()
+    async with (
+        PostgresJobQueue.connect(pg_clean, clock, listen=False) as queue,
+        PostgresFailureStore.connect(pg_clean, clock) as store,
+        PostgresUsageLedger.connect(pg_clean, clock) as ledger,
+        PostgresInstallationStore.connect(pg_clean) as installations,
+        diagnose_world(
+            clock=clock,
+            queue=queue,
+            store=store,
+            ledger=ledger,
+            installations=installations,
+            embedder=embedder,
+        ) as world,
+    ):
+        world.add_run()
+        await world.enqueue()
+
+        assert await world.worker.run_one("pg")
+
+        record = await store.run_analysis(5000, 1)
+        assert record is not None
+        [item] = record.items
+        expected = embedder.embed([item.failure.signature.text])[0]
+        assert item.failure.embedding == pytest.approx(expected, abs=1e-6)  # float4 column
+        assert rows(pg_clean, "SELECT vector_dims(embedding) FROM failures") == [(384,)]
 
 
 async def test_attempt_two_is_published_by_patching_what_attempt_one_created(

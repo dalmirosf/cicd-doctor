@@ -160,6 +160,7 @@ class World:
         daily_budget: Decimal = Decimal("2.00"),
         jobs: bool = True,
         llm: Any = None,
+        embedder: Any = None,
     ) -> None:
         self.clock = FakeClock(COMPLETED_AT + timedelta(seconds=5))
         self.journal: list[str] = []
@@ -187,6 +188,7 @@ class World:
             counter=CharTokenCounter(),
             diagnose=self.diagnose,
             clock=self.clock,
+            embedder=embedder,
             config=config,
         )
         if jobs:

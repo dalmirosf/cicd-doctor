@@ -5,9 +5,10 @@ what is stored:
 
 1. a guard: when a newer attempt already published the check run, there is nothing to do;
 2. the check run goes ``in_progress`` and its id is stored right away (under the publication lock);
-3. the stored analysis of the attempt, or else jobs -> logs -> excerpts and rules -> the LLM per
-   job -> ``save_run_analysis``. That commit is the checkpoint: the LLM is only ever called before
-   it, so a retry after it downloads no log, calls no LLM and reserves no budget;
+3. the stored analysis of the attempt, or else jobs -> logs -> excerpts and rules -> one batch of
+   embeddings of the signatures (D-77) -> the LLM per job -> ``save_run_analysis``. That commit
+   is the checkpoint: the LLM and the embedder are only ever called before it, so a retry after
+   it downloads no log, calls no LLM, embeds nothing and reserves no budget;
 4. the check run is completed from the stored analysis (under the lock, guarded again);
 5. the sticky comment is upserted from the stored analysis (under the lock of its own key).
 
@@ -60,6 +61,7 @@ from cicd_doctor.core.models import (
 )
 from cicd_doctor.core.ports import (
     Clock,
+    Embedder,
     FailureStore,
     InstallationStore,
     LogSource,
@@ -114,6 +116,7 @@ class DiagnoseFailedRun:
         counter: TokenCounter,
         diagnose: DiagnoseJob,
         clock: Clock,
+        embedder: Embedder | None = None,
         config: DiagnoseConfig | None = None,
     ) -> None:
         self._logs = logs
@@ -124,6 +127,7 @@ class DiagnoseFailedRun:
         self._counter = counter
         self._diagnose = diagnose
         self._clock = clock
+        self._embedder = embedder
         self._config = config or DiagnoseConfig()
 
     async def run(self, payload: DiagnoseRunPayload) -> None:
@@ -361,6 +365,7 @@ class DiagnoseFailedRun:
                 max_tokens=self._config.excerpt_max_tokens, max_bytes=self._config.max_bytes
             ),
         )
+        embeddings = await self._embed(analyses)
         results = await self._diagnose_all(run, analyses)
         record = RunAnalysisRecord(
             run=_workflow_run(run),
@@ -370,9 +375,35 @@ class DiagnoseFailedRun:
                 conclusion=payload.conclusion,
                 completed_at=payload.completed_at,
             ),
-            items=[_stored(run, analysis, result) for analysis, result in results],
+            items=[
+                _stored(run, analysis, result, embedding)
+                for (analysis, result), embedding in zip(results, embeddings, strict=True)
+            ],
         )
         return await self._store.save_run_analysis(record)
+
+    async def _embed(self, analyses: list[JobAnalysis]) -> list[list[float] | None]:
+        """One embedding per signature text, in one batch and off the event loop (D-77).
+
+        Any error leaves every embedding ``None``: the failure is stored without a vector and the
+        diagnosis goes on. Only the class of the error is logged, never a text.
+        """
+        missing: list[list[float] | None] = [None] * len(analyses)
+        if self._embedder is None or not analyses:
+            return missing
+        texts = [analysis.signature.text for analysis in analyses]
+        try:
+            vectors = await asyncio.to_thread(self._embedder.embed, texts)
+        except Exception as exc:
+            logger.warning(
+                "no embeddings for this run (%s): the failures are stored without one",
+                type(exc).__name__,
+            )
+            return missing
+        if len(vectors) != len(texts) or any(len(v) != self._embedder.dims for v in vectors):
+            logger.warning("no embeddings for this run: the embedder returned the wrong shape")
+            return missing
+        return list(vectors)
 
     async def _read_logs(
         self, run: RunRef, examined: _Examined | None = None
@@ -484,7 +515,9 @@ def _workflow_run(run: RunRef) -> WorkflowRun:
     )
 
 
-def _stored(run: RunRef, analysis: JobAnalysis, result: JobDiagnosis) -> StoredFailure:
+def _stored(
+    run: RunRef, analysis: JobAnalysis, result: JobDiagnosis, embedding: list[float] | None
+) -> StoredFailure:
     job_id = analysis.job.job.job_id
     return StoredFailure(
         failure=Failure(
@@ -492,7 +525,7 @@ def _stored(run: RunRef, analysis: JobAnalysis, result: JobDiagnosis) -> StoredF
             job=analysis.job,
             excerpt=analysis.excerpt,
             signature=analysis.signature,
-            embedding=None,  # P2
+            embedding=embedding,
             status=FailureStatus.OPEN,
             fix_commit_sha=None,
         ),

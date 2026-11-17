@@ -55,3 +55,11 @@ class LLMTransientError(LLMError):
 
 class PolicyBlocked(CicdDoctorError):  # noqa: N818  (name fixed by SPEC §4.2)
     """An action was refused by policy (for example the LLM on a fork PR)."""
+
+
+class EmbedderUnavailable(CicdDoctorError):  # noqa: N818  (a state, like ``PolicyBlocked``)
+    """The embedding model is not loaded (still downloading, or its load failed).
+
+    It never fails a job: the failure is stored without an embedding and the diagnosis goes on
+    (SPEC §8, D-77).
+    """

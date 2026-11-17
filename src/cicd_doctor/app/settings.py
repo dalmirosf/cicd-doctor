@@ -6,6 +6,7 @@ the example file can list optional variables without giving them a value.
 """
 
 from decimal import Decimal
+from pathlib import Path
 from typing import Literal
 
 from pydantic import Field, SecretStr
@@ -51,6 +52,11 @@ class Settings(BaseSettings):
     cache_ttl_days: int = Field(default=7, ge=0)
     similar_k: int = Field(default=3, ge=0)
     similar_min_score: float = Field(default=0.85, ge=0, le=1)
+
+    # Embeddings (D-77, D-78)
+    embeddings_enabled: bool = True
+    embedding_cache_dir: Path = Path(".cache/fastembed")
+    embedding_threads: int | None = Field(default=None, ge=1)  # unset: onnxruntime decides
 
     # Worker (SPEC §4.4, D-23)
     worker_concurrency: int = Field(default=4, ge=1)

@@ -11,6 +11,7 @@ import asyncio
 import logging
 import signal
 import sys
+import threading
 from collections.abc import AsyncIterator
 from contextlib import AsyncExitStack, asynccontextmanager, suppress
 from datetime import timedelta
@@ -20,6 +21,7 @@ from fastapi import FastAPI
 from pydantic import SecretStr
 
 from cicd_doctor.adapters.clock import SystemClock
+from cicd_doctor.adapters.embeddings.fastembed_embedder import FastEmbedEmbedder
 from cicd_doctor.adapters.github.auth import GitHubAppAuth, load_private_key
 from cicd_doctor.adapters.github.http import GitHubHttp
 from cicd_doctor.adapters.github.logs import GitHubLogSource
@@ -37,7 +39,7 @@ from cicd_doctor.app.settings import Settings
 from cicd_doctor.core.diagnosis.cost import CostModel
 from cicd_doctor.core.diagnosis.pipeline import DiagnoseJob
 from cicd_doctor.core.models import Job, JobKind
-from cicd_doctor.core.ports import Clock, InstallationStore, JobQueue, LLMClient
+from cicd_doctor.core.ports import Clock, Embedder, InstallationStore, JobQueue, LLMClient
 from cicd_doctor.core.usecases.diagnose_failed_run import DiagnoseConfig, DiagnoseFailedRun
 from cicd_doctor.worker import Handler, Worker
 from cicd_doctor.worker.handlers import diagnose_run_handler, sync_installation_handler
@@ -161,6 +163,29 @@ def cost_model(settings: Settings) -> CostModel:
     )
 
 
+def make_embedder(settings: Settings) -> FastEmbedEmbedder | None:
+    """The fastembed embedder, or ``None`` when ``EMBEDDINGS_ENABLED=false`` (D-78). The model
+    is not loaded here: ``start_warming`` does it in the background."""
+    if not settings.embeddings_enabled:
+        logger.warning("EMBEDDINGS_ENABLED=false: failures are stored without an embedding")
+        return None
+    return FastEmbedEmbedder(settings.embedding_cache_dir, threads=settings.embedding_threads)
+
+
+def start_warming(embedder: FastEmbedEmbedder | None) -> threading.Thread | None:
+    """Load the model in a background thread while the worker consumes jobs (D-78).
+
+    Nothing waits for it: until it is loaded ``embed`` fails fast and the diagnosis goes on
+    without a vector. A daemon thread, so a download in progress never delays a shutdown. A load
+    that fails is logged as an error and retried by ``embed`` every 5 minutes at most.
+    """
+    if embedder is None:
+        return None
+    thread = threading.Thread(target=embedder.warm, name="embedding-warm", daemon=True)
+    thread.start()
+    return thread
+
+
 def diagnose_config(settings: Settings) -> DiagnoseConfig:
     return DiagnoseConfig(
         llm_enabled=settings.llm_enabled,
@@ -191,7 +216,10 @@ def build_worker(
 
 @asynccontextmanager
 async def diagnose_run_use_case(
-    settings: Settings, clock: Clock, installations: InstallationStore
+    settings: Settings,
+    clock: Clock,
+    installations: InstallationStore,
+    embedder: Embedder | None = None,
 ) -> AsyncIterator[DiagnoseFailedRun]:
     """The real graph of the diagnosis flow; its connections close when the block ends."""
     app_id, key = require_github_app(settings)
@@ -232,6 +260,7 @@ async def diagnose_run_use_case(
                 max_output_tokens=settings.llm_max_output_tokens,
             ),
             clock=clock,
+            embedder=embedder,
             config=diagnose_config(settings),
         )
 
@@ -240,6 +269,8 @@ async def run_worker(settings: Settings, stop: asyncio.Event) -> None:
     require_github_app(settings)  # before any connection opens
     clock = SystemClock()
     url = settings.database_url.get_secret_value()
+    embedder = make_embedder(settings)
+    start_warming(embedder)  # the consumers do not wait for the model (D-78)
     async with (
         PostgresJobQueue.connect(
             url,
@@ -249,7 +280,7 @@ async def run_worker(settings: Settings, stop: asyncio.Event) -> None:
         PostgresInstallationStore.connect(
             url, pool_size=settings.worker_concurrency + 2
         ) as installations,
-        diagnose_run_use_case(settings, clock, installations) as use_case,
+        diagnose_run_use_case(settings, clock, installations, embedder) as use_case,
     ):
         registry = handlers(installations, diagnose_run_handler(use_case))
         await build_worker(settings, queue, registry, clock).run(stop)
