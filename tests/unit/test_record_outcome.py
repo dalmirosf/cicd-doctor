@@ -1,14 +1,15 @@
-"""The success path on in-memory fakes (P2 e2a, D-83, D-84): a success is stored and resolves the
-open failures it fixes, and a failure that arrives after its success is resolved at once.
+"""The success path on in-memory fakes (P2 e2a and e2b, D-83, D-84): a success is stored and
+resolves the open failures it fixes, and a failure that arrives after its success is resolved.
 
-The comment and the check run do not change yet (e2b): the tests only look at the store, and at
-the fact that a success makes no call to GitHub.
+Only the comment is rewritten (D-84): the check run is never touched by a resolution.
 """
 
 from typing import Any
 
 import pytest
 
+from cicd_doctor.adapters.memory.llm import valid
+from cicd_doctor.core.errors import TransientError
 from cicd_doctor.core.models import FailureStatus, RecordOutcomePayload, RunRef
 from cicd_doctor.core.usecases.record_run_outcome import RecordRunOutcome
 from tests.factories import T0, make_run_ref
@@ -37,7 +38,9 @@ def outcome_payload(run: RunRef, **changes: Any) -> RecordOutcomePayload:
 
 
 def use_case(world: World) -> RecordRunOutcome:
-    return RecordRunOutcome(store=world.store, installations=world.installations)
+    return RecordRunOutcome(
+        store=world.store, installations=world.installations, reporter=world.reporter
+    )
 
 
 async def record_success(world: World, run: RunRef, **changes: Any) -> None:
@@ -119,17 +122,159 @@ async def test_a_success_with_no_open_failures_makes_no_call_to_github() -> None
     assert world.reporter.comments == {}
 
 
-async def test_resolving_a_failure_does_not_touch_the_check_run_or_the_comment() -> None:
+FLAKY_TEXT = "✅ Passed on re-run without code changes — recorded as flaky"
+
+
+def only_comment(world: World) -> Any:
+    [comment] = world.reporter.comments.values()
+    return comment
+
+
+async def test_a_fix_rewrites_the_same_comment_with_the_banner_and_the_compare_link() -> None:
     world = World()
     await world.run_once()
-    journal = list(world.journal)
-    [check] = world.reporter.checks.values()
-    before = check.output
+    comment_before = only_comment(world)
+    id_before, calls_before = comment_before.id, len(world.reporter.calls)
 
     await record_success(world, success_run())
 
-    assert world.journal == journal
-    assert check.output == before
+    comment = only_comment(world)  # the same comment, edited: still exactly one
+    assert comment.id == id_before
+    assert comment.edits == 1
+    assert "**✅ Fixed by `bbbbbbb`**" in comment.body
+    assert "Likely cause" not in comment.body
+    assert f"/compare/{A}...{B})" in comment.body
+    assert "**Probable cause:**" in comment.body  # the diagnosis stays below the banner
+    assert [c.method for c in world.reporter.calls[calls_before:]] == ["upsert_comment"]
+    pub = await world.store.publication(world.comment_key())
+    assert pub is not None
+    assert (pub.run_id, pub.attempt, pub.external_id) == (5001, 1, id_before)
+
+
+async def test_a_flaky_pass_rewrites_the_comment_with_the_flaky_message() -> None:
+    world = World()
+    await world.run_once()
+
+    await record_success(world, success_run(run_id=5000, attempt=2, sha=A))
+
+    comment = only_comment(world)
+    assert f"**{FLAKY_TEXT}**" in comment.body
+    assert "Compare the changes" not in comment.body
+
+
+async def test_the_check_run_is_never_touched_when_a_failure_is_resolved() -> None:
+    world = World()
+    await world.run_once()
+    [check] = world.reporter.checks.values()
+    output = check.output
+    calls_before = len(world.reporter.calls)
+
+    await record_success(world, success_run())
+
+    assert check.output == output
+    new_calls = [c.method for c in world.reporter.calls[calls_before:]]
+    assert "start_check" not in new_calls
+    assert "complete_check" not in new_calls
+
+
+async def test_a_failure_with_no_comment_yet_writes_nothing_and_the_diagnosis_does() -> None:
+    world = World()
+    await record_success(world, success_run())  # nothing to resolve, nothing to write
+    assert world.reporter.calls == []
+
+    await world.run_once()  # the late failure: its own comment is already resolved
+
+    comment = only_comment(world)
+    assert "**✅ Fixed by `bbbbbbb`**" in comment.body
+    assert "Likely cause" not in comment.body
+    [check] = world.reporter.checks.values()
+    assert check.output is not None
+    assert check.output.title == "✅ Fixed by bbbbbbb"
+
+
+async def test_a_comment_already_written_by_a_later_run_is_not_overwritten() -> None:
+    world = World([valid(), valid()])
+    await world.run_once()
+    later = make_run_ref(run_id=5002, head_sha="c" * 40)
+    world.add_failed_job(later, 21)
+    await world.run_once(later)  # the comment now shows run 5002
+    body = only_comment(world).body
+    edits = only_comment(world).edits
+
+    await record_success(world, success_run(run_id=5001, sha=B))  # resolves 5000, not 5002
+
+    assert (await failure_of(world)).status is FIX
+    assert (await failure_of(world, later)).status is OPEN
+    assert only_comment(world).body == body
+    assert only_comment(world).edits == edits
+    pub = await world.store.publication(world.comment_key())
+    assert pub is not None
+    assert pub.run_id == 5002
+
+
+async def test_a_retry_after_resolve_and_before_the_comment_writes_the_comment() -> None:
+    world = World()
+    await world.run_once()
+    world.reporter.fail_next("upsert_comment", TransientError("github is down"))
+
+    with pytest.raises(TransientError):
+        await record_success(world, success_run())
+
+    assert (await failure_of(world)).status is FIX  # resolved, but the comment is still red
+    assert "Likely cause" in only_comment(world).body
+
+    await record_success(world, success_run())  # the retry of the job
+
+    assert "**✅ Fixed by `bbbbbbb`**" in only_comment(world).body
+    assert only_comment(world).edits == 1
+
+
+async def test_a_retry_after_the_comment_was_written_writes_nothing_more() -> None:
+    world = World()
+    await world.run_once()
+    await record_success(world, success_run())
+    calls = len(world.reporter.calls)
+
+    await record_success(world, success_run())
+
+    assert len(world.reporter.calls) == calls
+
+
+async def test_a_resolved_failure_without_a_pull_request_writes_no_comment() -> None:
+    run = make_run_ref(pr_number=None)
+    world = World(run=run)
+    await world.run_once()
+    calls = len(world.reporter.calls)
+
+    await record_success(world, success_run(pr_number=None))
+
+    assert (await failure_of(world, run)).status is FIX
+    assert len(world.reporter.calls) == calls
+
+
+async def test_a_success_that_arrives_between_the_report_and_the_comment_is_not_lost() -> None:
+    """The diagnosis read no success, then one is recorded and resolves the failure while the
+    comment is still unpublished: the success finds no comment to rewrite, so the diagnosis must
+    write the resolved state (it reads the record again under the comment lock)."""
+    world = World()
+    original = world.store.later_successes
+    done = False
+
+    async def spy(*args: Any) -> Any:
+        nonlocal done
+        found = await original(*args)
+        if not done:
+            done = True
+            await record_success(world, success_run())
+        return found  # empty: it was read before the success was recorded
+
+    world.store.later_successes = spy  # type: ignore[method-assign,assignment]
+
+    await world.run_once()
+
+    assert (await failure_of(world)).status is FIX
+    assert "**✅ Fixed by `bbbbbbb`**" in only_comment(world).body
+    assert "Likely cause" not in only_comment(world).body
 
 
 async def test_a_retry_changes_nothing() -> None:

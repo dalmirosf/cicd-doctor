@@ -226,7 +226,11 @@ async def diagnose_world(
                 {
                     JobKind.DIAGNOSE_RUN: handler,
                     JobKind.RECORD_OUTCOME: record_outcome_handler(
-                        RecordRunOutcome(store=store, installations=installations)
+                        RecordRunOutcome(
+                            store=store,
+                            installations=installations,
+                            reporter=GitHubReporter(http, auth, clock),
+                        )
                     ),
                 },
                 clock,

@@ -20,6 +20,10 @@ _STEP_LINK = re.compile(
 _RUN_LINK = re.compile(
     r"\[run #\d+\]\(https://github\.com/[A-Za-z0-9._\-]+/[A-Za-z0-9._\-]+/actions/runs/\d+\)"
 )
+_COMPARE_LINK = re.compile(
+    r"\[Compare the changes\]\(https://github\.com/[A-Za-z0-9._\-]+/[A-Za-z0-9._\-]+"
+    r"/compare/[0-9a-f]{40}\.\.\.[0-9a-f]{40}\)"
+)
 _MARKER = re.compile(r"<!-- cicd-doctor:v1 pr=\d+ workflow=\d+ -->")
 _FENCE = re.compile(r"^\s{0,3}(`{3,})")
 _PUNCTUATION = frozenset("!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~")
@@ -105,6 +109,7 @@ def threats(markdown: str, *, document: bool = False) -> list[str]:
     text = _ALLOWED_AUTOLINK.sub("", text)
     text = _STEP_LINK.sub("", text)
     text = _RUN_LINK.sub("run", text)
+    text = _COMPARE_LINK.sub("compare", text)
     found: list[str] = []
     checks = {
         "raw html or comment": r"<[A-Za-z/!?]",
