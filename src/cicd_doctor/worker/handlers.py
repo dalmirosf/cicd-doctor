@@ -8,7 +8,13 @@ from typing import Protocol
 from pydantic import ValidationError
 
 from cicd_doctor.core.errors import InstallationUnavailable, LogsUnavailable, PermanentError
-from cicd_doctor.core.models import DiagnoseRunPayload, InstallationEvent, Job, RunRef
+from cicd_doctor.core.models import (
+    DiagnoseRunPayload,
+    InstallationEvent,
+    Job,
+    RecordOutcomePayload,
+    RunRef,
+)
 from cicd_doctor.core.ports import Clock, FailureStore, InstallationStore, JobQueue
 from cicd_doctor.core.usecases.purge import PurgeConfig, run_purge
 from cicd_doctor.core.usecases.track_installation import track_installation
@@ -50,6 +56,28 @@ def purge_handler(
 
     async def handle(job: Job) -> None:
         await run_purge(queue, store, installations, clock, config)
+
+    return handle
+
+
+class OutcomeUseCase(Protocol):
+    """What the handler needs of ``RecordRunOutcome``."""
+
+    async def run(self, payload: RecordOutcomePayload) -> None: ...
+
+
+def record_outcome_handler(use_case: OutcomeUseCase) -> Handler:
+    """``record_outcome`` jobs (D-83). A success has no check run to close, so a failure here
+    is just retried by the worker and never publishes "Could not diagnose"."""
+
+    async def handle(job: Job) -> None:
+        try:
+            payload = RecordOutcomePayload.model_validate(job.payload)
+        except ValidationError as exc:
+            raise PermanentError(
+                f"invalid record_outcome payload ({exc.error_count()} errors)"
+            ) from exc
+        await use_case.run(payload)
 
     return handle
 

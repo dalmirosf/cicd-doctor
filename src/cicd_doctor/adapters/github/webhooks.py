@@ -19,12 +19,16 @@ from cicd_doctor.core.models import (
     InstallationEvent,
     JobKind,
     NewJob,
+    RecordOutcomePayload,
     Repository,
     RunRef,
     diagnose_dedupe_key,
+    outcome_dedupe_key,
 )
 
 SIGNATURE_PREFIX = "sha256="
+# A ``success`` becomes a ``record_outcome`` job (FR-17, D-83); ``skipped``, ``neutral``,
+# ``action_required`` and ``stale`` change nothing and answer 204.
 # ``cancelled`` runs are enqueued too: a job that exceeds its ``timeout-minutes`` ends the run
 # ``cancelled``, and the use case decides whether it was a timeout (D-73).
 DIAGNOSED_CONCLUSIONS: frozenset[str] = frozenset({"failure", "timed_out", "cancelled"})
@@ -79,7 +83,10 @@ def route_event(
     """The job a delivery should create, or None when CICD Doctor does not act on it."""
     action = payload.get("action")
     if event == "workflow_run" and action == "completed":
-        return _diagnose_job(_parse(_WorkflowRunEvent, event, payload), max_attempts)
+        workflow_run = _parse(_WorkflowRunEvent, event, payload)
+        if workflow_run.workflow_run.conclusion == "success":
+            return _outcome_job(workflow_run, max_attempts)
+        return _diagnose_job(workflow_run, max_attempts)
     if event == "installation" and action in _INSTALLATION_ACTIONS:
         parsed = _parse(_InstallationPayload, event, payload)
         action_ = _INSTALLATION_ACTIONS[action]
@@ -197,7 +204,7 @@ def _parse[M: BaseModel](model: type[M], event: str, payload: Mapping[str, Any])
 def _diagnose_job(parsed: _WorkflowRunEvent, max_attempts: int) -> NewJob | None:
     run, repo = parsed.workflow_run, parsed.repository
     if run.conclusion not in DIAGNOSED_CONCLUSIONS:
-        return None  # success becomes record_outcome in P2 (FR-17)
+        return None
     conclusion: Literal["failure", "timed_out", "cancelled"] = (
         "failure"
         if run.conclusion == "failure"
@@ -205,10 +212,30 @@ def _diagnose_job(parsed: _WorkflowRunEvent, max_attempts: int) -> NewJob | None
         if run.conclusion == "cancelled"
         else "timed_out"
     )
+    run_ref = _run_ref(parsed)
+    payload = DiagnoseRunPayload(
+        run=run_ref,
+        conclusion=conclusion,
+        completed_at=run.updated_at,
+        default_branch=repo.default_branch,
+        private=repo.private,
+        account_login=repo.owner.login,
+        account_type=repo.owner.type,
+    )
+    return NewJob(
+        kind=JobKind.DIAGNOSE_RUN,
+        payload=payload.model_dump(mode="json"),
+        dedupe_key=diagnose_dedupe_key(run.id, run.run_attempt),
+        max_attempts=max_attempts,
+    )
+
+
+def _run_ref(parsed: _WorkflowRunEvent) -> RunRef:
+    run, repo = parsed.workflow_run, parsed.repository
     head = run.head_repository
     # A deleted fork leaves no head repository: treat it as a fork (no automatic LLM, D-17).
     is_fork = head is None or head.id != repo.id
-    run_ref = RunRef(
+    return RunRef(
         installation_id=parsed.installation.id,
         repo_id=repo.id,
         repo_full_name=repo.full_name,
@@ -225,9 +252,12 @@ def _diagnose_job(parsed: _WorkflowRunEvent, max_attempts: int) -> NewJob | None
         # branch (SPEC §7.1, D-72).
         pr_number=_own_pull_request(run, repo.id),
     )
-    payload = DiagnoseRunPayload(
-        run=run_ref,
-        conclusion=conclusion,
+
+
+def _outcome_job(parsed: _WorkflowRunEvent, max_attempts: int) -> NewJob:
+    run, repo = parsed.workflow_run, parsed.repository
+    payload = RecordOutcomePayload(
+        run=_run_ref(parsed),
         completed_at=run.updated_at,
         default_branch=repo.default_branch,
         private=repo.private,
@@ -235,9 +265,9 @@ def _diagnose_job(parsed: _WorkflowRunEvent, max_attempts: int) -> NewJob | None
         account_type=repo.owner.type,
     )
     return NewJob(
-        kind=JobKind.DIAGNOSE_RUN,
+        kind=JobKind.RECORD_OUTCOME,
         payload=payload.model_dump(mode="json"),
-        dedupe_key=diagnose_dedupe_key(run.id, run.run_attempt),
+        dedupe_key=outcome_dedupe_key(run.id, run.run_attempt),
         max_attempts=max_attempts,
     )
 

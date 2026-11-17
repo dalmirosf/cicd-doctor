@@ -319,7 +319,7 @@ async def test_a_manual_cancellation_ends_with_nothing_published(world: Diagnose
     assert (job.status, job.attempts) == (JobStatus.DONE, 1)  # finished, not retried
 
 
-@pytest.mark.parametrize("conclusion", ["success", "skipped"])
+@pytest.mark.parametrize("conclusion", ["neutral", "skipped"])
 async def test_a_run_that_neither_failed_nor_was_cancelled_makes_no_job(
     world: DiagnoseWorld, conclusion: str
 ) -> None:

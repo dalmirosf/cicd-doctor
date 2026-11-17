@@ -7,7 +7,7 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from cicd_doctor.core.models import Failure, FailureStatus, RunRef, SuccessRef
+from cicd_doctor.core.models import Failure, FailureStatus, ResolvedBy, RunRef, SuccessRef
 from cicd_doctor.core.outcomes import (
     Outcome,
     Resolution,
@@ -134,7 +134,12 @@ def test_decide(
         return
     fix_sha = success.head_sha if expected is FIX else None
     assert resolutions == [
-        Resolution(failure_id=failure.id, status=expected, fix_commit_sha=fix_sha)
+        Resolution(
+            failure_id=failure.id,
+            status=expected,
+            fix_commit_sha=fix_sha,
+            resolved_by=ResolvedBy(run_id=success.run_id, attempt=success.run_attempt),
+        )
     ]
 
 
@@ -181,7 +186,12 @@ def test_decide_late_takes_the_earliest_success_that_resolves() -> None:
         [_ref(5003, 1, C), _ref(5000, 2, A), _ref(5001, 1, B)],  # unsorted on purpose
     )
 
-    assert late == Resolution(failure_id=failure.id, status=FLAKY, fix_commit_sha=None)
+    assert late == Resolution(
+        failure_id=failure.id,
+        status=FLAKY,
+        fix_commit_sha=None,
+        resolved_by=ResolvedBy(run_id=5000, attempt=2),
+    )
 
 
 def test_decide_late_skips_a_success_with_the_same_sha_and_goes_on() -> None:
@@ -189,7 +199,12 @@ def test_decide_late_skips_a_success_with_the_same_sha_and_goes_on() -> None:
 
     late = decide_late(failure, [_ref(5001, 1, A), _ref(5002, 1, B)])
 
-    assert late == Resolution(failure_id=failure.id, status=FIX, fix_commit_sha=B)
+    assert late == Resolution(
+        failure_id=failure.id,
+        status=FIX,
+        fix_commit_sha=B,
+        resolved_by=ResolvedBy(run_id=5002, attempt=1),
+    )
 
 
 def test_decide_late_ignores_successes_that_are_not_later() -> None:
