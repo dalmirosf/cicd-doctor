@@ -1,8 +1,9 @@
 """Eval variants (SPEC §11.2): ``rules``, ``llm`` (no hints) and ``llm+hints`` (D-14).
 
-``llm+hints+similar`` arrives with similarity search (P2). The LLM variants run the production
-pipeline (``DiagnoseJob``) so the numbers describe what the app would publish: policy, budget,
-validation and fallbacks included. A case that fell back to the rules diagnosis shows its
+The LLM variants run the production pipeline (``DiagnoseJob``) so the numbers describe what the app
+would publish: policy, budget, validation and fallbacks included. ``llm+hints+similar`` also gives
+each case the exact-signature cache and the similar past failures of an in-memory history
+(``evals/runner/history.py``, D-86). A case that fell back to the rules diagnosis shows its
 ``fallback_reason``, and an injection case is judged (``wins``).
 """
 
@@ -24,10 +25,11 @@ from cicd_doctor.core.models import (
 from cicd_doctor.core.ports import TokenCounter
 from cicd_doctor.core.render import render_check, render_comment
 from evals.runner.cases import Case
+from evals.runner.history import Lookup, SimilarHistory
 
 ALL_VARIANTS = ("rules", "llm", "llm+hints", "llm+hints+similar")
-LLM_VARIANTS = ("llm", "llm+hints")
-NOT_YET = {"llm+hints+similar": "arrives with similarity search (P2)"}
+LLM_VARIANTS = ("llm", "llm+hints", "llm+hints+similar")
+SIMILAR_VARIANT = "llm+hints+similar"
 
 
 @dataclass(frozen=True)
@@ -48,6 +50,8 @@ class CaseResult:
     cost_usd: float = 0.0
     error: str | None = None
     diagnosis_source: str = "rules"  # rules, llm or cache: what was published
+    similar_found: int = 0  # past failures the history offered (``llm+hints+similar`` only, D-86)
+    similar_top_score: float | None = None  # the best of them
     fallback_reason: str | None = None
     llm_calls: int = 0
     input_tokens: int = 0
@@ -131,15 +135,29 @@ async def run_llm_case(
     variant: str,
     pipeline: DiagnoseJob,
     use_hints: bool,
+    history: SimilarHistory | None = None,
 ) -> CaseResult:
-    """One case through the production pipeline, as a non-fork run on an installation."""
+    """One case through the production pipeline, as a non-fork run on an installation.
+
+    With a ``history`` the case gets the cache and the similar failures of the cases before it, and
+    leaves its own diagnosis for the cases after it (D-86).
+    """
     analysis = _analyse(case, counter)
     if analysis is None:
         return _no_job(case, variant)
+    lookup = Lookup(None, [], None)
+    if history is not None:
+        lookup = await history.lookup(case, analysis)
     started = time.perf_counter()
     result = await pipeline.run(
-        analysis, DiagnosisContext(installation_id=0, is_fork=False), use_hints=use_hints
+        analysis,
+        DiagnosisContext(
+            installation_id=0, is_fork=False, cached=lookup.cached, similar=lookup.similar
+        ),
+        use_hints=use_hints,
     )
+    if history is not None:
+        await history.remember(case, analysis, result, lookup)
     latency_ms = (time.perf_counter() - started) * 1000
     published, usage = result.published, result.usage
     wins: list[str] = []
@@ -175,6 +193,8 @@ async def run_llm_case(
         latency_ms=round(latency_ms, 2),
         cost_usd=float(usage.cost_usd) if usage else 0.0,
         diagnosis_source=published.source,
+        similar_found=len(lookup.similar),
+        similar_top_score=lookup.similar[0].score if lookup.similar else None,
         fallback_reason=published.fallback_reason,
         llm_calls=usage.calls if usage else 0,
         input_tokens=usage.input_tokens if usage else 0,

@@ -8,9 +8,10 @@ from collections.abc import Mapping, Sequence
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
-from pydantic import SecretStr
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from cicd_doctor.adapters.embeddings.fastembed_embedder import FastEmbedEmbedder
 from cicd_doctor.adapters.llm.cache import CachedLLMClient
 from cicd_doctor.adapters.llm.openai_client import OpenAILLMClient, make_openai_client
 from cicd_doctor.core.diagnosis.cost import CostModel
@@ -37,6 +38,24 @@ class LiveSettings(BaseSettings):
     llm_price_output_per_mtok: Decimal | None = None
     llm_max_output_tokens: int = 800
     llm_timeout_s: float = 30.0
+    embedding_cache_dir: Path = Path(".cache/fastembed")
+    embedding_threads: int | None = Field(default=None, ge=1)
+
+
+def build_embedder(settings: LiveSettings | None = None) -> FastEmbedEmbedder:
+    """The production embedder, loaded now (it downloads the model into the cache once, D-78).
+
+    The ``llm+hints+similar`` variant is meaningless without it, so a model that does not load is
+    an error here and not a silent run without embeddings.
+    """
+    settings = settings or LiveSettings()
+    embedder = FastEmbedEmbedder(settings.embedding_cache_dir, threads=settings.embedding_threads)
+    if not embedder.warm():
+        raise EvalError(
+            "the embedding model did not load (variant llm+hints+similar needs it; "
+            f"cache dir {settings.embedding_cache_dir})"
+        )
+    return embedder
 
 
 def parse_prices(values: Sequence[str]) -> dict[str, CostModel]:

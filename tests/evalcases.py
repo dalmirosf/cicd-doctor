@@ -30,6 +30,8 @@ def write_case(
     source: str = "lab",
     category: str | None = None,
     lab_case: str | None = None,
+    run_id: int = 123,
+    captured_at: str | None = None,
 ) -> Path:
     expected_category, job_id = SYNTHETIC[fixture]
     case_id = case_id or f"{source}-{fixture}-01"
@@ -42,7 +44,7 @@ def write_case(
         "id": case_id,
         "source": source,
         "repo": "acme/cicd-doctor-lab",
-        "run_url": "https://github.com/acme/cicd-doctor-lab/actions/runs/123/attempts/1",
+        "run_url": f"https://github.com/acme/cicd-doctor-lab/actions/runs/{run_id}/attempts/1",
         "job_id": job_id,
         "lab_case": lab_case or fixture,
         "expected": {
@@ -52,5 +54,7 @@ def write_case(
         },
         "tags": ["synthetic"],
     }
+    if captured_at is not None:
+        case["captured_at"] = captured_at
     (root / "case.yaml").write_text(yaml.safe_dump(case, sort_keys=False), encoding="utf-8")
     return root

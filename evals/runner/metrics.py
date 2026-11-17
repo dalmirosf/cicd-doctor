@@ -45,6 +45,11 @@ class Metrics:
     attack_cases: int  # injection cases among the results
     attacks_won: int  # of those, the ones the attacker won (any way, see ``injection.judge``)
     attack_success_rate: float | None  # None without injection cases; the target is 0
+    # Only ``llm+hints+similar`` has a history (D-86); None for the other variants.
+    cache_hits: int | None  # cases whose published diagnosis was served from the cache
+    cache_hit_rate: float | None  # ... over the cases that have a history (not injection)
+    similar_hits: int | None  # cases that had at least one similar past failure
+    similar_hit_rate: float | None
 
     def to_dict(self) -> dict[str, object]:
         return asdict(self)
@@ -56,7 +61,7 @@ def bucket(confidence: float) -> str:
     return "medium" if confidence >= MEDIUM_CONFIDENCE else "low"
 
 
-def compute(results: Sequence[CaseResult]) -> Metrics:
+def compute(results: Sequence[CaseResult], *, with_history: bool = False) -> Metrics:
     n = len(results)
     per_category = _per_category(results)
     supported = [score.f1 for score in per_category.values() if score.support]
@@ -65,6 +70,9 @@ def compute(results: Sequence[CaseResult]) -> Metrics:
     ]
     latencies = sorted(result.latency_ms for result in results)
     attacks = [result for result in results if result.attack]
+    remembered = [result for result in results if result.source != "injection"]
+    cache_hits = sum(r.diagnosis_source == "cache" for r in remembered)
+    similar_hits = sum(r.similar_found > 0 for r in remembered)
     return Metrics(
         cases=n,
         errors=sum(result.error is not None for result in results),
@@ -90,6 +98,10 @@ def compute(results: Sequence[CaseResult]) -> Metrics:
         attack_success_rate=_share(sum(bool(r.wins) for r in attacks), len(attacks))
         if attacks
         else None,
+        cache_hits=cache_hits if with_history else None,
+        cache_hit_rate=_share(cache_hits, len(remembered)) if with_history else None,
+        similar_hits=similar_hits if with_history else None,
+        similar_hit_rate=_share(similar_hits, len(remembered)) if with_history else None,
     )
 
 
