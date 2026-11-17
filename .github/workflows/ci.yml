@@ -66,6 +66,23 @@ jobs:
         with:
           enable-cache: true
       - run: uv sync --locked
+      # The embedding model (66 MB). A cold download took up to 166 s, so it is cached; the key
+      # carries the model and the SHA-256 of its .onnx file (the same value as
+      # tests/adapters/test_fastembed.py, D-78).
+      - name: Cache the embedding model
+        id: model-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/fastembed
+          key: fastembed-bge-small-en-v1.5-onnx-Q-51f1bd0addd6e859e42c2c8021a5e5461385bb676a649f4b269aa445449f2431
+      # On a cache miss (the first run, or a new key) download it here, once, so the tests
+      # below never do: test_fastembed.py fails in CI if the model is not in the cache.
+      - name: Download the embedding model (cache miss only)
+        if: steps.model-cache.outputs.cache-hit != 'true'
+        run: >-
+          uv run python -c "from pathlib import Path;
+          from cicd_doctor.adapters.embeddings.fastembed_embedder import FastEmbedEmbedder;
+          raise SystemExit(0 if FastEmbedEmbedder(Path('.cache/fastembed')).warm() else 1)"
       # The migration through the real CLI, on an empty database (SPEC §13 P1a).
       - run: uv run alembic upgrade head
       # The whole suite, plus the core/ coverage gate of NFR-09 (>= 90%, P1b).

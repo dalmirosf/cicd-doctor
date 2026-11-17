@@ -101,3 +101,16 @@ def test_env_example_is_a_valid_configuration() -> None:
     settings = Settings(_env_file=ENV_EXAMPLE)
 
     assert settings.database_url.get_secret_value().startswith("postgresql+psycopg://")
+
+
+def test_embedding_settings_defaults_and_validation(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("DATABASE_URL", URL)
+
+    settings = Settings(_env_file=None)
+
+    assert settings.embeddings_enabled is True
+    assert settings.embedding_cache_dir.as_posix() == ".cache/fastembed"
+    assert settings.embedding_threads is None
+    monkeypatch.setenv("EMBEDDING_THREADS", "0")
+    with pytest.raises(ValidationError):
+        Settings(_env_file=None)

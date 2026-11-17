@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import threading
 from datetime import datetime
 from decimal import Decimal
 from typing import Any
@@ -373,3 +374,37 @@ def test_prices_and_limits_come_from_the_settings() -> None:
         500,
     )
     assert container.cost_model(settings_with()) == CostModel()
+
+
+def test_the_embedder_is_built_without_loading_the_model_and_can_be_switched_off(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    embedder = container.make_embedder(settings_with(embedding_threads=2))
+    assert embedder is not None
+    assert not embedder.ready  # nothing is loaded or downloaded here (D-78)
+    with caplog.at_level(logging.WARNING):
+        assert container.make_embedder(settings_with(embeddings_enabled=False)) is None
+    assert "EMBEDDINGS_ENABLED=false" in caplog.text
+    assert container.start_warming(None) is None
+
+
+def test_the_warm_up_runs_in_a_daemon_thread_and_does_not_wait_for_the_model() -> None:
+    class Slow:
+        started = threading.Event()
+        release = threading.Event()
+
+        def warm(self) -> bool:
+            self.started.set()
+            self.release.wait(5)
+            return True
+
+    slow = Slow()
+
+    thread = container.start_warming(slow)  # type: ignore[arg-type]
+
+    assert thread is not None
+    assert thread.daemon
+    assert slow.started.wait(5)
+    assert thread.is_alive()  # start_warming returned while the load is still going
+    slow.release.set()
+    thread.join(5)
