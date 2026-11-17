@@ -12,14 +12,15 @@ from cicd_doctor.adapters.clock import SystemClock
 from cicd_doctor.adapters.memory.ledger import InMemoryUsageLedger
 from cicd_doctor.core.diagnosis.cost import CostModel
 from cicd_doctor.core.diagnosis.pipeline import DiagnoseJob
-from cicd_doctor.core.ports import LLMClient, TokenCounter
+from cicd_doctor.core.ports import Embedder, LLMClient, TokenCounter
 from evals.runner.cases import Case, load_cases
+from evals.runner.history import SimilarHistory, history_order
 from evals.runner.metrics import compute
 from evals.runner.report import Report, VariantRun
 from evals.runner.variants import (
     ALL_VARIANTS,
     LLM_VARIANTS,
-    NOT_YET,
+    SIMILAR_VARIANT,
     VARIANTS,
     CaseResult,
     run_llm_case,
@@ -48,14 +49,11 @@ def resolve_variants(requested: str, have_llm: bool = False) -> tuple[list[str],
     """``(variants to run, skipped variant -> reason)`` for ``--variant``."""
     runnable = ["rules", *(LLM_VARIANTS if have_llm else ())]
     if requested == "all":
-        skipped = {v: NEEDS_A_MODEL for v in LLM_VARIANTS if not have_llm}
-        return runnable, skipped | NOT_YET
+        return runnable, {v: NEEDS_A_MODEL for v in LLM_VARIANTS if not have_llm}
     if requested in runnable:
         return [requested], {}
     if requested in LLM_VARIANTS:
         raise EvalError(f"variant {requested!r} {NEEDS_A_MODEL}")
-    if requested in NOT_YET:
-        raise EvalError(f"variant {requested!r} is not available yet: it {NOT_YET[requested]}")
     raise EvalError(f"unknown variant {requested!r}; choose from {', '.join(ALL_VARIANTS)} or all")
 
 
@@ -67,9 +65,12 @@ def run_evals(
     now: Callable[[], datetime] = lambda: datetime.now(UTC),
     git_sha: Callable[[], str] | None = None,
     llms: Sequence[LLMSetup] = (),
+    embedder: Embedder | None = None,
 ) -> Report:
     """The synchronous entry point (the CLI). In a running event loop use ``run_evals_async``."""
-    return asyncio.run(run_evals_async(variant, sources, cases_dir, counter, now, git_sha, llms))
+    return asyncio.run(
+        run_evals_async(variant, sources, cases_dir, counter, now, git_sha, llms, embedder)
+    )
 
 
 async def run_evals_async(
@@ -80,8 +81,11 @@ async def run_evals_async(
     now: Callable[[], datetime] = lambda: datetime.now(UTC),
     git_sha: Callable[[], str] | None = None,
     llms: Sequence[LLMSetup] = (),
+    embedder: Embedder | None = None,
 ) -> Report:
     variants, skipped = resolve_variants(variant, have_llm=bool(llms))
+    if SIMILAR_VARIANT in variants and embedder is None:
+        raise EvalError(f"variant {SIMILAR_VARIANT!r} needs an embedder (D-86)")
     cases = load_cases(cases_dir, sources)
     if not cases:
         raise EvalError(
@@ -92,8 +96,10 @@ async def run_evals_async(
     for name in variants:
         if name in LLM_VARIANTS:
             for setup in llms:
-                results = await _run_llm(name, setup, cases, counter)
-                runs.append(_variant_run(f"{name} [{setup.label}]", results))
+                results = await _run_llm(name, setup, cases, counter, embedder)
+                runs.append(
+                    _variant_run(f"{name} [{setup.label}]", results, name == SIMILAR_VARIANT)
+                )
         else:
             results = [VARIANTS[name](case, counter) for case in cases]
             runs.append(_variant_run(name, results))
@@ -106,14 +112,24 @@ async def run_evals_async(
     )
 
 
-def _variant_run(name: str, results: list[CaseResult]) -> VariantRun:
-    return VariantRun(variant=name, metrics=compute(results), results=results)
+def _variant_run(name: str, results: list[CaseResult], with_history: bool = False) -> VariantRun:
+    return VariantRun(
+        variant=name, metrics=compute(results, with_history=with_history), results=results
+    )
 
 
 async def _run_llm(
-    variant: str, setup: LLMSetup, cases: Sequence[Case], counter: TokenCounter
+    variant: str,
+    setup: LLMSetup,
+    cases: Sequence[Case],
+    counter: TokenCounter,
+    embedder: Embedder | None = None,
 ) -> list[CaseResult]:
-    """Every case through the production pipeline, one after the other (kind to rate limits)."""
+    """Every case through the production pipeline, one after the other (kind to rate limits).
+
+    ``llm+hints+similar`` runs them in history order (per repository, by ``captured_at``) over a
+    fresh in-memory history, and the results come back in the order of ``cases`` (D-86).
+    """
     pipeline = DiagnoseJob(
         llm=setup.client,
         ledger=InMemoryUsageLedger(
@@ -122,16 +138,18 @@ async def _run_llm(
         cost=setup.cost,
         max_output_tokens=setup.max_output_tokens,
     )
-    return [
-        await run_llm_case(
+    history = SimilarHistory(embedder) if variant == SIMILAR_VARIANT and embedder else None
+    done: dict[str, CaseResult] = {}
+    for case in history_order(cases) if history else cases:
+        done[case.id] = await run_llm_case(
             case,
             counter,
             variant=f"{variant} [{setup.label}]",
             pipeline=pipeline,
-            use_hints=variant == "llm+hints",
+            use_hints=variant != "llm",
+            history=history,
         )
-        for case in cases
-    ]
+    return [done[case.id] for case in cases]
 
 
 def current_git_sha() -> str:

@@ -1050,7 +1050,7 @@ tags: [python, uv]
 
 ### 11.2 Variants and metrics
 
-Variants: `rules`, `llm` (no hints), `llm+hints` (production behavior in P1), `llm+hints+similar` (P2+).
+Variants: `rules`, `llm` (no hints), `llm+hints` (production behavior in P1), `llm+hints+similar` (P2: `llm+hints` plus the exact-signature cache and the similar past failures of an in-memory history of the eval cases, processed per repository in the order of `captured_at`; injection cases have no history; D-86). Its report columns are the cache hits and the similar hits, and a section compares it with `llm+hints` (accuracy, cost) with a small-n warning.
 
 | Metric | Definition |
 |---|---|
@@ -1065,7 +1065,7 @@ Variants: `rules`, `llm` (no hints), `llm+hints` (production behavior in P1), `l
 
 ### 11.3 Running
 
-- `uv run python -m evals run --variant all --sources lab,public,injection` writes `evals/reports/<date>-<git-sha>.{json,md}`. As of P1b the `rules`, `llm` and `llm+hints` variants exist; `llm+hints+similar` arrives with P2, and `all` runs what exists and lists the rest. The LLM variants need a model: `--model a,b` (or `OPENAI_MODEL`), prices from `--price MODEL=IN,OUT` or `LLM_PRICE_*`, and `--live` to call OpenAI (the key comes from `.env` and is never printed). Each model is its own column (`llm+hints [model]`) and runs the production pipeline (D-65). The reports have accuracy, per-category P/R/F1, macro-F1, the confusion matrix, evidence kept and cited, abstention, calibration, latency and cost, and for the LLM variants the share of LLM diagnoses, the fallbacks by reason, tokens, cost per case and the injection attacks won; the cause-match judge arrives in P4.
+- `uv run python -m evals run --variant all --sources lab,public,injection` writes `evals/reports/<date>-<git-sha>.{json,md}`. The `rules`, `llm`, `llm+hints` and `llm+hints+similar` variants exist (the last one needs the embedding model, which the CLI loads, D-86), and `all` runs what exists and lists the rest. The LLM variants need a model: `--model a,b` (or `OPENAI_MODEL`), prices from `--price MODEL=IN,OUT` or `LLM_PRICE_*`, and `--live` to call OpenAI (the key comes from `.env` and is never printed). Each model is its own column (`llm+hints [model]`) and runs the production pipeline (D-65). The reports have accuracy, per-category P/R/F1, macro-F1, the confusion matrix, evidence kept and cited, abstention, calibration, latency and cost, and for the LLM variants the share of LLM diagnoses, the fallbacks by reason, tokens, cost per case and the injection attacks won; the cause-match judge arrives in P4.
 - `uv run python -m evals capture --repo <owner>/cicd-doctor-lab --all` captures the lab's failed runs (see `lab/README.md`).
 - LLM responses are cached in `evals/.cache/` keyed by a hash of `(model, prompt_version, the whole request)`, so any change of model, prompt, excerpt, hint or repair message is a miss (D-65). CI runs offline from the committed cache (deterministic, free). `--live` fills or refreshes it on demand. Without `--live` a miss is an `LLMError`, reported as an `llm_error` fallback. The cache is empty until the first live run.
 - `evals/baseline.json` holds the last accepted metrics. A change to the prompt, model or rules **fails CI if macro-F1 drops by more than 5 points** or if any injection case succeeds.
@@ -1152,7 +1152,7 @@ Scope: FR-08b, FR-15…FR-18.
 - [ ] Flaky lab workflow: fail then re-run success → the failure is `resolved_flaky` and the comment shows the flaky message.
 - [ ] Fix flow: a failing PR, then a fixing commit, then green → `resolved_by_commit` with the right `fix_commit_sha`, and the comment shows "Fixed by …".
 - [x] Purge job with a fake clock deletes deliveries older than 30 days and failures older than 90 days. Evidence (2026-11-17): `tests/unit/test_purge.py` and `tests/unit/test_scheduler.py` (31-day deliveries go and 29-day ones stay; 91-day failures go with their diagnoses and 89-day ones stay; `stale` at 31 days; 8 days of grace; one job per day with three schedulers), the contract suites on memory and Postgres, and `tests/integration/test_purge_postgres.py` (5 000 old rows, no orphans, two simultaneous purges without deadlock).
-- [ ] Eval variant `llm+hints+similar` is added to the report.
+- [x] Eval variant `llm+hints+similar` is added to the report. Evidence (2026-11-17): `uv run python -m evals run --variant all --model x` lists the column `llm+hints+similar [x]` with the cache and similar hit columns and the "Effect of the memory" section (D-86); `tests/unit/test_eval_similar.py` (FakeLLM and FakeEmbedder: the second py-modnf capture is served from the cache, a near failure lists the earlier run, order by `captured_at`, injection without history) and `tests/adapters/test_eval_similar_real_embedder.py` (the real model over 6 lab cases). **Mechanical only:** no OpenAI call was made, so the real numbers of the variant (accuracy and cost against `llm+hints`) wait for the OpenAI key and the first `--live` run.
 
 ### P3 — Commands, suggestions, repo config
 Scope: FR-19…FR-21.

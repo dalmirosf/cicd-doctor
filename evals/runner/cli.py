@@ -15,10 +15,16 @@ from evals.runner.capture import (
 )
 from evals.runner.cases import DEFAULT_CASES_DIR, SOURCES
 from evals.runner.injection import write_cases
-from evals.runner.live import DEFAULT_CACHE_DIR, LiveSettings, build_setups, parse_prices
+from evals.runner.live import (
+    DEFAULT_CACHE_DIR,
+    LiveSettings,
+    build_embedder,
+    build_setups,
+    parse_prices,
+)
 from evals.runner.report import DEFAULT_REPORTS_DIR, write_report
 from evals.runner.run import EvalError, run_evals
-from evals.runner.variants import ALL_VARIANTS, LLM_VARIANTS
+from evals.runner.variants import ALL_VARIANTS, LLM_VARIANTS, SIMILAR_VARIANT
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -94,6 +100,7 @@ def _run(args: argparse.Namespace) -> int:
     wants_llm = args.variant in (*LLM_VARIANTS, "all")
     models = [m.strip() for m in (args.model or "").split(",") if m.strip()]
     llms = []
+    embedder = None
     if wants_llm:
         settings = LiveSettings()
         models = models or ([settings.openai_model] if settings.openai_model else [])
@@ -105,7 +112,11 @@ def _run(args: argparse.Namespace) -> int:
                 prices=parse_prices(args.price),
                 settings=settings,
             )
-    report = run_evals(args.variant, sources, args.cases_dir, TiktokenCounter(), llms=llms)
+            if args.variant in (SIMILAR_VARIANT, "all"):
+                embedder = build_embedder(settings)
+    report = run_evals(
+        args.variant, sources, args.cases_dir, TiktokenCounter(), llms=llms, embedder=embedder
+    )
     json_path, md_path = write_report(report, args.out_dir)
     for run in report.runs:
         m = run.metrics
