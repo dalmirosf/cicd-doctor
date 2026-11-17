@@ -20,3 +20,7 @@ Where a response was trimmed:
 - `hook_config.json`, `hook_deliveries.json`: no secret, no payloads.
 
 Never add a file here without sanitizing it first, and never commit a token, a key or a signed URL.
+
+`workflow_run_success_pull_request.json` and `workflow_run_success_push.json` are successful runs of
+this repository recorded read-only on 2026-11-17 (the spike of P2) and sanitized the same way; the
+tests wrap them in a webhook envelope to check that a real `success` becomes a `record_outcome` job.

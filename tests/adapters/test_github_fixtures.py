@@ -30,10 +30,11 @@ from cicd_doctor.adapters.github.reporter import (
     GitHubReporter,
     external_id_for,
 )
+from cicd_doctor.adapters.github.webhooks import route_event
 from cicd_doctor.core.errors import LogsUnavailable
 from cicd_doctor.core.logs.parse import parse_log
-from cicd_doctor.core.models import JobRef
-from tests.factories import make_run_ref
+from cicd_doctor.core.models import JobKind, JobRef, RecordOutcomePayload
+from tests.factories import T0, make_run_ref
 from tests.github_fake import (
     APP_ID,
     BLOB_TEMPLATE,
@@ -86,8 +87,8 @@ def test_every_fixture_is_json_without_credentials(path: Path) -> None:
     assert "sig=" not in text  # the signed query of a log URL is never recorded
 
 
-def test_there_are_nineteen_recorded_fixtures() -> None:
-    assert len(list(FIXTURES.glob("*.json"))) == 19
+def test_there_are_twenty_one_recorded_fixtures() -> None:
+    assert len(list(FIXTURES.glob("*.json"))) == 21
 
 
 # --- jobs ------------------------------------------------------------------------------------
@@ -393,3 +394,33 @@ def test_the_remaining_recorded_objects_have_the_shape_the_runbook_relies_on() -
     assert runs["workflow_runs"]
     assert fixture("hook_config")["content_type"] == "json"
     assert fixture("hook_deliveries")
+
+
+@pytest.mark.parametrize(
+    ("name", "event", "branch"),
+    [
+        ("workflow_run_success_pull_request", "pull_request", "docs/branch-workflow"),
+        ("workflow_run_success_push", "push", "main"),
+    ],
+)
+def test_a_recorded_successful_run_becomes_a_record_outcome_job(
+    name: str, event: str, branch: str
+) -> None:
+    run = fixture(name)
+    # The webhook envelope is not part of the recording: build it around the run, as GitHub does
+    # (the ``repository`` of the envelope is the one of the run, here with a default branch).
+    payload = {
+        "action": "completed",
+        "workflow_run": run,
+        "repository": {**run["repository"], "default_branch": "main"},
+        "installation": {"id": 90000001},
+    }
+
+    job = route_event("workflow_run", payload, received_at=T0, max_attempts=5)
+
+    assert job is not None
+    assert job.kind is JobKind.RECORD_OUTCOME
+    parsed = RecordOutcomePayload.model_validate(job.payload)
+    assert (parsed.run.event, parsed.run.head_branch) == (event, branch)
+    assert re.fullmatch(r"[0-9a-f]{40}", parsed.run.head_sha)
+    assert job.dedupe_key == f"outcome:{run['id']}:{run['run_attempt']}"

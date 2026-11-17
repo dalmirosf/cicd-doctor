@@ -562,6 +562,22 @@ class Job(DomainModel):
     last_error: str | None
 
 
+def outcome_dedupe_key(run_id: int, run_attempt: int) -> str:
+    """One ``record_outcome`` job per successful run attempt, whatever the delivery (D-83)."""
+    return f"outcome:{run_id}:{run_attempt}"
+
+
+class RecordOutcomePayload(DomainModel):
+    """Payload of a ``record_outcome`` job: a successful run attempt (FR-17, D-83)."""
+
+    run: RunRef
+    completed_at: datetime  # workflow_run.updated_at
+    default_branch: str
+    private: bool
+    account_login: str
+    account_type: str
+
+
 class DiagnoseRunPayload(DomainModel):
     """Payload of a ``diagnose_run`` job: what the webhook knew, never the raw GitHub JSON."""
 

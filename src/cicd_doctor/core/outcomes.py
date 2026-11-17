@@ -18,7 +18,14 @@ red) and any failure that is not ``open``.
 from datetime import datetime, timedelta
 from uuid import UUID
 
-from cicd_doctor.core.models import DomainModel, Failure, FailureStatus, RunRef, SuccessRef
+from cicd_doctor.core.models import (
+    DomainModel,
+    Failure,
+    FailureStatus,
+    ResolvedBy,
+    RunRef,
+    SuccessRef,
+)
 
 STALE_AFTER = timedelta(days=30)  # an open failure older than this becomes ``stale`` (D-24)
 
@@ -34,6 +41,9 @@ class Resolution(DomainModel):
     failure_id: UUID
     status: FailureStatus
     fix_commit_sha: str | None
+    # The success that resolved it, stored with the status (D-84). None only for a resolution
+    # built by hand.
+    resolved_by: ResolvedBy | None = None
 
 
 def decide(outcome: Outcome, open_failures: list[Failure]) -> list[Resolution]:
@@ -77,11 +87,15 @@ def _resolve(
     if failure.status is not FailureStatus.OPEN:
         return None
     run = failure.job.job.run
+    by = ResolvedBy(run_id=success.run_id, attempt=success.attempt)
     if (run.run_id, run.run_attempt) >= (success.run_id, success.attempt):
         return None  # the failure is newer than the success: the branch is still red
     if run.run_id == success.run_id:
         return Resolution(
-            failure_id=failure.id, status=FailureStatus.RESOLVED_FLAKY, fix_commit_sha=None
+            failure_id=failure.id,
+            status=FailureStatus.RESOLVED_FLAKY,
+            fix_commit_sha=None,
+            resolved_by=by,
         )
     if run.head_sha == success.head_sha or not success_branch or not run.head_branch:
         return None
@@ -89,6 +103,7 @@ def _resolve(
         failure_id=failure.id,
         status=FailureStatus.RESOLVED_BY_COMMIT,
         fix_commit_sha=success.head_sha,
+        resolved_by=by,
     )
 
 

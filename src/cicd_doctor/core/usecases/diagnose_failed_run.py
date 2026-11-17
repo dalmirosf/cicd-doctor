@@ -30,6 +30,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass, replace
 from datetime import datetime, timedelta
 from typing import NoReturn
+from uuid import UUID
 
 from cicd_doctor.core.analysis import JobAnalysis, analyze_jobs
 from cicd_doctor.core.diagnosis.cache import reuse_cached
@@ -48,13 +49,12 @@ from cicd_doctor.core.models import (
     FailedJob,
     Failure,
     FailureStatus,
-    Installation,
     JobRef,
     Publication,
     PublicationKey,
     RawLog,
     RepoConfig,
-    Repository,
+    ResolvedBy,
     RunAnalysisRecord,
     RunAttempt,
     RunRef,
@@ -64,6 +64,7 @@ from cicd_doctor.core.models import (
     WorkflowRun,
     failure_id_for,
 )
+from cicd_doctor.core.outcomes import decide_late
 from cicd_doctor.core.policy import PolicyInput, decide
 from cicd_doctor.core.ports import (
     Clock,
@@ -80,6 +81,7 @@ from cicd_doctor.core.render import (
     render_comment,
     render_could_not_diagnose,
 )
+from cicd_doctor.core.usecases.rows import ensure_rows
 
 logger = logging.getLogger(__name__)
 
@@ -164,6 +166,7 @@ class DiagnoseFailedRun:
         record = await self._store.run_analysis(run.run_id, run.run_attempt)
         if record is None:
             record = await self._analyze(payload, examined)
+        record = await self._resolve_late(record)
         report = await self._report(payload, record)
         if not await self._complete_check(payload, record, report, check_id, check_key):
             return
@@ -217,30 +220,13 @@ class DiagnoseFailedRun:
         still installed), but the credential belongs to the adapters, so it is the first thing
         the use case does. A removed repository or a deleted installation still has a row.
         """
-        run = payload.run
-        if payload.account_login and payload.account_type:
-            await self._installations.ensure_installation(
-                Installation(
-                    id=run.installation_id,
-                    account_login=payload.account_login,
-                    account_type=payload.account_type,
-                )
-            )
-        elif await self._installations.installation(run.installation_id) is None:
-            # A job queued before P1c carries no account, and nothing tracks this installation.
-            raise PermanentError(
-                f"installation {run.installation_id} is unknown and the job has no account"
-            )
-        await self._installations.save_repositories(
-            [
-                Repository(
-                    id=run.repo_id,
-                    installation_id=run.installation_id,
-                    full_name=run.repo_full_name,
-                    private=payload.private,
-                    default_branch=payload.default_branch,
-                )
-            ]
+        await ensure_rows(
+            self._installations,
+            payload.run,
+            account_login=payload.account_login,
+            account_type=payload.account_type,
+            private=payload.private,
+            default_branch=payload.default_branch,
         )
 
     # --- cancelled runs ---------------------------------------------------------------------
@@ -269,6 +255,36 @@ class DiagnoseFailedRun:
             run.run_attempt,
         )
         return None
+
+    # --- a success that came first (D-83) ---------------------------------------------------
+
+    async def _resolve_late(self, record: RunAnalysisRecord) -> RunAnalysisRecord:
+        """Resolve the failures of this attempt that a recorded success already fixed.
+
+        The checkpoint is stored before this reads the successes, and a success is stored before
+        it reads the open failures, so whichever arrives second sees the other (D-83). One query
+        per attempt: its failures share workflow and branch. The record is read again when
+        something changed, so the report and the comment already show the resolved state.
+        """
+        if not any(item.failure.status is FailureStatus.OPEN for item in record.items):
+            return record
+        run = record.items[0].failure.job.job.run
+        successes = await self._store.later_successes(
+            run.repo_id, run.workflow_id, run.branch_key, run.run_id, run.run_attempt
+        )
+        if not successes:
+            return record
+        groups: dict[tuple[FailureStatus, str | None, ResolvedBy | None], list[UUID]] = {}
+        for item in record.items:
+            resolution = decide_late(item.failure, successes)
+            if resolution is not None:
+                key = (resolution.status, resolution.fix_commit_sha, resolution.resolved_by)
+                groups.setdefault(key, []).append(resolution.failure_id)
+        if not groups:
+            return record
+        for (status, fix_commit_sha, by), failure_ids in groups.items():
+            await self._store.resolve(failure_ids, status, fix_commit_sha, by)
+        return await self._store.run_analysis(run.run_id, run.run_attempt) or record
 
     # --- the check run ----------------------------------------------------------------------
 

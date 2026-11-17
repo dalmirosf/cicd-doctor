@@ -42,10 +42,12 @@ from cicd_doctor.core.models import Job, JobKind
 from cicd_doctor.core.ports import Clock, Embedder, InstallationStore, JobQueue, LLMClient
 from cicd_doctor.core.usecases.diagnose_failed_run import DiagnoseConfig, DiagnoseFailedRun
 from cicd_doctor.core.usecases.purge import PurgeConfig
+from cicd_doctor.core.usecases.record_run_outcome import RecordRunOutcome
 from cicd_doctor.worker import Handler, Worker
 from cicd_doctor.worker.handlers import (
     diagnose_run_handler,
     purge_handler,
+    record_outcome_handler,
     sync_installation_handler,
 )
 from cicd_doctor.worker.scheduler import Scheduler
@@ -215,12 +217,16 @@ def purge_config(settings: Settings) -> PurgeConfig:
 
 
 def handlers(
-    installations: InstallationStore, diagnose_run: Handler, purge: Handler
+    installations: InstallationStore,
+    diagnose_run: Handler,
+    purge: Handler,
+    record_outcome: Handler,
 ) -> dict[JobKind, Handler]:
     registry: dict[JobKind, Handler] = dict.fromkeys(JobKind, placeholder_handler)
     registry[JobKind.SYNC_INSTALLATION] = sync_installation_handler(installations)
     registry[JobKind.DIAGNOSE_RUN] = diagnose_run
     registry[JobKind.PURGE] = purge
+    registry[JobKind.RECORD_OUTCOME] = record_outcome
     return registry
 
 
@@ -308,10 +314,19 @@ async def run_worker(settings: Settings, stop: asyncio.Event) -> None:
             url, pool_size=settings.worker_concurrency + 2
         ) as installations,
         PostgresFailureStore.connect(url, clock, pool_size=2) as purge_store,
+        PostgresFailureStore.connect(
+            url, clock, pool_size=settings.worker_concurrency + 2
+        ) as outcome_store,
         diagnose_run_use_case(settings, clock, installations, embedder) as use_case,
     ):
         purge = purge_handler(queue, purge_store, installations, clock, purge_config(settings))
-        registry = handlers(installations, diagnose_run_handler(use_case), purge)
+        outcomes = RecordRunOutcome(store=outcome_store, installations=installations)
+        registry = handlers(
+            installations,
+            diagnose_run_handler(use_case),
+            purge,
+            record_outcome_handler(outcomes),
+        )
         worker = build_worker(settings, queue, registry, clock)
         if not settings.purge_enabled:
             logger.warning("PURGE_ENABLED=false: the daily purge is not scheduled")

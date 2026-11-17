@@ -29,8 +29,9 @@ from cicd_doctor.core.diagnosis.pipeline import DiagnoseJob
 from cicd_doctor.core.models import Job, JobKind
 from cicd_doctor.core.ports import Embedder, FailureStore, InstallationStore, JobQueue, UsageLedger
 from cicd_doctor.core.usecases.diagnose_failed_run import DiagnoseConfig, DiagnoseFailedRun
+from cicd_doctor.core.usecases.record_run_outcome import RecordRunOutcome
 from cicd_doctor.worker import Worker
-from cicd_doctor.worker.handlers import diagnose_run_handler
+from cicd_doctor.worker.handlers import diagnose_run_handler, record_outcome_handler
 from tests.github_fake import (
     FakeGitHub,
     FakeRepoWrites,
@@ -78,13 +79,18 @@ def job_id_for(run_id: int, attempt: int) -> int:
 
 
 def workflow_run_payload(
-    run_id: int = 5000, attempt: int = 1, conclusion: str = "failure"
+    run_id: int = 5000,
+    attempt: int = 1,
+    conclusion: str = "failure",
+    head_sha: str | None = None,
 ) -> dict[str, Any]:
     """The signed-webhook fixture of a failed run, as another run (attempt) of the same PR."""
     payload = load("workflow_run_completed_failure")
     payload["workflow_run"]["id"] = run_id
     payload["workflow_run"]["run_attempt"] = attempt
     payload["workflow_run"]["conclusion"] = conclusion
+    if head_sha is not None:
+        payload["workflow_run"]["head_sha"] = head_sha
     return payload
 
 
@@ -141,6 +147,19 @@ class DiagnoseWorld:
             job_id, log_bytes(["Run sleep 300", "##[error]The operation was canceled."])
         )
         return job_id
+
+    async def enqueue_success(
+        self, run_id: int = 5001, attempt: int = 1, head_sha: str = "b" * 40
+    ) -> None:
+        """The ``record_outcome`` job the webhook would create for a successful attempt."""
+        new_job = route_event(
+            "workflow_run",
+            workflow_run_payload(run_id, attempt, "success", head_sha),
+            received_at=self.clock.now(),
+            max_attempts=5,
+        )
+        assert new_job is not None
+        assert await self.queue.enqueue(new_job, None)
 
     async def enqueue(self, run_id: int = 5000, attempt: int = 1) -> None:
         """The job the webhook would create for this attempt (without the HTTP hop)."""
@@ -204,7 +223,12 @@ async def diagnose_world(
             handler = diagnose_run_handler(use_case, give_up_timeout_s=give_up_timeout_s)
             worker = Worker(
                 queue,
-                {JobKind.DIAGNOSE_RUN: handler},
+                {
+                    JobKind.DIAGNOSE_RUN: handler,
+                    JobKind.RECORD_OUTCOME: record_outcome_handler(
+                        RecordRunOutcome(store=store, installations=installations)
+                    ),
+                },
                 clock,
                 concurrency=1,
                 lease=lease,

@@ -29,12 +29,14 @@ from cicd_doctor.core.models import (
     Job,
     JobKind,
     JobStatus,
+    RecordOutcomePayload,
     RunRef,
 )
 from cicd_doctor.core.usecases.purge import PurgeConfig
 from cicd_doctor.worker.handlers import (
     diagnose_run_handler,
     purge_handler,
+    record_outcome_handler,
     sync_installation_handler,
 )
 from tests.factories import T0, make_run_analysis, make_run_ref
@@ -73,19 +75,54 @@ async def test_sync_installation_applies_the_event() -> None:
     assert await store.installation(10) == event.installation
 
 
+async def test_record_outcome_validates_the_payload_and_runs_the_use_case() -> None:
+    seen: list[RecordOutcomePayload] = []
+
+    class Recorder:
+        async def run(self, payload: RecordOutcomePayload) -> None:
+            seen.append(payload)
+
+    payload = RecordOutcomePayload(
+        run=make_run_ref(),
+        completed_at=T0,
+        default_branch="main",
+        private=False,
+        account_login="acme",
+        account_type="Organization",
+    )
+
+    await record_outcome_handler(Recorder())(job(payload.model_dump(mode="json")))
+
+    assert seen == [payload]
+
+
+async def test_record_outcome_with_a_malformed_payload_is_permanent_and_publishes_nothing() -> None:
+    class Boom:
+        async def run(self, payload: RecordOutcomePayload) -> None:
+            raise AssertionError("must not run")
+
+    with pytest.raises(PermanentError, match="invalid record_outcome payload"):
+        await record_outcome_handler(Boom())(job({"run": {}}))
+
+
 async def test_a_malformed_payload_is_a_permanent_error() -> None:
     with pytest.raises(PermanentError, match="invalid sync_installation payload"):
         await sync_installation_handler(InMemoryInstallationStore())(job({"action": "nope"}))
 
 
-def test_only_sync_installation_diagnose_run_and_purge_have_real_handlers() -> None:
-    registry = container.handlers(InMemoryInstallationStore(), noop, noop)
+def test_every_kind_but_explain_has_a_real_handler() -> None:
+    registry = container.handlers(InMemoryInstallationStore(), noop, noop, noop)
 
     assert set(registry) == set(JobKind)
     real = {
         kind for kind, handler in registry.items() if handler is not container.placeholder_handler
     }
-    assert real == {JobKind.SYNC_INSTALLATION, JobKind.DIAGNOSE_RUN, JobKind.PURGE}
+    assert real == {
+        JobKind.SYNC_INSTALLATION,
+        JobKind.DIAGNOSE_RUN,
+        JobKind.PURGE,
+        JobKind.RECORD_OUTCOME,
+    }
     assert registry[JobKind.DIAGNOSE_RUN] is noop
 
 
