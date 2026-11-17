@@ -615,3 +615,13 @@ def test_no_workflow_name_makes_the_comment_unsafe(name: str) -> None:
     rep = DiagnosisReport(run=make_run_ref(workflow_name=name), items=report().items)
 
     assert threats(render_comment(rep), document=True) == []
+
+
+def test_a_cached_diagnosis_names_the_run_it_came_from_as_a_number() -> None:
+    failure, cached = item(source="cache")
+
+    named = render_check(report((failure, cached), cached_from_runs={failure.id: 5000})).summary
+    anonymous = render_check(report((failure, cached))).summary
+
+    assert "`cached from run #5000`" in named
+    assert "`cached from an earlier run`" in anonymous

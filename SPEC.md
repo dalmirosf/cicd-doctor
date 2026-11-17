@@ -283,7 +283,7 @@ Settings come from the environment (`pydantic-settings` in `app/settings.py`; `.
 | `EMBEDDINGS_ENABLED` | `true` | `false` = the worker does not load the model and stores no embeddings (D-77, D-78) |
 | `EMBEDDING_CACHE_DIR` | `.cache/fastembed` | Where fastembed keeps the model (66 MB) instead of the system temporary directory; git-ignored (D-78) |
 | `EMBEDDING_THREADS` | unset | ONNX threads; unset = onnxruntime decides |
-| `CACHE_TTL_DAYS` | `7` | P2 |
+| `CACHE_TTL_DAYS` | `7` | Days an `llm` diagnosis can be reused for the same signature in the same repository; `0` turns the cache off (P2, D-81) |
 | `SIMILAR_K` / `SIMILAR_MIN_SCORE` | `3` / `0.85` | P2; 0.85 was measured and stays (D-80) |
 | `SIMILAR_USE_HNSW` | `false` | P2. The similarity search is exact per repository; `true` uses the HNSW index with iterative scans (pgvector ≥ 0.8) for a repository of tens of thousands of rows (D-79) |
 | `WORKER_CONCURRENCY` / `JOB_LEASE_S` / `JOB_MAX_ATTEMPTS` | `4` / `300` / `5` | |
@@ -368,7 +368,7 @@ class Diagnosis(BaseModel):
     suggestion: Suggestion | None
     confidence: float = Field(ge=0, le=1)
     # metadata (not produced by the LLM)
-    source: Literal["rules", "llm", "cache"]
+    source: Literal["rules", "llm", "cache"]    # "cache": an earlier llm diagnosis, evidence re-anchored by text, no suggestion (D-81)
     rule_ids: list[str] = []
     model: str | None = None; prompt_version: str | None = None
     fallback_reason: Literal["llm_error", "invalid_output", "budget", "fork_policy",
@@ -385,12 +385,13 @@ class SimilarFailure(BaseModel):
     category: Category; probable_cause: str; fix_commit_sha: str | None
 
 class CachedDiagnosis(BaseModel):                     # what cached_diagnosis returns (D-81)
-    diagnosis: Diagnosis; origin_id: UUID             # origin_id = diagnoses.id of the row served
+    diagnosis: Diagnosis; origin_id: UUID             # origin_id = diagnoses.id of the row served; written to diagnoses.cached_from by the flow
 
 class DiagnosisReport(BaseModel):
     run: RunRef; items: list[tuple[Failure, Diagnosis]]
     similar: dict[UUID, list[SimilarFailure]] = {}
     rules_baseline: dict[UUID, Diagnosis] = {}   # shown when it disagrees with the LLM
+    cached_from_runs: dict[UUID, int] = {}       # failure id -> run a `cache` diagnosis came from ("cached from run #N")
 ```
 
 ### 5.1 LLM output contract
@@ -588,7 +589,7 @@ CREATE TABLE diagnoses (
     suggestion      jsonb,
     confidence      double precision NOT NULL CHECK (confidence BETWEEN 0 AND 1),  -- numeric(3,2) until 0003: it rounded
     rule_ids        text[] NOT NULL DEFAULT '{}',
-    cached_from     uuid REFERENCES diagnoses(id) ON DELETE SET NULL,
+    cached_from     uuid REFERENCES diagnoses(id) ON DELETE SET NULL,  -- on a published `cache` row: the `llm` row it was copied from (D-81)
     model           text,                              -- the answer's; on a rules row, the model of its failed calls
     prompt_version  text,
     input_tokens    int,                               -- the usage of the job: only on the published row (D-69)
@@ -733,7 +734,7 @@ sequenceDiagram
 5. **Logs.** `GET /repos/{o}/{r}/actions/jobs/{job_id}/logs` returns a redirect to a signed blob URL. The redirect is followed **without** the `Authorization` header. If `Content-Length > LOG_MAX_BYTES`, an HTTP `Range` request fetches the last 20 MB. Otherwise the log is streamed into a ring buffer that keeps the last 20 MB, with a hard stop at 100 MB read. `truncated` is set accordingly. Implemented by `GitHubLogSource` (D-71): the blob client has no credentials and no GitHub headers, `https` is mandatory, a suffix range is never sent (the blob ignores it) and a gzip body would be read without a `Range`. A 404 or 410 (logs expired or deleted) is `LogsUnavailable`; the use case decides: a 404 within 10 minutes of the run's `completed_at` (the payload's) is a `TransientError` with `retry_after` 30 s (the logs may not be ready), later it publishes "Could not diagnose" (`logs_expired`) and raises `PermanentError`, and a 410 is always permanent. A 403 from the log source publishes `permission` and is permanent. A 403 from the blob (the signed URL expired) is transient: the retry asks for a new redirect.
 6. **Excerpt** (§7.3), **redaction** (§9.2), **signature** (§7.4).
 7. **Rules** (§10). Always computed, and stored as a `rules` diagnosis.
-8. **Policy** (§9.4): decide among `llm`, `cache` (P2) or `rules` with a `fallback_reason`.
+8. **Policy** (§9.4): decide among `llm`, `cache` (P2) or `rules` with a `fallback_reason`. Per job, when the policy without a cache would say `llm` and `CACHE_TTL_DAYS > 0`, `cached_diagnosis(repo, signature_hash, ttl, PROMPT_VERSION)` is read and `reuse_cached` re-anchors its evidence by text to the new excerpt (a quote that is gone is dropped, `suggestion` is removed, no evidence left means a miss). A hit reserves no budget and makes no call; the row is stored with `cached_from` (D-81). The jobs of one attempt look up at the same time, so a matrix of one signature calls the model once per job (the cache serves the next run).
 9. **LLM** (§9.3): build the prompt, reserve budget, call with `LLM_TIMEOUT_S`, retry twice on transient errors (1 s and 4 s backoff), validate with one repair attempt, and settle the actual cost.
 10. **Persist** the run, attempt, failures and both diagnoses, and mark the published one.
 11. **Publish** (§7.5): complete the check run, then upsert the sticky comment. Both are guarded so that an older attempt never overwrites a newer one.
@@ -810,7 +811,7 @@ The embedding (P2) is computed on `canonical`, so the exact match and the simila
   - The probable cause.
   - Evidence in a fenced block, each line labelled `L<n>:` with its position in the retained log (D-58), and a link to the failed step, `…/actions/runs/{run_id}/job/{job_id}#step:{n}:1`. The evidence lines are labels and not links: a line number of the excerpt is not GitHub's per-step line number, so a link to `#step:{n}:{line}` would point at the wrong line (D-64).
   - The suggested fix.
-  - The source (`LLM <model> · prompt diag-v1`, `rule PY-MODNF`, or `cached from an earlier run`) and the fallback reason when there is one.
+  - The source (`LLM <model> · prompt diag-v1`, `rule PY-MODNF`, or `cached from run #N`, or `cached from an earlier run` when the origin is unknown) and the fallback reason when there is one.
   - The rule baseline when it disagrees with the LLM.
   - Similar past failures (P2).
   - A footer: "Diagnosis generated automatically from untrusted logs; verify before acting."
@@ -902,7 +903,7 @@ Evaluated in order; the first match decides:
 2. Global kill switch `LLM_ENABLED=false` → rules (`disabled`).
 3. Fork run and not triggered by `/cicd-doctor explain` → rules (`fork_policy`).
 4. Repo config `llm: on_demand` and not an explain → rules (`config_off`).
-5. Exact-signature LLM diagnosis in the same repo within `CACHE_TTL_DAYS` (P2) → `cache`.
+5. Exact-signature LLM diagnosis in the same repo within `CACHE_TTL_DAYS` (P2, D-81) → `cache`. The use case asks the store only when rules 1 to 4 would not already have decided (so a fork never reads the cache), and a stored answer whose evidence cannot be found again in the new excerpt is a miss (§7.1 step 8). `CACHE_TTL_DAYS=0` turns it off.
 6. Budget reservation fails → rules (`budget`).
 7. Otherwise → `llm`.
 
@@ -1125,7 +1126,7 @@ Also measured on the real API (spike and Appendix B, 2026-11-16): the token requ
 ### P2 — Memory: similarity, cache, flaky, fix commits
 Scope: FR-08b, FR-15…FR-18.
 - [x] Embeddings are 384-d, deterministic for the same input, and take < 200 ms per failure on the dev machine after the model is loaded. Evidence (2026-11-17, Windows 11, CPython 3.13.7, fastembed 0.9.1, `uv run pytest tests/adapters/test_fastembed.py -s`): 384 dimensions with unit norm; the same text gives the same vector alone and in a batch; the 36 reviewed vectors of `tests/fixtures/embeddings/lab_signatures.json` are reproduced with cosine >= 0.9999 and a maximum difference below 1e-3 (1e-6 held on the dev machine, but a GitHub runner CPU differed by 1e-4); latency after the load over 50 runs each: batch of 1, p50 5.8 ms and p95 10.8 ms; batch of 3, p50 22.3 ms and p95 27.9 ms (D-77, D-78).
-- [ ] Re-triggering an identical lab failure within 7 days → source `cache`, and `llm_usage.calls` is unchanged.
+- [ ] Re-triggering an identical lab failure within 7 days → source `cache`, and `llm_usage.calls` is unchanged. **Open: only the offline part is covered** (`tests/unit/test_diagnose_cache.py` on memory, `tests/e2e/test_cache_e2e.py`, and `tests/integration/test_diagnose_postgres.py` on Postgres: one model call, one reservation, `source = cache`, `cached_from` pointing at the origin row, "cached from run #N" in the check and the comment). The live part needs a real `llm` diagnosis, so the OpenAI key; it is measured in step (h).
 - [ ] A lab failure similar but not identical to an earlier one → the report lists the earlier run (score ≥ 0.85) with its fix commit if any.
 - [x] Isolation test: similarity and cache never return failures from another `repository_id`. Evidence (store level; the flow repeats it in later steps): `tests/contract/test_failure_store.py` on the memory and the Postgres adapters: the same vector in two repositories, 1 000 closer rows of another repository do not change the result, a cached diagnosis of repository 100 is not served to 200 (D-79, D-81).
 - [ ] Flaky lab workflow: fail then re-run success → the failure is `resolved_flaky` and the comment shows the flaky message.

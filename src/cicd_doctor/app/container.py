@@ -192,6 +192,7 @@ def diagnose_config(settings: Settings) -> DiagnoseConfig:
         max_jobs=settings.log_max_jobs,
         max_bytes=settings.log_max_bytes,
         excerpt_max_tokens=settings.excerpt_max_tokens,
+        cache_ttl_days=settings.cache_ttl_days,
     )
 
 

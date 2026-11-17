@@ -170,3 +170,38 @@ async def test_attempt_two_is_published_by_patching_what_attempt_one_created(
     assert rows(pg_clean, "SELECT calls FROM llm_usage") == [(2,)]
     statuses = rows(pg_clean, "SELECT status, attempts FROM jobs ORDER BY id")
     assert statuses == [("done", 1), ("done", 1)]
+
+
+async def test_an_identical_failure_in_the_next_run_is_served_from_the_cache(
+    world: DiagnoseWorld, pg_clean: str
+) -> None:
+    world.add_run(5000, job_name="tests")
+    world.add_run(5001, job_name="tests")
+    await world.enqueue(5000)
+    assert await world.worker.run_one("pg")
+    await world.enqueue(5001)
+    assert await world.worker.run_one("pg")
+
+    assert len(world.llm.calls) == 1
+    published = rows(
+        pg_clean,
+        "SELECT f.run_id, d.source, d.llm_calls, d.cached_from IS NOT NULL "
+        "FROM diagnoses d JOIN failures f ON f.id = d.failure_id "
+        "WHERE d.published ORDER BY f.run_id",
+    )
+    assert published == [(5000, "llm", 1, False), (5001, "cache", None, True)]
+    # ``cached_from`` points at the llm row of run 5000.
+    assert rows(
+        pg_clean,
+        "SELECT o.source, of.run_id FROM diagnoses d "
+        "JOIN diagnoses o ON o.id = d.cached_from JOIN failures of ON of.id = o.failure_id "
+        "WHERE d.source = 'cache'",
+    ) == [("llm", 5000)]
+    [(calls,)] = rows(pg_clean, "SELECT calls FROM llm_usage")
+    assert calls == 1
+    # What the second run published says where it came from, read back through the adapter.
+    record = await world.store.run_analysis(5001, 1)
+    assert record is not None
+    assert (record.items[0].cached_from_run_id, record.items[0].published.source) == (5000, "cache")
+    [check] = world.requests("PATCH", CHECK)[1:]
+    assert "cached from run #5000" in check.json["output"]["summary"]

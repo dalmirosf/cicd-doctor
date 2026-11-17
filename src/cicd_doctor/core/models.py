@@ -295,6 +295,8 @@ class DiagnosisReport(DomainModel):
     items: list[tuple[Failure, Diagnosis]]
     similar: dict[UUID, list[SimilarFailure]] = Field(default_factory=dict)
     rules_baseline: dict[UUID, Diagnosis] = Field(default_factory=dict)  # shown on disagreement
+    # failure id -> the run a ``cache`` diagnosis was served from (an int: the renderer builds text)
+    cached_from_runs: dict[UUID, int] = Field(default_factory=dict)
 
 
 # --- What a run attempt leaves behind: the analysis checkpoint (D-69) ----------------------
@@ -321,11 +323,17 @@ class StoredFailure(DomainModel):
     published: Diagnosis  # what the check run and the comment show
     rules: Diagnosis  # always computed (D-35)
     usage: DiagnosisUsage | None = None  # None when no LLM call was made
+    # The ``diagnoses.id`` a published ``cache`` diagnosis was copied from (``cached_from``, D-81).
+    cached_from: UUID | None = None
+    # The run of that row, filled by the store when it reads the record back (never written).
+    cached_from_run_id: int | None = Field(default=None, ge=0)
 
     @model_validator(mode="after")
     def _check_rows(self) -> Self:
         """The invariants that let the store keep a diagnosis as one row per source (D-69)."""
         published, rules = self.published, self.rules
+        if published.source != "cache" and self.cached_from is not None:
+            raise ValueError("only a cached diagnosis has an origin")
         if rules.source != "rules" or rules.model is not None or rules.fallback_reason is not None:
             raise ValueError("the rules diagnosis must be a plain rules diagnosis")
         if published.source == "rules":

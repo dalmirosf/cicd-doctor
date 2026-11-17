@@ -280,7 +280,7 @@ def _job_section(
         lines.append("_No line of the log supports this diagnosis._")
     fix_limit = COMMENT_FIX_CHARS if compact else 1000
     lines.append(f"**Suggested fix:** {inline(diagnosis.suggested_fix, fix_limit)}")
-    lines.append(_source(diagnosis))
+    lines.append(_source(diagnosis, report.cached_from_runs.get(failure.id)))
     baseline = report.rules_baseline.get(failure.id)
     if baseline is not None:
         lines.append(_baseline(baseline))
@@ -316,13 +316,18 @@ def _evidence(failure: Failure, diagnosis: Diagnosis, limit: int | None) -> str:
     return "**Evidence:**\n" + fenced(shown)
 
 
-def _source(diagnosis: Diagnosis) -> str:
+def _source(diagnosis: Diagnosis, origin_run: int | None = None) -> str:
     if diagnosis.source == "llm":
         model = _ASCII_NAME.sub("", diagnosis.model or "")[:60] or "unknown model"
         version = _ASCII_NAME.sub("", diagnosis.prompt_version or "")[:20]
         text = f"LLM {model} · prompt {version}".rstrip()
     elif diagnosis.source == "cache":
-        text = "cached from an earlier run"
+        # The origin is an int from the store, never a stored string (D-64).
+        text = (
+            "cached from an earlier run"
+            if origin_run is None
+            else f"cached from run #{int(origin_run)}"
+        )
     else:
         ids = ", ".join(_ASCII_NAME.sub("", rule_id)[:30] for rule_id in diagnosis.rule_ids[:1])
         text = f"rule {ids}" if ids else "rules (no rule matched)"
