@@ -19,10 +19,12 @@ from cicd_doctor.core.models import (
     Publication,
     PublicationKey,
     PurgeCounts,
+    ResolvedBy,
     RunAnalysisRecord,
     RunAttempt,
     SimilarFailure,
     StoredFailure,
+    SuccessRef,
     WorkflowRun,
 )
 from cicd_doctor.core.ports import Clock
@@ -58,6 +60,8 @@ class InMemoryFailureStore:
         # What the database stamps: ``created_at`` of failures and ``updated_at`` of publications.
         # The retention rules of D-85 read them.
         self._failure_created: dict[UUID, datetime] = {}
+        self._resolved_at: dict[UUID, datetime] = {}
+        self._resolved_by: dict[UUID, ResolvedBy | None] = {}
         self._publication_updated: dict[PublicationKey, datetime] = {}
         # The checkpoints: (run id, attempt) -> the stored failures, as they were saved.
         self._analyses: dict[tuple[int, int], list[StoredFailure]] = {}
@@ -202,20 +206,65 @@ class InMemoryFailureStore:
             and failure.job.job.run.branch_key == branch_key
         ]
 
+    async def record_success(self, run: WorkflowRun, attempt: RunAttempt) -> None:
+        self._runs.setdefault(run.id, run)  # never overwrite: a diagnosis may know the pr_number
+        self._attempts.setdefault((attempt.run_id, attempt.attempt), attempt)
+
+    async def later_successes(
+        self,
+        repo_id: int,
+        workflow_id: int,
+        branch_key: str,
+        after_run_id: int,
+        after_attempt: int,
+    ) -> list[SuccessRef]:
+        found = [
+            SuccessRef(run_id=run.id, attempt=attempt.attempt, head_sha=run.head_sha)
+            for (run_id, _), attempt in self._attempts.items()
+            if attempt.conclusion == "success"
+            and (run := self._runs.get(run_id)) is not None
+            and run.repo_id == repo_id
+            and run.workflow_id == workflow_id
+            and f"{run.head_repo_full_name}:{run.head_branch or ''}" == branch_key
+            and (run_id, attempt.attempt) > (after_run_id, after_attempt)
+        ]
+        return sorted(found, key=lambda s: (s.run_id, s.attempt))
+
     async def resolve(
         self,
         failure_ids: Sequence[UUID],
         status: FailureStatus,
         fix_commit_sha: str | None,
+        resolved_by: ResolvedBy | None = None,
     ) -> None:
         unknown = [failure_id for failure_id in failure_ids if failure_id not in self._failures]
         if unknown:  # all or nothing, like the Postgres transaction
             raise KeyError("unknown failure among " + ", ".join(map(str, unknown)))
+        now = self._clock.now()
         for failure_id in failure_ids:
             failure = self._failures[failure_id]
             self._failures[failure_id] = failure.model_copy(
                 update={"status": status, "fix_commit_sha": fix_commit_sha}
             )
+            self._resolved_by[failure_id] = resolved_by
+            if status is FailureStatus.OPEN:
+                self._resolved_at.pop(failure_id, None)
+            else:
+                self._resolved_at[failure_id] = now
+
+    async def resolved_by(self, repo_id: int, run_id: int, attempt: int) -> list[Failure]:
+        wanted = ResolvedBy(run_id=run_id, attempt=attempt)
+        return [
+            self._failures[failure_id]
+            for failure_id, by in self._resolved_by.items()
+            if by == wanted
+            and failure_id in self._failures
+            and _repo_id(self._failures[failure_id]) == repo_id
+        ]
+
+    def resolution(self, failure_id: UUID) -> tuple[datetime | None, ResolvedBy | None]:
+        """When a failure was resolved and by which success (tests, operations)."""
+        return self._resolved_at.get(failure_id), self._resolved_by.get(failure_id)
 
     async def publication(self, key: PublicationKey) -> Publication | None:
         return self._publications.get(key)
@@ -289,6 +338,8 @@ class InMemoryFailureStore:
             diagnoses += len(self._diagnoses.pop(failure_id, []))
             del self._failures[failure_id]
             del self._failure_created[failure_id]
+            self._resolved_at.pop(failure_id, None)
+            self._resolved_by.pop(failure_id, None)
         for key in gone:
             self._attempts.pop(key, None)
             self._analyses.pop(key, None)

@@ -53,6 +53,7 @@ INDEXES = {
     "failures_open_created_idx",  # 0005
     "check_publications_updated_idx",  # 0005
     "comment_publications_updated_idx",  # 0005
+    "failures_resolved_by_idx",  # 0006
 }
 INDEXES_0005 = {
     "webhook_deliveries_received_idx",
@@ -61,6 +62,10 @@ INDEXES_0005 = {
     "failures_open_created_idx",
     "check_publications_updated_idx",
     "comment_publications_updated_idx",
+}
+COLUMNS_0006 = {
+    ("failures", "resolved_by_run_id"): ("bigint", "YES"),
+    ("failures", "resolved_by_attempt"): ("integer", "YES"),
 }
 # What 0003 adds, as (table, column) -> (data_type, is_nullable) (D-69).
 COLUMNS_0003 = {
@@ -228,3 +233,36 @@ def test_downgrade_removes_everything_and_upgrade_works_again(migrations_url: st
     assert _rows(migrations_url, "SELECT 1 FROM pg_type WHERE typname = 'job_status'") == []
     command.upgrade(config, "head")
     assert _tables(migrations_url) == TABLES
+
+
+def _columns_0006(url: str) -> dict[tuple[str, str], tuple[str, str]]:
+    rows = _rows(
+        url,
+        """
+        SELECT table_name, column_name, data_type, is_nullable FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'failures'
+          AND column_name LIKE 'resolved_by%'
+        """,
+    )
+    return {(t, c): (kind, nullable) for t, c, kind, nullable in rows}
+
+
+def test_0006_adds_the_provenance_of_a_resolution_and_rolls_back(migrations_url: str) -> None:
+    config = alembic_config(migrations_url)
+    command.upgrade(config, "head")
+
+    indexes = _pairs(migrations_url, "SELECT indexname, indexdef FROM pg_indexes")
+    assert _columns_0006(migrations_url) == COLUMNS_0006
+    assert (
+        "(resolved_by_run_id, resolved_by_attempt) WHERE (resolved_by_run_id IS NOT NULL)"
+        in str(indexes["failures_resolved_by_idx"])
+    )
+
+    command.downgrade(config, "0005")
+
+    assert _columns_0006(migrations_url) == {}
+    assert "failures_resolved_by_idx" not in _pairs(
+        migrations_url, "SELECT indexname, indexdef FROM pg_indexes"
+    )
+    command.upgrade(config, "head")
+    assert _columns_0006(migrations_url) == COLUMNS_0006
