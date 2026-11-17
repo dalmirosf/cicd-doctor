@@ -26,6 +26,7 @@ Logs, excerpts and the text of a diagnosis are never logged.
 
 import asyncio
 import logging
+from collections.abc import Sequence
 from dataclasses import dataclass, replace
 from datetime import datetime, timedelta
 from typing import NoReturn
@@ -57,6 +58,7 @@ from cicd_doctor.core.models import (
     RunAnalysisRecord,
     RunAttempt,
     RunRef,
+    SimilarFailure,
     StoredFailure,
     WorkflowJob,
     WorkflowRun,
@@ -99,6 +101,8 @@ class DiagnoseConfig:
     logs_retry_after: timedelta = timedelta(seconds=30)
     concurrency: int = 3  # jobs diagnosed at the same time
     cache_ttl_days: int = 7  # CACHE_TTL_DAYS; 0 turns the exact-signature cache off (D-81)
+    similar_k: int = 3  # SIMILAR_K: past failures listed per job; 0 turns the search off (D-82)
+    similar_min_score: float = 0.85  # SIMILAR_MIN_SCORE (cosine similarity, D-80)
 
 
 @dataclass(frozen=True)
@@ -160,7 +164,7 @@ class DiagnoseFailedRun:
         record = await self._store.run_analysis(run.run_id, run.run_attempt)
         if record is None:
             record = await self._analyze(payload, examined)
-        report = self._report(payload, record)
+        report = await self._report(payload, record)
         if not await self._complete_check(payload, record, report, check_id, check_key):
             return
         await self._comment(payload, record, report)
@@ -371,7 +375,7 @@ class DiagnoseFailedRun:
             ),
         )
         embeddings = await self._embed(analyses)
-        results = await self._diagnose_all(run, analyses)
+        results = await self._diagnose_all(run, analyses, embeddings)
         record = RunAnalysisRecord(
             run=_workflow_run(run),
             attempt=RunAttempt(
@@ -445,7 +449,10 @@ class DiagnoseFailedRun:
         ) from exc
 
     async def _diagnose_all(
-        self, run: RunRef, analyses: list[JobAnalysis]
+        self,
+        run: RunRef,
+        analyses: list[JobAnalysis],
+        embeddings: list[list[float] | None],
     ) -> list[tuple[JobAnalysis, JobDiagnosis]]:
         context = DiagnosisContext(
             installation_id=run.installation_id,
@@ -455,13 +462,19 @@ class DiagnoseFailedRun:
         )
         slots = asyncio.Semaphore(self._config.concurrency)
 
-        async def one(analysis: JobAnalysis) -> JobDiagnosis:
+        async def one(analysis: JobAnalysis, embedding: list[float] | None) -> JobDiagnosis:
             async with slots:
                 cached = await self._cached(run, analysis, context)
-                job_context = context if cached is None else replace(context, cached=cached)
+                similar = await self._similar(run, embedding)
+                job_context = replace(context, cached=cached, similar=similar)
                 return await self._diagnose.run(analysis, job_context)
 
-        results = await asyncio.gather(*(one(analysis) for analysis in analyses))
+        results = await asyncio.gather(
+            *(
+                one(analysis, embedding)
+                for analysis, embedding in zip(analyses, embeddings, strict=True)
+            )
+        )
         return list(zip(analyses, results, strict=True))
 
     async def _cached(
@@ -492,10 +505,32 @@ class DiagnoseFailedRun:
             return None
         return CachedDiagnosis(diagnosis=reused, origin_id=hit.origin_id)
 
+    async def _similar(
+        self, run: RunRef, embedding: Sequence[float] | None
+    ) -> list[SimilarFailure]:
+        """The past failures of this repository that look like one job (D-82), best first.
+
+        Asked before the LLM, so the prompt can use them, and again when the report is built: they
+        are not part of the checkpoint. A job with no embedding (the embedder was not ready) or
+        ``SIMILAR_K=0`` has none. The store never returns a fork, a failure of this run or one
+        of another repository (D-79). A database error propagates: the job is retried. The
+        result is shown for a fork run too, but its policy never sends anything to the model.
+        """
+        if embedding is None or self._config.similar_k <= 0:
+            return []
+        return await self._store.similar(
+            run.repo_id,
+            embedding,
+            self._config.similar_k,
+            self._config.similar_min_score,
+            exclude_run_id=run.run_id,
+        )
+
     # --- the report -------------------------------------------------------------------------
 
-    @staticmethod
-    def _report(payload: DiagnoseRunPayload, record: RunAnalysisRecord) -> DiagnosisReport:
+    async def _report(
+        self, payload: DiagnoseRunPayload, record: RunAnalysisRecord
+    ) -> DiagnosisReport:
         """The report of a stored analysis. The run carries the pull request that was found."""
         run = payload.run.model_copy(update={"pr_number": record.run.pr_number})
         baselines = {
@@ -508,9 +543,15 @@ class DiagnoseFailedRun:
             for item in record.items
             if item.cached_from_run_id is not None
         }
+        similar = {
+            item.failure.id: found
+            for item in record.items
+            if (found := await self._similar(run, item.failure.embedding))
+        }
         return DiagnosisReport(
             run=run,
             items=[(item.failure, item.published) for item in record.items],
+            similar=similar,
             rules_baseline=baselines,
             cached_from_runs=origins,
         )

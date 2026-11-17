@@ -130,7 +130,7 @@ def test_the_key_depends_on_the_model_the_prompt_the_hints_and_the_repair() -> N
     assert CachedLLMClient(None, Path("."), model="a").key(request) == base
     assert CachedLLMClient(None, Path("."), model="b").key(request) != base
     assert (
-        CachedLLMClient(None, Path("."), model="a", prompt_version="diag-v2").key(request) != base
+        CachedLLMClient(None, Path("."), model="a", prompt_version="diag-v3").key(request) != base
     )
     assert (
         CachedLLMClient(None, Path("."), model="a").key(make_request(rule_hints=[make_hint()]))
@@ -143,7 +143,7 @@ def test_the_key_depends_on_the_model_the_prompt_the_hints_and_the_repair() -> N
         != base
     )
     assert len(base) == 64
-    assert PROMPT_VERSION == "diag-v1"
+    assert PROMPT_VERSION == "diag-v2"
 
 
 async def test_an_entry_has_the_answer_and_never_the_request(tmp_path: Path) -> None:

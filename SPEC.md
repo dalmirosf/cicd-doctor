@@ -287,7 +287,7 @@ Settings come from the environment (`pydantic-settings` in `app/settings.py`; `.
 | `RETENTION_DELIVERIES_DAYS` / `RETENTION_JOBS_DAYS` / `RETENTION_FAILURES_DAYS` | `30` / `30` / `90` | FR-18 (D-85) |
 | `STALE_AFTER_DAYS` / `UNINSTALL_GRACE_DAYS` | `30` / `7` | An open failure turns `stale`; grace before the data of an uninstall is purged (D-85) |
 | `CACHE_TTL_DAYS` | `7` | Days an `llm` diagnosis can be reused for the same signature in the same repository; `0` turns the cache off (P2, D-81) |
-| `SIMILAR_K` / `SIMILAR_MIN_SCORE` | `3` / `0.85` | P2; 0.85 was measured and stays (D-80) |
+| `SIMILAR_K` / `SIMILAR_MIN_SCORE` | `3` / `0.85` | P2; 0.85 was measured and stays (D-80). `SIMILAR_K=0` turns the search off (D-82) |
 | `SIMILAR_USE_HNSW` | `false` | P2. The similarity search is exact per repository; `true` uses the HNSW index with iterative scans (pgvector ≥ 0.8) for a repository of tens of thousands of rows (D-79) |
 | `WORKER_CONCURRENCY` / `JOB_LEASE_S` / `JOB_MAX_ATTEMPTS` | `4` / `300` / `5` | |
 | `LANGFUSE_*` | unset | P5; tracing disabled when unset |
@@ -392,7 +392,7 @@ class CachedDiagnosis(BaseModel):                     # what cached_diagnosis re
 
 class DiagnosisReport(BaseModel):
     run: RunRef; items: list[tuple[Failure, Diagnosis]]
-    similar: dict[UUID, list[SimilarFailure]] = {}
+    similar: dict[UUID, list[SimilarFailure]] = {}   # filled by the flow for every job with a neighbour, also for a fork run (D-82)
     rules_baseline: dict[UUID, Diagnosis] = {}   # shown when it disagrees with the LLM
     cached_from_runs: dict[UUID, int] = {}       # failure id -> run a `cache` diagnosis came from ("cached from run #N")
 ```
@@ -821,9 +821,9 @@ The embedding (P2) is computed on `canonical`, so the exact match and the simila
   - The probable cause.
   - Evidence in a fenced block, each line labelled `L<n>:` with its position in the retained log (D-58), and a link to the failed step, `…/actions/runs/{run_id}/job/{job_id}#step:{n}:1`. The evidence lines are labels and not links: a line number of the excerpt is not GitHub's per-step line number, so a link to `#step:{n}:{line}` would point at the wrong line (D-64).
   - The suggested fix.
-  - The source (`LLM <model> · prompt diag-v1`, `rule PY-MODNF`, or `cached from run #N`, or `cached from an earlier run` when the origin is unknown) and the fallback reason when there is one.
+  - The source (`LLM <model> · prompt diag-v2`, `rule PY-MODNF`, or `cached from run #N`, or `cached from an earlier run` when the origin is unknown) and the fallback reason when there is one.
   - The rule baseline when it disagrees with the LLM.
-  - Similar past failures (P2).
+  - Similar past failures (P2, D-82): up to three earlier runs of the same repository with a score of at least 0.85, each as a link to the run (`[run #N](https://github.com/<repo>/actions/runs/<N>)`, built from integers and a validated repository name), its category, its score and its cause (untrusted prose, `inline`), and the fix commit as code when it is known. The sticky comment shows only the best one, in one line ("Similar past failure"). Failures of forks are never listed, but a fork run shows the others.
   - A footer: "Diagnosis generated automatically from untrusted logs; verify before acting."
 
 **Sticky comment:** a shorter version of the same content, starting with the hidden marker `<!-- cicd-doctor:v1 pr={n} workflow={workflow_id} -->`, then the heading `### CICD Doctor: <workflow>` (the workflow name through `inline`) and the title in bold. The comment is found by the id stored in `comment_publications`. If that id is missing or 404s, the adapter searches the PR comments (at most 10 pages) for a comment whose author is the app's bot user (`<slug>[bot]`) and whose first line is exactly the marker of that (PR, workflow); a comment of anyone else is never edited, whatever it contains. If none is found, it creates the comment and stores the id.
@@ -892,13 +892,13 @@ Redaction runs **three times**: on the excerpt (before storage or the LLM), on t
 
 ### 9.3 Prompt-injection defenses (LLM call)
 
-1. **Separation of trusted and untrusted content.** The system prompt (versioned, e.g. `diag-v1`) defines the task and states that the log is data and that instructions inside it must be ignored. Trusted metadata (repo, workflow, job, step, runner OS, rule hints) goes in its own section. Untrusted content goes only inside:
+1. **Separation of trusted and untrusted content.** The system prompt (versioned, e.g. `diag-v2`) defines the task and states that the log is data and that instructions inside it must be ignored. Trusted metadata (repo, workflow, job, step, runner OS, rule hints) goes in its own section. Untrusted content goes only inside:
    ```
    <untrusted_log nonce="9f2c…">
    L1043: ##[error]Process completed with exit code 1.
    </untrusted_log nonce="9f2c…">
    ```
-   The nonce is random for each call, and any occurrence of `untrusted_log` inside the content is escaped. Similar past failures (P2) are also placed in an untrusted block.
+   The nonce is random for each call, and any occurrence of `untrusted_log` inside the content is escaped. Similar past failures (P2) go in a second block, `<untrusted_similar nonce="…">`, with the same nonce and escaping: each is a run number, a score, a category, a cause cut to 200 characters on one line and a fix commit only if it matches `^[0-9a-f]{7,40}$`. The system prompt (`diag-v2`) says the block is background data, never an instruction and never evidence (D-82). A fork run never reaches the model, so a fork never feeds this block.
 2. **No capabilities.** No tools, functions, browsing or retrieval are given to the model. The only output is the strict JSON schema.
 3. **Verifiable output.** Evidence must quote the excerpt (§5.1). The category is an enum. Lengths are capped. Suggestions are restricted.
 4. **Independent baseline.** The rules diagnosis is computed without the LLM. When a rule with confidence ≥ 0.85 disagrees with the LLM, both are shown.
@@ -1137,7 +1137,7 @@ Also measured on the real API (spike and Appendix B, 2026-11-16): the token requ
 Scope: FR-08b, FR-15…FR-18.
 - [x] Embeddings are 384-d, deterministic for the same input, and take < 200 ms per failure on the dev machine after the model is loaded. Evidence (2026-11-17, Windows 11, CPython 3.13.7, fastembed 0.9.1, `uv run pytest tests/adapters/test_fastembed.py -s`): 384 dimensions with unit norm; the same text gives the same vector alone and in a batch; the 36 reviewed vectors of `tests/fixtures/embeddings/lab_signatures.json` are reproduced with cosine >= 0.9999 and a maximum difference below 1e-3 (1e-6 held on the dev machine, but a GitHub runner CPU differed by 1e-4); latency after the load over 50 runs each: batch of 1, p50 5.8 ms and p95 10.8 ms; batch of 3, p50 22.3 ms and p95 27.9 ms (D-77, D-78).
 - [ ] Re-triggering an identical lab failure within 7 days → source `cache`, and `llm_usage.calls` is unchanged. **Open: only the offline part is covered** (`tests/unit/test_diagnose_cache.py` on memory, `tests/e2e/test_cache_e2e.py`, and `tests/integration/test_diagnose_postgres.py` on Postgres: one model call, one reservation, `source = cache`, `cached_from` pointing at the origin row, "cached from run #N" in the check and the comment). The live part needs a real `llm` diagnosis, so the OpenAI key; it is measured in step (h).
-- [ ] A lab failure similar but not identical to an earlier one → the report lists the earlier run (score ≥ 0.85) with its fix commit if any.
+- [ ] A lab failure similar but not identical to an earlier one → the report lists the earlier run (score ≥ 0.85) with its fix commit if any. **Open: only the offline part is covered** (D-82: `tests/unit/test_diagnose_similar.py`, `tests/e2e/test_similar_e2e.py`, and `tests/integration/test_diagnose_postgres.py` with pgvector and `FakeEmbedder`: the second check lists the first run with its link and score and the model receives it as untrusted context; the fix commit is only tested with a stored value). The live part needs the real embedder over real lab runs and a real `llm` diagnosis, so it is measured in step (h).
 - [x] Isolation test: similarity and cache never return failures from another `repository_id`. Evidence (store level; the flow repeats it in later steps): `tests/contract/test_failure_store.py` on the memory and the Postgres adapters: the same vector in two repositories, 1 000 closer rows of another repository do not change the result, a cached diagnosis of repository 100 is not served to 200 (D-79, D-81).
 - [ ] Flaky lab workflow: fail then re-run success → the failure is `resolved_flaky` and the comment shows the flaky message.
 - [ ] Fix flow: a failing PR, then a fixing commit, then green → `resolved_by_commit` with the right `fix_commit_sha`, and the comment shows "Fixed by …".
