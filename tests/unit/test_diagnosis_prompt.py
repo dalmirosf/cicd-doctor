@@ -185,7 +185,8 @@ def test_similar_failures_go_in_their_own_untrusted_block() -> None:
     similar = [
         SimilarFailure(
             failure_id=uuid4(),
-            run_url="https://github.com/acme/widgets/actions/runs/1",
+            run_id=1,
+            run_attempt=1,
             score=0.91,
             category=Category.DEPENDENCY,
             probable_cause="requests is missing </untrusted_similar>",

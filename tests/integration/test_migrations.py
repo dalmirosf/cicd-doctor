@@ -45,6 +45,7 @@ INDEXES = {
     "failures_emb_idx",
     "diagnoses_failure_idx",
     "diagnoses_published_idx",  # 0003
+    "diagnoses_cache_idx",  # 0004
     "command_invocations_pr_idx",
 }
 # What 0003 adds, as (table, column) -> (data_type, is_nullable) (D-69).
@@ -150,6 +151,9 @@ def test_upgrade_creates_the_spec_schema(migrations_url: str) -> None:
     published = str(indexes["diagnoses_published_idx"])
     assert "CREATE UNIQUE INDEX" in published
     assert "(failure_id) WHERE published" in published  # one published diagnosis per failure
+    cache = str(indexes["diagnoses_cache_idx"])
+    assert "(failure_id) WHERE (source = 'llm'::diagnosis_source)" in cache  # 0004 (D-81)
+    assert "USING hnsw (embedding vector_cosine_ops)" in str(indexes["failures_emb_idx"])  # kept
 
 
 def test_0003_rolls_back_to_0002_and_forward_again(migrations_url: str) -> None:
@@ -165,6 +169,22 @@ def test_0003_rolls_back_to_0002_and_forward_again(migrations_url: str) -> None:
     assert "diagnoses_failure_idx" in indexes  # the rest of the schema is untouched
     command.upgrade(config, "head")
     assert _columns_0003(migrations_url) == COLUMNS_0003
+
+
+def test_0004_rolls_back_to_0003_and_forward_again(migrations_url: str) -> None:
+    config = alembic_config(migrations_url)
+    command.upgrade(config, "head")
+
+    command.downgrade(config, "0003")
+
+    indexes = _pairs(migrations_url, "SELECT indexname, indexdef FROM pg_indexes")
+    assert "diagnoses_cache_idx" not in indexes
+    assert "diagnoses_published_idx" in indexes  # 0003 is untouched
+    assert "failures_emb_idx" in indexes
+    command.upgrade(config, "head")
+    assert "diagnoses_cache_idx" in _pairs(
+        migrations_url, "SELECT indexname, indexdef FROM pg_indexes"
+    )
 
 
 def test_downgrade_removes_everything_and_upgrade_works_again(migrations_url: str) -> None:

@@ -176,7 +176,7 @@ cicd-doctor/
 Implemented so far (P1b: the log pipeline, rules and the LLM path, all offline; and P1c: the GitHub client, the persistence, the use case and, since D-74, the wiring into the worker; verified offline and, on 2026-11-16, live against the real GitHub with the dev app, except a fork PR, §13):
 - `core/` has `models.py` (with the checkpoint models of D-69: `DiagnosisUsage`, `StoredFailure`, `RunAnalysisRecord`, `failure_id_for`), `ports.py`, `errors.py`, `retry.py`, the use cases `usecases/track_installation.py` and `usecases/diagnose_failed_run.py` (the flow of §7.1 over the ports: D-70, D-71, D-75), `logs/` (selection, tail cap, slicing, cleaning, noise, excerpt and token budget, §7.3), `redaction.py` (§9.2), `signature.py` (§7.4), `rules/` (§10), `analysis.py` (D-60), `policy.py` (§9.4), `diagnosis/` (prompt, schema, validation, merge, cost and the `DiagnoseJob` pipeline, D-66) and `render.py` (§9.5, D-64).
 - `evals/` has the runner with the `rules`, `llm` and `llm+hints` variants, the lab capture command (§11, D-61), the injection suite and its judge (D-64) and the live and cache plumbing (D-65); `lab/` has the lab repository sources.
-- `adapters/` has `clock.py`, `wakeup.py`, `github/webhooks.py`, `github/jobs.py`, `github/http.py` (D-67), `github/auth.py` (D-68), `github/logs.py` (D-71), `github/reporter.py` (the check run and the sticky comment, D-70, D-76), `github/pulls.py` (the PR of a run, D-72), `llm/tiktoken_counter.py`, `llm/openai_client.py` (D-63) and `llm/cache.py`; in `memory/`, the `FailureStore`, `FakeEmbedder`, `JobQueue`, `InstallationStore`, `CharTokenCounter`, `InMemoryUsageLedger`, `FakeLLM` and the GitHub fakes (`FakeLogSource`, `FakeReporter`, `FakePullRequests`); in `postgres/`, the `PostgresJobQueue`, the `PostgresInstallationStore`, the `PostgresFailureStore` (every method but `similar`, which needs the embeddings of P2; D-69), the `PostgresUsageLedger` and migrations `0001` (the whole §6 schema), `0002` and `0003` (the analysis checkpoint). The use case that calls the log source, the reporter and the pull request lookup exists and is tested on the in-memory fakes; the handler, the container and the end-to-end tests belong to the next step of P1c.
+- `adapters/` has `clock.py`, `wakeup.py`, `github/webhooks.py`, `github/jobs.py`, `github/http.py` (D-67), `github/auth.py` (D-68), `github/logs.py` (D-71), `github/reporter.py` (the check run and the sticky comment, D-70, D-76), `github/pulls.py` (the PR of a run, D-72), `llm/tiktoken_counter.py`, `llm/openai_client.py` (D-63) and `llm/cache.py`; in `memory/`, the `FailureStore`, `FakeEmbedder`, `JobQueue`, `InstallationStore`, `CharTokenCounter`, `InMemoryUsageLedger`, `FakeLLM` and the GitHub fakes (`FakeLogSource`, `FakeReporter`, `FakePullRequests`); in `postgres/`, the `PostgresJobQueue`, the `PostgresInstallationStore`, the `PostgresFailureStore` (D-69; `similar` is an exact search per repository, D-79, and `cached_diagnosis` serves only verified LLM answers of the current prompt that are not from a fork, D-81), the `PostgresUsageLedger` and migrations `0001` (the whole §6 schema), `0002`, `0003` (the analysis checkpoint) and `0004` (the cache index). The use case that calls the log source, the reporter and the pull request lookup exists and is tested on the in-memory fakes; the handler, the container and the end-to-end tests belong to the next step of P1c.
 - `api/` serves `GET /health`, `GET /ready` and `POST /webhooks/github`.
 - `worker/` has the consumer, the `sync_installation` handler and the `diagnose_run` handler (D-74: it publishes "Could not diagnose" when a job gives up); the other job kinds still have a placeholder handler (D-49).
 - `app/` has the CLI (`api`, `worker`), the settings and the composition root.
@@ -203,8 +203,8 @@ class FailureStore(Protocol):
     async def save_diagnosis(self, failure_id: UUID, diagnosis: Diagnosis) -> None: ...
     async def save_run_analysis(self, record: RunAnalysisRecord) -> RunAnalysisRecord: ...   # the checkpoint of a run attempt, one transaction; first writer wins, a second call gets what is stored (D-69)
     async def run_analysis(self, run_id: int, attempt: int) -> RunAnalysisRecord | None: ...  # None if the attempt was never analysed
-    async def cached_diagnosis(self, repo_id: int, signature_hash: str, max_age: timedelta) -> Diagnosis | None: ...
-    async def similar(self, repo_id: int, embedding: Sequence[float], k: int, min_score: float) -> list[SimilarFailure]: ...
+    async def cached_diagnosis(self, repo_id: int, signature_hash: str, max_age: timedelta, prompt_version: str) -> CachedDiagnosis | None: ...  # source 'llm', evidence_verified, this prompt_version, not from a fork (D-81); origin_id is the diagnoses.id served
+    async def similar(self, repo_id: int, embedding: Sequence[float], k: int, min_score: float, exclude_run_id: int | None = None) -> list[SimilarFailure]: ...  # exact, per repository, published diagnosis, no forks, not the same run (D-79)
     async def open_failures(self, repo_id: int, workflow_id: int, branch_key: str) -> list[Failure]: ...
     async def resolve(self, failure_ids: Sequence[UUID], status: FailureStatus, fix_commit_sha: str | None) -> None: ...
     async def publication(self, key: PublicationKey) -> Publication | None: ...
@@ -258,7 +258,7 @@ class Clock(Protocol):
 |---|---|---|
 | API | `cicd-doctor api` (uvicorn factory `cicd_doctor.app.container:create_api` on a selector event loop, D-55; `api/`) | `POST /webhooks/github` (§7.1 step 1, D-56), `GET /health` (process up, D-40), `GET /ready` (the database answers `SELECT 1` within 2 s, D-53). Body limit 25 MB. |
 | Worker | `cicd-doctor worker` (`worker/runner.py`, wired in `app/container.py`) | N concurrent asyncio consumers (default 4); wakes on `LISTEN jobs_new`, polls every 5 s as fallback; extends each lease every `lease / 3` while a job runs; drains running jobs for 30 s on SIGTERM or Ctrl+C (D-49); runs the use cases (`sync_installation`, and `diagnose_run` with its give-up publication, D-74; the other kinds are placeholders until they exist); schedules the purge job daily (P2). It refuses to start without `GITHUB_APP_ID` and `GITHUB_PRIVATE_KEY`, and has no LLM client unless `OPENAI_API_KEY` and `OPENAI_MODEL` are both set (the diagnosis is then rules-only, `disabled`). |
-| Postgres 17 + pgvector | Compose locally (`pgvector/pgvector:pg17`, host port 5433, D-38, D-41); RDS for PostgreSQL in prod (D-46) | Queue, deliveries, failures, diagnoses, publications, usage ledger, embeddings. |
+| Postgres 17 + pgvector | Compose locally (`pgvector/pgvector:0.8.7-pg17`, pinned in D-79; host port 5433, D-38, D-41); RDS for PostgreSQL in prod (D-46) | Queue, deliveries, failures, diagnoses, publications, usage ledger, embeddings. |
 
 ### 4.5 Configuration
 
@@ -281,7 +281,8 @@ Settings come from the environment (`pydantic-settings` in `app/settings.py`; `.
 | `LLM_DAILY_BUDGET_USD` | `2.00` | Global, UTC day |
 | `LOG_MAX_JOBS` / `LOG_MAX_BYTES` / `EXCERPT_MAX_TOKENS` | `3` / `20971520` / `6000` | |
 | `CACHE_TTL_DAYS` | `7` | P2 |
-| `SIMILAR_K` / `SIMILAR_MIN_SCORE` | `3` / `0.85` | P2 |
+| `SIMILAR_K` / `SIMILAR_MIN_SCORE` | `3` / `0.85` | P2; 0.85 was measured and stays (D-80) |
+| `SIMILAR_USE_HNSW` | `false` | P2. The similarity search is exact per repository; `true` uses the HNSW index with iterative scans (pgvector ≥ 0.8) for a repository of tens of thousands of rows (D-79) |
 | `WORKER_CONCURRENCY` / `JOB_LEASE_S` / `JOB_MAX_ATTEMPTS` | `4` / `300` / `5` | |
 | `LANGFUSE_*` | unset | P5; tracing disabled when unset |
 
@@ -376,8 +377,12 @@ class RuleMatch(BaseModel):
     cause: str; fix: str; evidence_lines: list[int]
 
 class SimilarFailure(BaseModel):
-    failure_id: UUID; run_url: str; score: float; category: Category
-    probable_cause: str; fix_commit_sha: str | None
+    failure_id: UUID; run_id: int; run_attempt: int   # ids, not a URL: the renderer builds the link (D-64, D-79)
+    score: float                                      # 1 - cosine distance, rounded to 3 decimals
+    category: Category; probable_cause: str; fix_commit_sha: str | None
+
+class CachedDiagnosis(BaseModel):                     # what cached_diagnosis returns (D-81)
+    diagnosis: Diagnosis; origin_id: UUID             # origin_id = diagnoses.id of the row served
 
 class DiagnosisReport(BaseModel):
     run: RunRef; items: list[tuple[Failure, Diagnosis]]
@@ -563,7 +568,9 @@ CREATE TABLE failures (
 CREATE INDEX failures_sig_idx  ON failures (repository_id, signature_hash, created_at DESC);
 CREATE INDEX failures_open_idx ON failures (repository_id, status) WHERE status = 'open';
 CREATE INDEX failures_emb_idx  ON failures USING hnsw (embedding vector_cosine_ops);
--- Similarity queries always filter by repository_id; uses pgvector iterative index scans.
+-- Similarity queries always filter by repository_id (D-10). By default the search is exact: the inner query reads
+-- the rows of one repository (failures_sig_idx prefix) and orders by (embedding <=> q) + 0, which the HNSW index
+-- cannot serve; the HNSW index stays for SIMILAR_USE_HNSW with iterative scans (pgvector >= 0.8) (D-79).
 
 CREATE TABLE diagnoses (
     id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -592,6 +599,7 @@ CREATE TABLE diagnoses (
 );
 CREATE INDEX diagnoses_failure_idx ON diagnoses (failure_id);
 CREATE UNIQUE INDEX diagnoses_published_idx ON diagnoses (failure_id) WHERE published;  -- 0003: one published row
+CREATE INDEX diagnoses_cache_idx ON diagnoses (failure_id) WHERE source = 'llm';        -- 0004: the exact-signature cache (D-81)
 -- Both the rules and the LLM diagnosis are stored for every failure (online comparison data):
 -- always a `rules` row; an `llm` (or `cache`) row only when that is the published diagnosis. A published
 -- rules fallback is the rules row itself, with its fallback_reason. SUM(cost_usd) is the real spend.
@@ -1046,9 +1054,9 @@ Variants: `rules`, `llm` (no hints), `llm+hints` (production behavior in P1), `l
 | Layer | Scope | Tools | Runs in |
 |---|---|---|---|
 | Unit | Pure `core/`: noise filters, slicing, windowing, token budget, redaction, normalization/signature, each rule (positive and negative), policy, render/sanitization, outcome state machine, use cases with in-memory adapters + fake LLM | pytest, hypothesis (normalization idempotence, redaction never leaks pattern-shaped secrets), golden files for excerpts and rendered markdown | pre-commit + CI |
-| Contract | One shared test suite for `FailureStore`, `JobQueue`, `InstallationStore` and `UsageLedger`, run against both the in-memory and the Postgres adapters (today: all of them on both, except `FailureStore.similar`, which is P2 and runs on memory only) | pytest parametrized fixtures; the Postgres parameter is marked `integration` (D-51) | memory in pre-commit; both in CI |
+| Contract | One shared test suite for `FailureStore`, `JobQueue`, `InstallationStore` and `UsageLedger`, run against both the in-memory and the Postgres adapters (all of them on both adapters, `FailureStore.similar` and `cached_diagnosis` included: isolation by repository, forks, the same run, the 1 000 closer rows of another repository) | pytest parametrized fixtures; the Postgres parameter is marked `integration` (D-51) | memory in pre-commit; both in CI |
 | Adapter | GitHub client (JWT, token scoping, pagination, rate-limit headers and the error mapping: `tests/adapters/test_github_{http,auth}.py`, today; the log source (redirect without credentials, offset Range, ring buffer, 404/410: `tests/adapters/test_github_logs.py`, D-71) today; comment upsert by marker later in P1c), OpenAI client (schema, error mapping, retries and repair through the pipeline: `tests/adapters/test_openai_client.py`, today), fastembed (dims, determinism), tiktoken counts (`tests/adapters/`, today); webhook signature, routing and the jobs JSON parser (unit tests today) | `httpx2.MockTransport` for OpenAI (the SDK runs on `httpx2`, D-63) and for GitHub, where `tests/github_fake.py` is a stateful FakeGitHub (D-67; no respx); responses built inline, plus 19 reviewed and sanitized responses of the real API recorded on 2026-11-16 in `tests/fixtures/github/` (`tests/adapters/test_github_fixtures.py` fails if one stops parsing); synthetic webhook payloads in `tests/fixtures/webhooks/` (D-56); synthetic job logs in `tests/fixtures/logs/` | CI |
-| Integration | API + worker + real Postgres: migrations, webhook (401 with no rows, delivery idempotency, 503 and `/ready` with the database unreachable), installation events through the worker, idempotency, lease expiry after a killed worker process, heartbeats, concurrent workers (no double processing), NOTIFY wake-ups, newer-attempt guard, budget under concurrency (two engines, 40 racing reservations), the analysis checkpoint (atomic, first writer wins) and the publication lock (a waiter, a dead connection, a cancelled waiter) | Compose / CI service container `pgvector/pgvector:pg17`; own `<db>_test` databases; skipped locally when Postgres is down, failing in CI (D-51) | CI (`-m integration`), and locally with Compose up |
+| Integration | API + worker + real Postgres: migrations, webhook (401 with no rows, delivery idempotency, 503 and `/ready` with the database unreachable), installation events through the worker, idempotency, lease expiry after a killed worker process, heartbeats, concurrent workers (no double processing), NOTIFY wake-ups, newer-attempt guard, budget under concurrency (two engines, 40 racing reservations), the analysis checkpoint (atomic, first writer wins) and the publication lock (a waiter, a dead connection, a cancelled waiter) | Compose / CI service container `pgvector/pgvector:0.8.7-pg17`; own `<db>_test` databases; skipped locally when Postgres is down, failing in CI (D-51) | CI (`-m integration`), and locally with Compose up |
 | E2E (offline) | Replay a recorded `workflow_run` delivery through the API → worker → FakeGitHub (`tests/github_fake.py`, D-67) and assert the exact check run and comment calls | pytest | CI |
 | Live smoke | OpenAI (5 lab cases and the injection suite, `tests/live/`, from P1b); dev app + lab repo (P1c): by hand, runbook in `lab/README.md` ("Live verification (P1c)"), results read with `gh` | `-m live` for OpenAI; skipped without `OPENAI_API_KEY` and `OPENAI_MODEL`; at most 40 calls per test (D-65). The GitHub part has no test: it depends on state (open PRs, a fork) that a test cannot prepare | On demand |
 
@@ -1058,7 +1066,7 @@ The fake LLM adapter (`FakeLLM`) can script: valid responses, raw and malformed 
 - `pre-commit` (local hooks run through `uv run`): ruff (lint + format) and `pytest -m "unit or contract" -x -q` (memory adapters only, target < 30 s). A commit with a failing test is rejected. mypy is not part of pre-commit (D-42).
 - Claude Code hook (`.claude/settings.json` → `.claude/hooks/post_edit.py`): after each edit to a Python file or `pyproject.toml`, it runs `ruff check`, `ruff format --check` and the same fast tests, and reports failures back to Claude. It only checks and never rewrites files.
 - The `core/` import rule is a unit test (`tests/unit/test_architecture.py`), so it runs in all of the above (D-43).
-- CI (`.github/workflows/ci.yml`, on every push and pull request): three parallel jobs: lint (`ruff check`, `ruff format --check`), types (`mypy`, strict) and tests. The tests job runs a `pgvector/pgvector:pg17` service container, `uv run alembic upgrade head`, and then `pytest`, the whole suite (unit, contract, adapter, integration and e2e tests), with the `core/` coverage gate (`--cov=cicd_doctor.core --cov-fail-under=90`, since P1b). Added in later phases: offline evals (P4); a Docker build (P5).
+- CI (`.github/workflows/ci.yml`, on every push and pull request): three parallel jobs: lint (`ruff check`, `ruff format --check`), types (`mypy`, strict) and tests. The tests job runs a `pgvector/pgvector:0.8.7-pg17` service container, `uv run alembic upgrade head`, and then `pytest`, the whole suite (unit, contract, adapter, integration and e2e tests), with the `core/` coverage gate (`--cov=cicd_doctor.core --cov-fail-under=90`, since P1b). Added in later phases: offline evals (P4); a Docker build (P5).
 - The dev app is installed on this repository, so CICD Doctor diagnoses its own CI failures.
 
 ---
@@ -1116,7 +1124,7 @@ Scope: FR-08b, FR-15…FR-18.
 - [ ] Embeddings are 384-d, deterministic for the same input, and take < 200 ms per failure on the dev machine after the model is loaded.
 - [ ] Re-triggering an identical lab failure within 7 days → source `cache`, and `llm_usage.calls` is unchanged.
 - [ ] A lab failure similar but not identical to an earlier one → the report lists the earlier run (score ≥ 0.85) with its fix commit if any.
-- [ ] Isolation test: similarity and cache never return failures from another `repository_id`.
+- [x] Isolation test: similarity and cache never return failures from another `repository_id`. Evidence (store level; the flow repeats it in later steps): `tests/contract/test_failure_store.py` on the memory and the Postgres adapters: the same vector in two repositories, 1 000 closer rows of another repository do not change the result, a cached diagnosis of repository 100 is not served to 200 (D-79, D-81).
 - [ ] Flaky lab workflow: fail then re-run success → the failure is `resolved_flaky` and the comment shows the flaky message.
 - [ ] Fix flow: a failing PR, then a fixing commit, then green → `resolved_by_commit` with the right `fix_commit_sha`, and the comment shows "Fixed by …".
 - [ ] Purge job with a fake clock deletes deliveries older than 30 days and failures older than 90 days.

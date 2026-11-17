@@ -10,7 +10,7 @@ name: cicd-doctor
 
 services:
   db:
-    image: pgvector/pgvector:pg17
+    image: pgvector/pgvector:0.8.7-pg17
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-cicd}

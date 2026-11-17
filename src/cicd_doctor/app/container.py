@@ -207,7 +207,12 @@ async def diagnose_run_use_case(
         # ``save_publication`` inside it needs a second one: two per job in flight (one per
         # consumer), or the pool could deadlock.
         store = await stack.enter_async_context(
-            PostgresFailureStore.connect(url, clock, pool_size=2 * consumers + 2)
+            PostgresFailureStore.connect(
+                url,
+                clock,
+                pool_size=2 * consumers + 2,
+                use_hnsw=settings.similar_use_hnsw,
+            )
         )
         ledger = await stack.enter_async_context(
             PostgresUsageLedger.connect(

@@ -51,6 +51,7 @@ class Settings(BaseSettings):
     cache_ttl_days: int = Field(default=7, ge=0)
     similar_k: int = Field(default=3, ge=0)
     similar_min_score: float = Field(default=0.85, ge=0, le=1)
+    similar_use_hnsw: bool = False  # D-79: the exact search is the default; pgvector >= 0.8
 
     # Worker (SPEC §4.4, D-23)
     worker_concurrency: int = Field(default=4, ge=1)
