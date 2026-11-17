@@ -1,0 +1,26 @@
+# flaky (simulated): fails in attempt 1 and passes from attempt 2 on, so "Re-run failed jobs" turns
+# a failure into a success without any code change. It is deterministic on purpose: it simulates a
+# flaky, it is not a real race. Started by a pull request, to check the flaky resolution of P2
+# against real pull requests ("Live verification (P2)" in README.md). Fails on purpose.
+name: pr-flaky
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Run the check
+        run: |
+          echo "attempt $GITHUB_RUN_ATTEMPT"
+          if [ "$GITHUB_RUN_ATTEMPT" = 1 ]; then
+            echo "Error: the check failed in attempt 1 (simulated flaky failure)"
+            exit 1
+          fi
+          echo "the check passed"
