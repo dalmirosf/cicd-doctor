@@ -4,13 +4,14 @@ import asyncio
 import math
 from collections.abc import AsyncIterator, Sequence
 from contextlib import asynccontextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from cicd_doctor.adapters.clock import SystemClock
 from cicd_doctor.core.errors import TransientError
 from cicd_doctor.core.models import (
+    CachedDiagnosis,
     Diagnosis,
     DiagnosisUsage,
     Failure,
@@ -36,6 +37,7 @@ class StoredDiagnosis:
     created_at: datetime
     published: bool = False
     usage: DiagnosisUsage | None = None  # only on the published row (D-69)
+    id: UUID = field(default_factory=uuid4)  # ``diagnoses.id``: the origin of a cache hit
 
 
 class InMemoryFailureStore:
@@ -104,45 +106,62 @@ class InMemoryFailureStore:
         return list(self._diagnoses.get(failure_id, []))
 
     async def cached_diagnosis(
-        self, repo_id: int, signature_hash: str, max_age: timedelta
-    ) -> Diagnosis | None:
+        self, repo_id: int, signature_hash: str, max_age: timedelta, prompt_version: str
+    ) -> CachedDiagnosis | None:
         oldest_allowed = self._clock.now() - max_age
         candidates = [
             stored
             for failure in self._failures.values()
-            if _repo_id(failure) == repo_id and failure.signature.hash == signature_hash
+            if _repo_id(failure) == repo_id
+            and failure.signature.hash == signature_hash
+            and not failure.job.job.run.is_fork
             for stored in self._diagnoses.get(failure.id, [])
-            if stored.diagnosis.source == "llm" and stored.created_at >= oldest_allowed
+            if stored.diagnosis.source == "llm"
+            and stored.diagnosis.evidence_verified
+            and stored.diagnosis.prompt_version == prompt_version
+            and stored.created_at >= oldest_allowed
         ]
         if not candidates:
             return None
-        return max(candidates, key=lambda stored: stored.created_at).diagnosis
+        newest = max(candidates, key=lambda stored: stored.created_at)
+        return CachedDiagnosis(diagnosis=newest.diagnosis, origin_id=newest.id)
 
     async def similar(
-        self, repo_id: int, embedding: Sequence[float], k: int, min_score: float
+        self,
+        repo_id: int,
+        embedding: Sequence[float],
+        k: int,
+        min_score: float,
+        exclude_run_id: int | None = None,
     ) -> list[SimilarFailure]:
         scored: list[SimilarFailure] = []
         for failure in self._failures.values():
-            if _repo_id(failure) != repo_id or failure.embedding is None:
+            run = failure.job.job.run
+            if (
+                _repo_id(failure) != repo_id
+                or failure.embedding is None
+                or run.is_fork
+                or run.run_id == exclude_run_id
+            ):
                 continue
-            latest = self._latest_diagnosis(failure.id)
-            if latest is None:
+            published = self._published_diagnosis(failure.id)
+            if published is None:
                 continue
             score = _cosine(embedding, failure.embedding)
             if score < min_score:
                 continue
-            run = failure.job.job.run
             scored.append(
                 SimilarFailure(
                     failure_id=failure.id,
-                    run_url=f"https://github.com/{run.repo_full_name}/actions/runs/{run.run_id}",
+                    run_id=run.run_id,
+                    run_attempt=run.run_attempt,
                     score=score,
-                    category=latest.category,
-                    probable_cause=latest.probable_cause,
+                    category=published.category,
+                    probable_cause=published.probable_cause,
                     fix_commit_sha=failure.fix_commit_sha,
                 )
             )
-        scored.sort(key=lambda item: item.score, reverse=True)
+        scored.sort(key=lambda item: (-item.score, str(item.failure_id)))
         return scored[:k]
 
     async def open_failures(self, repo_id: int, workflow_id: int, branch_key: str) -> list[Failure]:
@@ -195,11 +214,10 @@ class InMemoryFailureStore:
         finally:
             lock.release()
 
-    def _latest_diagnosis(self, failure_id: UUID) -> Diagnosis | None:
-        stored = self._diagnoses.get(failure_id)
-        if not stored:
-            return None
-        return max(stored, key=lambda item: item.created_at).diagnosis
+    def _published_diagnosis(self, failure_id: UUID) -> Diagnosis | None:
+        return next(
+            (item.diagnosis for item in self._diagnoses.get(failure_id, []) if item.published), None
+        )
 
 
 def _repo_id(failure: Failure) -> int:

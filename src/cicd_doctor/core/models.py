@@ -262,12 +262,32 @@ class RuleMatch(DomainModel):
 
 
 class SimilarFailure(DomainModel):
+    """A past failure of the same repository that looks like the current one (D-79, D-82).
+
+    It carries ids, not a URL: the renderer builds the link, so no stored string is trusted as
+    one (D-64). The score is rounded so that the same inputs print the same on every platform.
+    """
+
     failure_id: UUID
-    run_url: str
+    run_id: int = Field(ge=0)
+    run_attempt: int = Field(ge=1)
     score: float
     category: Category
     probable_cause: str
     fix_commit_sha: str | None
+
+    @field_validator("score")
+    @classmethod
+    def _round_score(cls, value: float) -> float:
+        return round(value, 3)
+
+
+class CachedDiagnosis(DomainModel):
+    """An earlier LLM diagnosis served from the cache, with the ``diagnoses`` row it came from
+    (stored in ``cached_from``, D-81)."""
+
+    diagnosis: Diagnosis
+    origin_id: UUID
 
 
 class DiagnosisReport(DomainModel):

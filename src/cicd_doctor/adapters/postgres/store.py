@@ -11,7 +11,10 @@ the injected ``Clock`` and travel as parameters (D-48), so a ``FakeClock`` drive
   unique index), and the LLM usage sits on that row.
 * ``publication_lock`` is a session-level advisory lock on a pool connection held for the whole
   critical section; the database drops it if the connection dies.
-* ``similar`` arrives with the embeddings (P2).
+* ``similar`` is an exact search per repository by default (D-79): the inner query reads the
+  rows of one repository and orders them by an expression the HNSW index cannot serve, so the
+  filter never runs after an approximate scan. ``use_hnsw`` opts into the index with iterative
+  scans, for repositories too big for the exact scan.
 """
 
 import json
@@ -29,6 +32,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 from cicd_doctor.adapters.postgres.engine import make_engine, transient_db_errors
 from cicd_doctor.core.errors import TransientError
 from cicd_doctor.core.models import (
+    CachedDiagnosis,
     Category,
     Diagnosis,
     DiagnosisUsage,
@@ -178,16 +182,72 @@ _ANALYSIS_DIAGNOSES = text(
 
 # --- cache and open failures --------------------------------------------------------------
 
+# D-81: only LLM answers that were verified, made with the current prompt and produced by a run
+# that is not a fork, so an attacker-controlled log never feeds the cache of normal runs.
 _CACHED_DIAGNOSIS = text(
     f"""
-    SELECT {_DIAGNOSIS_COLUMNS}
-    FROM diagnoses d JOIN failures f ON f.id = d.failure_id
+    SELECT d.id AS origin_id, {_DIAGNOSIS_COLUMNS}
+    FROM diagnoses d
+    JOIN failures f ON f.id = d.failure_id
+    JOIN workflow_runs r ON r.id = f.run_id
     WHERE f.repository_id = :repo_id AND f.signature_hash = :signature_hash
-      AND d.source = 'llm' AND d.created_at >= :oldest_allowed
-    ORDER BY d.created_at DESC
+      AND d.source = 'llm' AND d.evidence_verified AND d.prompt_version = :prompt_version
+      AND NOT r.is_fork AND d.created_at >= :oldest_allowed
+    ORDER BY d.created_at DESC, d.id
     LIMIT 1
     """
 )
+# D-79. The inner query sees only ``failures`` and one repository (the filter is inside it, never
+# applied after the search). ``+ 0`` makes the ordering expression something the HNSW index
+# cannot serve, so the planner reads the rows of the repository and keeps the best ``fetch``:
+# exact, whatever the size of the other repositories (test_similarity_plan.py checks the plan).
+# The outer query joins what the inner one must not: the run (fork, same run) and the published
+# diagnosis, and keeps the ``k`` best above the score.
+_SIMILAR_OUTER = """
+    SELECT c.id, c.run_id, c.run_attempt, c.fix_commit_sha, c.distance,
+           d.category, d.probable_cause
+    FROM ({inner}) c
+    JOIN workflow_runs r ON r.id = c.run_id
+    JOIN diagnoses d ON d.failure_id = c.id AND d.published
+    WHERE NOT r.is_fork
+      AND (CAST(:exclude_run_id AS bigint) IS NULL OR c.run_id <> :exclude_run_id)
+      AND 1 - c.distance >= :min_score
+    ORDER BY c.distance, c.id
+    LIMIT :k
+"""
+_SIMILAR_EXACT = text(
+    _SIMILAR_OUTER.format(
+        inner="""
+    SELECT f.id, f.run_id, f.run_attempt, f.fix_commit_sha,
+           f.embedding <=> CAST(:q AS vector) AS distance
+    FROM failures f
+    WHERE f.repository_id = :repo_id AND f.embedding IS NOT NULL
+    ORDER BY (f.embedding <=> CAST(:q AS vector)) + 0
+    LIMIT :fetch
+    """
+    )
+)
+# The opt-in path: the plain ordering lets the planner use the HNSW index, and the iterative scan
+# keeps scanning until ``fetch`` rows pass the repository filter.
+_SIMILAR_HNSW = text(
+    _SIMILAR_OUTER.format(
+        inner="""
+    SELECT f.id, f.run_id, f.run_attempt, f.fix_commit_sha,
+           f.embedding <=> CAST(:q AS vector) AS distance
+    FROM failures f
+    WHERE f.repository_id = :repo_id AND f.embedding IS NOT NULL
+    ORDER BY f.embedding <=> CAST(:q AS vector)
+    LIMIT :fetch
+    """
+    )
+)
+_HNSW_SETTINGS = (
+    text("SET LOCAL hnsw.iterative_scan = relaxed_order"),
+    text("SET LOCAL hnsw.ef_search = 100"),
+)
+_VECTOR_VERSION = text("SELECT extversion FROM pg_extension WHERE extname = 'vector'")
+_OVERFETCH = 4  # rows read per wanted row: forks and the same run are dropped afterwards
+_HNSW_MIN_VERSION = (0, 8)  # iterative scans arrived in pgvector 0.8.0
 _OPEN_FAILURES = text(
     f"""
     SELECT {_FAILURE_COLUMNS} {_FAILURE_JOINS}
@@ -258,11 +318,18 @@ class PostgresFailureStore:
     """Implements ``FailureStore``. Create it with ``PostgresFailureStore.connect(...)``."""
 
     def __init__(
-        self, engine: AsyncEngine, clock: Clock, *, lock_wait: timedelta = DEFAULT_LOCK_WAIT
+        self,
+        engine: AsyncEngine,
+        clock: Clock,
+        *,
+        lock_wait: timedelta = DEFAULT_LOCK_WAIT,
+        use_hnsw: bool = False,
     ) -> None:
         self._engine = engine
         self._clock = clock
         self._lock_wait = lock_wait
+        self._use_hnsw = use_hnsw
+        self._hnsw_supported: bool | None = None  # read once, from the extension version
 
     @classmethod
     @asynccontextmanager
@@ -273,11 +340,12 @@ class PostgresFailureStore:
         *,
         pool_size: int = 5,
         lock_wait: timedelta = DEFAULT_LOCK_WAIT,
+        use_hnsw: bool = False,
     ) -> AsyncIterator[Self]:
         """``database_url`` is a SQLAlchemy URL (``postgresql+psycopg://...``)."""
         engine = make_engine(database_url, pool_size=pool_size)
         try:
-            yield cls(engine, clock, lock_wait=lock_wait)
+            yield cls(engine, clock, lock_wait=lock_wait, use_hnsw=use_hnsw)
         finally:
             await engine.dispose()
 
@@ -350,22 +418,78 @@ class PostgresFailureStore:
     # --- cache, similarity, open failures ---------------------------------------------------
 
     async def cached_diagnosis(
-        self, repo_id: int, signature_hash: str, max_age: timedelta
-    ) -> Diagnosis | None:
+        self, repo_id: int, signature_hash: str, max_age: timedelta, prompt_version: str
+    ) -> CachedDiagnosis | None:
         params = {
             "repo_id": repo_id,
             "signature_hash": signature_hash,
+            "prompt_version": prompt_version,
             "oldest_allowed": self._clock.now() - max_age,
         }
         with transient_db_errors():
             async with self._engine.connect() as conn:
                 row = (await conn.execute(_CACHED_DIAGNOSIS, params)).first()
-        return None if row is None else _to_diagnosis(row._mapping)
+        if row is None:
+            return None
+        return CachedDiagnosis(diagnosis=_to_diagnosis(row._mapping), origin_id=row.origin_id)
 
     async def similar(
-        self, repo_id: int, embedding: Sequence[float], k: int, min_score: float
+        self,
+        repo_id: int,
+        embedding: Sequence[float],
+        k: int,
+        min_score: float,
+        exclude_run_id: int | None = None,
     ) -> list[SimilarFailure]:
-        raise NotImplementedError("P2")
+        if k <= 0:
+            return []
+        params = {
+            "q": _vector_text(embedding),
+            "repo_id": repo_id,
+            "fetch": _OVERFETCH * k,
+            "k": k,
+            "min_score": min_score,
+            "exclude_run_id": exclude_run_id,
+        }
+        with transient_db_errors():
+            # One transaction: ``SET LOCAL`` ends with it and never reaches the next user of
+            # the pooled connection (D-79).
+            async with self._engine.begin() as conn:
+                hnsw = self._use_hnsw and await self._hnsw_available(conn)
+                if hnsw:
+                    for setting in _HNSW_SETTINGS:
+                        await conn.execute(setting)
+                rows = (
+                    (await conn.execute(_SIMILAR_HNSW if hnsw else _SIMILAR_EXACT, params))
+                    .mappings()
+                    .all()
+                )
+        return [
+            SimilarFailure(
+                failure_id=row["id"],
+                run_id=row["run_id"],
+                run_attempt=row["run_attempt"],
+                score=1.0 - row["distance"],
+                category=Category(row["category"]),
+                probable_cause=row["probable_cause"],
+                fix_commit_sha=row["fix_commit_sha"],
+            )
+            for row in rows
+        ]
+
+    async def _hnsw_available(self, conn: AsyncConnection) -> bool:
+        """The iterative scan needs pgvector 0.8.0; an older one falls back to the exact search."""
+        if self._hnsw_supported is None:
+            version = (await conn.execute(_VECTOR_VERSION)).scalar()
+            self._hnsw_supported = _version_at_least(version, _HNSW_MIN_VERSION)
+            if not self._hnsw_supported:
+                logger.warning(
+                    "SIMILAR_USE_HNSW is on but pgvector %s has no iterative scans (needs %s.%s): "
+                    "using the exact search",
+                    version,
+                    *_HNSW_MIN_VERSION,
+                )
+        return self._hnsw_supported
 
     async def open_failures(self, repo_id: int, workflow_id: int, branch_key: str) -> list[Failure]:
         params = {"repo_id": repo_id, "workflow_id": workflow_id, "branch_key": branch_key}
@@ -606,6 +730,15 @@ def _diagnosis_params(
         "fallback_reason": diagnosis.fallback_reason,
         "now": now,
     }
+
+
+def _version_at_least(version: object, minimum: tuple[int, ...]) -> bool:
+    """``'0.8.7' >= (0, 8)``; an unreadable or missing version is not enough."""
+    try:
+        parts = tuple(int(part) for part in str(version).split(".")[: len(minimum)])
+    except ValueError:
+        return False
+    return parts >= minimum
 
 
 def _vector_text(embedding: Sequence[float] | None) -> str | None:

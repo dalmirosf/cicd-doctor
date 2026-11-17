@@ -170,11 +170,6 @@ async def test_the_attempt_keeps_its_own_conclusion_and_time(
     assert stored.run == make_workflow_run(RUN)
 
 
-async def test_similarity_search_arrives_with_the_embeddings(store: PostgresFailureStore) -> None:
-    with pytest.raises(NotImplementedError, match="P2"):
-        await store.similar(100, [0.0] * 384, k=3, min_score=0.5)
-
-
 async def test_an_unreachable_database_is_a_transient_error(pg_clean: str) -> None:
     missing = make_url(pg_clean).set(database="cicd_doctor_does_not_exist")
     url = missing.render_as_string(hide_password=False)

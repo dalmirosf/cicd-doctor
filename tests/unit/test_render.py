@@ -360,7 +360,8 @@ def test_similar_failures_are_listed_in_the_check_but_not_in_the_comment() -> No
     failure, diag = item()
     similar = SimilarFailure(
         failure_id=uuid4(),
-        run_url="https://github.com/acme/widgets/actions/runs/1",
+        run_id=1,
+        run_attempt=1,
         score=0.91,
         category=Category.DEPENDENCY,
         probable_cause="requests was missing; see https://evil.example/x @octocat",

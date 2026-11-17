@@ -11,6 +11,7 @@ from typing import Protocol
 from uuid import UUID
 
 from cicd_doctor.core.models import (
+    CachedDiagnosis,
     CheckOutput,
     CommentRef,
     CommentTarget,
@@ -107,12 +108,25 @@ class FailureStore(Protocol):
         ...
 
     async def cached_diagnosis(
-        self, repo_id: int, signature_hash: str, max_age: timedelta
-    ) -> Diagnosis | None: ...
+        self, repo_id: int, signature_hash: str, max_age: timedelta, prompt_version: str
+    ) -> CachedDiagnosis | None:
+        """The newest LLM diagnosis of the same signature in this repository that is still
+        within ``max_age``, was verified, was made with ``prompt_version`` and comes from a run
+        that is not a fork (D-81)."""
+        ...
 
     async def similar(
-        self, repo_id: int, embedding: Sequence[float], k: int, min_score: float
-    ) -> list[SimilarFailure]: ...
+        self,
+        repo_id: int,
+        embedding: Sequence[float],
+        k: int,
+        min_score: float,
+        exclude_run_id: int | None = None,
+    ) -> list[SimilarFailure]:
+        """Up to ``k`` past failures of this repository, best first, with a score of at least
+        ``min_score`` (cosine similarity), published diagnosis only, never from a fork and never
+        from ``exclude_run_id`` (D-79)."""
+        ...
 
     async def open_failures(
         self, repo_id: int, workflow_id: int, branch_key: str

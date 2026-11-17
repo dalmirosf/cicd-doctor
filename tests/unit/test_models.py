@@ -1,3 +1,5 @@
+from uuid import uuid4
+
 import pytest
 from pydantic import ValidationError
 
@@ -8,6 +10,7 @@ from cicd_doctor.core.models import (
     PublicationKey,
     PublicationKind,
     RepoConfig,
+    SimilarFailure,
 )
 from tests.factories import make_diagnosis, make_run_ref
 
@@ -83,3 +86,27 @@ def test_repo_config_has_defaults_and_rejects_unknown_keys() -> None:
 
     with pytest.raises(ValidationError):
         RepoConfig.model_validate({"unknown_key": True})
+
+
+def _similar(**changes: object) -> SimilarFailure:
+    fields: dict[str, object] = {
+        "failure_id": uuid4(),
+        "run_id": 5000,
+        "run_attempt": 1,
+        "score": 0.9,
+        "category": Category.DEPENDENCY,
+        "probable_cause": "requests is missing",
+        "fix_commit_sha": None,
+    }
+    return SimilarFailure.model_validate(fields | changes)
+
+
+def test_a_similar_failure_rounds_its_score_to_three_decimals() -> None:
+    assert _similar(score=0.912_345_678).score == 0.912
+    assert _similar(score=1.000_000_000_000_000_2).score == 1.0
+
+
+@pytest.mark.parametrize("changes", [{"run_id": -1}, {"run_attempt": 0}])
+def test_a_similar_failure_rejects_impossible_ids(changes: dict[str, int]) -> None:
+    with pytest.raises(ValidationError):
+        _similar(**changes)

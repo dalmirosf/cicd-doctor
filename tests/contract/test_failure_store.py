@@ -14,6 +14,7 @@ from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from datetime import timedelta
 from decimal import Decimal
+from typing import Any
 from uuid import UUID
 
 import pytest
@@ -26,6 +27,7 @@ from cicd_doctor.adapters.postgres.installations import PostgresInstallationStor
 from cicd_doctor.adapters.postgres.store import PostgresFailureStore
 from cicd_doctor.core.errors import TransientError
 from cicd_doctor.core.models import (
+    Diagnosis,
     Failure,
     FailureStatus,
     Installation,
@@ -33,6 +35,7 @@ from cicd_doctor.core.models import (
     PublicationKey,
     Repository,
     RunRef,
+    StoredFailure,
     failure_id_for,
 )
 from cicd_doctor.core.ports import FailureStore
@@ -67,6 +70,7 @@ class Harness:
     clock: FakeClock
     prepare: Callable[[RunRef], Awaitable[None]]
     rows: Callable[[UUID], Awaitable[list[DiagnosisRow]]]
+    ids: Callable[[UUID], Awaitable[list[UUID]]]  # the ids of the diagnoses rows, oldest first
 
 
 def _memory() -> Harness:
@@ -88,7 +92,10 @@ def _memory() -> Harness:
             for row in store.diagnosis_rows(failure_id)
         ]
 
-    return Harness(store=store, clock=clock, prepare=prepare, rows=rows)
+    async def ids(failure_id: UUID) -> list[UUID]:
+        return [row.id for row in store.diagnosis_rows(failure_id)]
+
+    return Harness(store=store, clock=clock, prepare=prepare, rows=rows, ids=ids)
 
 
 @asynccontextmanager
@@ -126,8 +133,16 @@ async def _postgres(url: str) -> AsyncIterator[Harness]:
             )
         return [DiagnosisRow(*row) for row in result]
 
+    async def ids(failure_id: UUID) -> list[UUID]:
+        async with engine.connect() as conn:
+            result = await conn.execute(
+                text("SELECT id FROM diagnoses WHERE failure_id = :id ORDER BY created_at"),
+                {"id": failure_id},
+            )
+        return [row[0] for row in result]
+
     try:
-        yield Harness(store=store, clock=clock, prepare=prepare, rows=rows)
+        yield Harness(store=store, clock=clock, prepare=prepare, rows=rows, ids=ids)
     finally:
         await engine.dispose()
 
@@ -140,13 +155,6 @@ async def harness(request: pytest.FixtureRequest) -> AsyncIterator[Harness]:
     url: str = request.getfixturevalue("pg_clean")
     async with _postgres(url) as postgres:
         yield postgres
-
-
-# ``similar`` runs on the in-memory adapter only: the Postgres one needs the embeddings and the
-# pgvector query that arrive in P2, and raises NotImplementedError until then (D-69).
-@pytest.fixture(params=["memory"])
-def similarity_harness() -> Harness:
-    return _memory()
 
 
 async def _save(harness: Harness, failure: Failure) -> None:
@@ -251,44 +259,96 @@ async def test_a_diagnosis_for_an_unknown_failure_is_refused(harness: Harness) -
 
 # --- exact-signature cache ----------------------------------------------------------------
 
+PROMPT = "diag-v1"
+WEEK = timedelta(days=7)
+
+
+def _llm(**changes: Any) -> Diagnosis:
+    return make_diagnosis(**{"source": "llm", "prompt_version": PROMPT, **changes})
+
 
 async def test_cached_diagnosis_returns_a_recent_llm_diagnosis(harness: Harness) -> None:
     failure = make_failure(signature_hash="1" * 64)
     await _save(harness, failure)
-    await harness.store.save_diagnosis(failure.id, make_diagnosis(source="llm"))
+    await harness.store.save_diagnosis(failure.id, _llm())
     harness.clock.advance(timedelta(days=6))
 
     cached = await harness.store.cached_diagnosis(
-        failure.job.job.run.repo_id, "1" * 64, timedelta(days=7)
+        failure.job.job.run.repo_id, "1" * 64, WEEK, PROMPT
     )
 
     assert cached is not None
-    assert cached.source == "llm"
+    assert cached.diagnosis.source == "llm"
+
+
+async def test_cached_diagnosis_says_which_row_it_came_from(harness: Harness) -> None:
+    failure = make_failure(signature_hash="1" * 64)
+    await _save(harness, failure)
+    await harness.store.save_diagnosis(failure.id, _llm())
+
+    cached = await harness.store.cached_diagnosis(
+        failure.job.job.run.repo_id, "1" * 64, WEEK, PROMPT
+    )
+
+    assert cached is not None
+    assert [cached.origin_id] == await harness.ids(failure.id)
 
 
 async def test_cached_diagnosis_expires_after_max_age(harness: Harness) -> None:
     failure = make_failure(signature_hash="1" * 64)
     await _save(harness, failure)
-    await harness.store.save_diagnosis(failure.id, make_diagnosis(source="llm"))
+    await harness.store.save_diagnosis(failure.id, _llm())
     harness.clock.advance(timedelta(days=8))
 
     assert (
-        await harness.store.cached_diagnosis(
-            failure.job.job.run.repo_id, "1" * 64, timedelta(days=7)
-        )
+        await harness.store.cached_diagnosis(failure.job.job.run.repo_id, "1" * 64, WEEK, PROMPT)
         is None
     )
 
 
-async def test_cached_diagnosis_ignores_rules_diagnoses(harness: Harness) -> None:
+@pytest.mark.parametrize("source", ["rules", "cache"])
+async def test_cached_diagnosis_only_serves_llm_rows(harness: Harness, source: str) -> None:
+    """A ``cache`` row is never served again: the TTL runs from the real call (D-81)."""
     failure = make_failure(signature_hash="1" * 64)
     await _save(harness, failure)
-    await harness.store.save_diagnosis(failure.id, make_diagnosis(source="rules"))
+    await harness.store.save_diagnosis(failure.id, _llm(source=source))
 
     assert (
-        await harness.store.cached_diagnosis(
-            failure.job.job.run.repo_id, "1" * 64, timedelta(days=7)
-        )
+        await harness.store.cached_diagnosis(failure.job.job.run.repo_id, "1" * 64, WEEK, PROMPT)
+        is None
+    )
+
+
+async def test_cached_diagnosis_skips_unverified_evidence(harness: Harness) -> None:
+    failure = make_failure(signature_hash="1" * 64)
+    await _save(harness, failure)
+    await harness.store.save_diagnosis(failure.id, _llm(evidence_verified=False))
+
+    assert (
+        await harness.store.cached_diagnosis(failure.job.job.run.repo_id, "1" * 64, WEEK, PROMPT)
+        is None
+    )
+
+
+async def test_cached_diagnosis_is_tied_to_the_prompt_version(harness: Harness) -> None:
+    failure = make_failure(signature_hash="1" * 64)
+    await _save(harness, failure)
+    await harness.store.save_diagnosis(failure.id, _llm())
+    repo_id = failure.job.job.run.repo_id
+
+    assert await harness.store.cached_diagnosis(repo_id, "1" * 64, WEEK, "diag-v2") is None
+    assert await harness.store.cached_diagnosis(repo_id, "1" * 64, WEEK, PROMPT) is not None
+
+
+async def test_cached_diagnosis_never_comes_from_a_fork(harness: Harness) -> None:
+    """D-81: a fork controls its logs, so what the model said about them must not be served to
+    normal runs."""
+    failure = make_failure(run=make_run_ref(is_fork=True), signature_hash="1" * 64)
+    await _save(harness, failure)
+    await harness.store.save_diagnosis(failure.id, _llm())
+
+    assert (
+        await harness.store.cached_diagnosis(failure.job.job.run.repo_id, "1" * 64, WEEK, PROMPT)
         is None
     )
 
@@ -297,9 +357,9 @@ async def test_cached_diagnosis_is_isolated_by_repository(harness: Harness) -> N
     """D-10: a diagnosis from one repository must never be served to another."""
     failure = make_failure(run=make_run_ref(repo_id=100), signature_hash="1" * 64)
     await _save(harness, failure)
-    await harness.store.save_diagnosis(failure.id, make_diagnosis(source="llm"))
+    await harness.store.save_diagnosis(failure.id, _llm())
 
-    assert await harness.store.cached_diagnosis(200, "1" * 64, timedelta(days=7)) is None
+    assert await harness.store.cached_diagnosis(200, "1" * 64, WEEK, PROMPT) is None
 
 
 async def test_the_llm_diagnosis_of_a_checkpoint_feeds_the_cache(harness: Harness) -> None:
@@ -308,57 +368,174 @@ async def test_the_llm_diagnosis_of_a_checkpoint_feeds_the_cache(harness: Harnes
     await harness.prepare(run)
     await harness.store.save_run_analysis(record)
     published = record.items[0].published  # the LLM one; the others fell back to the rules
+    assert published.prompt_version == "v1"
 
-    cached = await harness.store.cached_diagnosis(run.repo_id, "f" * 64, timedelta(days=7))
+    cached = await harness.store.cached_diagnosis(run.repo_id, "f" * 64, WEEK, "v1")
 
-    assert cached == published
-
-
-# --- similarity ---------------------------------------------------------------------------
+    assert cached is not None
+    assert cached.diagnosis == published
 
 
-async def _failure_with_text(
-    harness: Harness, text: str, *, repo_id: int = 100, job_id: int = 1
-) -> Failure:
+# --- similarity (D-79) --------------------------------------------------------------------
+
+
+def _embedding(text: str) -> list[float]:
     [embedding] = FakeEmbedder().embed([text])
-    failure = make_failure(run=make_run_ref(repo_id=repo_id), job_id=job_id, embedding=embedding)
-    await _save(harness, failure)
-    await harness.store.save_diagnosis(failure.id, make_diagnosis())
-    return failure
+    return embedding
 
 
-async def test_similar_returns_best_matches_first_above_min_score(
-    similarity_harness: Harness,
-) -> None:
-    harness = similarity_harness
-    exact = await _failure_with_text(harness, "No module named requests in tests", job_id=1)
-    near = await _failure_with_text(harness, "No module named numpy in tests", job_id=2)
-    await _failure_with_text(harness, "Error acquiring the state lock backend", job_id=3)
-    [query] = FakeEmbedder().embed(["No module named requests in tests"])
+async def _publish(
+    harness: Harness,
+    text: str,
+    *,
+    repo_id: int = 100,
+    job_id: int = 1,
+    run_id: int | None = None,
+    is_fork: bool = False,
+    embedded: bool = True,
+    cause: str | None = None,
+) -> StoredFailure:
+    """A failure of its own run, with the embedding of ``text`` and a published diagnosis."""
+    run = make_run_ref(
+        repo_id=repo_id, run_id=run_id or repo_id * 100_000 + job_id, is_fork=is_fork
+    )
+    published = make_diagnosis(
+        model="gpt-test", prompt_version="v1", probable_cause=cause or f"cause of {text}"
+    )
+    item = make_stored_failure(
+        run=run,
+        job_id=job_id,
+        published=published,
+        embedding=_embedding(text) if embedded else None,
+    )
+    await harness.prepare(run)
+    await harness.store.save_run_analysis(make_run_analysis(run, [item]))
+    return item
 
-    results = await harness.store.similar(100, query, k=3, min_score=0.5)
 
-    assert [r.failure_id for r in results] == [exact.id, near.id]
+async def test_similar_returns_best_matches_first_above_min_score(harness: Harness) -> None:
+    exact = await _publish(harness, "No module named requests in tests", job_id=1)
+    near = await _publish(harness, "No module named numpy in tests", job_id=2)
+    await _publish(harness, "Error acquiring the state lock backend", job_id=3)
+
+    results = await harness.store.similar(
+        100, _embedding("No module named requests in tests"), k=3, min_score=0.5
+    )
+
+    assert [r.failure_id for r in results] == [exact.failure.id, near.failure.id]
     assert results[0].score == pytest.approx(1.0)
     assert results[0].score > results[1].score >= 0.5
 
 
-async def test_similar_honors_k(similarity_harness: Harness) -> None:
-    harness = similarity_harness
-    await _failure_with_text(harness, "No module named requests", job_id=1)
-    await _failure_with_text(harness, "No module named requests today", job_id=2)
-    [query] = FakeEmbedder().embed(["No module named requests"])
+async def test_similar_honors_k(harness: Harness) -> None:
+    await _publish(harness, "No module named requests", job_id=1)
+    await _publish(harness, "No module named requests today", job_id=2)
+    query = _embedding("No module named requests")
 
     assert len(await harness.store.similar(100, query, k=1, min_score=0.0)) == 1
+    assert len(await harness.store.similar(100, query, k=5, min_score=0.0)) == 2
+    assert await harness.store.similar(100, query, k=0, min_score=0.0) == []
 
 
-async def test_similar_is_isolated_by_repository(similarity_harness: Harness) -> None:
-    """D-10: vector search must never return failures from another repository."""
-    harness = similarity_harness
-    await _failure_with_text(harness, "No module named requests", repo_id=100)
-    [query] = FakeEmbedder().embed(["No module named requests"])
+async def test_similar_rounds_the_score_to_three_decimals(harness: Harness) -> None:
+    await _publish(harness, "No module named numpy in tests")
 
-    assert await harness.store.similar(200, query, k=3, min_score=0.0) == []
+    [result] = await harness.store.similar(
+        100, _embedding("No module named requests in tests"), k=3, min_score=0.0
+    )
+
+    assert result.score == round(result.score, 3)
+
+
+async def test_similar_is_isolated_by_repository(harness: Harness) -> None:
+    """D-10: the same vector in two repositories; each search sees only its own."""
+    mine = await _publish(harness, "No module named requests", repo_id=100)
+    theirs = await _publish(harness, "No module named requests", repo_id=200)
+    query = _embedding("No module named requests")
+
+    found_mine = await harness.store.similar(100, query, 3, 0.0)
+    found_theirs = await harness.store.similar(200, query, 3, 0.0)
+
+    assert [r.failure_id for r in found_mine] == [mine.failure.id]
+    assert [r.failure_id for r in found_theirs] == [theirs.failure.id]
+    assert await harness.store.similar(300, query, 3, 0.0) == []
+
+
+async def test_similar_is_not_crowded_out_by_closer_rows_of_other_repositories(
+    harness: Harness,
+) -> None:
+    """The case that breaks a filter applied after the vector search: 1 000 rows of another
+    repository sit closer to the query than the ones of this repository."""
+    query = _embedding("No module named requests")
+    mine = [
+        await _publish(harness, "No module named numpy", job_id=1),
+        await _publish(harness, "No module named scipy", job_id=2),
+        await _publish(harness, "No module named pandas", job_id=3),
+    ]
+    other = make_run_ref(repo_id=200, run_id=900_000)
+    crowd = [
+        make_stored_failure(
+            run=other,
+            job_id=job_id,
+            embedding=query,
+            published=make_diagnosis(model="gpt-test", prompt_version="v1"),
+        )
+        for job_id in range(1, 1001)
+    ]
+    await harness.prepare(other)
+    await harness.store.save_run_analysis(make_run_analysis(other, crowd))
+
+    results = await harness.store.similar(100, query, k=3, min_score=0.0)
+
+    assert {r.failure_id for r in results} == {item.failure.id for item in mine}
+    assert len(await harness.store.similar(200, query, k=3, min_score=0.0)) == 3
+
+
+async def test_similar_never_returns_failures_of_forks(harness: Harness) -> None:
+    await _publish(harness, "No module named requests", job_id=1, is_fork=True)
+    normal = await _publish(harness, "No module named requests", job_id=2)
+
+    results = await harness.store.similar(100, _embedding("No module named requests"), 3, 0.0)
+
+    assert [r.failure_id for r in results] == [normal.failure.id]
+
+
+async def test_similar_leaves_out_the_run_it_is_asked_to_exclude(harness: Harness) -> None:
+    await _publish(harness, "No module named requests", job_id=1, run_id=777)
+    other = await _publish(harness, "No module named requests", job_id=2, run_id=778)
+    query = _embedding("No module named requests")
+
+    assert len(await harness.store.similar(100, query, 3, 0.0)) == 2
+    results = await harness.store.similar(100, query, 3, 0.0, exclude_run_id=777)
+
+    assert [r.failure_id for r in results] == [other.failure.id]
+
+
+async def test_similar_shows_the_published_diagnosis_and_the_fix(harness: Harness) -> None:
+    item = await _publish(harness, "No module named requests", cause="the published cause")
+    await harness.store.resolve([item.failure.id], FailureStatus.RESOLVED_BY_COMMIT, "c" * 40)
+
+    [result] = await harness.store.similar(100, _embedding("No module named requests"), 3, 0.0)
+
+    run = item.failure.job.job.run
+    assert result.probable_cause == "the published cause"  # not the rules row's
+    assert result.category == item.published.category
+    assert result.fix_commit_sha == "c" * 40
+    assert (result.run_id, result.run_attempt) == (run.run_id, run.run_attempt)
+
+
+async def test_similar_ignores_failures_without_a_published_diagnosis(harness: Harness) -> None:
+    failure = make_failure(embedding=_embedding("No module named requests"))
+    await _save(harness, failure)
+    await harness.store.save_diagnosis(failure.id, make_diagnosis())  # saved, not published
+
+    assert await harness.store.similar(100, _embedding("No module named requests"), 3, 0.0) == []
+
+
+async def test_similar_ignores_failures_without_an_embedding(harness: Harness) -> None:
+    await _publish(harness, "No module named requests", embedded=False)
+
+    assert await harness.store.similar(100, _embedding("No module named requests"), 3, 0.0) == []
 
 
 # --- the checkpoint of a run attempt (D-69) -----------------------------------------------
@@ -562,7 +739,7 @@ async def test_analysed_failures_belong_to_their_repository_only(harness: Harnes
 
     assert len(await harness.store.open_failures(100, mine.workflow_id, mine.branch_key)) == 3
     assert await harness.store.open_failures(200, mine.workflow_id, mine.branch_key) == []
-    assert await harness.store.cached_diagnosis(200, "f" * 64, timedelta(days=7)) is None
+    assert await harness.store.cached_diagnosis(200, "f" * 64, WEEK, "v1") is None
     assert await harness.store.run_analysis(6000, 1) is None
 
 
