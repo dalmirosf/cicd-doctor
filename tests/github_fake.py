@@ -792,13 +792,17 @@ class BlobState:
 
 
 def jobs_json(
-    job_ids: list[int], *, run_attempt: int = 1, conclusion: str = "failure"
+    job_ids: list[int],
+    *,
+    run_attempt: int = 1,
+    conclusion: str = "failure",
+    name: str | None = None,
 ) -> list[Any]:
     """Jobs in the shape of the jobs API (the fields ``jobs.py`` reads, plus ``run_attempt``)."""
     return [
         {
             "id": job_id,
-            "name": f"job-{job_id}",
+            "name": name or f"job-{job_id}",
             "run_attempt": run_attempt,
             "conclusion": conclusion,
             "started_at": "2026-11-12T12:00:00Z",

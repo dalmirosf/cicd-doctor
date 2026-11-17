@@ -39,6 +39,7 @@ class StoredDiagnosis:
     published: bool = False
     usage: DiagnosisUsage | None = None  # only on the published row (D-69)
     id: UUID = field(default_factory=uuid4)  # ``diagnoses.id``: the origin of a cache hit
+    cached_from: UUID | None = None  # ``diagnoses.cached_from`` (D-81)
 
 
 class InMemoryFailureStore:
@@ -86,7 +87,13 @@ class InMemoryFailureStore:
                 self._failures[item.failure.id] = item.failure
                 self._failure_created.setdefault(item.failure.id, now)
                 self._diagnoses[item.failure.id] = [
-                    StoredDiagnosis(diagnosis, now, published, item.usage if published else None)
+                    StoredDiagnosis(
+                        diagnosis,
+                        now,
+                        published,
+                        item.usage if published else None,
+                        cached_from=item.cached_from if published else None,
+                    )
                     for diagnosis, published in item.diagnosis_rows()
                 ]
             self._analyses[key] = list(record.items)
@@ -103,10 +110,24 @@ class InMemoryFailureStore:
             attempt=self._attempts[(run_id, attempt)],
             # The failure is read again: ``resolve`` may have changed its status since.
             items=[
-                item.model_copy(update={"failure": self._failures[item.failure.id]})
+                item.model_copy(
+                    update={
+                        "failure": self._failures[item.failure.id],
+                        "cached_from_run_id": self._origin_run(item.cached_from),
+                    }
+                )
                 for item in items
             ],
         )
+
+    def _origin_run(self, diagnosis_id: UUID | None) -> int | None:
+        """The run of the ``diagnoses`` row with this id, like the join of the Postgres read."""
+        if diagnosis_id is None:
+            return None
+        for failure_id, rows in self._diagnoses.items():
+            if any(stored.id == diagnosis_id for stored in rows):
+                return self._failures[failure_id].job.job.run.run_id
+        return None
 
     def diagnosis_rows(self, failure_id: UUID) -> list[StoredDiagnosis]:
         """The ``diagnoses`` rows of a failure (tests, operations)."""

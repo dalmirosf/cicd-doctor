@@ -108,10 +108,16 @@ class DiagnoseWorld:
     use_case: DiagnoseFailedRun
     worker: Worker
 
-    def add_run(self, run_id: int = 5000, attempt: int = 1, body: bytes | None = None) -> int:
+    def add_run(
+        self,
+        run_id: int = 5000,
+        attempt: int = 1,
+        body: bytes | None = None,
+        job_name: str | None = None,
+    ) -> int:
         """Make GitHub know the attempt: one failed job and its log. Returns the job id."""
         job_id = job_id_for(run_id, attempt)
-        self.logs.set_jobs(run_id, attempt, jobs_json([job_id], run_attempt=attempt))
+        self.logs.set_jobs(run_id, attempt, jobs_json([job_id], run_attempt=attempt, name=job_name))
         self.logs.set_log(job_id, body if body is not None else log_bytes())
         return job_id
 

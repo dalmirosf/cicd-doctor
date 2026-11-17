@@ -12,6 +12,7 @@ from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass, field
 from decimal import Decimal
 from typing import Literal
+from uuid import UUID
 
 from cicd_doctor.core.analysis import JobAnalysis
 from cicd_doctor.core.diagnosis.cost import CostModel
@@ -19,6 +20,7 @@ from cicd_doctor.core.diagnosis.prompt import PROMPT_VERSION
 from cicd_doctor.core.diagnosis.validate import InvalidOutputError, finalize, parse_output
 from cicd_doctor.core.errors import LLMError, LLMTransientError
 from cicd_doctor.core.models import (
+    CachedDiagnosis,
     Diagnosis,
     DiagnosisRequest,
     DiagnosisUsage,
@@ -43,7 +45,9 @@ class DiagnosisContext:
     llm_enabled: bool = True  # LLM_ENABLED
     repo_llm: Literal["auto", "on_demand", "off"] = "auto"  # RepoConfig.llm
     explain: bool = False  # triggered by `/cicd-doctor explain` (P3)
-    cached: Diagnosis | None = None  # the cached LLM diagnosis of the same signature (P2)
+    # The reused LLM diagnosis of the same signature, already re-anchored to this excerpt, with the
+    # row it came from (D-81). The use case only sets it when the policy would otherwise say llm.
+    cached: CachedDiagnosis | None = None
 
 
 @dataclass
@@ -84,6 +88,7 @@ class JobDiagnosis:
     published: Diagnosis  # what the check run and the comment show
     rules: Diagnosis  # always computed (D-35); equal to ``published`` minus the reason on fallback
     usage: DiagnosisUsage | None = None  # None when no call was made
+    cached_from: UUID | None = None  # the diagnoses row a cache hit was copied from (D-81)
     notes: list[str] = field(default_factory=list)  # why a fallback happened, for logs and tests
 
 
@@ -125,7 +130,8 @@ class DiagnoseJob:
         )
         if decision.action == "cache":  # the policy only says "cache" when one is available
             assert context.cached is not None
-            return JobDiagnosis(context.cached.model_copy(update={"source": "cache"}), rules)
+            cached = context.cached.diagnosis.model_copy(update={"source": "cache"})
+            return JobDiagnosis(cached, rules, cached_from=context.cached.origin_id)
         if decision.action == "rules":
             assert decision.fallback_reason is not None
             return self._fallback(rules, decision.fallback_reason)
@@ -202,4 +208,4 @@ class DiagnoseJob:
     ) -> JobDiagnosis:
         published = rules.model_copy(update={"fallback_reason": reason})
         frozen = usage.freeze() if usage is not None else None
-        return JobDiagnosis(published, rules, frozen, [note] if note else [])
+        return JobDiagnosis(published, rules, frozen, notes=[note] if note else [])

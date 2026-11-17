@@ -26,17 +26,20 @@ Logs, excerpts and the text of a diagnosis are never logged.
 
 import asyncio
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timedelta
 from typing import NoReturn
 
 from cicd_doctor.core.analysis import JobAnalysis, analyze_jobs
+from cicd_doctor.core.diagnosis.cache import reuse_cached
 from cicd_doctor.core.diagnosis.merge import baseline_to_show
 from cicd_doctor.core.diagnosis.pipeline import DiagnoseJob, DiagnosisContext, JobDiagnosis
+from cicd_doctor.core.diagnosis.prompt import PROMPT_VERSION
 from cicd_doctor.core.errors import LogsUnavailable, PermanentError, TransientError
 from cicd_doctor.core.logs import ExcerptConfig
 from cicd_doctor.core.logs.select import cancelled_jobs, is_job_timeout, select_failed_jobs
 from cicd_doctor.core.models import (
+    CachedDiagnosis,
     CheckOutput,
     CommentTarget,
     DiagnoseRunPayload,
@@ -59,6 +62,7 @@ from cicd_doctor.core.models import (
     WorkflowRun,
     failure_id_for,
 )
+from cicd_doctor.core.policy import PolicyInput, decide
 from cicd_doctor.core.ports import (
     Clock,
     Embedder,
@@ -94,6 +98,7 @@ class DiagnoseConfig:
     logs_grace: timedelta = timedelta(minutes=10)  # a 404 this soon after the run is transient
     logs_retry_after: timedelta = timedelta(seconds=30)
     concurrency: int = 3  # jobs diagnosed at the same time
+    cache_ttl_days: int = 7  # CACHE_TTL_DAYS; 0 turns the exact-signature cache off (D-81)
 
 
 @dataclass(frozen=True)
@@ -452,10 +457,40 @@ class DiagnoseFailedRun:
 
         async def one(analysis: JobAnalysis) -> JobDiagnosis:
             async with slots:
-                return await self._diagnose.run(analysis, context)
+                cached = await self._cached(run, analysis, context)
+                job_context = context if cached is None else replace(context, cached=cached)
+                return await self._diagnose.run(analysis, job_context)
 
         results = await asyncio.gather(*(one(analysis) for analysis in analyses))
         return list(zip(analyses, results, strict=True))
+
+    async def _cached(
+        self, run: RunRef, analysis: JobAnalysis, context: DiagnosisContext
+    ) -> CachedDiagnosis | None:
+        """The exact-signature cache of this repository for one job (D-81), or None.
+
+        The store is asked only when the policy, without a cache, would call the LLM: a fork,
+        ``llm: off`` and ``LLM_ENABLED=false`` never read it (§9.4 keeps its order: the fork rule
+        comes before the cache). The jobs of one attempt are looked up at the same time, before
+        anything of this attempt is stored, so a matrix whose jobs share a signature calls the
+        model once per job: the cache serves later runs, not siblings.
+        """
+        if self._config.cache_ttl_days <= 0:
+            return None
+        if decide(_policy_without_cache(context)).action != "llm":
+            return None
+        hit = await self._store.cached_diagnosis(
+            run.repo_id,
+            analysis.signature.hash,
+            timedelta(days=self._config.cache_ttl_days),
+            PROMPT_VERSION,
+        )
+        if hit is None:
+            return None
+        reused = reuse_cached(hit.diagnosis, analysis.excerpt)
+        if reused is None:
+            return None
+        return CachedDiagnosis(diagnosis=reused, origin_id=hit.origin_id)
 
     # --- the report -------------------------------------------------------------------------
 
@@ -468,10 +503,16 @@ class DiagnoseFailedRun:
             for item in record.items
             if (baseline := baseline_to_show(item.rules, item.published)) is not None
         }
+        origins = {
+            item.failure.id: item.cached_from_run_id
+            for item in record.items
+            if item.cached_from_run_id is not None
+        }
         return DiagnosisReport(
             run=run,
             items=[(item.failure, item.published) for item in record.items],
             rules_baseline=baselines,
+            cached_from_runs=origins,
         )
 
     def _log_published(self, kind: str, run: RunRef, completed_at: datetime | None) -> None:
@@ -486,6 +527,17 @@ class DiagnoseFailedRun:
             run.run_attempt,
             seconds,
         )
+
+
+def _policy_without_cache(context: DiagnosisContext) -> PolicyInput:
+    """The policy input of a job, with no cache hit (what §9.4 says before the cache rule)."""
+    return PolicyInput(
+        llm_enabled=context.llm_enabled,
+        repo_llm=context.repo_llm,
+        is_fork=context.is_fork,
+        explain=context.explain,
+        cache_hit=False,
+    )
 
 
 def _newer(existing: Publication | None, run: RunRef) -> bool:
@@ -532,4 +584,5 @@ def _stored(
         published=result.published,
         rules=result.rules,
         usage=result.usage,
+        cached_from=result.cached_from,
     )

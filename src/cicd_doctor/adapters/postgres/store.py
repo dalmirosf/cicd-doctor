@@ -127,12 +127,14 @@ _INSERT_DIAGNOSIS = text(
     INSERT INTO diagnoses (failure_id, source, published, category, probable_cause, evidence,
                            evidence_verified, suggested_fix, suggestion, confidence, rule_ids,
                            model, prompt_version, input_tokens, output_tokens, cost_usd,
-                           latency_ms, llm_calls, llm_failed_calls, fallback_reason, created_at)
+                           latency_ms, llm_calls, llm_failed_calls, fallback_reason, cached_from,
+                           created_at)
     VALUES (:failure_id, CAST(:source AS diagnosis_source), :published,
             CAST(:category AS failure_category), :probable_cause, CAST(:evidence AS jsonb),
             :evidence_verified, :suggested_fix, CAST(:suggestion AS jsonb), :confidence,
             CAST(:rule_ids AS text[]), :model, :prompt_version, :input_tokens, :output_tokens,
-            :cost_usd, :latency_ms, :llm_calls, :llm_failed_calls, :fallback_reason, :now)
+            :cost_usd, :latency_ms, :llm_calls, :llm_failed_calls, :fallback_reason,
+            :cached_from, :now)
     """
 )
 
@@ -174,8 +176,10 @@ _DIAGNOSIS_COLUMNS = """
 """
 _ANALYSIS_DIAGNOSES = text(
     f"""
-    SELECT d.failure_id, {_DIAGNOSIS_COLUMNS}
+    SELECT d.failure_id, {_DIAGNOSIS_COLUMNS}, d.cached_from, origin_f.run_id AS cached_from_run_id
     FROM diagnoses d JOIN failures f ON f.id = d.failure_id
+    LEFT JOIN diagnoses origin_d ON origin_d.id = d.cached_from
+    LEFT JOIN failures origin_f ON origin_f.id = origin_d.failure_id
     WHERE f.run_id = :run_id AND f.run_attempt = :attempt
     ORDER BY d.created_at, d.published
     """
@@ -489,7 +493,7 @@ class PostgresFailureStore:
                 await conn.execute(_UPSERT_FAILURE, _failure_params(failure, self._clock.now()))
 
     async def save_diagnosis(self, failure_id: UUID, diagnosis: Diagnosis) -> None:
-        params = _diagnosis_params(failure_id, diagnosis, False, None, self._clock.now())
+        params = _diagnosis_params(failure_id, diagnosis, False, None, None, self._clock.now())
         try:
             with transient_db_errors():
                 async with self._engine.begin() as conn:
@@ -534,6 +538,7 @@ class PostgresFailureStore:
                     diagnosis,
                     published,
                     item.usage if published else None,
+                    item.cached_from if published else None,
                     now,
                 )
                 for item in items
@@ -933,6 +938,7 @@ def _diagnosis_params(
     diagnosis: Diagnosis,
     published: bool,
     usage: DiagnosisUsage | None,
+    cached_from: UUID | None,
     now: datetime,
 ) -> dict[str, Any]:
     # ``model`` is the model of the answer. A rules row has none of its own: the model of the
@@ -960,6 +966,7 @@ def _diagnosis_params(
         "llm_calls": None if usage is None else usage.calls,
         "llm_failed_calls": None if usage is None else usage.failed_calls,
         "fallback_reason": diagnosis.fallback_reason,
+        "cached_from": cached_from,
         "now": now,
     }
 
@@ -1042,7 +1049,12 @@ def _to_stored_failure(failure_row: RowMapping, diagnosis_rows: list[RowMapping]
         )
     )
     return StoredFailure(
-        failure=_to_failure(failure_row), published=published, rules=rules, usage=usage
+        failure=_to_failure(failure_row),
+        published=published,
+        rules=rules,
+        usage=usage,
+        cached_from=published_row["cached_from"],
+        cached_from_run_id=published_row["cached_from_run_id"],
     )
 
 
