@@ -16,6 +16,7 @@ from collections.abc import AsyncIterator
 from contextlib import AsyncExitStack, asynccontextmanager, suppress
 from datetime import timedelta
 from decimal import Decimal
+from typing import NamedTuple
 
 from fastapi import FastAPI
 from pydantic import SecretStr
@@ -242,14 +243,22 @@ def build_worker(
     )
 
 
+class UseCases(NamedTuple):
+    """The use cases of the worker that talk to GitHub, over one HTTP client and one store."""
+
+    diagnose: DiagnoseFailedRun
+    outcome: RecordRunOutcome
+
+
 @asynccontextmanager
-async def diagnose_run_use_case(
+async def worker_use_cases(
     settings: Settings,
     clock: Clock,
     installations: InstallationStore,
     embedder: Embedder | None = None,
-) -> AsyncIterator[DiagnoseFailedRun]:
-    """The real graph of the diagnosis flow; its connections close when the block ends."""
+) -> AsyncIterator[UseCases]:
+    """The real graph of the diagnosis and outcome flows; its connections close when the block
+    ends. Both use the same token permissions (D-84: no new one for the comment rewrite)."""
     app_id, key = require_github_app(settings)
     private_key = load_private_key(key)  # ValueError names the variable, never the key
     url = settings.database_url.get_secret_value()
@@ -279,10 +288,19 @@ async def diagnose_run_use_case(
                 pool_size=consumers + 2,
             )
         )
-        yield DiagnoseFailedRun(
+        reporter = GitHubReporter(http, auth, clock)
+        config = diagnose_config(settings)
+        outcome = RecordRunOutcome(
+            store=store,
+            installations=installations,
+            reporter=reporter,
+            similar_k=config.similar_k,
+            similar_min_score=config.similar_min_score,
+        )
+        diagnose = DiagnoseFailedRun(
             logs=logs,
             pulls=GitHubPullRequests(http, auth),
-            reporter=GitHubReporter(http, auth, clock),
+            reporter=reporter,
             store=store,
             installations=installations,
             counter=TiktokenCounter(),
@@ -294,8 +312,9 @@ async def diagnose_run_use_case(
             ),
             clock=clock,
             embedder=embedder,
-            config=diagnose_config(settings),
+            config=config,
         )
+        yield UseCases(diagnose, outcome)
 
 
 async def run_worker(settings: Settings, stop: asyncio.Event) -> None:
@@ -314,18 +333,14 @@ async def run_worker(settings: Settings, stop: asyncio.Event) -> None:
             url, pool_size=settings.worker_concurrency + 2
         ) as installations,
         PostgresFailureStore.connect(url, clock, pool_size=2) as purge_store,
-        PostgresFailureStore.connect(
-            url, clock, pool_size=settings.worker_concurrency + 2
-        ) as outcome_store,
-        diagnose_run_use_case(settings, clock, installations, embedder) as use_case,
+        worker_use_cases(settings, clock, installations, embedder) as use_cases,
     ):
         purge = purge_handler(queue, purge_store, installations, clock, purge_config(settings))
-        outcomes = RecordRunOutcome(store=outcome_store, installations=installations)
         registry = handlers(
             installations,
-            diagnose_run_handler(use_case),
+            diagnose_run_handler(use_cases.diagnose),
             purge,
-            record_outcome_handler(outcomes),
+            record_outcome_handler(use_cases.outcome),
         )
         worker = build_worker(settings, queue, registry, clock)
         if not settings.purge_enabled:

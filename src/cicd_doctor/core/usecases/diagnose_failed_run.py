@@ -34,7 +34,6 @@ from uuid import UUID
 
 from cicd_doctor.core.analysis import JobAnalysis, analyze_jobs
 from cicd_doctor.core.diagnosis.cache import reuse_cached
-from cicd_doctor.core.diagnosis.merge import baseline_to_show
 from cicd_doctor.core.diagnosis.pipeline import DiagnoseJob, DiagnosisContext, JobDiagnosis
 from cicd_doctor.core.diagnosis.prompt import PROMPT_VERSION
 from cicd_doctor.core.errors import LogsUnavailable, PermanentError, TransientError
@@ -81,6 +80,7 @@ from cicd_doctor.core.render import (
     render_comment,
     render_could_not_diagnose,
 )
+from cicd_doctor.core.usecases.report import build_report, find_similar
 from cicd_doctor.core.usecases.rows import ensure_rows
 
 logger = logging.getLogger(__name__)
@@ -353,6 +353,12 @@ class DiagnoseFailedRun:
             existing = await self._store.publication(key)
             if _newer(existing, run):
                 return
+            # A success that resolved these failures after the report was built has found no
+            # comment to rewrite (this lock keeps it out until we are done), so what is written
+            # must come from the store as it is now (D-84).
+            fresh = await self._store.run_analysis(run.run_id, run.run_attempt)
+            if fresh is not None and _statuses(fresh) != _statuses(record):
+                report = await self._report(payload, fresh)
             comment_id = await self._reporter.upsert_comment(
                 CommentTarget(run=run, pr_number=pr_number),
                 render_comment(report),
@@ -532,13 +538,12 @@ class DiagnoseFailedRun:
         of another repository (D-79). A database error propagates: the job is retried. The
         result is shown for a fork run too, but its policy never sends anything to the model.
         """
-        if embedding is None or self._config.similar_k <= 0:
-            return []
-        return await self._store.similar(
+        return await find_similar(
+            self._store,
             run.repo_id,
             embedding,
-            self._config.similar_k,
-            self._config.similar_min_score,
+            k=self._config.similar_k,
+            min_score=self._config.similar_min_score,
             exclude_run_id=run.run_id,
         )
 
@@ -549,27 +554,12 @@ class DiagnoseFailedRun:
     ) -> DiagnosisReport:
         """The report of a stored analysis. The run carries the pull request that was found."""
         run = payload.run.model_copy(update={"pr_number": record.run.pr_number})
-        baselines = {
-            item.failure.id: baseline
-            for item in record.items
-            if (baseline := baseline_to_show(item.rules, item.published)) is not None
-        }
-        origins = {
-            item.failure.id: item.cached_from_run_id
-            for item in record.items
-            if item.cached_from_run_id is not None
-        }
-        similar = {
-            item.failure.id: found
-            for item in record.items
-            if (found := await self._similar(run, item.failure.embedding))
-        }
-        return DiagnosisReport(
-            run=run,
-            items=[(item.failure, item.published) for item in record.items],
-            similar=similar,
-            rules_baseline=baselines,
-            cached_from_runs=origins,
+        return await build_report(
+            self._store,
+            run,
+            record,
+            similar_k=self._config.similar_k,
+            similar_min_score=self._config.similar_min_score,
         )
 
     def _log_published(self, kind: str, run: RunRef, completed_at: datetime | None) -> None:
@@ -595,6 +585,10 @@ def _policy_without_cache(context: DiagnosisContext) -> PolicyInput:
         explain=context.explain,
         cache_hit=False,
     )
+
+
+def _statuses(record: RunAnalysisRecord) -> list[tuple[FailureStatus, str | None]]:
+    return [(item.failure.status, item.failure.fix_commit_sha) for item in record.items]
 
 
 def _newer(existing: Publication | None, run: RunRef) -> bool:

@@ -16,6 +16,7 @@ from cicd_doctor.core.models import (
     DiagnosisReport,
     Evidence,
     Failure,
+    FailureStatus,
     FallbackReason,
     SimilarFailure,
 )
@@ -671,3 +672,132 @@ def test_a_cached_diagnosis_names_the_run_it_came_from_as_a_number() -> None:
 
     assert "`cached from run #5000`" in named
     assert "`cached from an earlier run`" in anonymous
+
+
+# --- resolved failures: the banner (D-84) ---------------------------------
+
+
+FAILING_SHA, FIX_SHA = "a" * 40, "b" * 40
+
+
+def resolved(status: FailureStatus, fix_sha: str | None = None, **diagnosis_changes: Any) -> Any:
+    failure, diag = item(**diagnosis_changes)
+    return failure.model_copy(update={"status": status, "fix_commit_sha": fix_sha}), diag
+
+
+def test_a_flaky_failure_says_so_with_the_exact_message() -> None:
+    rep = report(resolved(FailureStatus.RESOLVED_FLAKY))
+
+    comment = render_comment(rep)
+
+    assert "**✅ Passed on re-run without code changes — recorded as flaky**" in comment
+    assert "Likely cause" not in comment
+    assert render_title(rep) == "✅ Passed on re-run without code changes — recorded as flaky"
+    assert "Compare the changes" not in comment
+    assert "**Probable cause:**" in comment  # the compact diagnosis stays below
+
+
+def test_a_fixed_failure_says_the_commit_shortened_and_links_the_comparison() -> None:
+    rep = report(resolved(FailureStatus.RESOLVED_BY_COMMIT, FIX_SHA))
+
+    comment = render_comment(rep)
+
+    assert "**✅ Fixed by `bbbbbbb`**" in comment
+    assert "Likely cause" not in comment
+    assert render_title(rep) == "✅ Fixed by bbbbbbb"
+    link = (
+        f"[Compare the changes](https://github.com/acme/widgets/compare/{FAILING_SHA}...{FIX_SHA})"
+    )
+    assert link in comment
+    assert threats(comment, document=True) == []
+    summary = render_check(rep).summary
+    assert summary.startswith("✅ Fixed by `bbbbbbb`")
+    assert threats(summary, document=True) == []
+
+
+@pytest.mark.parametrize(
+    "bad",
+    [
+        "abc](https://evil.example/x)",
+        "b" * 39,
+        "B" * 40,
+        "b" * 41,
+        "b" * 39 + "\n",
+        None,
+        "",
+    ],
+)
+def test_a_malformed_fix_sha_gets_no_sha_and_no_link(bad: str | None) -> None:
+    rep = report(resolved(FailureStatus.RESOLVED_BY_COMMIT, bad))
+
+    comment = render_comment(rep)
+
+    assert "✅ Fixed by a later commit" in comment
+    assert "compare" not in comment.lower()
+    assert "evil.example" not in comment
+    assert threats(comment, document=True) == []
+
+
+def test_an_odd_repository_name_or_failing_sha_gets_no_comparison_link() -> None:
+    failure, diag = resolved(FailureStatus.RESOLVED_BY_COMMIT, FIX_SHA)
+    run = failure.job.job.run.model_copy(update={"repo_full_name": "evil.example/x)(y"})
+    odd = failure.model_copy(
+        update={
+            "job": failure.job.model_copy(
+                update={"job": failure.job.job.model_copy(update={"run": run})}
+            )
+        }
+    )
+    other = failure.model_copy(
+        update={
+            "job": failure.job.model_copy(
+                update={
+                    "job": failure.job.job.model_copy(
+                        update={"run": failure.job.job.run.model_copy(update={"head_sha": "xyz"})}
+                    )
+                }
+            )
+        }
+    )
+
+    for subject in (odd, other):
+        comment = render_comment(report((subject, diag)))
+        assert "✅ Fixed by `bbbbbbb`" in comment
+        assert "Compare the changes" not in comment
+        assert threats(comment, document=True) == []
+
+
+def test_mixed_or_open_failures_keep_the_likely_cause_title() -> None:
+    fixed = resolved(FailureStatus.RESOLVED_BY_COMMIT, FIX_SHA)
+    flaky = resolved(FailureStatus.RESOLVED_FLAKY)
+    still_open = item()
+
+    for rep in (report(fixed, flaky), report(fixed, still_open), report(still_open)):
+        assert render_title(rep).startswith("Likely cause")
+        assert "✅" not in render_comment(rep)
+
+
+def test_a_stale_failure_has_no_banner() -> None:
+    failure, diag = item()
+    stale = failure.model_copy(update={"status": FailureStatus.STALE})
+
+    assert render_title(report((stale, diag))).startswith("Likely cause")
+
+
+def test_a_resolved_comment_with_a_poisoned_diagnosis_is_still_inert() -> None:
+    attack = (
+        "[click](https://evil.example/login) @octocat <script>x</script> ![i](https://e.x/p.png)"
+    )
+    rep = report(
+        resolved(
+            FailureStatus.RESOLVED_BY_COMMIT,
+            FIX_SHA,
+            probable_cause=attack,
+            suggested_fix=attack,
+            evidence=[Evidence(line=1, text=attack)],
+        )
+    )
+
+    for markdown in (render_comment(rep), render_check(rep).summary):
+        assert threats(markdown, document=True) == []
+        assert "evil.example" not in re.sub(r"`[^`]*`", "", markdown)

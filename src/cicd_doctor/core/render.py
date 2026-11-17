@@ -12,6 +12,7 @@ diagnosis: never a clickable phishing link, a notification, or markup that chang
 import re
 import unicodedata
 from collections.abc import Sequence
+from typing import NamedTuple
 from urllib.parse import urlsplit
 
 from cicd_doctor.core.logs.clean import strip_terminal_controls
@@ -20,6 +21,7 @@ from cicd_doctor.core.models import (
     Diagnosis,
     DiagnosisReport,
     Failure,
+    FailureStatus,
     FallbackReason,
     SimilarFailure,
 )
@@ -78,6 +80,8 @@ _LEADING = re.compile(r"^(\s*)([#>+\-=]|\d+[.)])")  # heading, quote, list, sete
 _ASCII_NAME = re.compile(r"[^A-Za-z0-9._:/@+\- ]")
 _REPO = re.compile(r"[A-Za-z0-9._\-]+/[A-Za-z0-9._\-]+")
 _COMMIT_SHA = re.compile(r"[0-9a-f]{7,40}")
+_FULL_SHA = re.compile(r"[0-9a-f]{40}")
+FLAKY_BANNER = "✅ Passed on re-run without code changes — recorded as flaky"
 MAX_CHECK_SIMILAR = 3
 MAX_COMMENT_SIMILAR = 1
 ZWJ = "‍"
@@ -209,10 +213,60 @@ def check_name(workflow_name: str) -> str:
     return f"{CHECK_NAME_PREFIX}: {flat}"[:MAX_CHECK_NAME_CHARS]
 
 
+class _Banner(NamedTuple):
+    """How a resolved failure is announced (D-84): plain text for the title of a check run,
+    markdown for a comment, and the link that compares the two commits when there is one."""
+
+    plain: str
+    markdown: str
+    compare: str | None
+
+
+def resolution_banner(report: DiagnosisReport) -> _Banner | None:
+    """The banner of a report whose failures were all resolved the same way, else None.
+
+    The text is built here from the status and from a commit sha that must be 40 hex digits (shown
+    as seven): nothing of the stored diagnosis, and no URL that came from a log. The comparison
+    link is derived from the repository name and the two shas, checked like every other link
+    (D-64); a sha that does not look like one is left out, with its link.
+    """
+    if not report.items:
+        return None
+    statuses = {(f.status, f.fix_commit_sha) for f, _ in report.items}
+    if len(statuses) != 1:
+        return None
+    status, fix_sha = next(iter(statuses))
+    if status is FailureStatus.RESOLVED_FLAKY:
+        return _Banner(FLAKY_BANNER, FLAKY_BANNER, None)
+    if status is not FailureStatus.RESOLVED_BY_COMMIT:
+        return None
+    if fix_sha is None or not _FULL_SHA.fullmatch(fix_sha):
+        text = "✅ Fixed by a later commit"
+        return _Banner(text, text, None)
+    failing = report.items[0][0].job.job.run
+    compare = None
+    if _REPO.fullmatch(failing.repo_full_name) and _FULL_SHA.fullmatch(failing.head_sha):
+        compare = (
+            f"https://github.com/{failing.repo_full_name}/compare/{failing.head_sha}...{fix_sha}"
+        )
+    return _Banner(f"✅ Fixed by {fix_sha[:7]}", f"✅ Fixed by `{fix_sha[:7]}`", compare)
+
+
+def _banner_lines(banner: _Banner, *, bold: bool) -> str:
+    text = f"**{banner.markdown}**" if bold else banner.markdown
+    if banner.compare is None:
+        return text
+    return f"{text}\n\n[Compare the changes]({banner.compare})"
+
+
 def render_title(report: DiagnosisReport) -> str:
-    """``Likely cause: dependency (high confidence)`` for the most confident job."""
+    """``Likely cause: dependency (high confidence)`` for the most confident job, or the plain
+    banner when every failure of the report was resolved."""
     if not report.items:
         return "Could not diagnose"
+    banner = resolution_banner(report)
+    if banner is not None:
+        return banner.plain
     _, best = max(report.items, key=lambda item: item[1].confidence)
     title = f"Likely cause: {best.category.value} ({confidence_label(best.confidence)} confidence)"
     return title + (f" (+{len(report.items) - 1} more)" if len(report.items) > 1 else "")
@@ -223,6 +277,9 @@ def render_check(report: DiagnosisReport) -> CheckOutput:
     sections = [_job_section(report, failure, diagnosis) for failure, diagnosis in report.items]
     if not sections:
         sections = ["No failed job was found in this run attempt."]
+    banner = resolution_banner(report)
+    if banner is not None:
+        sections.insert(0, _banner_lines(banner, bold=False))
     return CheckOutput(title=render_title(report), summary=_join(sections, MAX_SUMMARY_CHARS))
 
 
@@ -238,7 +295,9 @@ def render_comment(report: DiagnosisReport) -> str:
         _job_section(report, failure, diagnosis, compact=True)
         for failure, diagnosis in report.items
     ]
-    head = "\n".join([marker, heading, f"**{title}**"] + ([attempt] if attempt else []))
+    banner = resolution_banner(report)
+    lead = _banner_lines(banner, bold=True) if banner is not None else f"**{title}**"
+    head = "\n".join([marker, heading, lead] + ([attempt] if attempt else []))
     return _join([head, *body], MAX_COMMENT_CHARS)
 
 
