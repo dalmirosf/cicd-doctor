@@ -10,6 +10,7 @@ from pathlib import Path
 import pytest
 import yaml
 
+from cicd_doctor.adapters.memory import CharTokenCounter
 from evals.runner import cli
 from evals.runner.capture import (
     CaptureError,
@@ -25,6 +26,7 @@ from evals.runner.capture import (
     trim_jobs_payload,
 )
 from evals.runner.cases import load_cases
+from evals.runner.variants import run_rules
 from tests.logcases import LOG_CASES_DIR, load_log_case, select_case_jobs
 from tests.redaction_corpus import planted_secrets
 
@@ -66,9 +68,18 @@ class FakeGh:
     Like the real ``gh api``, it refuses to output that log unless it gets the escape flag.
     """
 
-    def __init__(self, runs: list[dict[str, object]] | None = None) -> None:
+    def __init__(
+        self,
+        runs: list[dict[str, object]] | None = None,
+        *,
+        annotations: dict[int, list[str]] | None = None,
+        cancelled_runs: Sequence[int] = (),
+        log_error: str | None = None,
+    ) -> None:
         self.calls: list[list[str]] = []
         self.runs = runs or []
+        self.annotations = annotations or {}
+        self.cancelled_runs = set(cancelled_runs)  # runs whose job ended cancelled (D-73)
         self.secret = planted_secrets()[0]
         fixture = LOG_CASES_DIR / "py-modnf"
         self.jobs = json.loads((fixture / "jobs.json").read_text("utf-8"))
@@ -76,7 +87,9 @@ class FakeGh:
         self.jobs["jobs"][0]["html_url"] = "https://github.com/acme/x/actions/runs/1/job/2"
         text = (fixture / "logs" / f"{JOB_ID}.txt").read_bytes().decode("utf-8")
         assert PLAIN_ERROR in text
-        text = text.replace(PLAIN_ERROR, COLOURED_ERROR)  # same line number, colours in between
+        text = text.replace(
+            PLAIN_ERROR, log_error or COLOURED_ERROR
+        )  # same line number, colours in between
         token = self.secret.secret
         extra = [
             self.secret.line,
@@ -98,9 +111,26 @@ class FakeGh:
             if ESCAPE_FLAG not in args:
                 raise CaptureError(f"gh api failed: {ESCAPES_REFUSED}")
             return self.log
+        if endpoint.endswith("/annotations?per_page=100"):
+            job_id = int(endpoint.split("/")[-2])
+            notes = [
+                {"message": message, "annotation_level": "failure"}
+                for message in self.annotations.get(job_id, [])
+            ]
+            return json.dumps(notes).encode()
         if "/jobs?" in endpoint:
+            run_id = int(endpoint.split("/runs/")[1].split("/")[0])
+            if run_id in self.cancelled_runs:
+                return json.dumps(_cancelled(self.jobs)).encode()
             return json.dumps(self.jobs).encode()
         raise AssertionError(f"unexpected gh call {args}")
+
+
+def _cancelled(payload: dict[str, object]) -> dict[str, object]:
+    """The same jobs, but ended ``cancelled`` (the job and its failed step), as a timeout does."""
+    text = json.dumps(payload).replace('"failure"', '"cancelled"')
+    result: dict[str, object] = json.loads(text)
+    return result
 
 
 def test_capture_writes_a_redacted_labelled_case(tmp_path: Path) -> None:
@@ -265,26 +295,118 @@ def test_capture_all_notes_cases_that_lack_failed_runs(tmp_path: Path) -> None:
     assert notes == ["py-modnf: 1 of 2 captures; run py-modnf.yml again"]
 
 
-def test_capture_all_explains_runs_that_ended_cancelled(tmp_path: Path) -> None:
-    # A job that hits its timeout-minutes ends cancelled, as the real lab showed.
-    runs = [{"databaseId": 21, "attempt": 1, "conclusion": "cancelled"}]
+TIMEOUT_NOTES = [
+    "The job has exceeded the maximum execution time of 1m0s",
+    "The operation was canceled.",
+]
 
-    captured, notes = capture_all(REPO, manifest=MANIFEST, out_dir=tmp_path, gh=FakeGh(runs))
+
+def test_a_cancelled_run_with_a_job_timeout_is_captured_with_its_annotations(
+    tmp_path: Path,
+) -> None:
+    gh = FakeGh(annotations={JOB_ID: TIMEOUT_NOTES}, cancelled_runs=[555])
+
+    captured = capture(
+        REPO, 555, "py-modnf", manifest=MANIFEST, out_dir=tmp_path / "lab", gh=gh, now=lambda: NOW
+    )
+
+    assert captured.job_id == JOB_ID
+    notes = json.loads((captured.path / "annotations.json").read_text("utf-8"))
+    assert notes == {str(JOB_ID): TIMEOUT_NOTES}
+    assert ["api", f"repos/{REPO}/check-runs/{JOB_ID}/annotations?per_page=100"] in gh.calls
+    assert all(call[0] == "api" and "-X" not in call for call in gh.calls)  # reads only
+    [case] = load_cases(tmp_path, sources=["lab"])
+    assert case.annotations == {JOB_ID: TIMEOUT_NOTES}
+
+
+def test_a_captured_job_timeout_is_diagnosed_as_a_timeout_by_the_eval_runner(
+    tmp_path: Path,
+) -> None:
+    gh = FakeGh(
+        annotations={JOB_ID: TIMEOUT_NOTES},
+        cancelled_runs=[555],
+        log_error="##[error]The operation was canceled.",  # all the log says about a timeout
+    )
+    capture(REPO, 555, "py-modnf", manifest=MANIFEST, out_dir=tmp_path / "lab", gh=gh)
+    [case] = load_cases(tmp_path, sources=["lab"])
+
+    result = run_rules(case, CharTokenCounter())
+
+    assert result.error is None
+    assert result.predicted == "timeout"
+    assert result.rule_ids[:1] == ["GHA-TIMEOUT"]
+    # without the annotations the same run is just a cancellation: no failed job
+    (case.root / "annotations.json").unlink()
+    [bare] = load_cases(tmp_path, sources=["lab"])
+    assert run_rules(bare, CharTokenCounter()).error == "no failed job matches the case"
+
+
+def test_a_manual_cancellation_cannot_be_captured_and_writes_nothing(tmp_path: Path) -> None:
+    gh = FakeGh(annotations={JOB_ID: ["The operation was canceled."]}, cancelled_runs=[555])
+
+    with pytest.raises(CaptureError, match="no failed or timed-out job"):
+        capture(REPO, 555, "py-modnf", manifest=MANIFEST, out_dir=tmp_path, gh=gh)
+
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_annotations_are_redacted_and_stripped_like_the_log(tmp_path: Path) -> None:
+    secret = planted_secrets()[0].secret
+    notes = [TIMEOUT_NOTES[0], f"[31mtoken {secret}[0m"]
+    gh = FakeGh(annotations={JOB_ID: notes}, cancelled_runs=[555])
+
+    captured = capture(REPO, 555, "py-modnf", manifest=MANIFEST, out_dir=tmp_path, gh=gh)
+
+    stored = (captured.path / "annotations.json").read_text("utf-8")
+    assert secret not in stored
+    assert "\u001b" not in stored
+    assert "[REDACTED:" in stored
+
+
+def test_a_failed_run_has_no_annotations_file_and_reads_none(tmp_path: Path) -> None:
+    gh = FakeGh()
+
+    captured = capture(REPO, 555, "py-modnf", manifest=MANIFEST, out_dir=tmp_path, gh=gh)
+
+    assert not (captured.path / "annotations.json").exists()
+    assert not any(call[-1].endswith("/annotations?per_page=100") for call in gh.calls)
+
+
+def test_capture_all_takes_a_cancelled_run_that_was_a_job_timeout(tmp_path: Path) -> None:
+    runs = [{"databaseId": 555, "attempt": 1, "conclusion": "cancelled"}]
+    gh = FakeGh(runs, annotations={JOB_ID: TIMEOUT_NOTES}, cancelled_runs=[555])
+    one = MANIFEST.model_copy(
+        update={"cases": [MANIFEST.cases[0].model_copy(update={"captures": 1})]}
+    )
+
+    captured, notes = capture_all(REPO, manifest=one, out_dir=tmp_path, gh=gh)
+
+    assert len(captured) == 1
+    assert notes == []
+
+
+def test_capture_all_skips_manual_cancellations_and_says_why(tmp_path: Path) -> None:
+    runs = [{"databaseId": 21, "attempt": 1, "conclusion": "cancelled"}]
+    gh = FakeGh(runs, annotations={JOB_ID: ["The operation was canceled."]}, cancelled_runs=[21])
+
+    captured, notes = capture_all(REPO, manifest=MANIFEST, out_dir=tmp_path, gh=gh)
 
     assert captured == []
     [note] = notes
-    assert note.startswith("py-modnf: 0 of 2 captures; its 1 run(s) ended cancelled")
-    assert "will not help" in note
-    assert "SPEC §14" in note
+    assert note.startswith("py-modnf: 0 of 2 captures; 1 cancelled run(s) were skipped")
+    assert "timeout-minutes" in note
 
 
-def test_a_cancelled_run_next_to_a_captured_one_keeps_the_plain_note(tmp_path: Path) -> None:
+def test_a_skipped_cancellation_next_to_a_captured_run_keeps_the_plain_note(
+    tmp_path: Path,
+) -> None:
     runs = [
         {"databaseId": 21, "attempt": 1, "conclusion": "cancelled"},
         {"databaseId": 22, "attempt": 1, "conclusion": "failure"},
     ]
+    gh = FakeGh(runs, annotations={JOB_ID: ["The operation was canceled."]}, cancelled_runs=[21])
 
-    _, notes = capture_all(REPO, manifest=MANIFEST, out_dir=tmp_path, gh=FakeGh(runs))
+    _, notes = capture_all(REPO, manifest=MANIFEST, out_dir=tmp_path, gh=gh)
 
     assert notes == ["py-modnf: 1 of 2 captures; run py-modnf.yml again"]
 

@@ -148,7 +148,7 @@ cases:
     category: timeout
     cause: "The job's timeout-minutes (1) is shorter than the 5-minute sleep."
     fix: "Raise the job's timeout-minutes, or make the work shorter."
-    evidence: ["has exceeded the maximum execution time"]
+    evidence: ["The operation was canceled"]  # the log only says this; the timeout text is an annotation (D-73)
     tags: [actions, timeout]
 
   - id: step-timeout

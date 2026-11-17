@@ -68,7 +68,9 @@ Variant = Callable[[Case, TokenCounter], CaseResult]
 
 def pick_job(case: Case) -> FailedJob | None:
     """The job of ``log.txt``: ``job_id`` from case.yaml, else the first failed job."""
-    failed = select_failed_jobs(case.run_ref(), case.jobs, limit=len(case.jobs) or 1)
+    failed = select_failed_jobs(
+        case.run_ref(), case.jobs, limit=len(case.jobs) or 1, annotations=case.annotations
+    )
     if case.meta.job_id is not None:
         return next((job for job in failed if job.job.job_id == case.meta.job_id), None)
     return failed[0] if failed else None

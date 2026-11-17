@@ -25,7 +25,9 @@ from cicd_doctor.core.models import (
 )
 
 SIGNATURE_PREFIX = "sha256="
-DIAGNOSED_CONCLUSIONS: frozenset[str] = frozenset({"failure", "timed_out"})
+# ``cancelled`` runs are enqueued too: a job that exceeds its ``timeout-minutes`` ends the run
+# ``cancelled``, and the use case decides whether it was a timeout (D-73).
+DIAGNOSED_CONCLUSIONS: frozenset[str] = frozenset({"failure", "timed_out", "cancelled"})
 
 _INSTALLATION_ACTIONS = {
     "created": InstallationAction.CREATED,
@@ -196,8 +198,12 @@ def _diagnose_job(parsed: _WorkflowRunEvent, max_attempts: int) -> NewJob | None
     run, repo = parsed.workflow_run, parsed.repository
     if run.conclusion not in DIAGNOSED_CONCLUSIONS:
         return None  # success becomes record_outcome in P2 (FR-17)
-    conclusion: Literal["failure", "timed_out"] = (
-        "failure" if run.conclusion == "failure" else "timed_out"
+    conclusion: Literal["failure", "timed_out", "cancelled"] = (
+        "failure"
+        if run.conclusion == "failure"
+        else "cancelled"
+        if run.conclusion == "cancelled"
+        else "timed_out"
     )
     head = run.head_repository
     # A deleted fork leaves no head repository: treat it as a fork (no automatic LLM, D-17).

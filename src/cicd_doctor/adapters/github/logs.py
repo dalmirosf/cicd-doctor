@@ -27,6 +27,7 @@ from cicd_doctor.core.models import JobRef, RawLog, RunRef, WorkflowJob
 logger = logging.getLogger(__name__)
 
 JOBS_TEMPLATE = "/repos/{owner}/{repo}/actions/runs/{run_id}/attempts/{attempt}/jobs"
+ANNOTATIONS_TEMPLATE = "/repos/{owner}/{repo}/check-runs/{job_id}/annotations"
 LOG_TEMPLATE = "/repos/{owner}/{repo}/actions/jobs/{job_id}/logs"
 
 BLOB_TIMEOUT = httpx2.Timeout(connect=5.0, read=30.0, write=30.0, pool=5.0)
@@ -67,6 +68,21 @@ class GitHubLogSource:
             return parse_jobs({"jobs": page.items})
         except InvalidJobsPayloadError as exc:  # names fields, never values
             raise TransientError(f"GET {JOBS_TEMPLATE}: {exc}") from None
+
+    async def job_annotations(self, job: JobRef) -> list[str]:
+        """The messages of the annotations of the job's check run (the job id is its id; D-73).
+        Only the ``message`` texts are kept."""
+        owner, repo = _split(job.run.repo_full_name)
+        page = await self._http.paginate(
+            ANNOTATIONS_TEMPLATE,
+            path={"owner": owner, "repo": repo, "job_id": job.job_id},
+            credential=self._credential(job.run),
+        )
+        return [
+            item["message"]
+            for item in page.items
+            if isinstance(item, dict) and isinstance(item.get("message"), str)
+        ]
 
     async def job_log(self, job: JobRef, max_bytes: int) -> RawLog:
         url = await self._redirect(job)

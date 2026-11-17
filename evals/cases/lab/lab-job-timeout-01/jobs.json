@@ -1,0 +1,61 @@
+{
+  "total_count": 1,
+  "jobs": [
+    {
+      "id": 134091606516,
+      "run_id": 44098408459,
+      "run_attempt": 1,
+      "workflow_name": "job-timeout",
+      "name": "run",
+      "status": "completed",
+      "conclusion": "cancelled",
+      "started_at": "2026-11-17T14:00:22Z",
+      "completed_at": "2026-11-17T14:01:38Z",
+      "labels": [
+        "ubuntu-24.04"
+      ],
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-17T14:00:23Z",
+          "completed_at": "2026-11-17T14:00:24Z"
+        },
+        {
+          "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-17T14:00:24Z",
+          "completed_at": "2026-11-17T14:00:25Z"
+        },
+        {
+          "name": "Run sleep 300",
+          "status": "completed",
+          "conclusion": "cancelled",
+          "number": 3,
+          "started_at": "2026-11-17T14:00:25Z",
+          "completed_at": "2026-11-17T14:01:35Z"
+        },
+        {
+          "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-11-17T14:01:35Z",
+          "completed_at": "2026-11-17T14:01:36Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-11-17T14:01:36Z",
+          "completed_at": "2026-11-17T14:01:36Z"
+        }
+      ]
+    }
+  ]
+}

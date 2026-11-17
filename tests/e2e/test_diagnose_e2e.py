@@ -42,6 +42,7 @@ COMMENTS = "/repos/{owner}/{repo}/issues/{issue_number}/comments"
 COMMENT = "/repos/{owner}/{repo}/issues/comments/{comment_id}"
 JOBS = "/repos/{owner}/{repo}/actions/runs/{run_id}/attempts/{attempt}/jobs"
 LOG = "/repos/{owner}/{repo}/actions/jobs/{job_id}/logs"
+ANNOTATIONS = "/repos/{owner}/{repo}/check-runs/{job_id}/annotations"
 APP = "/app"
 TOKEN = "/app/installations/{installation_id}/access_tokens"
 BLOB = "/actions-results/{blob_id}/workflow-job-run-{run_uuid}/logs/job/job-logs.txt"
@@ -79,7 +80,14 @@ async def world(clock: FakeClock) -> AsyncIterator[DiagnoseWorld]:
         yield built
 
 
-def deliver(world: DiagnoseWorld, run_id: int = 5000, attempt: int = 1, *, delivery: str) -> int:
+def deliver(
+    world: DiagnoseWorld,
+    run_id: int = 5000,
+    attempt: int = 1,
+    *,
+    delivery: str,
+    conclusion: str = "failure",
+) -> int:
     """POST a signed ``workflow_run`` delivery to the real API; return its HTTP status."""
     deps = ApiDependencies(
         queue=world.queue,
@@ -87,7 +95,7 @@ def deliver(world: DiagnoseWorld, run_id: int = 5000, attempt: int = 1, *, deliv
         ready=_ready,
         clock=world.clock,
     )
-    body = encode(workflow_run_payload(run_id, attempt))
+    body = encode(workflow_run_payload(run_id, attempt, conclusion))
     with TestClient(create_app(deps)) as client:
         response = client.post(
             WEBHOOK, content=body, headers=headers("workflow_run", body, delivery=delivery)
@@ -253,3 +261,70 @@ async def test_a_comment_post_that_was_not_recorded_is_found_by_its_marker_on_re
     assert len(world.requests("GET", BLOB)) == downloads
     assert len(world.llm.calls) == 1
     assert len(world.requests("POST", CHECKS)) == 1
+
+
+# --- job-level timeouts (D-73) ---------------------------------------------------------------
+
+
+async def test_a_cancelled_run_with_a_job_timeout_ends_in_a_timeout_check_and_comment(
+    world: DiagnoseWorld,
+) -> None:
+    job_id = world.add_cancelled_run(
+        annotations=[
+            "The job has exceeded the maximum execution time of 1m0s",
+            "The operation was canceled.",
+        ]
+    )
+
+    assert deliver(world, delivery="b1c2d3e4-0000-4000-8000-000000000010", conclusion="cancelled")
+    assert await run_job(world)
+
+    assert world.calls() == [
+        ("POST", TOKEN),
+        ("GET", JOBS),
+        ("GET", ANNOTATIONS),  # the decision comes before the check run exists
+        ("GET", APP),
+        ("GET", COMMIT_CHECK_RUNS),
+        ("POST", CHECKS),
+        ("GET", LOG),
+        ("GET", BLOB),
+        ("PATCH", CHECK),
+        ("GET", COMMENTS),
+        ("POST", COMMENTS),
+    ]
+    [annotations] = world.requests("GET", ANNOTATIONS)
+    assert annotations.params["job_id"] == str(job_id)
+    assert annotations.has_authorization
+    [finish] = world.requests("PATCH", CHECK)
+    assert finish.json["output"]["title"].startswith("Likely cause: timeout")
+    [comment] = world.writes.comments.values()
+    assert comment["body"].splitlines()[0] == MARKER
+    job = await world.queue.get(1)
+    assert job is not None
+    assert (job.status, job.attempts) == (JobStatus.DONE, 1)
+
+
+async def test_a_manual_cancellation_ends_with_nothing_published(world: DiagnoseWorld) -> None:
+    world.add_cancelled_run(annotations=["The operation was canceled."])
+
+    assert deliver(world, delivery="b1c2d3e4-0000-4000-8000-000000000011", conclusion="cancelled")
+    assert await run_job(world)
+
+    assert world.calls() == [("POST", TOKEN), ("GET", JOBS), ("GET", ANNOTATIONS)]
+    assert world.writes.check_runs == {}
+    assert world.writes.comments == {}
+    assert world.llm.calls == []
+    job = await world.queue.get(1)
+    assert job is not None
+    assert (job.status, job.attempts) == (JobStatus.DONE, 1)  # finished, not retried
+
+
+@pytest.mark.parametrize("conclusion", ["success", "skipped"])
+async def test_a_run_that_neither_failed_nor_was_cancelled_makes_no_job(
+    world: DiagnoseWorld, conclusion: str
+) -> None:
+    assert (
+        deliver(world, delivery="b1c2d3e4-0000-4000-8000-000000000012", conclusion=conclusion)
+        == 204
+    )
+    assert not await run_job(world)

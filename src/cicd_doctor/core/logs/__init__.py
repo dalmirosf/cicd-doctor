@@ -9,7 +9,12 @@ from cicd_doctor.core.logs.excerpt import (
     render_line,
     share_budget,
 )
-from cicd_doctor.core.logs.select import failed_step, select_failed_jobs
+from cicd_doctor.core.logs.select import (
+    cancelled_jobs,
+    failed_step,
+    is_job_timeout,
+    select_failed_jobs,
+)
 from cicd_doctor.core.logs.tail import TailBuffer, tail_text
 
 __all__ = [
@@ -18,7 +23,9 @@ __all__ = [
     "TailBuffer",
     "build_excerpt",
     "build_excerpts",
+    "cancelled_jobs",
     "failed_step",
+    "is_job_timeout",
     "render_line",
     "select_failed_jobs",
     "share_budget",

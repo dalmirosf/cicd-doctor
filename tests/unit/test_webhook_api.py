@@ -107,6 +107,8 @@ def test_ping_answers_pong_and_stores_nothing(api: Harness) -> None:
     ("event", "fixture", "change"),
     [
         ("workflow_run", "workflow_run_completed_failure", {"conclusion": "success"}),
+        ("workflow_run", "workflow_run_completed_failure", {"conclusion": "skipped"}),
+        ("workflow_run", "workflow_run_completed_failure", {"conclusion": "stale"}),
         ("workflow_run", "workflow_run_completed_failure", {"action": "requested"}),
         ("issue_comment", "issue_comment_created", {}),
         ("push", "ping", {}),

@@ -6,7 +6,7 @@ Logs are redacted when they are captured and are never executed or followed: the
 import json
 import re
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Literal
@@ -72,6 +72,8 @@ class Case:
     root: Path
     jobs: list[WorkflowJob]
     log: RawLog
+    # Annotation messages of the cancelled jobs, by job id (``annotations.json``, D-73).
+    annotations: dict[int, list[str]] = field(default_factory=dict)
 
     @property
     def id(self) -> str:
@@ -103,7 +105,20 @@ def load_case(root: Path) -> Case:
     jobs = parse_jobs(json.loads((root / "jobs.json").read_text("utf-8")))
     # newline="": a bare "\r" is a progress update inside a line, not a line break (§7.3).
     text = (root / "log.txt").read_text(encoding="utf-8", newline="")
-    return Case(meta=meta, root=root, jobs=jobs, log=RawLog(text=text, truncated=False))
+    return Case(
+        meta=meta,
+        root=root,
+        jobs=jobs,
+        log=RawLog(text=text, truncated=False),
+        annotations=_load_annotations(root / "annotations.json"),
+    )
+
+
+def _load_annotations(path: Path) -> dict[int, list[str]]:
+    if not path.is_file():
+        return {}
+    raw = json.loads(path.read_text("utf-8"))
+    return {int(job_id): [str(message) for message in notes] for job_id, notes in raw.items()}
 
 
 def load_cases(

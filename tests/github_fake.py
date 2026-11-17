@@ -759,6 +759,7 @@ def _page(request: RecordedRequest, cap: int, items: list[Any]) -> tuple[list[An
 BLOB_HOST = "productionresultssa7.blob.core.windows.net"
 JOBS_TEMPLATE = "/repos/{owner}/{repo}/actions/runs/{run_id}/attempts/{attempt}/jobs"
 LOG_TEMPLATE = "/repos/{owner}/{repo}/actions/jobs/{job_id}/logs"
+ANNOTATIONS_TEMPLATE = "/repos/{owner}/{repo}/check-runs/{job_id}/annotations"
 BLOB_TEMPLATE = "/actions-results/{blob_id}/workflow-job-run-{run_uuid}/logs/job/job-logs.txt"
 BLOB_CHUNK = 64 * 1024
 
@@ -827,9 +828,11 @@ class GitHubLogsFake:
         self.redirect_scheme = "https"
         self._jobs: dict[tuple[int, int], tuple[list[Any], int]] = {}
         self._blob_ids: dict[str, int] = {}  # blob id in the URL -> job id
+        self._annotations: dict[int, tuple[list[Any], int]] = {}  # by job id (D-73)
         self._redirects = 0
         github.add_route("GET", JOBS_TEMPLATE, self._list_jobs)
         github.add_route("GET", LOG_TEMPLATE, self._log_redirect)
+        github.add_route("GET", ANNOTATIONS_TEMPLATE, self._list_annotations)
         github.add_route("GET", BLOB_TEMPLATE, self._blob, auth="none")
 
     def set_jobs(
@@ -837,6 +840,13 @@ class GitHubLogsFake:
     ) -> None:
         """The jobs of an attempt; ``page_size`` overrides ``per_page`` to force several pages."""
         self._jobs[(run_id, attempt)] = (jobs, page_size or 0)
+
+    def set_annotations(
+        self, job_id: int, annotations: list[Any], *, page_size: int | None = None
+    ) -> None:
+        """The annotations of the check run of a job (the job id is the check run id). A job
+        without any answers 200 and ``[]``, like the real API."""
+        self._annotations[job_id] = (annotations, page_size or 0)
 
     def set_log(self, job_id: int, body: bytes | None = None, **options: Any) -> BlobState:
         state = BlobState(body=body or b"", **options)
@@ -859,6 +869,16 @@ class GitHubLogsFake:
             base = f"https://{API_HOST}{request.path}"
             headers["Link"] = f'<{base}?per_page={size}&page={page + 1}>; rel="next"'
         return json_response(200, {"total_count": len(jobs), "jobs": chunk}, headers)
+
+    def _list_annotations(self, request: RecordedRequest) -> httpx2.Response:
+        annotations, forced = self._annotations.get(int(request.params["job_id"]), ([], 0))
+        size = forced or int(request.query.get("per_page", "30"))
+        page = int(request.query.get("page", "1"))
+        headers: dict[str, str] = {}
+        if page * size < len(annotations):
+            base = f"https://{API_HOST}{request.path}"
+            headers["Link"] = f'<{base}?per_page={size}&page={page + 1}>; rel="next"'
+        return json_response(200, annotations[(page - 1) * size : page * size], headers)
 
     def _log_redirect(self, request: RecordedRequest) -> httpx2.Response:
         job_id = int(request.params["job_id"])
