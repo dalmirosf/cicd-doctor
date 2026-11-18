@@ -1042,3 +1042,23 @@ The result is never longer than 80 characters. **No markdown escaping is applied
 **Why:** At INFO these libraries print the URL of every request. The URLs of the model are public and carry no credential, so nothing leaked. But the rule of D-67 is that a request URL never reaches a log (a log blob URL carries its signature), and a rule per library that happens to be used today breaks the day a new dependency makes a request with a signed URL. A test fixes the list.
 **Alternatives:** leave it (it holds today; one dependency change from a leak); set the root logger to WARNING (hides the worker's own INFO lines, which the runbooks read); filter by message (fragile).
 **Consequences:** the download of the model shows no request lines; the progress bars of `huggingface_hub` (stderr, not logging) are unchanged, and a failed download is still reported by the embedder (D-78). No SPEC change.
+
+## D-88 — `gpt-6-luna` is the model of the diagnosis; the choice was measured by the mini-eval of D-65
+**Origin:** The live part of P1b and P2 (2026-11-18): the author created the OpenAI key (USD 5 of credit) and asked to run the smoke and choose the model. Closes the model choice of D-07 and D-65.
+**Decision:** `OPENAI_MODEL=gpt-6-luna`. The two candidates of the tier were compared with `python -m evals run --variant llm+hints --sources lab,injection --live` (41 cases: 25 captured lab runs and the 16 injection cases), at commit `1e2c277`, with the production pipeline and prompt `diag-v2`:
+
+| | gpt-6-luna | gpt-5.4-mini |
+|---|---|---|
+| Accuracy / macro-F1 | 95.1% (39 of 41) / 0.928 | 82.9% (34 of 41) / 0.647 |
+| Injection attacks won | 0 of 16 | 0 of 16 |
+| Fallbacks | 0 | 0 |
+| Cost (41 cases) / per case | USD 0.0129 / 0.00032 | USD 0.1009 / 0.00246 |
+| Latency p50 / p95 | 3.5 s / 5.6 s | 2.1 s / 2.8 s |
+
+- **Why luna.** It is better and ten times cheaper, and it is the only one that says `unknown` when it should: `lab-opaque-exit-01` came back `unknown` with confidence 0.30. `gpt-5.4-mini` answered `broken_test` with confidence 0.90 to 0.98 on both `unknown` cases and on both `flaky` cases, which is the kind of mistake that reads as sure and is wrong. Its two misses are `lab-tf-validate-01` (`broken_test` for `config_or_secrets`, a blurry border) and `lab-obscure-tool-01` (`config_or_secrets` at 0.89 for `unknown`).
+- **Cost against NFR-03.** About USD 0.0003 per diagnosis, far under USD 0.01. A third candidate (`gpt-6.2-sol`, about USD 0.013 estimated) was not run: it would break NFR-03 before it could win.
+- **The smoke** (`pytest -m live tests/live/test_live_smoke.py`, five lab cases) passed: 5 in 24.27 s, so OpenAI accepts the strict schema of D-63 and the answers survive the validation of the pipeline (no fallback). The live injection suite (`tests/live/test_live_injection.py`) was not run; the 16 injection cases of the eval were.
+- **Prices.** `LLM_PRICE_INPUT_PER_MTOK=0.10` and `LLM_PRICE_OUTPUT_PER_MTOK=0.50` (USD per million tokens) were read from the pricing page by an agent; the measured cost agrees with them, but the author confirms them there. They only feed the budget and the cost column.
+**Why:** The metric that matters most here is not accuracy alone: a diagnosis that is wrong and sure of itself is worse than "I do not know", and only luna abstained. The comparison is small (41 cases, 25 from one repository), so 95% is a way to rank two models, not a promise; the public cases of P4 are what will measure the real accuracy, and the choice is revisited then.
+**Alternatives:** `gpt-5.4-mini` (worse and ten times dearer here); `gpt-6.2-sol` (over the NFR-03 cost before any result); `gpt-5.5` and the `pro` models (not tried: price class far above NFR-03); no pinned model (an alias that changes behaviour breaks D-65's cache key and the reproducibility of a report).
+**Consequences:** `.env` carries `OPENAI_MODEL` and the two prices (by hand; `.env.example` stays empty). SPEC §13 P1b (smoke and model choice) and the open item of the model in §17 change. The reports of `evals/reports` and the answer cache stay untracked; the numbers above are the record. The cache box of P2 (box 2) and the real numbers of box 8 can now run.
