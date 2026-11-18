@@ -578,3 +578,11 @@ def test_configure_logging_silences_httpx2_and_httpcore2_children() -> None:
     assert logging.getLogger("httpx2").getEffectiveLevel() == logging.WARNING
     assert logging.getLogger("httpcore2.http11").getEffectiveLevel() == logging.WARNING
     assert logging.getLogger("httpcore2.connection").getEffectiveLevel() == logging.WARNING
+
+
+def test_configure_logging_also_silences_the_model_download_loggers() -> None:
+    configure_logging()
+
+    # The ones fastembed uses to fetch the embedding model print a URL per request at INFO (D-87).
+    for name in ("httpx", "httpcore.http11", "huggingface_hub.file_download"):
+        assert logging.getLogger(name).getEffectiveLevel() == logging.WARNING
