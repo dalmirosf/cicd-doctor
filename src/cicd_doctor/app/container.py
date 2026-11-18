@@ -60,7 +60,9 @@ LOG_FORMAT = "%(asctime)s %(levelname)s %(name)s %(message)s"
 
 # At INFO these print the URL of every request, and the URL of a log blob carries its signature
 # in the query (D-67). Their children (``httpcore2.http11`` and so on) inherit the level.
-HTTP_LOGGERS = ("httpx2", "httpcore2")
+# ``httpx``, ``httpcore`` and ``huggingface_hub`` are the ones of the embedding model download
+# (fastembed): public URLs today, but the worker should not print any request URL (D-87).
+HTTP_LOGGERS = ("httpx2", "httpcore2", "httpx", "httpcore", "huggingface_hub")
 
 
 def configure_logging() -> None:
