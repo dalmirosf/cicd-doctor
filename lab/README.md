@@ -488,6 +488,11 @@ folder before every `git` command, and stop old `cicd-doctor` processes). What i
 6. **Two workflows, two comments:** every lab pull request runs `pr-py-modnf` and `pr-flaky`. The
    comment of a workflow is found by the number after `workflow=` in its first line, so the blocks
    below look for the comment of **one** workflow (by its id) and ignore the other.
+7. **GitHub can take several minutes to start the run of a push** (seen on 2026-11-18: about 4
+   minutes). In boxes 6 and 3 the run is found by the sha of the commit; if `$RUN_X1`, `$RUN_X2`,
+   `$RUN_X3` or `$RUN_S` prints nothing, the run has not started: repeat the last two lines of that
+   block until a number shows, then `gh run watch <that variable> --repo $LAB`. Long lines pasted
+   into the terminal were cut once (`--commit` lost its argument), so those blocks keep every line short.
 
 ### 0. Variables and start-up (once per PowerShell session)
 
@@ -645,8 +650,9 @@ gh pr create --repo $LAB --base main --head p2/fix --title "P2 fix" --body "Live
 $PR_X   = gh pr view p2/fix --repo $LAB --json number --jq .number
 $SHA_X1 = git rev-parse HEAD
 Start-Sleep -Seconds 10
-$RUN_X1 = gh run list --repo $LAB --branch p2/fix --workflow pr-py-modnf.yml --commit $SHA_X1 --limit 1 --json databaseId --jq '.[0].databaseId'
-gh run watch $RUN_X1 --repo $LAB
+$runsX = gh run list --repo $LAB --branch p2/fix --workflow pr-py-modnf.yml --limit 5 --json databaseId,headSha | ConvertFrom-Json
+$RUN_X1 = ($runsX | Where-Object { $_.headSha -eq $SHA_X1 }).databaseId
+$RUN_X1
 ```
 
 Wait for the diagnosis, then keep the first comment:
@@ -673,8 +679,9 @@ git commit -m "p2 fix: declare requests"
 git push
 $SHA_X2 = git rev-parse HEAD
 Start-Sleep -Seconds 10
-$RUN_X2 = gh run list --repo $LAB --branch p2/fix --workflow pr-py-modnf.yml --commit $SHA_X2 --limit 1 --json databaseId --jq '.[0].databaseId'
-gh run watch $RUN_X2 --repo $LAB
+$runsX = gh run list --repo $LAB --branch p2/fix --workflow pr-py-modnf.yml --limit 5 --json databaseId,headSha | ConvertFrom-Json
+$RUN_X2 = ($runsX | Where-Object { $_.headSha -eq $SHA_X2 }).databaseId
+$RUN_X2
 ```
 
 `$fixed -ne $text` must print `True` (the file changed) and the diff must show one line. The run
@@ -712,8 +719,9 @@ git revert --no-edit HEAD
 git push
 $SHA_X3 = git rev-parse HEAD
 Start-Sleep -Seconds 10
-$RUN_X3 = gh run list --repo $LAB --branch p2/fix --workflow pr-py-modnf.yml --commit $SHA_X3 --limit 1 --json databaseId --jq '.[0].databaseId'
-gh run watch $RUN_X3 --repo $LAB
+$runsX = gh run list --repo $LAB --branch p2/fix --workflow pr-py-modnf.yml --limit 5 --json databaseId,headSha | ConvertFrom-Json
+$RUN_X3 = ($runsX | Where-Object { $_.headSha -eq $SHA_X3 }).databaseId
+$RUN_X3
 ```
 
 Verification (wait about 20 s):
@@ -750,8 +758,9 @@ git commit -m "p2 similar: another missing module"
 git push
 $SHA_S = git rev-parse HEAD
 Start-Sleep -Seconds 10
-$RUN_S = gh run list --repo $LAB --branch p2/fix --workflow pr-py-modnf.yml --commit $SHA_S --limit 1 --json databaseId --jq '.[0].databaseId'
-gh run watch $RUN_S --repo $LAB
+$runsX = gh run list --repo $LAB --branch p2/fix --workflow pr-py-modnf.yml --limit 5 --json databaseId,headSha | ConvertFrom-Json
+$RUN_S = ($runsX | Where-Object { $_.headSha -eq $SHA_S }).databaseId
+$RUN_S
 ```
 
 `git branch --show-current` must print `p2/fix`. Verification (wait about 20 s):
