@@ -7,8 +7,9 @@ the main repository; decision D-61).
 Every workflow:
 
 - runs only when started by hand (`workflow_dispatch`), so publishing the repository runs nothing.
-  The one exception is `pr-py-modnf.yml` (the P1c live verification, below): it runs on
-  `pull_request`, so it also runs nothing until somebody opens a pull request;
+  The exceptions are `pr-py-modnf.yml` (the P1c live verification) and `pr-flaky.yml` (the P2 one),
+  both below: they run on `pull_request`, so they also run nothing until somebody opens a pull
+  request;
 - has `permissions: contents: read` and a `timeout-minutes`;
 - needs no secret, cloud account or paid service. The secret in `secret-misspelled.yml` is
   misspelled on purpose and must **not** be created.
@@ -31,13 +32,20 @@ and regexes that mark its evidence lines.
 `cases.yaml` (it is not an eval case: the evals capture `py-modnf`) and exists only for the live
 verification of P1c.
 
+`pr-flaky.yml` **simulates** a flaky failure: it fails in attempt 1 and passes from attempt 2 on
+(`if [ "$GITHUB_RUN_ATTEMPT" = 1 ]; then exit 1; fi`), so "Re-run failed jobs" turns a failure into
+a success without a code change. It is deterministic on purpose, not a real race (the real ones are
+`flaky-random` and `flaky-timing`). It has no entry in `cases.yaml` either and exists only for the
+live verification of P2. Both `pr-*` workflows run on **every** pull request of the lab, so a pull
+request has two checks and two comments of CICD Doctor, one per workflow.
+
 A real `AccessDenied` from AWS would need an AWS account and an IAM role, so it is left out;
 `aws-no-credentials` covers the AWS credential rules without one.
 
 ## Publish
 
 The lab repository is published **by hand** from this folder; nothing in the main repository
-pushes to it. Publish again whenever a file here changes (the new `pr-py-modnf.yml` included).
+pushes to it. Publish again whenever a file here changes (the `pr-py-modnf.yml` and `pr-flaky.yml` pull request workflows included).
 
 From the root of the `cicd-doctor` repository, in PowerShell, with the GitHub CLI logged in.
 `git subtree split` turns the `lab/` folder into a branch whose root is the lab:
@@ -56,7 +64,7 @@ account's minutes per full round.
 
 ```powershell
 $repo = "<owner>/cicd-doctor-lab"
-Get-ChildItem lab\.github\workflows\*.yml | Where-Object { $_.Name -ne "pr-py-modnf.yml" } | ForEach-Object { gh workflow run $_.Name -R $repo }
+Get-ChildItem lab\.github\workflows\*.yml | Where-Object { $_.Name -notlike "pr-*" } | ForEach-Object { gh workflow run $_.Name -R $repo }
 ```
 
 Then, once those runs have finished:
@@ -431,6 +439,503 @@ gh pr close $PR3 --repo $LAB --delete-branch
 ```
 
 The check runs that were written cannot be deleted; they hang from commits of throwaway branches.
+
+## Live verification (P2)
+
+This is the runbook that checks the memory of CICD Doctor (P2: similar failures, the cache, the
+flaky and fix resolutions, the purge) against the real GitHub with the dev app and the lab (SPEC
+§13, P2). The split is the one of P1c: **you** run the *Action* blocks (they write to GitHub and
+change `.env`); the *Verification* blocks only read, and the session that reads the results uses
+`gh` with `GET` calls only. The same rules of PowerShell 5.1 apply (no `&&`, no double quotes inside
+`--jq`, no two variables whose names differ only in case).
+
+The boxes, in the order of this runbook (the numbers are the ones of SPEC §13, P2):
+
+| Box | What it checks | Needs the OpenAI key |
+|---|---|---|
+| 5 | Flaky: fail, then "Re-run failed jobs" passes → `resolved_flaky` and the flaky banner in the comment | no |
+| 6 | Fix: a failing PR, a fixing commit, green → `resolved_by_commit` with the right sha and "Fixed by" | no |
+| 3 | Similar but not identical: the report lists the earlier run with its score and its fix commit | no (rules only) |
+| 1 | Embeddings are stored for real runs and cost milliseconds | no |
+| 7 | The daily purge job runs (optional live check) | no |
+| 2 | An identical failure within 7 days is served from the cache, with no new LLM call | **yes: pending** |
+
+Box 8 of SPEC §13 (the eval variant `llm+hints+similar`) is not a live box: its real numbers also
+wait for the key and the first `--live` run of the evals.
+
+### Before you start
+
+Everything of *Before you start* in *Live verification (P1c)* still holds (above all: check the
+folder before every `git` command, and stop old `cicd-doctor` processes). What is new:
+
+1. **Run from a folder that has the code of `main`** (the `p2-live` worktree has it:
+   `C:\dev\cicd-doctor\.claude\worktrees\p2-live-57116f`, or `C:\dev\cicd-doctor` itself after
+   `git pull`). The API, the worker and smee all run **from that folder**; copy the real `.env` into
+   it by hand (`Copy-Item C:\dev\cicd-doctor\.env .env`) and never print it. See *Branches and
+   worktrees* in `CLAUDE.md`.
+2. **The database image changed.** `main` pins `pgvector/pgvector:0.8.7-pg17`: pull it and recreate
+   the container (the data volume is kept), then update the extension, then migrate. Migrations
+   `0004` to `0006` (the similarity index, the cache and the outcomes) have never run on your
+   dev database.
+3. **The model downloads once** (66 MB, into `.cache/fastembed` of the folder you run from) when the
+   worker starts, in the background: wait for the line `embedding model loaded in …` in the worker
+   terminal before the first push. Until then the failures are stored without an embedding (a
+   warning says so).
+4. **The lab needs `pr-flaky.yml` on its `main`:** publish `lab/` again (see *Publish*).
+5. **With no OpenAI key** (`OPENAI_API_KEY=` and `OPENAI_MODEL=` empty in `.env`, the state of the
+   end of P1c) boxes 5, 6, 3, 1 and 7 run on the rules only. That is on purpose: they check the
+   memory and the resolutions, not the model.
+6. **Two workflows, two comments:** every lab pull request runs `pr-py-modnf` and `pr-flaky`. The
+   comment of a workflow is found by the number after `workflow=` in its first line, so the blocks
+   below look for the comment of **one** workflow (by its id) and ignore the other.
+
+### 0. Variables and start-up (once per PowerShell session)
+
+Replace `OWNER` and `SLUG` (the app's slug). The first block is typed in the folder you run from:
+
+```powershell
+$LAB = "OWNER/cicd-doctor-lab"
+$BOT = "SLUG[bot]"
+$APPDIR = (Get-Location).Path
+$LABDIR = "$env:TEMP\lab-p2"
+$APPDIR
+git remote get-url origin
+```
+
+The last line must print the URL of the **cicd-doctor** repository (not the lab).
+
+Database: new image, extension and schema:
+
+```powershell
+docker compose pull db
+docker compose up -d db
+docker compose exec -T db psql -U cicd -d cicd_doctor -c "SELECT extversion FROM pg_extension WHERE extname = 'vector';"
+docker compose exec -T db psql -U cicd -d cicd_doctor -c "ALTER EXTENSION vector UPDATE;"
+uv sync
+uv run alembic upgrade head
+uv run alembic current
+```
+
+(Change `-U` and `-d` if you changed `POSTGRES_USER` or `POSTGRES_DB`.) The last command must end
+with `0006 (head)`. If `ALTER EXTENSION` says the extension is already at the newest version, that
+is fine.
+
+Each of these in its own terminal, **in the same folder** (`$APPDIR`):
+
+```powershell
+uv run cicd-doctor api
+```
+
+```powershell
+uv run cicd-doctor worker
+```
+
+```powershell
+npx smee-client --url https://smee.io/CHANNEL --target http://127.0.0.1:8000/webhooks/github
+```
+
+Check (it must say `ready`), and wait in the worker terminal for `embedding model loaded in`:
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8000/ready
+```
+
+A clone of the lab to work in (once), and the ids of the two workflows:
+
+```powershell
+gh repo clone $LAB $LABDIR
+$WF_FLAKY = gh api "repos/$LAB/actions/workflows/pr-flaky.yml" --jq .id
+$WF_MODNF = gh api "repos/$LAB/actions/workflows/pr-py-modnf.yml" --jq .id
+"$WF_FLAKY $WF_MODNF"
+```
+
+Both ids must print (if `pr-flaky.yml` answers 404, publish `lab/` first).
+
+### 5. Box 5: a failure that passes on re-run is `resolved_flaky` and the comment says so
+
+Action (a pull request: `pr-flaky` fails in attempt 1; then the failed jobs are re-run):
+
+```powershell
+Set-Location $LABDIR
+git remote get-url origin
+git switch main
+git pull
+git switch -c p2/flaky
+Add-Content -Path p2-scratch.txt -Value "flaky" -Encoding ascii
+git add p2-scratch.txt
+git commit -m "p2 flaky"
+git push -u origin p2/flaky
+gh pr create --repo $LAB --base main --head p2/flaky --title "P2 flaky" --body "Live check of P2: flaky"
+$PR_F  = gh pr view p2/flaky --repo $LAB --json number --jq .number
+$SHA_F = git rev-parse HEAD
+Start-Sleep -Seconds 10
+$RUN_F = gh run list --repo $LAB --branch p2/flaky --workflow pr-flaky.yml --limit 1 --json databaseId --jq '.[0].databaseId'
+gh run watch $RUN_F --repo $LAB
+```
+
+Wait for the check and the comment of the failure (about 10 s after the run ends), then keep the
+ids of attempt 1:
+
+```powershell
+$checksF1 = gh api "repos/$LAB/commits/$SHA_F/check-runs?per_page=100" | ConvertFrom-Json
+$mineF1 = @($checksF1.check_runs | Where-Object { $_.external_id -eq "cicd-doctor:run:$RUN_F" })
+$commentsF1 = gh api "repos/$LAB/issues/$PR_F/comments?per_page=100" | ConvertFrom-Json
+$botF1 = @($commentsF1 | Where-Object { $_.user.login -eq $BOT -and $_.body.Split("`n")[0] -like "*workflow=$WF_FLAKY -->*" })
+$mineF1 | Select-Object id, name, status, conclusion
+$botF1.Count
+$idF  = $mineF1[0].id
+$cidF = $botF1[0].id
+$botF1[0].body.Split("`n") | Select-Object -First 4
+```
+
+It must show one check `CICD Doctor: pr-flaky`, `completed` / `neutral`, and **1** comment of the
+bot for this workflow, with a failure diagnosis (not a banner). Now the re-run (attempt 2 passes):
+
+```powershell
+gh run rerun $RUN_F --repo $LAB --failed
+gh run watch $RUN_F --repo $LAB
+```
+
+Verification (wait about 20 s after the run ends):
+
+```powershell
+$runF = gh run view $RUN_F --repo $LAB --json conclusion,attempt,updatedAt | ConvertFrom-Json
+$runF.conclusion
+$runF.attempt
+$checksF2 = gh api "repos/$LAB/commits/$SHA_F/check-runs?per_page=100" | ConvertFrom-Json
+$mineF2 = @($checksF2.check_runs | Where-Object { $_.external_id -eq "cicd-doctor:run:$RUN_F" })
+$mineF2 | Select-Object id, name, status, conclusion
+$mineF2[0].output.title
+$commentsF2 = gh api "repos/$LAB/issues/$PR_F/comments?per_page=100" | ConvertFrom-Json
+$botF2 = @($commentsF2 | Where-Object { $_.user.login -eq $BOT -and $_.body.Split("`n")[0] -like "*workflow=$WF_FLAKY -->*" })
+$botF2.Count
+$botF2 | Select-Object id, updated_at
+$botF2[0].id -eq $cidF
+$botF2[0].body -match 'Passed on re-run without code changes'
+$botF2[0].body -match 'recorded as flaky'
+([datetimeoffset]$botF2[0].updated_at - [datetimeoffset]$runF.updatedAt).TotalSeconds
+docker compose exec -T db psql -U cicd -d cicd_doctor -c "SELECT id, run_id, run_attempt, status, resolved_by_run_id, resolved_by_attempt, fix_commit_sha FROM failures WHERE run_id = $RUN_F;"
+```
+
+Criterion: the run's `conclusion` is `success` and `attempt` is 2; **one** check run, with the id
+`$idF`, still `completed` / `neutral` and with its failure title (the success never touches the
+check, D-84); **1** comment of the bot for `pr-flaky`, with the id `$cidF` (the same comment,
+edited), whose body has the flaky banner (`True`, `True`); the seconds from the end of the run to
+the edit of the comment are small (the worker terminal shows `success recorded, 1 failure(s)
+resolved by it` and `published comment … (resolved by it)`); and the row of the failure has
+`status = resolved_flaky`, `resolved_by_run_id` equal to `$RUN_F`, `resolved_by_attempt = 2` and no
+`fix_commit_sha`.
+
+### 6. Box 6: a fixing commit turns the comment into "Fixed by" with the right sha
+
+Action: a pull request whose first commit fails (`pr-py-modnf` imports `requests`, which
+`python/pyproject.toml` does not declare), then a commit that declares it (green):
+
+```powershell
+Set-Location $LABDIR
+git remote get-url origin
+git switch main
+git pull
+git switch -c p2/fix
+Add-Content -Path p2-scratch.txt -Value "fix" -Encoding ascii
+git add p2-scratch.txt
+git commit -m "p2 fix: failing"
+git push -u origin p2/fix
+gh pr create --repo $LAB --base main --head p2/fix --title "P2 fix" --body "Live check of P2: fix"
+$PR_X   = gh pr view p2/fix --repo $LAB --json number --jq .number
+$SHA_X1 = git rev-parse HEAD
+Start-Sleep -Seconds 10
+$RUN_X1 = gh run list --repo $LAB --branch p2/fix --workflow pr-py-modnf.yml --commit $SHA_X1 --limit 1 --json databaseId --jq '.[0].databaseId'
+gh run watch $RUN_X1 --repo $LAB
+```
+
+Wait for the diagnosis, then keep the first comment:
+
+```powershell
+$commentsX1 = gh api "repos/$LAB/issues/$PR_X/comments?per_page=100" | ConvertFrom-Json
+$botX1 = @($commentsX1 | Where-Object { $_.user.login -eq $BOT -and $_.body.Split("`n")[0] -like "*workflow=$WF_MODNF -->*" })
+$botX1.Count
+$cidX = $botX1[0].id
+$botX1[0].body.Split("`n") | Select-Object -First 4
+```
+
+Now the fix (the file is edited without PowerShell's text cmdlets, which rewrite encodings):
+
+```powershell
+$pyproject = (Resolve-Path "python\pyproject.toml").Path
+$text = [IO.File]::ReadAllText($pyproject)
+$fixed = $text.Replace("dependencies = []", 'dependencies = ["requests"]')
+$fixed -ne $text
+[IO.File]::WriteAllText($pyproject, $fixed, (New-Object System.Text.UTF8Encoding($false)))
+git diff --stat
+git add python/pyproject.toml
+git commit -m "p2 fix: declare requests"
+git push
+$SHA_X2 = git rev-parse HEAD
+Start-Sleep -Seconds 10
+$RUN_X2 = gh run list --repo $LAB --branch p2/fix --workflow pr-py-modnf.yml --commit $SHA_X2 --limit 1 --json databaseId --jq '.[0].databaseId'
+gh run watch $RUN_X2 --repo $LAB
+```
+
+`$fixed -ne $text` must print `True` (the file changed) and the diff must show one line. The run
+`$RUN_X2` must end green.
+
+Verification (wait about 20 s after the run ends):
+
+```powershell
+gh run view $RUN_X2 --repo $LAB --json conclusion,headSha --jq .conclusion
+$headX2 = gh run view $RUN_X2 --repo $LAB --json headSha --jq .headSha
+$headX2 -eq $SHA_X2
+$commentsX2 = gh api "repos/$LAB/issues/$PR_X/comments?per_page=100" | ConvertFrom-Json
+$botX2 = @($commentsX2 | Where-Object { $_.user.login -eq $BOT -and $_.body.Split("`n")[0] -like "*workflow=$WF_MODNF -->*" })
+$botX2.Count
+$botX2[0].id -eq $cidX
+$botX2[0].body.Split("`n") | Select-Object -First 4
+$short = $SHA_X2.Substring(0, 7)
+$botX2[0].body -match ('Fixed by `' + $short + '`')
+$cmp = "https://github.com/$LAB/compare/${SHA_X1}...${SHA_X2}"
+$botX2[0].body.Contains($cmp)
+gh api "repos/$LAB/compare/${SHA_X1}...${SHA_X2}" --jq .status
+docker compose exec -T db psql -U cicd -d cicd_doctor -c "SELECT id, run_id, status, fix_commit_sha, resolved_by_run_id, resolved_by_attempt FROM failures WHERE run_id = $RUN_X1;"
+```
+
+Criterion: the green run's `headSha` is `$SHA_X2`; **1** comment of the bot for `pr-py-modnf`, with
+the id `$cidX` (the same comment); it contains `Fixed by` and the first 7 characters of `$SHA_X2`
+(`True`), and the comparison link `compare/<failing sha>...<fixing sha>` (`True`; the last `gh`
+call prints `ahead`, so the link opens); the failure of `$RUN_X1` has `status = resolved_by_commit`
+and `fix_commit_sha` equal to the **full** `$SHA_X2` (compare it with the output above).
+
+Then a third commit that fails again (it reverts the fix):
+
+```powershell
+git revert --no-edit HEAD
+git push
+$SHA_X3 = git rev-parse HEAD
+Start-Sleep -Seconds 10
+$RUN_X3 = gh run list --repo $LAB --branch p2/fix --workflow pr-py-modnf.yml --commit $SHA_X3 --limit 1 --json databaseId --jq '.[0].databaseId'
+gh run watch $RUN_X3 --repo $LAB
+```
+
+Verification (wait about 20 s):
+
+```powershell
+$commentsX3 = gh api "repos/$LAB/issues/$PR_X/comments?per_page=100" | ConvertFrom-Json
+$botX3 = @($commentsX3 | Where-Object { $_.user.login -eq $BOT -and $_.body.Split("`n")[0] -like "*workflow=$WF_MODNF -->*" })
+$botX3.Count
+$botX3[0].id -eq $cidX
+$botX3[0].body -match 'Fixed by'
+$botX3[0].body.Split("`n") | Select-Object -First 6
+```
+
+Criterion: still **1** comment, with the id `$cidX`; it no longer shows the banner (`False`) and
+shows the diagnosis of `$RUN_X3`.
+
+### 3. Box 3: a similar but not identical failure lists the earlier run with its fix commit
+
+Action (on the branch of box 6, another missing module: the signature changes, the embedding stays
+close; in the spike the same change, `yaml` for `requests`, scored 0.905 against the 0.85 threshold):
+
+```powershell
+Set-Location $LABDIR
+git remote get-url origin
+git branch --show-current
+$cli = (Resolve-Path "python\src\labpkg\cli.py").Path
+$text = [IO.File]::ReadAllText($cli)
+$other = $text.Replace("import requests", "import yaml").Replace("requests.__version__", "yaml.__version__")
+$other -ne $text
+[IO.File]::WriteAllText($cli, $other, (New-Object System.Text.UTF8Encoding($false)))
+git diff --stat
+git add python/src/labpkg/cli.py
+git commit -m "p2 similar: another missing module"
+git push
+$SHA_S = git rev-parse HEAD
+Start-Sleep -Seconds 10
+$RUN_S = gh run list --repo $LAB --branch p2/fix --workflow pr-py-modnf.yml --commit $SHA_S --limit 1 --json databaseId --jq '.[0].databaseId'
+gh run watch $RUN_S --repo $LAB
+```
+
+`git branch --show-current` must print `p2/fix`. Verification (wait about 20 s):
+
+```powershell
+$checksS = gh api "repos/$LAB/commits/$SHA_S/check-runs?per_page=100" | ConvertFrom-Json
+$mineS = @($checksS.check_runs | Where-Object { $_.external_id -eq "cicd-doctor:run:$RUN_S" })
+$mineS | Select-Object id, name, status, conclusion
+$textS = "$($mineS[0].output.summary)`n$($mineS[0].output.text)"
+$textS -match 'Similar past failure'
+$textS -match "actions/runs/$RUN_X1"
+$textS.Split("`n") | Where-Object { $_ -like '*score*' }
+$commentsS = gh api "repos/$LAB/issues/$PR_X/comments?per_page=100" | ConvertFrom-Json
+$botS = @($commentsS | Where-Object { $_.user.login -eq $BOT -and $_.body.Split("`n")[0] -like "*workflow=$WF_MODNF -->*" })
+$botS.Count
+$botS[0].id -eq $cidX
+$botS[0].body.Split("`n") | Where-Object { $_ -like '*Similar past failure*' }
+$botS[0].body.Split("`n") | Where-Object { $_ -like '*run #*' }
+docker compose exec -T db psql -U cicd -d cicd_doctor -c "SELECT run_id, status, left(fix_commit_sha, 7) AS fix, left(signature_hash, 12) AS sig, embedding IS NOT NULL AS has_embedding FROM failures WHERE run_id IN ($RUN_X1, $RUN_X3, $RUN_S) ORDER BY run_id;"
+```
+
+Criterion: the check run of `$RUN_S` lists, under `Similar past failure`, a line for run
+`#$RUN_X1` with its link, `(score 0.85` or more) and `fixed by` followed by the first 12 characters
+of `$SHA_X2`; the comment is still the same one (`$cidX`) and shows **one** similar failure (the
+heading `Similar past failure:` in the singular, one line, which may be the run `#$RUN_X3` instead
+of `#$RUN_X1`: both are earlier, so look at the check run for the full list of up to three). The
+`sig` of `$RUN_S` differs from the one of `$RUN_X1` (it is not an exact match) and all the rows
+have an embedding. All of this is rules only: no key is needed.
+
+### 1. Box 1: embeddings are stored for real runs and take milliseconds
+
+The worker logs **no** line with the time of the embedding (the call is a few milliseconds inside
+a job that takes seconds). So this box has two parts: the rows, and the latency measured on this
+machine with the real model.
+
+```powershell
+docker compose exec -T db psql -U cicd -d cicd_doctor -c "SELECT count(*) AS failures, count(embedding) AS with_embedding, vector_dims(embedding) AS dims FROM failures GROUP BY vector_dims(embedding);"
+Set-Location $APPDIR
+uv run pytest tests/adapters/test_fastembed.py -s
+```
+
+Criterion: every failure of the runs of boxes 5, 6 and 3 has an embedding of **384** dimensions
+(`with_embedding` equals `failures` for them: rows of earlier phases may have none, they were
+stored before P2) and the worker terminal shows no `no embeddings for this run` warning; the test
+prints the latency per batch (the SPEC bar is 200 ms per failure after the model is loaded; the
+spike measured 5.8 ms at p50 for one signature). The `published … seconds_since_completed=…` lines
+of the worker give the whole time of a diagnosis, for the record.
+
+### 7. Box 7: the daily purge job runs (optional)
+
+The offline suite already checks what the purge deletes (SPEC §13); this only shows that the job is
+scheduled and runs in the real worker. A new dev database has nothing old to delete, so the log
+says zeros.
+
+```powershell
+docker compose exec -T db psql -U cicd -d cicd_doctor -c "SELECT id, kind, status, dedupe_key, run_after, attempts FROM jobs WHERE kind = 'purge' ORDER BY id DESC LIMIT 3;"
+```
+
+If today's job (`purge:<today, UTC>`) is `done`, the worker already ran it at the configured hour:
+that row is the evidence of the schedule, and to also see the counts in the log, delete today's job
+(the dev database only) and let the scheduler create it again at the current UTC hour:
+
+```powershell
+$today = (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd")
+$hour  = (Get-Date).ToUniversalTime().Hour
+docker compose exec -T db psql -U cicd -d cicd_doctor -c "DELETE FROM jobs WHERE dedupe_key = 'purge:$today';"
+$hour
+```
+
+Then, **by hand in the editor**, set `PURGE_HOUR_UTC=<the hour printed above>` in `.env` (a number
+from 0 to 23), restart the worker (Ctrl+C, `uv run cicd-doctor worker`) and wait at most 15 minutes
+(one scheduler tick; the first tick runs at start-up). Verification:
+
+```powershell
+docker compose exec -T db psql -U cicd -d cicd_doctor -c "SELECT id, kind, status, dedupe_key, run_after, attempts, last_error FROM jobs WHERE kind = 'purge' ORDER BY id DESC LIMIT 3;"
+```
+
+Criterion: the worker terminal shows `scheduler: purge of <today> scheduled at …`, then
+`job … (purge) started`, `purge done: 0 failures marked stale, 0 rows deleted (…), 0 repositories
+gone` (the counts may be higher if your database has old rows) and `job … (purge) done`; the row
+of `purge:<today>` is `done` with `attempts = 1` and no `last_error`. Afterwards put `PURGE_HOUR_UTC`
+back to `3` (or remove the line) and restart the worker.
+
+### Box 2 (the cache): PENDING the OpenAI key (casilla 2)
+
+**This box is open** until there is an OpenAI key. Everything that does not need the key (boxes 5,
+6, 3, 1) can be checked before. The cache only serves a diagnosis that came from a real LLM call
+(`source = llm`, verified evidence), so the first run needs the model. The offline part is covered
+(`tests/unit/test_diagnose_cache.py`, `tests/e2e/test_cache_e2e.py` and
+`tests/integration/test_diagnose_postgres.py`: one model call, one reservation, `source = cache`,
+`cached_from` and "cached from run #N"). What is left is to see it on the real GitHub with the real
+model. **Cost:** a few cents: one failed job, one call (two if the model needs one repair), the
+second run makes none. The budget below caps it at USD 0.10.
+
+**Settings (by hand in the editor, never paste or print the key):** in `.env` set
+
+```
+OPENAI_API_KEY=<your key>
+OPENAI_MODEL=<model id>
+LLM_PRICE_INPUT_PER_MTOK=<USD per million input tokens of that model>
+LLM_PRICE_OUTPUT_PER_MTOK=<USD per million output tokens of that model>
+LLM_DAILY_BUDGET_USD=0.10
+LLM_DAILY_CALLS_PER_INSTALLATION=5
+```
+
+- **`OPENAI_MODEL` is empty today** because the model comparison of P1b (the `-m live` smoke and
+  the mini-eval, SPEC §13 P1b) has never run. If you have not run it yet, there are two ways:
+  run it first (`uv run python -m evals run --variant llm+hints --model <id> --live --price
+  <id>=IN,OUT`, and record the choice in `DECISIONS.md`), or, to be quick, **pick a cheap model
+  yourself, write its name down in the PR of this box and mark it provisional** until the mini-eval
+  decides. Nobody should choose it silently: the model that produced the evidence is part of it.
+- The prices come from the pricing page of the model you picked. Without them the cost is 0 and
+  the budget cannot stop anything (the worker says `LLM_PRICE_* not set` at start-up); the call cap
+  (`LLM_DAILY_CALLS_PER_INSTALLATION=5`) still does.
+- Restart the worker. It must **not** print `LLM disabled: …`.
+
+Action (the workflow runs on `main` without a pull request, so there is a check run and no
+comment). First a real call (`source = llm`), and note the calls of the day:
+
+```powershell
+Set-Location $APPDIR
+$callsSql = "SELECT COALESCE(sum(calls), 0) FROM llm_usage WHERE day = (now() AT TIME ZONE 'utc')::date;"
+docker compose exec -T db psql -U cicd -d cicd_doctor -t -A -c $callsSql
+gh workflow run py-modnf.yml --repo $LAB --ref main
+Start-Sleep -Seconds 10
+$RUN_A = gh run list --repo $LAB --workflow py-modnf.yml --limit 1 --json databaseId --jq '.[0].databaseId'
+gh run watch $RUN_A --repo $LAB
+Start-Sleep -Seconds 20
+$CALLS_A = docker compose exec -T db psql -U cicd -d cicd_doctor -t -A -c $callsSql
+"calls after run A: $CALLS_A"
+docker compose exec -T db psql -U cicd -d cicd_doctor -c "SELECT d.id, d.source, d.published, d.fallback_reason, d.model, d.cost_usd, d.cached_from FROM diagnoses d JOIN failures f ON f.id = d.failure_id WHERE f.run_id = $RUN_A ORDER BY d.created_at;"
+```
+
+The published row of run A must have `source = llm` (and the calls must have gone up by 1 or 2). If
+it says `rules`, read `fallback_reason` (`llm_error`, `invalid_output`, `budget`…): the cache has
+nothing to serve, so fix that first; do not run the second step. Now the same workflow again,
+without changing anything:
+
+```powershell
+gh workflow run py-modnf.yml --repo $LAB --ref main
+Start-Sleep -Seconds 10
+$RUN_B = gh run list --repo $LAB --workflow py-modnf.yml --limit 1 --json databaseId --jq '.[0].databaseId'
+$RUN_B -ne $RUN_A
+gh run watch $RUN_B --repo $LAB
+Start-Sleep -Seconds 20
+```
+
+Verification (run it right after; `gh` only reads):
+
+```powershell
+$CALLS_B = docker compose exec -T db psql -U cicd -d cicd_doctor -t -A -c $callsSql
+"calls after run A: $CALLS_A, after run B: $CALLS_B"
+$CALLS_A -eq $CALLS_B
+docker compose exec -T db psql -U cicd -d cicd_doctor -c "SELECT f.run_id, d.id, d.source, d.published, d.cached_from, d.cost_usd, d.created_at FROM diagnoses d JOIN failures f ON f.id = d.failure_id WHERE f.run_id IN ($RUN_A, $RUN_B) ORDER BY d.created_at;"
+$shaB = gh run view $RUN_B --repo $LAB --json headSha --jq .headSha
+$checksB = gh api "repos/$LAB/commits/$shaB/check-runs?per_page=100" | ConvertFrom-Json
+$mineB = @($checksB.check_runs | Where-Object { $_.external_id -eq "cicd-doctor:run:$RUN_B" })
+$mineB | Select-Object id, name, status, conclusion
+$textB = "$($mineB[0].output.summary)`n$($mineB[0].output.text)"
+$textB -match "cached from run #$RUN_A"
+$textB -match "runs/$RUN_B"
+```
+
+Criterion: `llm_usage.calls` of the day is **the same number** after run B (`True`); the published
+row of run B has `source = cache` and `cached_from` equal to the id of the published row of run A,
+and no cost; the check run of run B says `cached from run #<RUN_A>` (`True`) and its evidence links
+point at the log of run B, not of run A (`True`: the evidence was found again in the new log, or the
+cache would have been a miss). In the worker terminal the job of run B shows no LLM call (the
+worker has no line for a cache hit, so the evidence is the rows and the unchanged counter).
+
+Clean-up of this box (by hand): in `.env` empty `OPENAI_API_KEY=` and `OPENAI_MODEL=`, remove or
+empty the two `LLM_PRICE_*` lines and `LLM_DAILY_CALLS_PER_INSTALLATION`, put
+`LLM_DAILY_BUDGET_USD=2.00`, and restart the worker.
+
+### 8. Clean-up
+
+```powershell
+gh pr close $PR_F --repo $LAB --delete-branch
+gh pr close $PR_X --repo $LAB --delete-branch
+```
+
+The check runs and comments that were written stay (they hang from throwaway branches). Then stop
+the API, the worker and smee, and remove the worktree as *Branches and worktrees* in `CLAUDE.md`
+says.
 
 ## Job timeouts (D-73)
 

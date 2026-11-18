@@ -21,6 +21,8 @@ MANIFEST = load_manifest(LAB / "cases.yaml")
 CASES = {case.id: case for case in MANIFEST.cases}
 # Workflows of the live verification (P1c): started by a pull request, not a case of the evals.
 LIVE_WORKFLOWS = {"pr-py-modnf.yml": "py-modnf"}
+# Live verification of P2: a flaky simulated by the run attempt, not a case of the evals.
+FLAKY_LIVE_WORKFLOW = "pr-flaky.yml"
 
 
 def _workflow(name: str) -> dict[Any, Any]:
@@ -31,9 +33,9 @@ def _workflow(name: str) -> dict[Any, Any]:
 
 def test_case_ids_are_unique_and_every_workflow_has_a_case() -> None:
     assert len(CASES) == len(MANIFEST.cases)
-    assert {case.workflow for case in MANIFEST.cases} | LIVE_WORKFLOWS.keys() == {
-        p.name for p in WORKFLOWS.glob("*.yml")
-    }
+    assert {case.workflow for case in MANIFEST.cases} | LIVE_WORKFLOWS.keys() | {
+        FLAKY_LIVE_WORKFLOW
+    } == {p.name for p in WORKFLOWS.glob("*.yml")}
 
 
 def test_at_least_twenty_cases_and_two_per_category() -> None:
@@ -95,3 +97,18 @@ def test_third_party_actions_are_pinned_or_official() -> None:
             owner = action.split("/")[0]
             pinned = re.search(r"@[0-9a-f]{40}$", action) is not None
             assert pinned or owner in {"actions", "hashicorp"}, f"{path.name}: {action}"
+
+
+def test_simulated_flaky_workflow_fails_in_attempt_one_and_passes_after() -> None:
+    workflow = _workflow(FLAKY_LIVE_WORKFLOW)
+    triggers = workflow.get("on", workflow.get(True))
+    script = "\n".join(
+        step.get("run", "") for step in workflow["jobs"]["run"]["steps"] if isinstance(step, dict)
+    )
+
+    assert triggers == {"pull_request": None}
+    assert workflow["name"] == "pr-flaky"
+    assert workflow["permissions"] == {"contents": "read"}
+    assert "timeout-minutes" in workflow["jobs"]["run"]
+    assert 'if [ "$GITHUB_RUN_ATTEMPT" = 1 ]; then' in script
+    assert "exit 1" in script
