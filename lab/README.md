@@ -844,9 +844,9 @@ gone` (the counts may be higher if your database has old rows) and `job … (pur
 of `purge:<today>` is `done` with `attempts = 1` and no `last_error`. Afterwards put `PURGE_HOUR_UTC`
 back to `3` (or remove the line) and restart the worker.
 
-### Box 2 (the cache): ready to run (casilla 2)
+### Box 2 (the cache): verified on 2026-11-18 (casilla 2)
 
-**This box is open** until it runs with the real model (the key and the model exist, D-88). Everything that does not need the key (boxes 5,
+**This box was verified live** on 2026-11-18 with the real model (D-88); the evidence is in SPEC §13 P2. Everything that does not need the key (boxes 5,
 6, 3, 1) can be checked before. The cache only serves a diagnosis that came from a real LLM call
 (`source = llm`, verified evidence), so the first run needs the model. The offline part is covered
 (`tests/unit/test_diagnose_cache.py`, `tests/e2e/test_cache_e2e.py` and
