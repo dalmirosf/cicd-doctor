@@ -844,9 +844,9 @@ gone` (the counts may be higher if your database has old rows) and `job … (pur
 of `purge:<today>` is `done` with `attempts = 1` and no `last_error`. Afterwards put `PURGE_HOUR_UTC`
 back to `3` (or remove the line) and restart the worker.
 
-### Box 2 (the cache): PENDING the OpenAI key (casilla 2)
+### Box 2 (the cache): ready to run (casilla 2)
 
-**This box is open** until there is an OpenAI key. Everything that does not need the key (boxes 5,
+**This box is open** until it runs with the real model (the key and the model exist, D-88). Everything that does not need the key (boxes 5,
 6, 3, 1) can be checked before. The cache only serves a diagnosis that came from a real LLM call
 (`source = llm`, verified evidence), so the first run needs the model. The offline part is covered
 (`tests/unit/test_diagnose_cache.py`, `tests/e2e/test_cache_e2e.py` and
@@ -866,12 +866,9 @@ LLM_DAILY_BUDGET_USD=0.10
 LLM_DAILY_CALLS_PER_INSTALLATION=5
 ```
 
-- **`OPENAI_MODEL` is empty today** because the model comparison of P1b (the `-m live` smoke and
-  the mini-eval, SPEC §13 P1b) has never run. If you have not run it yet, there are two ways:
-  run it first (`uv run python -m evals run --variant llm+hints --model <id> --live --price
-  <id>=IN,OUT`, and record the choice in `DECISIONS.md`), or, to be quick, **pick a cheap model
-  yourself, write its name down in the PR of this box and mark it provisional** until the mini-eval
-  decides. Nobody should choose it silently: the model that produced the evidence is part of it.
+- **The model is `gpt-6-luna`** (D-88, chosen by the mini-eval of 2026-11-18 over `gpt-5.4-mini`), at
+  USD 0.10 in and 0.50 out per million tokens (confirm them on the pricing page). The model that
+  produced the evidence is part of it: write it down in the PR of this box.
 - The prices come from the pricing page of the model you picked. Without them the cost is 0 and
   the budget cannot stop anything (the worker says `LLM_PRICE_* not set` at start-up); the call cap
   (`LLM_DAILY_CALLS_PER_INSTALLATION=5`) still does.
