@@ -7,11 +7,8 @@ no LLM call, no budget reservation, ``source = cache``, evidence anchored to the
 from datetime import timedelta
 from typing import Any
 
-import pytest
-
 from cicd_doctor.adapters.memory.llm import valid
-from cicd_doctor.core.models import CachedDiagnosis, RepoConfig, RunRef
-from cicd_doctor.core.usecases import diagnose_failed_run
+from cicd_doctor.core.models import CachedDiagnosis, LoadedConfig, RepoConfig, RunRef
 from cicd_doctor.core.usecases.diagnose_failed_run import DiagnoseConfig
 from tests.factories import T0, make_run_ref
 from tests.unit.test_diagnose_failed_run import World, stamp, workflow_job
@@ -140,12 +137,10 @@ async def test_with_the_kill_switch_on_the_store_is_not_asked_for_a_cache() -> N
     assert lookups == []
 
 
-async def test_with_llm_off_in_the_repository_the_store_is_not_asked_for_a_cache(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
+async def test_with_llm_off_in_the_repository_the_store_is_not_asked_for_a_cache() -> None:
     world = World([valid()])
     await world.run_once()
-    monkeypatch.setattr(diagnose_failed_run, "DEFAULT_REPO_CONFIG", RepoConfig(llm="off"))
+    world.repo_config.set(LoadedConfig(config=RepoConfig(llm="off"), state="file"))
     lookups = count_lookups(world)
     run = second_run(world)
 

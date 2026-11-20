@@ -54,6 +54,10 @@ class Settings(BaseSettings):
     similar_min_score: float = Field(default=0.85, ge=0, le=1)
     similar_use_hnsw: bool = False  # D-79: the exact search is the default; pgvector >= 0.8
 
+    # Repository configuration (D-90): how long one answer is kept in the process
+    config_ttl_s: int = Field(default=300, ge=0)
+    config_missing_ttl_s: int = Field(default=60, ge=0)
+
     # Embeddings (D-77, D-78)
     embeddings_enabled: bool = True
     embedding_cache_dir: Path = Path(".cache/fastembed")

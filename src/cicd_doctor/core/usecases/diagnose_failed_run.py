@@ -49,10 +49,11 @@ from cicd_doctor.core.models import (
     Failure,
     FailureStatus,
     JobRef,
+    LoadedConfig,
     Publication,
     PublicationKey,
     RawLog,
-    RepoConfig,
+    RepoRef,
     ResolvedBy,
     RunAnalysisRecord,
     RunAttempt,
@@ -72,6 +73,7 @@ from cicd_doctor.core.ports import (
     InstallationStore,
     LogSource,
     PullRequestSource,
+    RepoConfigSource,
     Reporter,
     TokenCounter,
 )
@@ -80,14 +82,12 @@ from cicd_doctor.core.render import (
     render_comment,
     render_could_not_diagnose,
 )
+from cicd_doctor.core.repo_config import DEFAULT_LOADED, effective_llm, ignores
 from cicd_doctor.core.usecases.report import build_report, find_similar
 from cicd_doctor.core.usecases.rows import ensure_rows
 
 logger = logging.getLogger(__name__)
 
-# P1c has no ``RepoConfigSource``: every repository uses the defaults (comment on, llm auto).
-# Reading ``.github/cicd-doctor.yml`` needs ``contents: read`` and comes later (D-26).
-DEFAULT_REPO_CONFIG = RepoConfig()
 PERMISSION_STATUS = 403
 
 
@@ -128,6 +128,7 @@ class DiagnoseFailedRun:
         diagnose: DiagnoseJob,
         clock: Clock,
         embedder: Embedder | None = None,
+        repo_config: RepoConfigSource | None = None,
         config: DiagnoseConfig | None = None,
     ) -> None:
         self._logs = logs
@@ -139,6 +140,7 @@ class DiagnoseFailedRun:
         self._diagnose = diagnose
         self._clock = clock
         self._embedder = embedder
+        self._repo_config = repo_config
         self._config = config or DiagnoseConfig()
 
     async def run(self, payload: DiagnoseRunPayload) -> None:
@@ -158,6 +160,14 @@ class DiagnoseFailedRun:
             if examined is None:
                 return
         await self._ensure_rows(payload)
+        loaded = await self._load_config(payload)
+        if ignores(loaded, run.workflow_name):
+            logger.info(
+                "run_id=%d attempt=%d: the workflow is in ignore_workflows, nothing to do",
+                run.run_id,
+                run.run_attempt,
+            )
+            return
         if await self._superseded(check_key, run):
             return
         check_id = await self._start_check(run, check_key)
@@ -165,12 +175,12 @@ class DiagnoseFailedRun:
             return
         record = await self._store.run_analysis(run.run_id, run.run_attempt)
         if record is None:
-            record = await self._analyze(payload, examined)
+            record = await self._analyze(payload, loaded, examined)
         record = await self._resolve_late(record)
-        report = await self._report(payload, record)
+        report = await self._report(payload, record, loaded)
         if not await self._complete_check(payload, record, report, check_id, check_key):
             return
-        await self._comment(payload, record, report)
+        await self._comment(payload, record, report, loaded)
 
     async def publish_could_not_diagnose(
         self,
@@ -227,6 +237,21 @@ class DiagnoseFailedRun:
             account_type=payload.account_type,
             private=payload.private,
             default_branch=payload.default_branch,
+        )
+
+    async def _load_config(self, payload: DiagnoseRunPayload) -> LoadedConfig:
+        """The repository configuration, read once per call (D-90). A transient error propagates
+        (the job retries); without a source every repository uses the defaults."""
+        if self._repo_config is None:
+            return DEFAULT_LOADED
+        run = payload.run
+        return await self._repo_config.load(
+            RepoRef(
+                installation_id=run.installation_id,
+                repo_id=run.repo_id,
+                full_name=run.repo_full_name,
+                default_branch=payload.default_branch,
+            )
         )
 
     # --- cancelled runs ---------------------------------------------------------------------
@@ -342,11 +367,15 @@ class DiagnoseFailedRun:
     # --- the comment ------------------------------------------------------------------------
 
     async def _comment(
-        self, payload: DiagnoseRunPayload, record: RunAnalysisRecord, report: DiagnosisReport
+        self,
+        payload: DiagnoseRunPayload,
+        record: RunAnalysisRecord,
+        report: DiagnosisReport,
+        loaded: LoadedConfig,
     ) -> None:
         run = report.run
         pr_number = record.run.pr_number
-        if pr_number is None or not DEFAULT_REPO_CONFIG.comment or not record.items:
+        if pr_number is None or not loaded.config.comment or not record.items:
             return
         key = PublicationKey.comment(run.repo_id, pr_number, run.workflow_id)
         async with self._store.publication_lock(key):
@@ -358,7 +387,7 @@ class DiagnoseFailedRun:
             # must come from the store as it is now (D-84).
             fresh = await self._store.run_analysis(run.run_id, run.run_attempt)
             if fresh is not None and _statuses(fresh) != _statuses(record):
-                report = await self._report(payload, fresh)
+                report = await self._report(payload, fresh, loaded)
             comment_id = await self._reporter.upsert_comment(
                 CommentTarget(run=run, pr_number=pr_number),
                 render_comment(report),
@@ -375,7 +404,7 @@ class DiagnoseFailedRun:
     # --- the analysis -----------------------------------------------------------------------
 
     async def _analyze(
-        self, payload: DiagnoseRunPayload, examined: _Examined | None = None
+        self, payload: DiagnoseRunPayload, loaded: LoadedConfig, examined: _Examined | None = None
     ) -> RunAnalysisRecord:
         """Jobs, logs, excerpts, rules and the LLM; store the result and return what was stored
         (the first writer wins, so a concurrent attempt of the same job gives the same record)."""
@@ -397,7 +426,7 @@ class DiagnoseFailedRun:
             ),
         )
         embeddings = await self._embed(analyses)
-        results = await self._diagnose_all(run, analyses, embeddings)
+        results = await self._diagnose_all(run, analyses, embeddings, loaded)
         record = RunAnalysisRecord(
             run=_workflow_run(run),
             attempt=RunAttempt(
@@ -475,12 +504,13 @@ class DiagnoseFailedRun:
         run: RunRef,
         analyses: list[JobAnalysis],
         embeddings: list[list[float] | None],
+        loaded: LoadedConfig,
     ) -> list[tuple[JobAnalysis, JobDiagnosis]]:
         context = DiagnosisContext(
             installation_id=run.installation_id,
             is_fork=run.is_fork,
             llm_enabled=self._config.llm_enabled,
-            repo_llm=DEFAULT_REPO_CONFIG.llm,
+            repo_llm=effective_llm(loaded),
         )
         slots = asyncio.Semaphore(self._config.concurrency)
 
@@ -550,7 +580,7 @@ class DiagnoseFailedRun:
     # --- the report -------------------------------------------------------------------------
 
     async def _report(
-        self, payload: DiagnoseRunPayload, record: RunAnalysisRecord
+        self, payload: DiagnoseRunPayload, record: RunAnalysisRecord, loaded: LoadedConfig
     ) -> DiagnosisReport:
         """The report of a stored analysis. The run carries the pull request that was found."""
         run = payload.run.model_copy(update={"pr_number": record.run.pr_number})
@@ -560,6 +590,7 @@ class DiagnoseFailedRun:
             record,
             similar_k=self._config.similar_k,
             similar_min_score=self._config.similar_min_score,
+            config_problems=loaded.problems,
         )
 
     def _log_published(self, kind: str, run: RunRef, completed_at: datetime | None) -> None:

@@ -54,6 +54,7 @@ FALLBACK_TEXT: dict[FallbackReason, str] = {
     "fork_policy": "LLM not used for fork PRs",
     "budget": "LLM daily limit reached",
     "config_off": "LLM disabled by the repository configuration",
+    "on_demand": "LLM on demand: comment `/cicd-doctor explain`",
     "disabled": "LLM disabled",
     "llm_error": "LLM unavailable, showing the rule-based diagnosis",
     "invalid_output": "LLM answer was invalid, showing the rule-based diagnosis",
@@ -280,6 +281,9 @@ def render_check(report: DiagnosisReport) -> CheckOutput:
     banner = resolution_banner(report)
     if banner is not None:
         sections.insert(0, _banner_lines(banner, bold=False))
+    if report.config_problems:
+        fields = ", ".join(code(problem, 60) for problem in report.config_problems)
+        sections.append(f"_The repository configuration is invalid: {fields}; LLM turned off._")
     return CheckOutput(title=render_title(report), summary=_join(sections, MAX_SUMMARY_CHARS))
 
 

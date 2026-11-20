@@ -23,7 +23,7 @@ def test_a_normal_run_calls_the_llm() -> None:
         ({"repo_llm": "off"}, "config_off"),
         ({"llm_enabled": False}, "disabled"),
         ({"is_fork": True}, "fork_policy"),
-        ({"repo_llm": "on_demand"}, "config_off"),
+        ({"repo_llm": "on_demand"}, "on_demand"),
     ],
 )
 def test_each_rule_falls_back_with_its_reason(changes: dict[str, object], reason: str) -> None:
@@ -82,7 +82,7 @@ def test_a_decision_is_consistent_for_every_input(
         )
     )
 
-    reasons: set[FallbackReason | None] = {"config_off", "disabled", "fork_policy"}
+    reasons: set[FallbackReason | None] = {"config_off", "on_demand", "disabled", "fork_policy"}
     assert (decision.action == "rules") == (decision.fallback_reason in reasons)
     if repo_llm == "off" or not llm_enabled:
         assert decision.action == "rules"  # off and the kill switch beat even an explain

@@ -43,6 +43,7 @@ COMMENT = "/repos/{owner}/{repo}/issues/comments/{comment_id}"
 JOBS = "/repos/{owner}/{repo}/actions/runs/{run_id}/attempts/{attempt}/jobs"
 LOG = "/repos/{owner}/{repo}/actions/jobs/{job_id}/logs"
 ANNOTATIONS = "/repos/{owner}/{repo}/check-runs/{job_id}/annotations"
+CONFIG = "/repos/{owner}/{repo}/contents/.github/cicd-doctor.yml"
 APP = "/app"
 TOKEN = "/app/installations/{installation_id}/access_tokens"
 BLOB = "/actions-results/{blob_id}/workflow-job-run-{run_uuid}/logs/job/job-logs.txt"
@@ -123,6 +124,8 @@ async def test_a_signed_webhook_ends_in_one_check_run_and_one_comment(
     assert await run_job(world)
 
     assert world.calls() == [
+        ("POST", TOKEN),  # a token with contents: read only, for the configuration (D-90)
+        ("GET", CONFIG),  # the default branch: no ref
         ("GET", APP),  # who am I (the bot login and id), once per process
         ("POST", TOKEN),  # one token for the repository and the diagnosis permissions
         ("GET", COMMIT_CHECK_RUNS),  # find the check run by its external_id (none yet)
@@ -134,7 +137,10 @@ async def test_a_signed_webhook_ends_in_one_check_run_and_one_comment(
         ("GET", COMMENTS),  # find the sticky comment by its marker (none yet)
         ("POST", COMMENTS),
     ]
-    [token] = world.requests("POST", TOKEN)
+    config_token, token = world.requests("POST", TOKEN)
+    assert config_token.json["permissions"] == {"contents": "read"}  # and nothing else (D-90)
+    [config_request] = world.requests("GET", CONFIG)
+    assert config_request.raw_query == ""  # the default branch: no ref
     assert token.json == {
         "repository_ids": [REPO_ID],
         "permissions": {"actions": "read", "checks": "write", "pull_requests": "write"},
@@ -283,6 +289,8 @@ async def test_a_cancelled_run_with_a_job_timeout_ends_in_a_timeout_check_and_co
         ("POST", TOKEN),
         ("GET", JOBS),
         ("GET", ANNOTATIONS),  # the decision comes before the check run exists
+        ("POST", TOKEN),  # contents: read, for the configuration (D-90)
+        ("GET", CONFIG),
         ("GET", APP),
         ("GET", COMMIT_CHECK_RUNS),
         ("POST", CHECKS),

@@ -21,6 +21,7 @@ real one (D-59).
 """
 
 import asyncio
+import base64
 import inspect
 import json
 import re
@@ -43,6 +44,7 @@ APP_SLUG = "cicd-doctor-test"
 INSTALLATION_ID = 1001
 REPO_ID = 2002
 API_HOST = "api.github.com"
+CONFIG_ROUTE = "/repos/{owner}/{repo}/contents/.github/cicd-doctor.yml"
 
 _LEVELS = {"read": 1, "write": 2, "admin": 3}
 DEFAULT_INSTALLATION_PERMISSIONS = {
@@ -926,3 +928,42 @@ class GitHubLogsFake:
             chunk = body[start : start + BLOB_CHUNK]
             state.served += len(chunk)
             yield chunk
+
+
+@dataclass
+class FakeRepoContents:
+    """``GET /repos/{o}/{r}/contents/.github/cicd-doctor.yml`` (D-90).
+
+    The files are kept by ``ref``: ``None`` is the default branch (what GitHub serves when the
+    request has no ``ref``), any other key is a branch or a pull request head. A request that
+    carries a ``ref`` is served that ref's file, so an adapter that sent one would see the
+    difference in its result and in the recorded request.
+    """
+
+    github: FakeGitHub
+    files: dict[str | None, dict[str, Any] | list[Any]] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        self.github.add_route("GET", CONFIG_ROUTE, self._get)
+
+    def put(self, text: str | bytes, *, ref: str | None = None) -> None:
+        raw = text.encode() if isinstance(text, str) else text
+        # GitHub wraps the base64 payload every 60 characters.
+        encoded = base64.encodebytes(raw).decode()
+        self.files[ref] = {
+            "type": "file",
+            "encoding": "base64",
+            "size": len(raw),
+            "name": "cicd-doctor.yml",
+            "path": ".github/cicd-doctor.yml",
+            "content": encoded,
+        }
+
+    def put_raw(self, body: dict[str, Any] | list[Any], *, ref: str | None = None) -> None:
+        self.files[ref] = body
+
+    def _get(self, request: RecordedRequest) -> httpx2.Response:
+        body = self.files.get(request.query.get("ref"))
+        if body is None:
+            return error_response(404, "Not Found")
+        return json_response(200, body)

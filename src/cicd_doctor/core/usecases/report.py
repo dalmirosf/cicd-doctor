@@ -35,6 +35,7 @@ async def build_report(
     *,
     similar_k: int,
     similar_min_score: float,
+    config_problems: tuple[str, ...] = (),
 ) -> DiagnosisReport:
     """The report of a stored analysis. ``run`` carries the pull request that was found; each
     failure carries its current status (so a resolved one renders its banner)."""
@@ -68,4 +69,5 @@ async def build_report(
         similar=similar,
         rules_baseline=baselines,
         cached_from_runs=origins,
+        config_problems=config_problems,
     )

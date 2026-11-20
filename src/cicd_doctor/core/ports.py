@@ -24,12 +24,12 @@ from cicd_doctor.core.models import (
     Job,
     JobRef,
     LLMResult,
+    LoadedConfig,
     NewJob,
     Publication,
     PublicationKey,
     PurgeCounts,
     RawLog,
-    RepoConfig,
     RepoRef,
     Repository,
     Reservation,
@@ -310,8 +310,10 @@ class InstallationStore(Protocol):
 
 
 class RepoConfigSource(Protocol):
-    async def load(self, repo: RepoRef) -> RepoConfig:
-        """Read from the default branch only; defaults if absent or invalid (D-26)."""
+    async def load(self, repo: RepoRef) -> LoadedConfig:
+        """Read from the default branch only, never from another ref (D-90). A missing file is
+        ``default``; an invalid one is ``invalid`` (the caller turns the LLM off); a transient
+        error raises ``TransientError`` and is never turned into the defaults."""
         ...
 
 

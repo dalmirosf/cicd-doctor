@@ -101,11 +101,10 @@ async def test_a_signed_failure_then_a_signed_success_rewrites_the_same_comment(
     [comment] = world.writes.comments.values()
     assert "✅ Fixed by" in comment["body"]
     token_bodies = [r.json for r in world.requests("POST", TOKEN)]
-    # The rewrite asks for no permission the diagnosis does not have (D-84).
-    assert all(
-        b["permissions"] == {"actions": "read", "checks": "write", "pull_requests": "write"}
-        for b in token_bodies
-    )
+    # The rewrite asks for no permission the diagnosis does not have (D-84); the only other token
+    # is the one of the configuration: contents read and nothing else (D-90).
+    diagnosis = {"actions": "read", "checks": "write", "pull_requests": "write"}
+    assert all(b["permissions"] in (diagnosis, {"contents": "read"}) for b in token_bodies)
 
 
 async def test_a_signed_success_then_the_late_failure_ends_resolved(world: DiagnoseWorld) -> None:

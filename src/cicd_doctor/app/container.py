@@ -27,6 +27,7 @@ from cicd_doctor.adapters.github.auth import GitHubAppAuth, load_private_key
 from cicd_doctor.adapters.github.http import GitHubHttp
 from cicd_doctor.adapters.github.logs import GitHubLogSource
 from cicd_doctor.adapters.github.pulls import GitHubPullRequests
+from cicd_doctor.adapters.github.repo_config import GitHubRepoConfigSource
 from cicd_doctor.adapters.github.reporter import GitHubReporter
 from cicd_doctor.adapters.llm.openai_client import OpenAILLMClient, make_openai_client
 from cicd_doctor.adapters.llm.tiktoken_counter import TiktokenCounter
@@ -41,6 +42,7 @@ from cicd_doctor.core.diagnosis.cost import CostModel
 from cicd_doctor.core.diagnosis.pipeline import DiagnoseJob
 from cicd_doctor.core.models import Job, JobKind
 from cicd_doctor.core.ports import Clock, Embedder, InstallationStore, JobQueue, LLMClient
+from cicd_doctor.core.repo_config import CachedRepoConfig
 from cicd_doctor.core.usecases.diagnose_failed_run import DiagnoseConfig, DiagnoseFailedRun
 from cicd_doctor.core.usecases.purge import PurgeConfig
 from cicd_doctor.core.usecases.record_run_outcome import RecordRunOutcome
@@ -292,16 +294,24 @@ async def worker_use_cases(
         )
         reporter = GitHubReporter(http, auth, clock)
         config = diagnose_config(settings)
+        repo_config = CachedRepoConfig(
+            GitHubRepoConfigSource(http, auth),
+            clock,
+            ttl=timedelta(seconds=settings.config_ttl_s),
+            missing_ttl=timedelta(seconds=settings.config_missing_ttl_s),
+        )
         outcome = RecordRunOutcome(
             store=store,
             installations=installations,
             reporter=reporter,
+            repo_config=repo_config,
             similar_k=config.similar_k,
             similar_min_score=config.similar_min_score,
         )
         diagnose = DiagnoseFailedRun(
             logs=logs,
             pulls=GitHubPullRequests(http, auth),
+            repo_config=repo_config,
             reporter=reporter,
             store=store,
             installations=installations,

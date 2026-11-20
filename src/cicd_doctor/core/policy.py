@@ -32,7 +32,7 @@ def decide(policy: PolicyInput) -> PolicyDecision:
     if policy.is_fork and not policy.explain:
         return _rules("fork_policy")
     if policy.repo_llm == "on_demand" and not policy.explain:
-        return _rules("config_off")
+        return _rules("on_demand")
     if policy.cache_hit:
         return PolicyDecision(action="cache")
     return PolicyDecision(action="llm")
