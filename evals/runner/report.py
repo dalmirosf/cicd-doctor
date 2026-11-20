@@ -10,6 +10,7 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from pathlib import Path
 
+from evals.runner.judge import CauseMatch, cause_match_lines
 from evals.runner.metrics import Metrics
 from evals.runner.variants import CaseResult
 
@@ -30,9 +31,11 @@ class Report:
     sources: list[str]
     runs: list[VariantRun]
     skipped: dict[str, str] = field(default_factory=dict)  # variant -> why it did not run
+    cause_match: CauseMatch | None = None  # None: not judged (no ``--judge``, D-103)
 
     def to_dict(self) -> dict[str, object]:
         return {
+            "cause_match": self.cause_match.to_dict() if self.cause_match else None,
             "generated_at": self.generated_at.isoformat(),
             "git_sha": self.git_sha,
             "sources": self.sources,
@@ -87,6 +90,7 @@ def render_markdown(report: Report) -> str:
     for variant, reason in report.skipped.items():
         lines.append(f"| {variant} | not run: {reason} | | | | | | | | | | | | | |")
     lines += _memory_effect(report)
+    lines += cause_match_lines(report.cause_match)
     for run in report.runs:
         lines += ["", f"## {run.variant}", "", *_per_category(run.metrics), ""]
         lines += [*_confusion(run.metrics.confusion), ""]
