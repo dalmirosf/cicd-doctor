@@ -61,7 +61,7 @@ Each requirement is delivered in the phase noted in brackets (see §13).
 | FR-18 | Purge data past retention with a daily job at 03:00 UTC: deliveries 30 days, finished jobs (`done`, `failed`, `dead`) 30 days, run attempts with their failures, diagnoses and publication records 90 days, the data of an uninstalled installation or a removed repository 7 days after the uninstall; open failures older than 30 days become `stale` (D-85). | P2 |
 | FR-19 | `/cicd-doctor explain` on a PR (by `OWNER`, `MEMBER` or `COLLABORATOR`) acknowledges with a 👀 reaction and diagnoses the latest failed runs of the PR head with the LLM, including fork PRs; rate limited to 1 per PR per 5 minutes. | P3 |
 | FR-20 | When the LLM proposes a code change whose lines are inside the PR diff, post it as a review comment with a ```` ```suggestion ```` block; otherwise show it only as text. | P3 |
-| FR-21 | Read optional per-repo settings from `.github/cicd-doctor.yml` **on the default branch** (`comment`, `llm: auto|on_demand|off`, `ignore_workflows`). | P3 |
+| FR-21 | Read optional per-repo settings from `.github/cicd-doctor.yml` **on the default branch only** (`comment`, `llm: auto|on_demand|off`, `ignore_workflows`; D-90, D-91). A file that does not validate turns the LLM off and the check run names the failing fields. | P3 |
 | FR-22 | Provide an eval runner over versioned cases that reports the metrics in §11 for the variants `rules`, `llm`, `llm+hints`, `llm+hints+similar`. | P1 (skeleton), P4 |
 | FR-23 | Optional "CICD Doctor Fixer" app that opens PRs for allowlisted low-risk fix types only. Opt-in, never auto-merged. | P6 |
 
@@ -245,7 +245,7 @@ class InstallationStore(Protocol):     # FR-03, D-54; upserts only
     async def repository(self, repo_id: int) -> Repository | None: ...
 
 class RepoConfigSource(Protocol):
-    async def load(self, repo: RepoRef) -> RepoConfig: ...   # default branch only; defaults if absent
+    async def load(self, repo: RepoRef) -> LoadedConfig: ...   # default branch only, no ref (D-90); a transient error raises
 
 class UsageLedger(Protocol):
     async def reserve(self, installation_id: int, est_cost_usd: Decimal) -> Reservation | None: ...  # None = over limit
@@ -291,6 +291,7 @@ Settings come from the environment (`pydantic-settings` in `app/settings.py`; `.
 | `STALE_AFTER_DAYS` / `UNINSTALL_GRACE_DAYS` | `30` / `7` | An open failure turns `stale`; grace before the data of an uninstall is purged (D-85) |
 | `CACHE_TTL_DAYS` | `7` | Days an `llm` diagnosis can be reused for the same signature in the same repository; `0` turns the cache off (P2, D-81) |
 | `SIMILAR_K` / `SIMILAR_MIN_SCORE` | `3` / `0.85` | P2; 0.85 was measured and stays (D-80). `SIMILAR_K=0` turns the search off (D-82) |
+| `CONFIG_TTL_S` / `CONFIG_MISSING_TTL_S` | `300` / `60` | Seconds the `.github/cicd-doctor.yml` of a repository is remembered in the process; the second applies to a missing or unreadable file (P3, D-90) |
 | `SIMILAR_USE_HNSW` | `false` | P2. The similarity search is exact per repository; `true` uses the HNSW index with iterative scans (pgvector ≥ 0.8) for a repository of tens of thousands of rows (D-79) |
 | `WORKER_CONCURRENCY` / `JOB_LEASE_S` / `JOB_MAX_ATTEMPTS` | `4` / `300` / `5` | |
 | `LANGFUSE_*` | unset | P5; tracing disabled when unset |
@@ -378,7 +379,7 @@ class Diagnosis(BaseModel):
     rule_ids: list[str] = []
     model: str | None = None; prompt_version: str | None = None
     fallback_reason: Literal["llm_error", "invalid_output", "budget", "fork_policy",
-                             "config_off", "disabled"] | None = None
+                             "config_off", "on_demand", "disabled"] | None = None
     evidence_verified: bool = True
 
 class RuleMatch(BaseModel):
@@ -453,7 +454,7 @@ The ports in §4.3 refer to types that §5 does not define. They exist in `core/
 | `RecordOutcomePayload` | job payload (D-56, D-83) | `record_outcome`: `RunRef`, `completed_at`, default branch, `private`, account of the installation. Key: `outcome_dedupe_key(run_id, attempt)` |
 | `DiagnoseRunPayload`, `InstallationEvent` (+ `InstallationAction`) | job payloads (D-56) | `diagnose_run`: `RunRef`, conclusion, `completed_at`, default branch, `private`, and the optional account of the installation (`account_login`, `account_type`; D-75). `sync_installation`: action, installation, repositories added, ids removed, time received. Key: `diagnose_dedupe_key(run_id, attempt)` |
 | `Installation`, `Repository` | `InstallationStore` (D-54) | The columns of `installations` and `repositories` |
-| `RepoRef`, `RepoConfig` | `RepoConfigSource` | `RepoConfig` has `comment`, `llm` and `ignore_workflows`, and rejects unknown keys (D-26) |
+| `RepoRef`, `RepoConfig` | `RepoConfigSource` | `RepoConfig` has `comment`, `llm` and `ignore_workflows`, and rejects unknown keys (D-26, D-90). `LoadedConfig(config, state, problems)` is what the port returns: `state` is `default`, `file`, `invalid` or `unreadable`; `problems` are field paths, never values |
 | `SuccessRef`, `ResolvedBy` | `FailureStore.later_successes`, `resolve`, `resolved_by` | A recorded success (`run_id`, `attempt`, `head_sha`) and the `(run_id, attempt)` that resolved a failure (D-83, D-84). `core/outcomes.py` adds `Outcome` and `Resolution` |
 | `Reservation` | `UsageLedger` | Installation, UTC day, estimated cost |
 
@@ -878,7 +879,7 @@ Job payloads and `last_error` never contain raw log text. The messages of the Gi
 | Excessive privilege | A compromised app token used to modify code | Minimal permissions (§9.6); no `contents: write`; per-repo, per-permission installation tokens; the Fixer is a separate app (D-20). |
 | Cost DoS | Many failing runs, or a fork spamming failures | Fork policy, per-installation daily cap, global USD budget, cache, one call per job per attempt, output cap. |
 | Cross-repo data leak | Similarity or cache returning another repo's (possibly private) failure | All lookups filtered by `repository_id` (D-10); a test ensures isolation. |
-| Malicious config | Fork PR changing `.github/cicd-doctor.yml` to turn on the LLM or comments | Config read only from the default branch, parsed with `yaml.safe_load`, validated by Pydantic, unknown keys rejected. |
+| Malicious config | Fork PR changing `.github/cicd-doctor.yml` to turn on the LLM or comments | Config read only from the default branch (the request never carries a `ref`), at most 16 KB, a scan of the YAML events rejects aliases, anchors, tags, duplicate keys and deep nesting before `yaml.safe_load`, validated strictly by Pydantic, unknown keys rejected. An invalid file turns the LLM off (D-90). |
 | Credential forwarding | Following the log redirect with the `Authorization` header | Redirect followed without auth headers; covered by an adapter test. |
 | Code execution | Anything in logs, config or LLM output being executed | No code paths execute external input: no shell, no `eval`, no checkout. Suggestions are inert text. |
 
@@ -919,10 +920,10 @@ Redaction runs **three times**: on the excerpt (before storage or the LLM), on t
 
 Evaluated in order; the first match decides:
 
-1. Repo config `llm: off` → rules (`config_off`).
+1. Repo config `llm: off`, or a config file that does not validate (D-90) → rules (`config_off`).
 2. Global kill switch `LLM_ENABLED=false` → rules (`disabled`).
 3. Fork run and not triggered by `/cicd-doctor explain` → rules (`fork_policy`).
-4. Repo config `llm: on_demand` and not an explain → rules (`config_off`).
+4. Repo config `llm: on_demand` and not an explain → rules (`on_demand`: "LLM on demand: comment `/cicd-doctor explain`").
 5. Exact-signature LLM diagnosis in the same repo within `CACHE_TTL_DAYS` (P2, D-81) → `cache`. The use case asks the store only when rules 1 to 4 would not already have decided (so a fork never reads the cache), and a stored answer whose evidence cannot be found again in the new excerpt is a miss (§7.1 step 8). `CACHE_TTL_DAYS=0` turns it off.
 6. Budget reservation fails → rules (`budget`).
 7. Otherwise → `llm`.
@@ -1160,7 +1161,7 @@ Scope: FR-19…FR-21.
 - [ ] `/cicd-doctor explain` by a collaborator → 👀 reaction and an LLM diagnosis within 90 s, including on a fork PR.
 - [ ] The same command by a non-collaborator (`CONTRIBUTOR`, `NONE`, …) → no reaction, no job. A second valid command within 5 minutes → ignored.
 - [ ] An LLM suggestion on lines inside the PR diff → a review comment with a `suggestion` block. Outside the diff → text only.
-- [ ] `.github/cicd-doctor.yml` with `comment: false` on the default branch → no PR comment (check run still posted). The same file changed only in a fork PR head has no effect.
+- [ ] `.github/cicd-doctor.yml` with `comment: false` on the default branch → no PR comment (check run still posted; a comment already published stays, D-91). The same file changed only in a fork PR head has no effect. **Offline only so far (P3 b, D-90):** `tests/adapters/test_github_repo_config.py` (no request carries a `ref`; a file on a PR head or another ref changes nothing; the token is `contents: read` and nothing else), `tests/unit/test_repo_config_flow.py` (`comment: false` writes the check and no comment, leaves an old comment as it is and skips the resolution rewrite; `ignore_workflows` writes and reserves nothing; an invalid file turns the LLM off and the check names the fields) and the e2e call sequences. The live check waits for P3 (g).
 - [ ] The `issue_comment` permission behavior is verified and DECISIONS.md is updated. (Settings seen and D-89 written 2026-11-20; ticked when the first real `issue_comment` delivery is observed.)
 
 ### P4 — Evals at scale

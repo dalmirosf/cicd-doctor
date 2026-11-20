@@ -27,6 +27,7 @@ from cicd_doctor.adapters.memory import (
     InMemoryUsageLedger,
 )
 from cicd_doctor.adapters.memory.llm import Fail, ScriptItem, valid
+from cicd_doctor.adapters.memory.repo_config import FakeRepoConfig
 from cicd_doctor.core.diagnosis.cost import CostModel
 from cicd_doctor.core.diagnosis.pipeline import DiagnoseJob
 from cicd_doctor.core.errors import LLMError, LogsUnavailable, PermanentError, TransientError
@@ -168,6 +169,7 @@ class World:
         self.logs = FakeLogSource(self.journal)
         self.reporter = FakeReporter(journal=self.journal)
         self.pulls = FakePullRequests(journal=self.journal)
+        self.repo_config = FakeRepoConfig()
         self.store = FlakyStore(self.clock)
         self.installations = InMemoryInstallationStore()
         self.ledger = InMemoryUsageLedger(self.clock, daily_budget_usd=daily_budget)
@@ -189,6 +191,7 @@ class World:
             diagnose=self.diagnose,
             clock=self.clock,
             embedder=embedder,
+            repo_config=self.repo_config,
             config=config,
         )
         if jobs:

@@ -12,7 +12,8 @@ In this order, each step idempotent, so a failed job is retried by running it ag
    the publication lock of its key. The failures come from ``resolved_by``, not from step 3, so
    a retry after a crash between ``resolve`` and the ``PATCH`` still writes the comment.
 
-Only the comment changes: the check run stays as the record of the diagnosis (D-84).
+Only the comment changes: the check run stays as the record of the diagnosis (D-84). A repository
+with ``comment: false`` or the workflow in ``ignore_workflows`` gets no rewrite (D-91).
 """
 
 import logging
@@ -23,9 +24,11 @@ from cicd_doctor.core.models import (
     CommentTarget,
     Failure,
     FailureStatus,
+    LoadedConfig,
     Publication,
     PublicationKey,
     RecordOutcomePayload,
+    RepoRef,
     ResolvedBy,
     RunAnalysisRecord,
     RunAttempt,
@@ -33,8 +36,9 @@ from cicd_doctor.core.models import (
     WorkflowRun,
 )
 from cicd_doctor.core.outcomes import Outcome, decide
-from cicd_doctor.core.ports import FailureStore, InstallationStore, Reporter
+from cicd_doctor.core.ports import FailureStore, InstallationStore, RepoConfigSource, Reporter
 from cicd_doctor.core.render import render_comment
+from cicd_doctor.core.repo_config import ignores
 from cicd_doctor.core.usecases.report import build_report
 from cicd_doctor.core.usecases.rows import ensure_rows
 
@@ -48,6 +52,7 @@ class RecordRunOutcome:
         store: FailureStore,
         installations: InstallationStore,
         reporter: Reporter,
+        repo_config: RepoConfigSource | None = None,
         comments_enabled: bool = True,
         similar_k: int = 3,
         similar_min_score: float = 0.85,
@@ -55,6 +60,7 @@ class RecordRunOutcome:
         self._store = store
         self._installations = installations
         self._reporter = reporter
+        self._repo_config = repo_config
         self._comments_enabled = comments_enabled
         self._similar_k = similar_k
         self._similar_min_score = similar_min_score
@@ -98,8 +104,25 @@ class RecordRunOutcome:
             run.run_attempt,
             len(resolved),
         )
-        if resolved and self._comments_enabled:
+        if resolved and self._comments_enabled and await self._comments_allowed(payload):
             await self._rewrite_comments(run, resolved)
+
+    async def _comments_allowed(self, payload: RecordOutcomePayload) -> bool:
+        """False when the repository turned comments off or ignores this workflow (D-91). The
+        success is stored either way. Read only when a comment could be rewritten, so most
+        successes cost no GitHub call; a transient error propagates and the job retries."""
+        if self._repo_config is None:
+            return True
+        run = payload.run
+        loaded: LoadedConfig = await self._repo_config.load(
+            RepoRef(
+                installation_id=run.installation_id,
+                repo_id=run.repo_id,
+                full_name=run.repo_full_name,
+                default_branch=payload.default_branch,
+            )
+        )
+        return loaded.config.comment and not ignores(loaded, run.workflow_name)
 
     async def _resolve(self, payload: RecordOutcomePayload) -> None:
         run = payload.run

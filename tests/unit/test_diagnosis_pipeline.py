@@ -338,7 +338,7 @@ async def test_an_llm_error_releases_the_reservation(analysis: JobAnalysis) -> N
     [
         (DiagnosisContext(installation_id=1, is_fork=True), "fork_policy"),
         (DiagnosisContext(installation_id=1, is_fork=False, repo_llm="off"), "config_off"),
-        (DiagnosisContext(installation_id=1, is_fork=False, repo_llm="on_demand"), "config_off"),
+        (DiagnosisContext(installation_id=1, is_fork=False, repo_llm="on_demand"), "on_demand"),
         (DiagnosisContext(installation_id=1, is_fork=False, llm_enabled=False), "disabled"),
     ],
 )

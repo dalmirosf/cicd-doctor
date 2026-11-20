@@ -20,6 +20,7 @@ from cicd_doctor.adapters.github.auth import GitHubAppAuth
 from cicd_doctor.adapters.github.http import GitHubHttp
 from cicd_doctor.adapters.github.logs import GitHubLogSource
 from cicd_doctor.adapters.github.pulls import GitHubPullRequests
+from cicd_doctor.adapters.github.repo_config import GitHubRepoConfigSource
 from cicd_doctor.adapters.github.reporter import GitHubReporter
 from cicd_doctor.adapters.github.webhooks import route_event
 from cicd_doctor.adapters.memory import CharTokenCounter, FakeLLM
@@ -28,12 +29,14 @@ from cicd_doctor.core.diagnosis.cost import CostModel
 from cicd_doctor.core.diagnosis.pipeline import DiagnoseJob
 from cicd_doctor.core.models import Job, JobKind
 from cicd_doctor.core.ports import Embedder, FailureStore, InstallationStore, JobQueue, UsageLedger
+from cicd_doctor.core.repo_config import CachedRepoConfig
 from cicd_doctor.core.usecases.diagnose_failed_run import DiagnoseConfig, DiagnoseFailedRun
 from cicd_doctor.core.usecases.record_run_outcome import RecordRunOutcome
 from cicd_doctor.worker import Worker
 from cicd_doctor.worker.handlers import diagnose_run_handler, record_outcome_handler
 from tests.github_fake import (
     FakeGitHub,
+    FakeRepoContents,
     FakeRepoWrites,
     GitHubLogsFake,
     RecordedRequest,
@@ -105,6 +108,7 @@ class DiagnoseWorld:
     clock: FakeClock
     github: FakeGitHub
     writes: FakeRepoWrites
+    contents: FakeRepoContents
     logs: GitHubLogsFake
     queue: InspectableQueue
     store: FailureStore
@@ -196,6 +200,7 @@ async def diagnose_world(
     github = FakeGitHub(clock, app_key().public_key())
     github.install(INSTALLATION_ID, repo_ids={REPO_ID})
     writes = FakeRepoWrites(github)
+    contents = FakeRepoContents(github)
     logs = GitHubLogsFake(github)
     llm = FakeLLM([valid()] * 8 if llm_script is None else llm_script)
 
@@ -205,10 +210,12 @@ async def diagnose_world(
     async with GitHubHttp(clock, transport=github.transport()) as http:
         auth = GitHubAppAuth(http, app_id=github.app_id, private_key=app_key(), clock=clock)
         log_source = GitHubLogSource(http, auth, blob_transport=github.transport())
+        repo_config = CachedRepoConfig(GitHubRepoConfigSource(http, auth), clock)
         try:
             use_case = DiagnoseFailedRun(
                 logs=log_source,
                 pulls=GitHubPullRequests(http, auth),
+                repo_config=repo_config,
                 reporter=GitHubReporter(http, auth, clock),
                 store=store,
                 installations=installations,
@@ -230,6 +237,7 @@ async def diagnose_world(
                             store=store,
                             installations=installations,
                             reporter=GitHubReporter(http, auth, clock),
+                            repo_config=repo_config,
                         )
                     ),
                 },
@@ -242,6 +250,7 @@ async def diagnose_world(
                 clock=clock,
                 github=github,
                 writes=writes,
+                contents=contents,
                 logs=logs,
                 queue=queue,
                 store=store,

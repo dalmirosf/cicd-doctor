@@ -4,6 +4,7 @@ Models marked "P0 placeholder" are referenced by the ports in SPEC §4.3 but not
 spec; their fields are the minimum the ports need and will be refined in P1.
 """
 
+import unicodedata
 from datetime import date, datetime
 from decimal import Decimal
 from enum import StrEnum
@@ -33,7 +34,13 @@ class Category(StrEnum):
 
 # Why a rules diagnosis was published instead of an LLM one (SPEC §5, §8, §9.4).
 FallbackReason = Literal[
-    "llm_error", "invalid_output", "budget", "fork_policy", "config_off", "disabled"
+    "llm_error",
+    "invalid_output",
+    "budget",
+    "fork_policy",
+    "config_off",
+    "on_demand",
+    "disabled",
 ]
 
 
@@ -312,6 +319,8 @@ class DiagnosisReport(DomainModel):
     rules_baseline: dict[UUID, Diagnosis] = Field(default_factory=dict)  # shown on disagreement
     # failure id -> the run a ``cache`` diagnosis was served from (an int: the renderer builds text)
     cached_from_runs: dict[UUID, int] = Field(default_factory=dict)
+    # Fields of an invalid repository configuration (D-90); shown as one line of the check run.
+    config_problems: tuple[str, ...] = ()
 
 
 # --- What a run attempt leaves behind: the analysis checkpoint (D-69) ----------------------
@@ -630,6 +639,10 @@ class RepoRef(DomainModel):
     default_branch: str
 
 
+MAX_IGNORED_WORKFLOWS = 50
+MAX_WORKFLOW_NAME_CHARS = 120
+
+
 class RepoConfig(DomainModel):
     """Per-repo settings from ``.github/cicd-doctor.yml`` on the default branch (D-26)."""
 
@@ -638,6 +651,35 @@ class RepoConfig(DomainModel):
     comment: bool = True
     llm: Literal["auto", "on_demand", "off"] = "auto"
     ignore_workflows: list[str] = Field(default_factory=list)
+
+    @field_validator("ignore_workflows")
+    @classmethod
+    def _workflow_names(cls, names: list[str]) -> list[str]:
+        if len(names) > MAX_IGNORED_WORKFLOWS:
+            raise ValueError(f"at most {MAX_IGNORED_WORKFLOWS} names")
+        for name in names:
+            if not name or len(name) > MAX_WORKFLOW_NAME_CHARS:
+                raise ValueError(f"names are 1 to {MAX_WORKFLOW_NAME_CHARS} characters")
+            if any(unicodedata.category(char) in {"Cc", "Cf", "Cs", "Co", "Cn"} for char in name):
+                raise ValueError("names carry no control or invisible characters")
+        return names
+
+
+ConfigState = Literal["default", "file", "invalid", "unreadable"]
+
+
+class LoadedConfig(DomainModel):
+    """What reading the repository configuration found (D-90).
+
+    ``default``: no file (404) or an empty one; ``file``: a valid file; ``invalid``: a file that
+    does not parse or validate (``config`` is then the defaults and ``problems`` names the
+    failing fields, never a value); ``unreadable``: the installation has not accepted the
+    ``contents: read`` permission, so the defaults apply.
+    """
+
+    config: RepoConfig = Field(default_factory=RepoConfig)
+    state: ConfigState = "default"
+    problems: tuple[str, ...] = ()
 
 
 class Reservation(DomainModel):
