@@ -213,6 +213,7 @@ def diagnose_config(settings: Settings) -> DiagnoseConfig:
         cache_ttl_days=settings.cache_ttl_days,
         similar_k=settings.similar_k,
         similar_min_score=settings.similar_min_score,
+        max_suggestions=settings.explain_max_suggestions,
     )
 
 

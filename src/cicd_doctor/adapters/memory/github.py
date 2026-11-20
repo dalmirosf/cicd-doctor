@@ -17,12 +17,13 @@ from cicd_doctor.core.models import (
     CommentRef,
     CommentTarget,
     JobRef,
+    PullDiff,
     PullRequestInfo,
     RawLog,
     RepoRef,
+    ReviewSuggestion,
     RunRef,
     RunSummary,
-    Suggestion,
     WorkflowJob,
 )
 from cicd_doctor.core.render import check_name
@@ -122,6 +123,19 @@ class FakeComment:
     edits: int = 0
 
 
+@dataclass
+class FakeReviewComment:
+    """A review comment with a suggestion, as the fake reporter keeps it."""
+
+    id: int
+    body: str
+    path: str
+    start_line: int
+    end_line: int
+    commit_id: str
+    edits: int = 0
+
+
 @dataclass(frozen=True)
 class ReporterCall:
     """One call to the reporter: which method, for which run and with which id hint."""
@@ -164,6 +178,9 @@ class FakeReporter:
         self.calls: list[ReporterCall] = []
         self.comment_bodies: list[str] = []  # every body ever sent, in order
         self.reactions: list[tuple[int, str]] = []  # (comment id, reaction), in order
+        self.review_comments: dict[int, FakeReviewComment] = {}
+        self.reject_suggestions = False  # answer like a 422: the range is not in the diff
+        self._next_review_comment = 6001
         self._next_check = first_check_id
         self._next_comment = first_comment_id
         self._failures = _Failures()
@@ -222,8 +239,31 @@ class FakeReporter:
             comment.edits += 1
         return comment.id
 
-    async def post_suggestion(self, target: CommentTarget, suggestion: Suggestion) -> None:
-        raise NotImplementedError("P3")
+    async def post_suggestion(self, target: CommentTarget, suggestion: ReviewSuggestion) -> bool:
+        run = target.run
+        self.calls.append(ReporterCall("post_suggestion", run.run_id, run.run_attempt))
+        await self._enter("post_suggestion")
+        if self.reject_suggestions:
+            return False
+        marker = suggestion.body.splitlines()[0] if suggestion.body else ""
+        existing = next(
+            (c for c in self.review_comments.values() if c.body.splitlines()[:1] == [marker]), None
+        )
+        if existing is not None:
+            existing.body = suggestion.body
+            existing.edits += 1
+            return True
+        comment = FakeReviewComment(
+            self._next_review_comment,
+            suggestion.body,
+            suggestion.path,
+            suggestion.start_line,
+            suggestion.end_line,
+            suggestion.commit_id,
+        )
+        self._next_review_comment += 1
+        self.review_comments[comment.id] = comment
+        return True
 
     async def react(self, comment: CommentRef, reaction: str) -> None:
         self.calls.append(ReporterCall("react", 0, 0, known_id=comment.comment_id))
@@ -250,6 +290,8 @@ class FakePullRequests:
         self.calls: list[RunRef] = []
         self.gets: list[tuple[int, int]] = []  # (repo_id, number) of every ``get``
         self._pulls: dict[tuple[int, int], PullRequestInfo] = {}
+        self._diffs: dict[tuple[int, int], PullDiff] = {}
+        self.diffs: list[tuple[int, int]] = []  # (repo_id, number) of every ``diff``
         self._journal = journal
 
     def set(self, run_id: int, number: int | None) -> None:
@@ -270,7 +312,20 @@ class FakePullRequests:
         """Make ``get`` know this pull request (a missing one answers ``None``, like a 404)."""
         self._pulls[(repo_id, pull.number)] = pull
 
-    async def get(self, repo: RepoRef, number: int) -> PullRequestInfo | None:
+    def add_diff(self, repo_id: int, number: int, diff: PullDiff) -> None:
+        self._diffs[(repo_id, number)] = diff
+
+    async def diff(self, repo: RepoRef, number: int) -> PullDiff:
+        self.diffs.append((repo.repo_id, number))
+        _note(self._journal, "pulls.diff")
+        await asyncio.sleep(0)
+        if self._error is not None:
+            raise self._error
+        return self._diffs.get((repo.repo_id, number), PullDiff())
+
+    async def get(
+        self, repo: RepoRef, number: int, *, for_explain: bool = True
+    ) -> PullRequestInfo | None:
         self.gets.append((repo.repo_id, number))
         _note(self._journal, "pulls.get")
         await asyncio.sleep(0)

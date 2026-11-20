@@ -39,6 +39,7 @@ CHECKS = "/repos/{owner}/{repo}/check-runs"
 COMMIT_CHECK_RUNS = "/repos/{owner}/{repo}/commits/{ref}/check-runs"
 CHECK = "/repos/{owner}/{repo}/check-runs/{check_run_id}"
 COMMENTS = "/repos/{owner}/{repo}/issues/{issue_number}/comments"
+PULL = "/repos/{owner}/{repo}/pulls/{number}"
 COMMENT = "/repos/{owner}/{repo}/issues/comments/{comment_id}"
 JOBS = "/repos/{owner}/{repo}/actions/runs/{run_id}/attempts/{attempt}/jobs"
 LOG = "/repos/{owner}/{repo}/actions/jobs/{job_id}/logs"
@@ -133,6 +134,7 @@ async def test_a_signed_webhook_ends_in_one_check_run_and_one_comment(
         ("GET", JOBS),
         ("GET", LOG),  # 302 to the blob host
         ("GET", BLOB),  # the signed blob, without Authorization
+        ("GET", PULL),  # the head of the pull request, to give the model its diff (D-97)
         ("PATCH", CHECK),  # completed, neutral
         ("GET", COMMENTS),  # find the sticky comment by its marker (none yet)
         ("POST", COMMENTS),
@@ -296,6 +298,7 @@ async def test_a_cancelled_run_with_a_job_timeout_ends_in_a_timeout_check_and_co
         ("POST", CHECKS),
         ("GET", LOG),
         ("GET", BLOB),
+        ("GET", PULL),
         ("PATCH", CHECK),
         ("GET", COMMENTS),
         ("POST", COMMENTS),

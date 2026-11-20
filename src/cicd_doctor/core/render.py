@@ -14,6 +14,7 @@ import unicodedata
 from collections.abc import Sequence
 from typing import NamedTuple
 from urllib.parse import urlsplit
+from uuid import UUID
 
 from cicd_doctor.core.logs.clean import strip_terminal_controls
 from cicd_doctor.core.models import (
@@ -24,8 +25,10 @@ from cicd_doctor.core.models import (
     FailureStatus,
     FallbackReason,
     SimilarFailure,
+    Suggestion,
 )
 from cicd_doctor.core.redaction import redact
+from cicd_doctor.core.suggestions import suggestion_marker
 
 HIGH_CONFIDENCE = 0.75  # SPEC §5.1
 MEDIUM_CONFIDENCE = 0.45
@@ -59,6 +62,19 @@ FALLBACK_TEXT: dict[FallbackReason, str] = {
     "llm_error": "LLM unavailable, showing the rule-based diagnosis",
     "invalid_output": "LLM answer was invalid, showing the rule-based diagnosis",
 }
+
+# What the check run and the comment say about a suggested change (D-97). The keys are fixed by
+# the use case; nothing here comes from the diagnosis.
+SUGGESTION_TEXT: dict[str, str] = {
+    "posted": "Suggested change posted as a review comment",
+    "outside_diff": "Suggested change not posted: it does not fit in the diff of the pull request",
+    "head_moved": "Suggested change not posted: the pull request changed after this run",
+    "closed": "Suggested change not posted: the pull request is closed",
+    "permission": "Suggested change not posted: the app is not allowed to write review comments",
+    "unavailable": "Suggested change not posted: GitHub could not take it now",
+    "limit": "Suggested change not posted: too many suggestions for one command",
+}
+REVIEW_NOTE = "Generated automatically from untrusted logs: review it before you apply it."
 
 COULD_NOT_DIAGNOSE: dict[str, str] = {
     "logs_expired": "The logs of the failed job are no longer available (GitHub deletes them).",
@@ -305,6 +321,22 @@ def render_comment(report: DiagnosisReport) -> str:
     return _join([head, *body], MAX_COMMENT_CHARS)
 
 
+def render_review_comment(
+    pr_number: int, failure_id: UUID, probable_cause: str, suggestion: Suggestion
+) -> str:
+    """The body of the review comment of one suggestion (D-97): the hidden marker, one line of
+    explanation, the ``suggestion`` block and a note. The replacement goes inside a fence longer
+    than any run of backticks in it, so it cannot close the block; it was cleaned and checked
+    before (``core.suggestions``). The marker is built from integers and a UUID."""
+    cause = inline(probable_cause, 300)
+    block = fenced(suggestion.replacement.split("\n"), "suggestion")
+    lead = "**CICD Doctor suggests a change.**"
+    explanation = f"{lead} {cause}" if cause else lead
+    return "\n".join(
+        [suggestion_marker(pr_number, failure_id), explanation, "", block, "", f"_{REVIEW_NOTE}_"]
+    )
+
+
 def render_could_not_diagnose(reason: str) -> CheckOutput:
     """A neutral message for a run that cannot be analysed. ``reason`` is a key of
     ``COULD_NOT_DIAGNOSE``; anything else gets the generic text, never echoed."""
@@ -347,6 +379,9 @@ def _job_section(
     fix_limit = COMMENT_FIX_CHARS if compact else 1000
     lines.append(f"**Suggested fix:** {inline(diagnosis.suggested_fix, fix_limit)}")
     lines.append(_source(diagnosis, report.cached_from_runs.get(failure.id)))
+    outcome = report.suggestions.get(failure.id)
+    if outcome is not None:
+        lines.append(f"_{SUGGESTION_TEXT.get(outcome, SUGGESTION_TEXT['unavailable'])}._")
     baseline = report.rules_baseline.get(failure.id)
     if baseline is not None:
         lines.append(_baseline(baseline))

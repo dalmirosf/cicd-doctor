@@ -29,6 +29,7 @@ from cicd_doctor.core.models import (
     Publication,
     PublicationKey,
     PublishedUpgrade,
+    PullDiff,
     PullRequestInfo,
     PurgeCounts,
     RawLog,
@@ -36,13 +37,13 @@ from cicd_doctor.core.models import (
     Repository,
     Reservation,
     ResolvedBy,
+    ReviewSuggestion,
     RunAnalysisRecord,
     RunAttempt,
     RunRef,
     RunSummary,
     SimilarFailure,
     SuccessRef,
-    Suggestion,
     WorkflowJob,
     WorkflowRun,
 )
@@ -244,8 +245,13 @@ class Reporter(Protocol):
         write."""
         ...
 
-    async def post_suggestion(self, target: CommentTarget, suggestion: Suggestion) -> None:
-        """P3."""
+    async def post_suggestion(self, target: CommentTarget, suggestion: ReviewSuggestion) -> bool:
+        """Post the suggestion as a review comment on the pull request (D-97), or edit the one
+        this app already wrote for its marker (the first line of ``suggestion.body``), found
+        among the comments of ``<slug>[bot]`` only. ``True`` when it is there; ``False`` when
+        GitHub refuses the range (422: a line outside the diff, a moved head, spam), which is
+        "text only", not an error. A missing permission raises ``PermanentError``, a 5xx or a
+        rate limit ``TransientError``. The caller holds the publication lock."""
         ...
 
     async def react(self, comment: CommentRef, reaction: str) -> None:
@@ -260,10 +266,20 @@ class PullRequestSource(Protocol):
         """The number of the open pull request this run belongs to, or None (D-72)."""
         ...
 
-    async def get(self, repo: RepoRef, number: int) -> PullRequestInfo | None:
+    async def get(
+        self, repo: RepoRef, number: int, *, for_explain: bool = True
+    ) -> PullRequestInfo | None:
         """The pull request, or None when it does not exist (404). Read with the permissions of
-        ``explain`` (D-89). Transient errors raise ``TransientError``; a missing permission
-        raises ``PermanentError``."""
+        ``explain`` (D-89) or, with ``for_explain=False``, the ones of the diagnosis: the
+        automatic flow must not need Issues: write. Transient errors raise ``TransientError``;
+        a missing permission raises ``PermanentError``."""
+        ...
+
+    async def diff(self, repo: RepoRef, number: int) -> PullDiff:
+        """The files of the pull request with their ``patch`` (``GET /pulls/{n}/files``, up to
+        30 pages of 100), read with the permissions of the diagnosis (D-97). ``truncated`` is
+        true when the cap left files out. A 404 gives an empty diff. Transient errors raise
+        ``TransientError``."""
         ...
 
 

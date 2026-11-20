@@ -56,6 +56,8 @@ class Settings(BaseSettings):
 
     # Commands (D-92, D-95): the most recent failed runs one `/cicd-doctor explain` diagnoses
     explain_max_runs: int = Field(default=3, ge=1)
+    # Suggested changes (D-97): review comments with a `suggestion` block per run attempt; 0 = none
+    explain_max_suggestions: int = Field(default=3, ge=0)
 
     # Repository configuration (D-90): how long one answer is kept in the process
     config_ttl_s: int = Field(default=300, ge=0)

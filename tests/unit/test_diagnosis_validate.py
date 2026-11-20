@@ -15,14 +15,26 @@ from cicd_doctor.core.diagnosis.validate import (
     verified_evidence,
 )
 from cicd_doctor.core.models import Category, Diagnosis
+from tests.diffs import shown_diff
 from tests.llmcases import LOG_LINES, answer, make_excerpt, raw
 from tests.redaction_corpus import planted_secrets
 
 EXCERPT = make_excerpt()  # lines 1-6; the ModuleNotFoundError is line 5
+PATHS = [
+    "pyproject.toml",
+    "src/app/main.py",
+    "a b/c.txt",
+    ".github/workflows/ci.yml",
+    "dir\\file.py",
+    "a.py",
+]
+DIFF = shown_diff(*[(path, [(1, 40)]) for path in PATHS])  # lines 1-40 of each file
 
 
-def _final(**changes: Any) -> Diagnosis:
-    return finalize(parse_output(raw(**changes)), EXCERPT, model="m-1", prompt_version="diag-v1")
+def _final(diff: Any = None, **changes: Any) -> Diagnosis:
+    return finalize(
+        parse_output(raw(**changes)), EXCERPT, model="m-1", prompt_version="diag-v1", diff=diff
+    )
 
 
 def _ev(line: int, text: str) -> LLMEvidence:
@@ -47,8 +59,8 @@ def test_a_valid_answer_becomes_a_published_llm_diagnosis() -> None:
     assert diagnosis.rule_ids == []
 
 
-def test_the_prompt_version_is_diag_v1() -> None:
-    assert PROMPT_VERSION == "diag-v2"
+def test_the_prompt_version_is_diag_v3() -> None:
+    assert PROMPT_VERSION == "diag-v3"
 
 
 # --- rule 1: evidence must quote the excerpt --------------------------------------------------
@@ -157,10 +169,10 @@ def _suggestion(path: str = "pyproject.toml", start: int = 3, end: int = 4) -> L
 
 @pytest.mark.parametrize(
     "path",
-    ["pyproject.toml", "src/app/main.py", "a b/c.txt", ".github/workflows/ci.yml", "dir\\file.py"],
+    ["pyproject.toml", "src/app/main.py", "a b/c.txt", ".github/workflows/ci.yml"],
 )
 def test_a_relative_path_inside_the_repository_is_kept(path: str) -> None:
-    kept = checked_suggestion(_suggestion(path))
+    kept = checked_suggestion(_suggestion(path), DIFF)
 
     assert kept is not None
     assert kept.path == path
@@ -175,6 +187,7 @@ def test_a_relative_path_inside_the_repository_is_kept(path: str) -> None:
         "/etc/passwd",
         "\\\\server\\share\\x",
         "C:\\Windows\\x",
+        "dir\\file.py",
         "c:relative",
         "~/.ssh/config",
         "",
@@ -185,7 +198,7 @@ def test_a_relative_path_inside_the_repository_is_kept(path: str) -> None:
     ],
 )
 def test_a_path_that_leaves_the_repository_or_is_odd_is_dropped(path: str) -> None:
-    assert checked_suggestion(_suggestion(path)) is None
+    assert checked_suggestion(_suggestion(path), DIFF) is None
 
 
 @pytest.mark.parametrize(
@@ -194,7 +207,9 @@ def test_a_path_that_leaves_the_repository_or_is_odd_is_dropped(path: str) -> No
         (1, 1, True),
         (3, 4, True),
         (1, 30, True),
+        (11, 40, True),
         (1, 31, False),
+        (30, 41, False),
         (5, 4, False),
         (0, 2, False),
         (-3, 1, False),
@@ -203,7 +218,7 @@ def test_a_path_that_leaves_the_repository_or_is_odd_is_dropped(path: str) -> No
 def test_the_line_range_must_be_valid_and_at_most_thirty_lines(
     start: int, end: int, kept: bool
 ) -> None:
-    assert (checked_suggestion(_suggestion(start=start, end=end)) is not None) is kept
+    assert (checked_suggestion(_suggestion(start=start, end=end), DIFF) is not None) is kept
 
 
 def test_a_dropped_suggestion_leaves_the_text_of_the_fix() -> None:
@@ -217,7 +232,11 @@ def test_a_dropped_suggestion_leaves_the_text_of_the_fix() -> None:
 
 
 def test_no_suggestion_stays_none() -> None:
-    assert checked_suggestion(None) is None
+    assert checked_suggestion(None, DIFF) is None
+
+
+def test_without_a_diff_there_is_no_suggestion() -> None:
+    assert checked_suggestion(_suggestion(), None) is None
 
 
 # --- redaction, caps and the canary -----------------------------------------------------------
@@ -234,12 +253,13 @@ def test_secrets_in_the_answer_are_redacted() -> None:
             "end_line": 1,
             "replacement": f"token = '{planted.secret}'",
         },
+        diff=DIFF,
     )
 
     text = diagnosis.probable_cause + diagnosis.suggested_fix
     assert planted.secret not in text
-    assert diagnosis.suggestion is not None
-    assert planted.secret not in diagnosis.suggestion.replacement
+    # a replacement that held a secret is dropped: one click would commit "[REDACTED]"
+    assert diagnosis.suggestion is None
     assert f"[REDACTED:{planted.kind}]" in diagnosis.probable_cause
 
 

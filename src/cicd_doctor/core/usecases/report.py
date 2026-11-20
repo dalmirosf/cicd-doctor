@@ -5,6 +5,7 @@ stored record, and the similar failures are searched again (they are not in the 
 """
 
 from collections.abc import Sequence
+from uuid import UUID
 
 from cicd_doctor.core.diagnosis.merge import baseline_to_show
 from cicd_doctor.core.models import DiagnosisReport, RunAnalysisRecord, RunRef, SimilarFailure
@@ -36,6 +37,7 @@ async def build_report(
     similar_k: int,
     similar_min_score: float,
     config_problems: tuple[str, ...] = (),
+    suggestions: dict[UUID, str] | None = None,
 ) -> DiagnosisReport:
     """The report of a stored analysis. ``run`` carries the pull request that was found; each
     failure carries its current status (so a resolved one renders its banner)."""
@@ -70,4 +72,5 @@ async def build_report(
         rules_baseline=baselines,
         cached_from_runs=origins,
         config_problems=config_problems,
+        suggestions=suggestions or {},
     )

@@ -13,6 +13,7 @@ created.
 - Nothing here puts a response body in an error: ``GitHubHttp`` already keeps them out.
 """
 
+import re
 from datetime import UTC
 from typing import Any
 
@@ -25,7 +26,13 @@ from cicd_doctor.adapters.github.auth import (
 )
 from cicd_doctor.adapters.github.http import Credential, GitHubHttp, GitHubPermanentError
 from cicd_doctor.core.errors import CommentGone, PermanentError, TransientError
-from cicd_doctor.core.models import CheckOutput, CommentRef, CommentTarget, RunRef, Suggestion
+from cicd_doctor.core.models import (
+    CheckOutput,
+    CommentRef,
+    CommentTarget,
+    ReviewSuggestion,
+    RunRef,
+)
 from cicd_doctor.core.ports import Clock
 from cicd_doctor.core.render import check_name
 
@@ -34,8 +41,14 @@ CHECK_RUN = "/repos/{owner}/{repo}/check-runs/{check_run_id}"
 COMMIT_CHECK_RUNS = "/repos/{owner}/{repo}/commits/{ref}/check-runs"
 ISSUE_COMMENTS = "/repos/{owner}/{repo}/issues/{issue_number}/comments"
 ISSUE_COMMENT = "/repos/{owner}/{repo}/issues/comments/{comment_id}"
+PULL_COMMENTS = "/repos/{owner}/{repo}/pulls/{pull_number}/comments"
+PULL_COMMENT = "/repos/{owner}/{repo}/pulls/comments/{comment_id}"
 COMMENT_REACTIONS = "/repos/{owner}/{repo}/issues/comments/{comment_id}/reactions"
 
+_SUGGESTION_MARKER = re.compile(
+    r"<!-- cicd-doctor:v1 suggestion pr=(\d+) failure=[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-"
+    r"[0-9a-f]{4}-[0-9a-f]{12} -->"
+)
 COMMENT_PAGES = 10  # of 100 comments: more than 1,000 comments on one PR is an accepted residual
 CHECK_RUN_PAGES = 10
 MAX_TITLE_CHARS = 255
@@ -229,10 +242,101 @@ class GitHubReporter:
         ]
         return min(ours) if ours else None
 
-    # --- P3 ---------------------------------------------------------------------------------
+    # --- review comments with a suggestion (D-97) -------------------------------------------
 
-    async def post_suggestion(self, target: CommentTarget, suggestion: Suggestion) -> None:
-        raise NotImplementedError("P3")
+    async def post_suggestion(self, target: CommentTarget, suggestion: ReviewSuggestion) -> bool:
+        """Create the review comment of a suggestion, or edit the one this app already wrote for
+        the marker on the first line of its body. ``False`` for a 422: the range is not in the
+        diff of that commit (or GitHub refuses the comment): the caller keeps the text only."""
+        marker = _first_line(suggestion.body)
+        found = _SUGGESTION_MARKER.fullmatch(marker)
+        if (
+            found is None
+            or int(found.group(1)) != target.pr_number
+            or suggestion.pr_number != target.pr_number
+        ):
+            raise PermanentError("the review comment does not start with the marker of its target")
+        run = target.run
+        credential = self._credential(run)
+        try:
+            existing = await self._find_review_comment(target, credential, marker)
+            if existing is not None and await self._edit_review_comment(
+                run, credential, existing, suggestion.body
+            ):
+                return True
+            body: dict[str, Any] = {
+                "body": suggestion.body,
+                "commit_id": suggestion.commit_id,
+                "path": suggestion.path,
+                "line": suggestion.end_line,
+                "side": "RIGHT",
+            }
+            if suggestion.start_line < suggestion.end_line:
+                body["start_line"] = suggestion.start_line
+                body["start_side"] = "RIGHT"
+            await self._http.request(
+                "POST",
+                PULL_COMMENTS,
+                path={**_repo_path(run), "pull_number": target.pr_number},
+                json=body,
+                credential=credential,
+            )
+        except GitHubPermanentError as exc:
+            if exc.status_code == 422:
+                return False
+            if exc.status_code == 403:
+                raise GitHubPermanentError(
+                    f"review comment refused: the installation has not accepted "
+                    f"Pull requests: write ({exc})",
+                    status_code=403,
+                ) from exc
+            raise
+        return True
+
+    async def _edit_review_comment(
+        self, run: RunRef, credential: Credential, comment_id: int, body: str
+    ) -> bool:
+        """``False`` when the comment does not exist any more (404)."""
+        try:
+            await self._http.request(
+                "PATCH",
+                PULL_COMMENT,
+                path={**_repo_path(run), "comment_id": comment_id},
+                json={"body": body},
+                credential=credential,
+            )
+        except GitHubPermanentError as exc:
+            if exc.status_code == 404:
+                return False
+            raise
+        return True
+
+    async def _find_review_comment(
+        self, target: CommentTarget, credential: Credential, marker: str
+    ) -> int | None:
+        """The review comment of this marker written by this app, the oldest if there are several.
+        Only ``<slug>[bot]`` counts: anyone can type the marker into a comment of their own."""
+        identity = await self._auth.app_identity()
+        bot = f"{identity.slug}[bot]"
+        listed = await self._http.paginate(
+            PULL_COMMENTS,
+            path={**_repo_path(target.run), "pull_number": target.pr_number},
+            credential=credential,
+            max_pages=COMMENT_PAGES,
+        )
+        ours = [
+            item["id"]
+            for item in listed.items
+            if isinstance(item, dict)
+            and isinstance(item.get("user"), dict)
+            and item["user"].get("login") == bot
+            and isinstance(item.get("body"), str)
+            and _first_line(item["body"]) == marker
+            and isinstance(item.get("id"), int)
+        ]
+        return min(ours) if ours else None
+
+    # --- reactions --------------------------------------------------------------------------
 
     async def react(self, comment: CommentRef, reaction: str) -> None:
         """``POST .../issues/comments/{id}/reactions``: 201 when created, 200 when the app had

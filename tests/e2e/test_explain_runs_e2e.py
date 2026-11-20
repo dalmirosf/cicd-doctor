@@ -188,7 +188,8 @@ async def test_a_command_upgrades_the_three_most_recent_failed_runs_of_a_fork_pu
     assert world.writes.reactions == [(777, "eyes")]  # one reaction, no second one at the end
     [listing] = world.requests("GET", RUNS)
     assert listing.query == {"head_sha": HEAD_SHA, "per_page": "100"}
-    assert len(world.requests("GET", PULL)) == 1
+    # the command reads the pull request once; each child reads its head again for the diff
+    assert len(world.requests("GET", PULL)) == 1 + 3
     assert len(world.llm.calls) == 3  # three runs, one failed job each (9 would be the cap)
     assert len(world.requests("POST", CHECKS)) == posts[0]  # edited in place, never created again
     assert len(world.requests("POST", COMMENTS)) == posts[1]
