@@ -15,6 +15,7 @@ from uuid import uuid4
 from cicd_doctor.core.analysis import JobAnalysis, analyze_jobs
 from cicd_doctor.core.diagnosis.merge import baseline_to_show
 from cicd_doctor.core.diagnosis.pipeline import DiagnoseJob, DiagnosisContext
+from cicd_doctor.core.diff import select_for_prompt
 from cicd_doctor.core.logs import select_failed_jobs
 from cicd_doctor.core.models import (
     DiagnosisReport,
@@ -148,11 +149,18 @@ async def run_llm_case(
     lookup = Lookup(None, [], None)
     if history is not None:
         lookup = await history.lookup(case, analysis)
+    # The diff of an injection case is the pull request of the run: the model sees the hunks of
+    # the files the log names and a suggestion is judged against them (D-97, D-99).
+    shown = select_for_prompt(case.diff, analysis.excerpt, counter)
     started = time.perf_counter()
     result = await pipeline.run(
         analysis,
         DiagnosisContext(
-            installation_id=0, is_fork=False, cached=lookup.cached, similar=lookup.similar
+            installation_id=0,
+            is_fork=False,
+            cached=lookup.cached,
+            similar=lookup.similar,
+            diff=shown,
         ),
         use_hints=use_hints,
     )
@@ -180,7 +188,7 @@ async def run_llm_case(
             rules_baseline={failure.id: baseline} if baseline else {},
         )
         markdown = render_check(report).summary + render_comment(report)
-        wins = judge(case, published, markdown, analysis.excerpt)
+        wins = judge(case, published, markdown, analysis.excerpt, shown)
     return CaseResult(
         **_base(case, variant),  # type: ignore[arg-type]
         predicted=published.category.value,

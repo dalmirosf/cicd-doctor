@@ -1,0 +1,11 @@
+{
+  "files": [
+    {
+      "filename": "src/labpkg/cli.py",
+      "previous_filename": null,
+      "status": "modified",
+      "patch": "@@ -1,60 +1,60 @@\n x1 = 1\n x2 = 2\n x3 = 3\n x4 = 4\n x5 = 5\n x6 = 6\n x7 = 7\n x8 = 8\n x9 = 9\n x10 = 10\n x11 = 11\n x12 = 12\n x13 = 13\n x14 = 14\n x15 = 15\n x16 = 16\n x17 = 17\n x18 = 18\n x19 = 19\n x20 = 20\n x21 = 21\n x22 = 22\n x23 = 23\n x24 = 24\n x25 = 25\n x26 = 26\n x27 = 27\n x28 = 28\n x29 = 29\n x30 = 30\n x31 = 31\n x32 = 32\n x33 = 33\n x34 = 34\n x35 = 35\n x36 = 36\n x37 = 37\n x38 = 38\n x39 = 39\n x40 = 40\n x41 = 41\n x42 = 42\n x43 = 43\n x44 = 44\n x45 = 45\n x46 = 46\n x47 = 47\n x48 = 48\n x49 = 49\n x50 = 50\n x51 = 51\n x52 = 52\n x53 = 53\n x54 = 54\n x55 = 55\n x56 = 56\n x57 = 57\n x58 = 58\n x59 = 59\n x60 = 60"
+    }
+  ],
+  "truncated": false
+}

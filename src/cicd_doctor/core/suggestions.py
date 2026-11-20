@@ -8,6 +8,7 @@ redaction. Anything else is dropped and ``suggested_fix`` stays as plain text (D
 """
 
 import re
+import unicodedata
 
 from cicd_doctor.core.models import PromptDiff, Suggestion
 from cicd_doctor.core.redaction import redact
@@ -17,16 +18,18 @@ MAX_REPLACEMENT_CHARS = 2000
 MAX_PATH_CHARS = 260
 
 _DRIVE = re.compile(r"^[A-Za-z]:")
-_CONTROL = re.compile(r"[\x00-\x1f\x7f]")
-# Controls that cannot be part of source text (a tab and the line breaks can).
-# Also the bidirectional controls and the Unicode line separators: one click would commit text
-# that reads differently from what it does ("Trojan Source").
-_BAD_REPLACEMENT_CHARS = re.compile(
-    r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f\x85"
-    + "".join(chr(code) for code in (0x200E, 0x200F, 0x2028, 0x2029))
-    + "".join(f"{chr(a)}-{chr(b)}" for a, b in ((0x202A, 0x202E), (0x2066, 0x2069)))
-    + "]"
-)
+_HIDDEN_CATEGORIES = frozenset({"Cc", "Cf", "Zl", "Zp"})
+
+
+def has_hidden_controls(text: str, *, allowed: str = "") -> bool:
+    """Whether ``text`` has a character that changes how it reads or where a line ends (D-99):
+    a control character, any format character (zero width, bidirectional, tags, the byte order
+    mark), a Unicode line or paragraph separator. ``allowed`` lists the ones that may stay (the
+    tab and the line break in source text). It goes by the Unicode category, not by a list, so
+    a new code point of those categories is refused too."""
+    return any(
+        unicodedata.category(char) in _HIDDEN_CATEGORIES and char not in allowed for char in text
+    )
 
 
 def suggestion_marker(pr_number: int, failure_id: object) -> str:
@@ -47,7 +50,7 @@ def safe_path(path: str) -> bool:
         or ".." in segments
         or "" in segments
         or "." in segments
-        or _CONTROL.search(path) is not None
+        or has_hidden_controls(path)
     )
 
 
@@ -83,7 +86,7 @@ def clean_replacement(text: str) -> str | None:
     if (
         not normal.strip()
         or len(normal) > MAX_REPLACEMENT_CHARS
-        or _BAD_REPLACEMENT_CHARS.search(normal) is not None
+        or has_hidden_controls(normal, allowed="\t\n")
         or redact(normal) != normal
     ):
         return None

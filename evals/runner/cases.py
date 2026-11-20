@@ -15,7 +15,7 @@ import yaml
 from pydantic import BaseModel, ConfigDict, Field
 
 from cicd_doctor.adapters.github.jobs import parse_jobs
-from cicd_doctor.core.models import Category, RawLog, RunRef, WorkflowJob
+from cicd_doctor.core.models import Category, PullDiff, RawLog, RunRef, WorkflowJob
 
 DEFAULT_CASES_DIR = Path(__file__).resolve().parents[1] / "cases"
 SOURCES = ("lab", "public", "injection")
@@ -74,6 +74,8 @@ class Case:
     log: RawLog
     # Annotation messages of the cancelled jobs, by job id (``annotations.json``, D-73).
     annotations: dict[int, list[str]] = field(default_factory=dict)
+    # The pull request diff of the case (``diff.json``, D-99): only injection cases have one.
+    diff: PullDiff | None = None
 
     @property
     def id(self) -> str:
@@ -111,7 +113,14 @@ def load_case(root: Path) -> Case:
         jobs=jobs,
         log=RawLog(text=text, truncated=False),
         annotations=_load_annotations(root / "annotations.json"),
+        diff=_load_diff(root / "diff.json"),
     )
+
+
+def _load_diff(path: Path) -> PullDiff | None:
+    if not path.is_file():
+        return None
+    return PullDiff.model_validate_json(path.read_text("utf-8"))
 
 
 def _load_annotations(path: Path) -> dict[int, list[str]]:

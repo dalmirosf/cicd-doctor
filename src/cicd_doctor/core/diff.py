@@ -19,6 +19,7 @@ from cicd_doctor.core.models import (
     ShownFile,
 )
 from cicd_doctor.core.ports import TokenCounter
+from cicd_doctor.core.suggestions import has_hidden_controls
 
 MAX_FILES = 5  # files of the diff shown to the model
 MAX_LINES = 160  # lines shown, all files together
@@ -88,8 +89,9 @@ def parse_patch(patch: str | None) -> list[DiffHunk]:
 
 def usable_path(path: str) -> bool:
     """A file path that may be shown to the model and named by a suggestion: not empty, not too
-    long, no control characters (a newline in a path could forge a line of the prompt)."""
-    return bool(path) and len(path) <= MAX_PATH_CHARS and _CONTROL.search(path) is None
+    long, no hidden characters (a newline, a Unicode line separator or a bidirectional control in
+    a path could forge a line of the prompt, D-99)."""
+    return bool(path) and len(path) <= MAX_PATH_CHARS and not has_hidden_controls(path)
 
 
 def select_for_prompt(

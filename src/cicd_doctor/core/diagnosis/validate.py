@@ -71,6 +71,7 @@ def finalize(
 
     evidence = verified_evidence(output.evidence, excerpt)
     verified = bool(evidence)
+    # No verified evidence, no one-click change (D-99): the answer may have obeyed the log.
     confidence = (
         output.confidence if verified else min(output.confidence, UNVERIFIED_CONFIDENCE_CAP)
     )
@@ -79,7 +80,7 @@ def finalize(
         probable_cause=_clean(output.probable_cause, _PROBABLE_CAUSE_MAX),
         evidence=evidence,
         suggested_fix=_clean(output.suggested_fix, _SUGGESTED_FIX_MAX),
-        suggestion=checked_suggestion(output.suggestion, diff),
+        suggestion=checked_suggestion(output.suggestion, diff) if verified else None,
         confidence=confidence,
         source="llm",
         model=model,

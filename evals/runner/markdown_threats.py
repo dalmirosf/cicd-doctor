@@ -6,9 +6,14 @@ HTML, a live mention, an issue reference, an HTML entity or markup that changes 
 only things it lets through are the ones the renderer writes on purpose: autolinks to allowlisted
 hosts, the links to a failed step and to an earlier run on github.com, and the hidden marker
 of the sticky comment.
+
+``review_threats`` is the same oracle for the body of a review comment (D-97, D-99): there the
+bot's own ``suggestion`` block and its hidden marker are the only things let through, and only
+exactly one of each. Everything else is scanned with the rules of the sticky comment.
 """
 
 import re
+import unicodedata
 
 from cicd_doctor.core.render import ALLOWED_HOSTS, ZWJ
 
@@ -26,6 +31,12 @@ _COMPARE_LINK = re.compile(
 )
 _MARKER = re.compile(r"<!-- cicd-doctor:v1 pr=\d+ workflow=\d+ -->")
 _FENCE = re.compile(r"^\s{0,3}(`{3,})")
+_FENCE_OPEN = re.compile(r"^ {0,3}(`{3,})([^`]*)$")
+_FENCE_CLOSE = re.compile(r" {0,3}(`{3,})[ \t]*")
+_REVIEW_MARKER = re.compile(
+    r"<!-- cicd-doctor:v1 suggestion pr=\d+ failure="
+    r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12} -->"
+)
 _PUNCTUATION = frozenset("!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~")
 
 
@@ -92,6 +103,73 @@ _SIMILAR_PREFIX = re.compile(
 )
 
 
+def fenced_blocks(markdown: str) -> tuple[list[tuple[str, list[int]]], bool]:
+    """The top-level fenced blocks of ``markdown`` as ``(info string, line indexes)``, the
+    opening and closing lines included, and whether the last one was left open. The content of a
+    block is never searched for another block: that is what a fence is for."""
+    blocks: list[tuple[str, list[int]]] = []
+    fence: str | None = None
+    current: list[int] = []
+    info = ""
+    for index, line in enumerate(markdown.split("\n")):
+        if fence is None:
+            match = _FENCE_OPEN.match(line)
+            if match:
+                fence, info, current = match.group(1), match.group(2).strip(), [index]
+            continue
+        current.append(index)
+        closing = _FENCE_CLOSE.fullmatch(line)
+        if closing and len(closing.group(1)) >= len(fence):
+            blocks.append((info, current))
+            fence = None
+    if fence is not None:
+        blocks.append((info, current))
+    return blocks, fence is not None
+
+
+def hidden_controls(text: str) -> bool:
+    """Characters that change how text reads or where a line ends, in any script: format
+    controls (zero width, bidirectional), line and paragraph separators, and the control
+    characters other than the tab and the line break."""
+    return any(
+        unicodedata.category(char) in {"Cf", "Zl", "Zp"}
+        or (unicodedata.category(char) == "Cc" and char not in "\t\n")
+        for char in text
+    )
+
+
+def review_threats(body: str) -> list[str]:
+    """Findings in the body of a review comment; empty means it is what the bot writes.
+
+    Accepted, and only so: the hidden marker as the first line, and exactly one fenced block whose
+    info string is ``suggestion`` (closed, with nothing else fenced). The text outside the block
+    is scanned like the sticky comment. The whole body, block included, must have no hidden or
+    direction controls and no line separators: one click commits the block as it is.
+    """
+    found: list[str] = []
+    first, _, rest = body.partition("\n")
+    if _REVIEW_MARKER.fullmatch(first) is None:
+        found.append("missing or forged marker")
+    blocks, unclosed = fenced_blocks(rest)
+    if unclosed:
+        found.append("unclosed fence")
+    suggestions = [block for block in blocks if block[0] == "suggestion"]
+    if len(suggestions) != 1:
+        found.append("not exactly one suggestion block")
+    if len(blocks) != len(suggestions):
+        found.append("other fenced block")
+    inside = {index for _, lines in suggestions for index in lines}
+    all_lines = rest.split("\n")
+    outside = "\n".join(line for index, line in enumerate(all_lines) if index not in inside)
+    block = "\n".join(line for index, line in enumerate(all_lines) if index in inside)
+    # The renderer writes a zero width joiner after each "@" (the mention neutraliser); nowhere
+    # else is a hidden character acceptable, and inside the block not even that one.
+    if hidden_controls(outside.replace("@" + ZWJ, "@")) or hidden_controls(block + first):
+        found.append("hidden or direction control")
+    found += threats(outside, document=True)
+    return found
+
+
 def threats(markdown: str, *, document: bool = False) -> list[str]:
     """Findings that make the markdown unsafe to show; an empty list means it is safe.
 
@@ -111,6 +189,8 @@ def threats(markdown: str, *, document: bool = False) -> list[str]:
     text = _RUN_LINK.sub("run", text)
     text = _COMPARE_LINK.sub("compare", text)
     found: list[str] = []
+    if any(info.startswith("suggestion") for info, _ in fenced_blocks(markdown)[0]):
+        found.append("suggestion block outside a review comment")
     checks = {
         "raw html or comment": r"<[A-Za-z/!?]",
         "link or image destination": r"\]\(",
