@@ -63,6 +63,20 @@ git push "https://github.com/<owner>/cicd-doctor-lab.git" lab-export:main
 git branch -D lab-export
 ```
 
+That is the way for the first publish. Once the lab's `main` has other history (a merge commit,
+or a commit made on GitHub), the `git push` above is refused as a non-fast-forward. Then publish
+**on top**: clone the lab, compare, copy only what is new or changed, commit and push (with
+`$LABDIR` the clone and the current folder the root of the `cicd-doctor` repository):
+
+```powershell
+git -C $LABDIR pull
+diff -rq --strip-trailing-cr lab $LABDIR --exclude=.git --exclude=.github
+```
+
+`--strip-trailing-cr` matters: the working copies have CRLF, and a plain `diff` shows **every**
+file as different. Copy only the files it names (`Copy-Item`), then `git add`, `git commit` and
+`git push origin main` from `$LABDIR`. Check that `git diff --cached --stat` lists only those files.
+
 A public repository gets free Actions minutes; a private one uses about 25 short jobs of the
 account's minutes per full round.
 
@@ -1031,8 +1045,9 @@ blocks only read, and the session that reads the results uses `gh` with `GET` ca
 rules of PowerShell 5.1 apply (no `&&`, no double quotes inside `--jq`, no two variables whose names
 differ only in case, no `2>&1` on a native command).
 
-Nothing of P3 is verified live yet. No box of SPEC §13 P3 is ticked until a row of the evidence
-table (last section) has real ids, times and rows.
+The live check was run on 2026-11-20 (installation 181604068); what was observed is in the evidence
+table (last section). A box of SPEC §13 P3 is ticked only from a row with real ids, times and rows.
+The fork half of box 1 was **not** verified (see the end).
 
 ### What can hurt, by tag
 
@@ -1158,7 +1173,8 @@ settings page showed Issues = "No access", no "Issue comment" under *Subscribe t
    events: `workflow_run` and `issue_comment`. If the page differs, stop and say so.
 6. Write down, from *Advanced* → *Recent deliveries*, the `installation` delivery with the action
    `new_permissions_accepted` (its status must be **204**: the webhook ignores it) for each
-   installation. That is the first row of the evidence table.
+   installation. That is the first row of the evidence table. The list of deliveries shows only a
+   green tick for a 2xx and **not** the numeric status: to read the number, open the delivery.
 
 The check runs that are written cannot be deleted; they hang from commits of throwaway branches.
 
@@ -1223,10 +1239,11 @@ Invoke-RestMethod http://127.0.0.1:8000/ready
 
 ### D. The lab: files, workflow ids and the configuration (G3) **[WRITES LAB]**
 
-First publish `lab/` again (see *Publish*: `git subtree split` and `git push` to `main` of the
-lab). **Do this before the configuration below**: a commit made directly on `main` of the lab makes
-the next publish a non-fast-forward (see the clean-up). Then a clone, the ids of the workflows and
-the configuration of the set-up:
+First publish `lab/` again, **before the configuration below**. Since the lab's `main` has a merge
+commit ("Merge the history of the lab published by hand"), `git subtree split` + `git push` is
+**refused as a non-fast-forward** (seen on 2026-11-20). The supported way is: clone the lab, compare
+it with `lab/`, copy only the new or changed files, commit and push on top (see *Publish*). Then the
+ids of the workflows and the configuration of the set-up (use the same clone):
 
 ```powershell
 gh repo clone $LAB $LABDIR
@@ -1317,7 +1334,10 @@ $sticky1[0].body -match 'LLM on demand'
 
 Criterion: **one** check `CICD Doctor: pr-py-modnf` (none for `pr-flaky`), **one** sticky comment,
 and the comment says the LLM runs on demand (`True`). Now the command, with your account (an
-`OWNER`), and the 90 s measurement. **[WRITES LAB]** **[MONEY]**:
+`OWNER`), and the 90 s measurement. In PowerShell the body is posted as written; from a POSIX shell
+(Git Bash) `/cicd-doctor explain` can be turned into a path (the body became
+`C:/Program Files/Git/cicd-doctor explain` once), which is no command at all: **check that the
+comment is exactly `/cicd-doctor explain`**. **[WRITES LAB]** **[MONEY]**:
 
 ```powershell
 $URL1 = gh pr comment $PR1 --repo $LAB --body "/cicd-doctor explain"
@@ -1350,10 +1370,14 @@ $sticky1b[0].body -match 'gpt-6-luna'
 
 Criterion: one reaction `eyes` of the bot (`$BOT`); the **same** check run id and the **same**
 comment id as before (`True`, `True`), now with `LLM gpt-6-luna · prompt diag-v3` in the source
-line (the three `-match` lines print `True`); the last two lines are the seconds from your comment to
+line (the three `-match` lines print `True`; **when the exact signature was seen before, the answer
+comes from the cache and the line says `cached from run #N` instead, so the `-match 'gpt-6-luna'`
+lines print `False`, and that is also a pass for everything that is not about the model text: tell
+the two cases apart by `cached from` in the summary and by `llm_usage.calls`, which does not move
+for a cache hit**); the last two lines are the seconds from your comment to
 the 👀 and to the edited sticky: the second one must be **90 or less**. The worker terminal shows
 `explain acknowledged seconds_since_command=…` and `explain queued seconds_since_command=… children=1`;
-copy both. The rows **[READ]**:
+copy both (when the worker terminal is not at hand, write "not recorded"). The rows **[READ]**:
 
 ```powershell
 Set-Location $APPDIR
@@ -1493,6 +1517,11 @@ docker compose exec -T db psql -U cicd -d cicd_doctor -c $q
 If there is **no** review comment: read `has_suggestion` and `suggested_fix` (the model may have
 suggested nothing, or the validation dropped it, in which case the sticky has no "Suggested change"
 line and the fix is plain text). Then the box stays open with that reason: it is not a bug.
+
+Note for the second half of box 3: the exact-signature cache (D-81) answers a failure the app has
+already seen on a non-fork run, so the outside-the-diff pull request can be served by it (`cached from
+run #N` in both stickies) and the model is **not** called: then the validation is not exercised with a
+fresh answer. Write that in the table; do not count it as the validation path observed.
 
 **Outside the diff** (the PR edits only `notes.py`; `legacy.py` fails all the same, so the
 model gets no diff and no suggestion can be posted) **[WRITES LAB]** **[MONEY]**:
@@ -1669,9 +1698,11 @@ $checks5b = gh api "repos/$LAB/commits/$SHA5/check-runs?per_page=100" | ConvertF
 @(gh api "repos/$LAB/issues/$PR5/comments?per_page=100" | ConvertFrom-Json | Where-Object { $_.user.login -eq $BOT }).Count
 ```
 
-Criterion: the reaction is `eyes` (not `confused`), the check now says `gpt-6-luna` (`True`) and
-there is still no comment of the bot (`0`; with `comment: false` the explain edits the check only,
-D-91).
+Criterion: the reaction is `eyes` (not `confused`: that is the proof that the branch file, which
+says `llm: "off"`, was not read), the check now says `gpt-6-luna` (`True`; **or `cached from run #N`
+when the cache answers, which is no model call and also a pass: the proof is then the reaction and
+the 0 comments**) and there is still no comment of the bot (`0`; with `comment: false` the explain
+edits the check only, D-91).
 
 **4c. An invalid file on the default branch turns the LLM off.**
 
@@ -1721,6 +1752,9 @@ request gets a second check, `CICD Doctor: pr-flaky`; it says the same about the
 
 ### Clean-up (restore by hand)
 
+Run on 2026-11-20 (PRs #4 to #9 closed, the branches deleted, the test configuration removed from
+`main` of the lab in commit f7eef19).
+
 ```powershell
 gh pr close $PR1 --repo $LAB --delete-branch
 gh pr close $PR2 --repo $LAB --delete-branch
@@ -1746,8 +1780,8 @@ git push origin main
 By hand: stop the API, the worker and smee; **delete the `.env` copy** of the folder you ran from
 (that restores the limits: the real `.env` was never edited); the key stays in the real `.env` as it
 was; remove the worktree if it was one (`CLAUDE.md`, *Branches and worktrees*). The lab now has two
-extra commits on `main`: the next *Publish* will be refused as a non-fast-forward; decide then
-whether to push with `--force` (the lab is a throwaway mirror) or to rebuild it. The check runs
+extra commits on `main`: publish on top of them as *Publish* says (a plain `git push` of the
+subtree is refused as a non-fast-forward; no `--force` is needed). The check runs
 cannot be deleted.
 
 ### G6. Optional: the live injection suite with the 14 new cases **[MONEY]**
@@ -1761,45 +1795,48 @@ uv run pytest -m live tests/live/test_live_injection.py
 ```
 
 Criterion: it passes (0 attacks won) in about a minute. Write the count of passed tests in the table.
+Run on 2026-11-20: 1 passed in 81 s.
 
 ### The fork box stays open
 
 A command on a pull request **from a fork** (SPEC §13 P3 box 1, "including on a fork PR"; D-94;
-`pull_request_target` and R-P3-5) needs an organization (or a second account) that holds a fork of
-the lab: the fork's pull request must be opened from a repository that is not the lab, and the
-account that comments must still be an `OWNER`, `MEMBER` or `COLLABORATOR` of the lab. That
-organization does not exist yet, so the fork half **stays open**. What would be checked, and with
-which evidence, when it exists: the 👀, a `llm` diagnosis for the fork run (`is_fork = t`), that the
-`llm` row never appears in `cached_diagnosis` or as a similar failure of a normal run, and the
-`is_fork` of a `pull_request_target` run. Meanwhile it is covered by the offline tests of D-94 and
+`pull_request_target` and R-P3-5) needs a fork of the lab owned by a **different** account, and
+the account that comments must still be an `OWNER`, `MEMBER` or `COLLABORATOR` of the lab. It was
+**not verified** on 2026-11-20. The second account `dalmirosff` exists now and could do it:
+fork the lab, push a failing change to the fork, open a pull request to the lab, the owner
+approves the workflow run (a first-time fork contributor) and comments `/cicd-doctor explain`.
+What would be checked: the 👀, an `llm` diagnosis for the fork run (`is_fork = t`), that the `llm`
+row never appears in `cached_diagnosis` or as a similar failure of a normal run, and the `is_fork`
+of a `pull_request_target` run. Meanwhile it is covered by the offline tests of D-94 and
 `tests/e2e/test_explain_runs_e2e.py`.
 
 ### The evidence (paste what you observed)
 
 Fill the **Observed** column with the real value (id, status, seconds, a row). A box is ticked in
-SPEC §13 only from here; an empty cell means not observed.
+SPEC §13 only from here; "not recorded" means the value was not captured. All the values
+below are from 2026-11-20 (UTC unless the cell says local, which is UTC-3).
 
 | # | Box | What to paste | Expected | Observed |
 |---|---|---|---|---|
-| 1 | 5 | Recent deliveries: id, time and status of `installation` / `new_permissions_accepted` (lab, this repo) | 204 | |
-| 2 | 5 | Recent deliveries: id, time and status of the plain `issue_comment` of step E | 204, no row in `webhook_deliveries` | |
-| 3 | 5 | Recent deliveries: id, time and status of the first command (`$CMD1`) | 202 | |
-| 4 | 1 | `$CMD1`, `$T1`, reaction `eyes` and its `created_at` | `eyes` of `$BOT` | |
-| 5 | 1 | Seconds from `$T1` to the edited sticky (last line of the block) | 90 or less | |
-| 6 | 1 | Worker lines `explain acknowledged` and `explain queued` with `seconds_since_command` | both present | |
-| 7 | 1 | Same check run id and comment id before and after; `gpt-6-luna · diag-v3` in both | `True`, `True`, `True` | |
-| 8 | 1 | `diagnoses` of `$RUN_M`: rules unpublished (`on_demand`), `llm` published, `cost_usd`; `llm_usage.calls` | 1 call more | |
-| 9 | 2 | `$CMD2`: reactions, `command_invocations` rows, job `done` | 0 reactions, 1 row, `done` | |
-| 10 | 2 | `$CMD3` of `$OTHER`: `author_association`, reactions, jobs, rows; delivery status | `NONE`/`CONTRIBUTOR`, 0, 0, 0, 204 | |
-| 11 | 3 | Review comment of the bot on `$PR2`: id, `path`, `line`, `start_line`, `commit_id`, first line, `suggestion` block | one comment, `line` 8, `True` | |
-| 12 | 3 | Sticky of `pr-suggest` on `$PR2`: "Suggested change posted…" | `True` | |
-| 13 | 3 | `$PR3`: review comments of the bot; "Suggested change" in the sticky; `has_suggestion` | 0; `False`; `f` | |
-| 14 | 3 | **422 probe** `line=9999`: the whole answer (status, `message`, `errors`) | a 422 (write the text) | |
-| 15 | 3 | **422 probe** `line=1`: the whole answer | a 422 (write the text) | |
-| 16 | 3 | **Range probe** lines 7 to 8: `start_line`, `line`, `start_side`, `side`, `position` | 7, 8, RIGHT, RIGHT | |
-| 17 | 4 | `$PR4` (`comment: false`): check run id; comments of the bot | 1 check, 0 comments | |
-| 18 | 4 | `$PR5` (the file only in the branch): comments of the bot; reaction; `gpt-6-luna` in the check | 0; `eyes`; `True` | |
-| 19 | 4 | `$PR6` (invalid file): "configuration is invalid" in the check; `fallback_reason`; reactions | `True`; `config_off`; `eyes`, `confused` | |
-| 20 | all | `llm_usage` of the day at the end: `calls`, `spent_usd` | 0.10 USD cap not reached | |
-| 21 | G6 | `pytest -m live tests/live/test_live_injection.py`: result | passed, 0 attacks won | |
-| 22 | fork | Why it stays open | no organization for the fork | |
+| 1 | 5 | Recent deliveries: id, time and status of `installation` / `new_permissions_accepted` (lab, this repo) | 204 | `installation.new_permissions_accepted` seen in the app page at 18:12:26 local (21:12:26 UTC), green tick; the numeric status was not read (the list shows a tick for a 2xx, not the number); delivery id not recorded |
+| 2 | 5 | Recent deliveries: id, time and status of the plain `issue_comment` of step E | 204, no row in `webhook_deliveries` | Comment 7051042761 on lab PR #4 (created 21:27:59 UTC), delivery `430bbf22-e529-11f1-8675-7028ec737b26` at 18:28:04 local, green tick (204 expected, tick observed, number not read); `webhook_deliveries` has 0 `issue_comment` rows. The bot's sticky creation (21:28:32 UTC) was delivered at 18:28:38 (`5760661c-e529-11f1-8b70-a8d2a8e78bb6`); its later edits also arrive as `issue_comment.edited` (ignored) |
+| 3 | 5 | Recent deliveries: id, time and status of the first command (`$CMD1`) | 202 | not recorded (the delivery was not read; the 👀 at 21:31:24 UTC and the job `explain:7051106445` show it was accepted) |
+| 4 | 1 | `$CMD1`, `$T1`, reaction `eyes` and its `created_at` | `eyes` of `$BOT` | `$CMD1` = 7051106445 (lab PR #4), `$T1` = 21:31:21 UTC; reaction `eyes` of `cicd-doctor-dev[bot]` at 21:31:24 (3 s) |
+| 5 | 1 | Seconds from `$T1` to the edited sticky (last line of the block) | 90 or less | sticky 7051053512 edited at 21:31:32 UTC: 11 s after `$T1` (limit 90 s) |
+| 6 | 1 | Worker lines `explain acknowledged` and `explain queued` with `seconds_since_command` | both present | not recorded (the worker terminal was not readable by the session that wrote this) |
+| 7 | 1 | Same check run id and comment id before and after; `gpt-6-luna · diag-v3` in both | `True`, `True`, `True` | before: one check `CICD Doctor: pr-py-modnf` (neutral, id 136580251246; none for `pr-flaky`), one sticky 7051053512 saying "LLM on demand". After: the same check id and the same sticky id; the summary has `gpt-6-luna` and `diag-v3` |
+| 8 | 1 | `diagnoses` of `$RUN_M`: rules unpublished (`on_demand`), `llm` published, `cost_usd`; `llm_usage.calls` | 1 call more | run 44820551647: `rules` published = f, then `llm` published = t, `gpt-6-luna`, `diag-v3`, `cost_usd` 0.000339, `latency_ms` 4280; `llm_usage` of the day 0 to 1 call (spent 0.000339). Jobs `explain:7051106445` and its child `explain:7051106445:44820551647:1` are `done`. **Deviation:** the unpublished `rules` row had an empty `fallback_reason`, where this runbook expected `on_demand` (the sticky did say "LLM on demand" before the upgrade, and a published `rules` row with `on_demand` exists in the table); not analysed here |
+| 9 | 2 | `$CMD2`: reactions, `command_invocations` rows, job `done` | 0 reactions, 1 row, `done` | `$CMD2` = 7051107506 (same PR, inside the window): 0 reactions; `command_invocations` has one row for PR 4 (comment 7051106445, actor `dalmirosf`); job `explain:7051107506` is `done`; the check and the sticky were not changed by it |
+| 10 | 2 | `$CMD3` of `$OTHER`: `author_association`, reactions, jobs, rows; delivery status | `NONE`/`CONTRIBUTOR`, 0, 0, 0, 204 | `dalmirosff` (not a collaborator; the lab's only collaborator is `dalmirosf`) commented on lab PR #4: comment 7051236689 (created 21:38:18 UTC), `author_association` = `NONE`, 0 reactions, 0 jobs with dedupe `explain:7051236689`, 0 rows in `command_invocations`; delivery `b3ff4978-e52a-11f1-9023-0c07053a39b6` at 18:38:22 local, green tick. The lab was made public by the owner for this |
+| 11 | 3 | Review comment of the bot on `$PR2`: id, `path`, `line`, `start_line`, `commit_id`, first line, `suggestion` block | one comment, `line` 8, `True` | lab PR #5 (line 8 of `legacy.py` edited, head `63ddd608d87be4e2808fdf67d625490655824f39`, command 7051133538 at about 21:32:47 UTC): one review comment 4647976456, path `python/suggest/legacy.py`, `line` 8, `start_line` null, `side` RIGHT, `commit_id` = the head sha, created 21:32:59; first line `<!-- cicd-doctor:v1 suggestion pr=5 failure=a38ff6f7-88fb-575b-b096-3f2ff161a11b -->`; a `suggestion` block with `    return value is None  # P3` and the note "Generated automatically from untrusted logs: review it before you apply it." |
+| 12 | 3 | Sticky of `pr-suggest` on `$PR2`: "Suggested change posted…" | `True` | `True`: it says "Suggested change posted as a review comment" and names `gpt-6-luna`; two child jobs `done`. The `pr-py-modnf` sticky of that PR says "cached from run #44820551647" (the P2 cache, correct for a non-fork run) |
+| 13 | 3 | `$PR3`: review comments of the bot; "Suggested change" in the sticky; `has_suggestion` | 0; `False`; `f` | lab PR #6 (only `notes.py` edited, command 7051157568): 0 review comments of the bot. **Partial:** both stickies say "cached from…" (the exact-signature cache of the PR #5 runs answered), so the model was **not** called and the validation path was not exercised live with a fresh model answer; `has_suggestion` not recorded. The offline tests cover the validation |
+| 14 | 3 | **422 probe** `line=9999`: the whole answer (status, `message`, `errors`) | a 422 (write the text) | `422 Validation Failed`; `errors` = `[{"resource":"PullRequestReviewComment","code":"custom","field":"pull_request_review_thread.line","message":"could not be resolved"}]`; `documentation_url` https://docs.github.com/rest/pulls/comments#create-a-review-comment-for-a-pull-request. No comment was created |
+| 15 | 3 | **422 probe** `line=1`: the whole answer | a 422 (write the text) | the same answer as `line=9999` (`422 Validation Failed`, the same `errors` and `documentation_url`); line 1 is outside the hunk. No comment was created |
+| 16 | 3 | **Range probe** lines 7 to 8: `start_line`, `line`, `start_side`, `side`, `position` | 7, 8, RIGHT, RIGHT | created (id 4647982966) and deleted at once: `start_line` 7, `line` 8, `original_start_line` 7, `original_line` 8, `start_side` RIGHT, `side` RIGHT, `position` 5. It is the shape `GitHubReporter.post_suggestion` sends, so the adapter needs no fix |
+| 17 | 4 | `$PR4` (`comment: false`): check run id; comments of the bot | 1 check, 0 comments | lab PR #7 (4a: `comment: false`, `llm: on_demand`, ignore `pr-flaky` on `main`): check 136585686904 `CICD Doctor: pr-py-modnf` (neutral), none for `pr-flaky`, 0 comments of the bot |
+| 18 | 4 | `$PR5` (the file only in the branch): comments of the bot; reaction; `gpt-6-luna` in the check | 0; `eyes`; `True` | lab PR #8 (4b: the file with `comment: true`, `llm: "off"` only in the branch; `main` still `comment: false`): check 136586393525, 0 comments of the bot; command 7051290109 got `eyes` at 21:41:17 UTC (not `confused`, so the branch file was not read). The check summary said "cached from" (no model call): the proof is the reaction and the 0 comments, not the model text |
+| 19 | 4 | `$PR6` (invalid file): "configuration is invalid" in the check; `fallback_reason`; reactions | `True`; `config_off`; `eyes`, `confused` | lab PR #9 (4c: `llm: maybe` on `main`, pushed 21:42:23 UTC; the PR was opened 21:47:55, the worker remembers a file 300 s): both checks (`pr-py-modnf` 136590181032 and `pr-flaky` 136590205330; the invalid file drops `ignore_workflows`) contain "configuration is invalid"; command 7051433076 got `eyes` at 21:48:57 then `confused` at 21:48:58; the only diagnoses of the runs are `rules` with `fallback_reason = config_off`; `llm_usage.calls` did not move (2 to 2) |
+| 20 | all | `llm_usage` of the day at the end: `calls`, `spent_usd` | 0.10 USD cap not reached | 2 calls, `spent_usd` about 0.000895 (cap 0.10 not reached) |
+| 21 | G6 | `pytest -m live tests/live/test_live_injection.py`: result | passed, 0 attacks won | 1 passed in 81 s (the test includes the 14 cases with a diff of D-99); 0 attacks won |
+| 22 | fork | Why it stays open | no organization for the fork | **Not verified.** It needs a fork of the lab owned by another account. `dalmirosff` exists now and could do it (fork, a failing change, a pull request to the lab, the owner approves the workflow run and comments the command), but it was not done |
