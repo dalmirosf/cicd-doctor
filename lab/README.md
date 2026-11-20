@@ -1066,7 +1066,7 @@ What the runbook does **not** do: it never starts anything for you, and every "r
 
 - `.github/workflows/pr-suggest.yml` runs only when a pull request touches `python/suggest/`.
   It runs `ruff check --select E711 --output-format concise python/suggest/legacy.py` from the root
-  of the repository, so the log names `python/suggest/legacy.py:8:12` exactly as the diff of the
+  of the repository, so the log names `python/suggest/legacy.py:8:21` exactly as the diff of the
   pull request does (the model is shown the diff of a file only when the log names it, D-97) and the
   failure is on `main` already (`return value == None`, line 8).
 - `python/suggest/legacy.py` is that file; `python/suggest/notes.py` is clean.
@@ -1545,9 +1545,9 @@ Criterion: **0** review comments; the sticky has the `llm` diagnosis (`True`) wi
 and **no** "Suggested change" line (`False`: the validation dropped a suggestion that could not be
 inside a shown hunk, or the model gave none); `has_suggestion = f`.
 
-**Measure what GitHub answers (G5) [PROBE]** This is the part that only the real API can tell
-(the documentation lists only 403 and 422 for a comment outside the diff and says nothing of `suggestion`). The app treats **any** 422 as "text only"; this records
-what GitHub says. It writes **review comments of your account** on pull request `$PR2`: the first
+**Measure what GitHub answers (G5) [PROBE].** This is the part that only the real API can tell
+(the documentation lists only 403 and 422 for a comment outside the diff and says nothing of
+`suggestion`). The app treats **any** 422 as "text only"; this records what GitHub says. It writes **review comments of your account** on pull request `$PR2`: the first
 two are expected to be refused (nothing is created), the third is created and **deleted** at once.
 The line of the first one does not exist; the line of the second exists but is outside the hunk:
 
@@ -1716,7 +1716,8 @@ docker compose exec -T db psql -U cicd -d cicd_doctor -c "SELECT f.run_id, d.sou
 Criterion: the check says "The repository configuration is invalid: `llm`; LLM turned off." (`True`),
 the only diagnosis of the run is `rules` with `fallback_reason = config_off`, and the command gets
 **two** reactions in order: `eyes` (accepted) then `confused` (the LLM is off, D-96), with no model
-call (`llm_usage.calls` does not move).
+call (`llm_usage.calls` does not move). An invalid file also drops `ignore_workflows`, so this pull
+request gets a second check, `CICD Doctor: pr-flaky`; it says the same about the configuration.
 
 ### Clean-up (restore by hand)
 

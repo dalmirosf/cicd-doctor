@@ -164,8 +164,8 @@ def test_the_log_of_pr_suggest_makes_the_diff_reach_the_model_only_when_the_file
     log = [
         "##[group]Run uvx ruff check --isolated --select E711 --output-format concise "
         "python/suggest/legacy.py",
-        "python/suggest/legacy.py:8:12: E711 [*] Comparison to `None` should be `cond is None`",
-        "Found 2 errors.",
+        "python/suggest/legacy.py:8:21: E711 Comparison to `None` should be `cond is None`",
+        "Found 1 error.",
     ]
     excerpt = make_excerpt(log)
     legacy = DiffFile(
