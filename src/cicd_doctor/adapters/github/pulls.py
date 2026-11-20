@@ -15,11 +15,13 @@ from cicd_doctor.adapters.github.auth import (
 )
 from cicd_doctor.adapters.github.http import GitHubHttp, GitHubPermanentError
 from cicd_doctor.core.errors import PermanentError
-from cicd_doctor.core.models import PullRequestInfo, RepoRef, RunRef
+from cicd_doctor.core.models import DiffFile, PullDiff, PullRequestInfo, RepoRef, RunRef
 
 PULLS = "/repos/{owner}/{repo}/pulls"
 PULL = "/repos/{owner}/{repo}/pulls/{number}"
+PULL_FILES = "/repos/{owner}/{repo}/pulls/{number}/files"
 MAX_PAGES = 3
+FILES_PAGES = 30  # of 100 files: GitHub lists at most 3,000 files of a pull request
 
 
 class GitHubPullRequests:
@@ -54,8 +56,12 @@ class GitHubPullRequests:
         ]
         return min(numbers) if numbers else None
 
-    async def get(self, repo: RepoRef, number: int) -> PullRequestInfo | None:
-        """``GET /pulls/{n}`` with the permissions of ``explain`` (D-96). A 404 is ``None``."""
+    async def get(
+        self, repo: RepoRef, number: int, *, for_explain: bool = True
+    ) -> PullRequestInfo | None:
+        """``GET /pulls/{n}`` with the permissions of ``explain`` (D-96) or of the diagnosis
+        (``for_explain=False``, D-97). A 404 is ``None``."""
+        permissions = EXPLAIN_PERMISSIONS if for_explain else DIAGNOSIS_PERMISSIONS
         owner, _, name = repo.full_name.partition("/")
         try:
             response = await self._http.request(
@@ -63,7 +69,7 @@ class GitHubPullRequests:
                 PULL,
                 path={"owner": owner, "repo": name, "number": number},
                 credential=self._auth.installation_credential(
-                    repo.installation_id, repo.repo_id, EXPLAIN_PERMISSIONS
+                    repo.installation_id, repo.repo_id, permissions
                 ),
             )
         except GitHubPermanentError as exc:
@@ -86,6 +92,46 @@ class GitHubPullRequests:
             head_repo_full_name=head_repo.full_name if head_repo is not None else "",
             base_repo_id=raw.base.repo.id,
         )
+
+    async def diff(self, repo: RepoRef, number: int) -> PullDiff:
+        """``GET /pulls/{n}/files``, every page up to the cap, with the permissions of the
+        diagnosis (D-97). An item of an unexpected shape is skipped; a 404 is an empty diff."""
+        owner, _, name = repo.full_name.partition("/")
+        try:
+            listed = await self._http.paginate(
+                PULL_FILES,
+                path={"owner": owner, "repo": name, "number": number},
+                credential=self._auth.installation_credential(
+                    repo.installation_id, repo.repo_id, DIAGNOSIS_PERMISSIONS
+                ),
+                max_pages=FILES_PAGES,
+            )
+        except GitHubPermanentError as exc:
+            if exc.status_code == 404:
+                return PullDiff()
+            raise
+        files: list[DiffFile] = []
+        for item in listed.items:
+            try:
+                raw = _File.model_validate(item)
+            except ValidationError:
+                continue
+            files.append(
+                DiffFile(
+                    filename=raw.filename,
+                    previous_filename=raw.previous_filename,
+                    status=raw.status,
+                    patch=raw.patch,
+                )
+            )
+        return PullDiff(files=files, truncated=listed.truncated)
+
+
+class _File(BaseModel):
+    filename: str
+    previous_filename: str | None = None
+    status: str
+    patch: str | None = None  # absent for binary, renamed-only, removed and very large files
 
 
 class _HeadRepo(BaseModel):

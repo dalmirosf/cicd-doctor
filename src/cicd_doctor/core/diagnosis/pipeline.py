@@ -26,6 +26,7 @@ from cicd_doctor.core.models import (
     DiagnosisUsage,
     FallbackReason,
     LLMResult,
+    PromptDiff,
     SimilarFailure,
 )
 from cicd_doctor.core.policy import PolicyInput, decide
@@ -51,6 +52,9 @@ class DiagnosisContext:
     cached: CachedDiagnosis | None = None
     # Past failures like this job's (D-82): untrusted context for the prompt, never evidence.
     similar: list[SimilarFailure] = field(default_factory=list)
+    # The hunks of the pull request the model may see and a suggestion may touch (D-97). It is
+    # also what a suggestion is checked against: without it there is no suggestion.
+    diff: PromptDiff | None = None
 
 
 @dataclass
@@ -113,6 +117,11 @@ class DiagnoseJob:
         self._sleep = sleep
         self._backoffs = tuple(backoffs)
 
+    @property
+    def has_llm(self) -> bool:
+        """Whether a client is configured (without a key every job falls back to the rules)."""
+        return self._llm is not None
+
     async def run(
         self, analysis: JobAnalysis, context: DiagnosisContext, *, use_hints: bool = True
     ) -> JobDiagnosis:
@@ -141,14 +150,17 @@ class DiagnoseJob:
         if self._llm is None:  # no key configured: the same as the kill switch
             return self._fallback(rules, "disabled")
 
-        estimate = self._cost.reservation(analysis.excerpt.token_count, self._max_output_tokens)
+        diff_tokens = context.diff.token_count if context.diff else 0
+        estimate = self._cost.reservation(
+            analysis.excerpt.token_count + diff_tokens, self._max_output_tokens
+        )
         reservation = await self._ledger.reserve(context.installation_id, estimate)
         if reservation is None:
             return self._fallback(rules, "budget")
 
         usage = LLMUsage()
         try:
-            return await self._diagnose(analysis, use_hints, usage, context.similar)
+            return await self._diagnose(analysis, use_hints, usage, context.similar, context.diff)
         finally:
             # Settle with what was really spent, also when the call is cancelled or a bug raises.
             await self._ledger.settle(reservation, usage.cost_usd)
@@ -159,6 +171,7 @@ class DiagnoseJob:
         use_hints: bool,
         usage: LLMUsage,
         similar: Sequence[SimilarFailure] = (),
+        diff: PromptDiff | None = None,
     ) -> JobDiagnosis:
         rules = analysis.rules
         request = DiagnosisRequest(
@@ -166,6 +179,7 @@ class DiagnoseJob:
             excerpt=analysis.excerpt,
             rule_hints=list(analysis.matches) if use_hints else [],
             similar=list(similar),
+            diff=diff,
         )
         error: str | None = None
         for attempt in (1, 2):  # the call and, at most, one repair of an invalid answer
@@ -179,7 +193,11 @@ class DiagnoseJob:
             try:
                 output = parse_output(result.raw_json)
                 diagnosis = finalize(
-                    output, analysis.excerpt, model=result.model, prompt_version=PROMPT_VERSION
+                    output,
+                    analysis.excerpt,
+                    model=result.model,
+                    prompt_version=PROMPT_VERSION,
+                    diff=diff,
                 )
             except InvalidOutputError as exc:
                 error = str(exc)

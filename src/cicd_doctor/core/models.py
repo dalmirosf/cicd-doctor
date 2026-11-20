@@ -321,6 +321,9 @@ class DiagnosisReport(DomainModel):
     cached_from_runs: dict[UUID, int] = Field(default_factory=dict)
     # Fields of an invalid repository configuration (D-90); shown as one line of the check run.
     config_problems: tuple[str, ...] = ()
+    # failure id -> what became of its suggested change (a key of ``render.SUGGESTION_TEXT``,
+    # D-97): only the failures that had a validated suggestion are listed.
+    suggestions: dict[UUID, str] = Field(default_factory=dict)
 
 
 # --- What a run attempt leaves behind: the analysis checkpoint (D-69) ----------------------
@@ -453,11 +456,68 @@ class RunAnalysisRecord(DomainModel):
 # --- LLM port types (P0 placeholders) -----------------------------------------------------
 
 
+class DiffFile(DomainModel):
+    """One file of a pull request diff, as ``GET /pulls/{n}/files`` lists it (D-97). Every text
+    is untrusted: the path and the patch were written by whoever opened the pull request.
+    ``patch`` is ``None`` for a binary file, a pure rename, a removed file or a file GitHub
+    left out because it is too large (the generated ``uv.lock``, for one)."""
+
+    filename: str
+    previous_filename: str | None = None
+    status: str  # added | modified | removed | renamed | ... (kept as text)
+    patch: str | None = None
+
+
+class PullDiff(DomainModel):
+    """The files of a pull request. ``truncated`` means GitHub or the page cap left files out:
+    nothing is then derived from it (D-97)."""
+
+    files: list[DiffFile] = Field(default_factory=list)
+    truncated: bool = False
+
+
+class DiffLine(DomainModel):
+    """One line of the NEW side of a hunk: a context line or an added one."""
+
+    number: int = Field(ge=1)
+    text: str
+    added: bool
+
+
+class DiffHunk(DomainModel):
+    """The lines of the new side of one ``@@`` hunk: consecutive numbers, none removed."""
+
+    lines: list[DiffLine] = Field(min_length=1)
+
+    @property
+    def first(self) -> int:
+        return self.lines[0].number
+
+    @property
+    def last(self) -> int:
+        return self.lines[-1].number
+
+
+class ShownFile(DomainModel):
+    path: str
+    status: str
+    hunks: list[DiffHunk]
+
+
+class PromptDiff(DomainModel):
+    """The hunks the model was shown (D-97): whole hunks of the files the log names, bounded in
+    tokens. A suggestion is valid only inside one of them."""
+
+    files: list[ShownFile]
+    token_count: int = 0
+
+
 class DiagnosisRequest(DomainModel):
     job: FailedJob
     excerpt: LogExcerpt
     rule_hints: list[RuleMatch] = Field(default_factory=list)
     similar: list[SimilarFailure] = Field(default_factory=list)
+    diff: PromptDiff | None = None  # the lines of the pull request the model may touch (D-97)
     repair_error: str | None = None  # validation error sent back on the single repair attempt
 
 
@@ -482,6 +542,18 @@ class CheckOutput(DomainModel):
 class CommentTarget(DomainModel):
     run: RunRef
     pr_number: int
+
+
+class ReviewSuggestion(DomainModel):
+    """A suggestion that passed every check, ready to be a review comment (D-97). ``body`` is
+    already rendered and starts with the hidden marker of its failure."""
+
+    pr_number: int
+    commit_id: str  # the head commit of the run: the lines are valid on it
+    path: str
+    start_line: int
+    end_line: int
+    body: str
 
 
 class CommentRef(DomainModel):

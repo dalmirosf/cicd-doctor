@@ -42,6 +42,7 @@ from cicd_doctor.core.analysis import JobAnalysis, analysis_from_stored, analyze
 from cicd_doctor.core.diagnosis.cache import reuse_cached
 from cicd_doctor.core.diagnosis.pipeline import DiagnoseJob, DiagnosisContext, JobDiagnosis
 from cicd_doctor.core.diagnosis.prompt import PROMPT_VERSION
+from cicd_doctor.core.diff import select_for_prompt
 from cicd_doctor.core.errors import LogsUnavailable, PermanentError, TransientError
 from cicd_doctor.core.logs import ExcerptConfig
 from cicd_doctor.core.logs.select import cancelled_jobs, is_job_timeout, select_failed_jobs
@@ -59,6 +60,7 @@ from cicd_doctor.core.models import (
     Publication,
     PublicationKey,
     PublishedUpgrade,
+    PullDiff,
     RawLog,
     RepoRef,
     ResolvedBy,
@@ -92,6 +94,7 @@ from cicd_doctor.core.render import (
 from cicd_doctor.core.repo_config import DEFAULT_LOADED, effective_llm, ignores
 from cicd_doctor.core.usecases.report import build_report, find_similar
 from cicd_doctor.core.usecases.rows import ensure_rows
+from cicd_doctor.core.usecases.suggest import SuggestionPublisher
 
 logger = logging.getLogger(__name__)
 
@@ -112,6 +115,7 @@ class DiagnoseConfig:
     cache_ttl_days: int = 7  # CACHE_TTL_DAYS; 0 turns the exact-signature cache off (D-81)
     similar_k: int = 3  # SIMILAR_K: past failures listed per job; 0 turns the search off (D-82)
     similar_min_score: float = 0.85  # SIMILAR_MIN_SCORE (cosine similarity, D-80)
+    max_suggestions: int = 3  # EXPLAIN_MAX_SUGGESTIONS: review comments per attempt (D-97)
 
 
 @dataclass(frozen=True)
@@ -149,6 +153,12 @@ class DiagnoseFailedRun:
         self._embedder = embedder
         self._repo_config = repo_config
         self._config = config or DiagnoseConfig()
+        self._suggestions = SuggestionPublisher(
+            pulls=pulls,
+            reporter=reporter,
+            store=store,
+            max_per_run=self._config.max_suggestions,
+        )
 
     async def run(self, payload: DiagnoseRunPayload) -> None:
         """Diagnose one run attempt and publish it; safe to call again after any failure.
@@ -189,10 +199,11 @@ class DiagnoseFailedRun:
         elif explain:
             record = await self._upgrade(payload, loaded, check_key)
         record = await self._resolve_late(record)
-        report = await self._report(payload, record, loaded)
+        suggestions = await self._suggest(payload, record, loaded)
+        report = await self._report(payload, record, loaded, suggestions)
         if not await self._complete_check(payload, record, report, check_id, check_key):
             return
-        await self._comment(payload, record, report, loaded)
+        await self._comment(payload, record, report, loaded, suggestions)
 
     async def publish_could_not_diagnose(
         self,
@@ -384,7 +395,15 @@ class DiagnoseFailedRun:
                 return record
             analyses = [analysis_from_stored(item.failure) for item in pending]
             embeddings = [item.failure.embedding for item in pending]
-            results = await self._diagnose_all(run, analyses, embeddings, loaded, explain=True)
+            results = await self._diagnose_all(
+                run,
+                analyses,
+                embeddings,
+                loaded,
+                explain=True,
+                repo=_repo_ref(payload),
+                pr_number=_pr_number(payload, record),
+            )
             upgrades = [
                 PublishedUpgrade(
                     failure_id=failure_id_for(run.run_id, run.run_attempt, analysis.job.job.job_id),
@@ -438,6 +457,7 @@ class DiagnoseFailedRun:
         record: RunAnalysisRecord,
         report: DiagnosisReport,
         loaded: LoadedConfig,
+        suggestions: dict[UUID, str],
     ) -> None:
         run = report.run
         pr_number = _pr_number(payload, record)
@@ -453,7 +473,7 @@ class DiagnoseFailedRun:
             # must come from the store as it is now (D-84).
             fresh = await self._store.run_analysis(run.run_id, run.run_attempt)
             if fresh is not None and _statuses(fresh) != _statuses(record):
-                report = await self._report(payload, fresh, loaded)
+                report = await self._report(payload, fresh, loaded, suggestions)
             comment_id = await self._reporter.upsert_comment(
                 CommentTarget(run=run, pr_number=pr_number),
                 render_comment(report),
@@ -493,7 +513,13 @@ class DiagnoseFailedRun:
         )
         embeddings = await self._embed(analyses)
         results = await self._diagnose_all(
-            run, analyses, embeddings, loaded, explain=payload.trigger == "explain"
+            run,
+            analyses,
+            embeddings,
+            loaded,
+            explain=payload.trigger == "explain",
+            repo=_repo_ref(payload),
+            pr_number=run.pr_number or _command_pr(payload),
         )
         record = RunAnalysisRecord(
             run=_workflow_run(run),
@@ -575,6 +601,8 @@ class DiagnoseFailedRun:
         loaded: LoadedConfig,
         *,
         explain: bool = False,
+        repo: RepoRef | None = None,
+        pr_number: int | None = None,
     ) -> list[tuple[JobAnalysis, JobDiagnosis]]:
         context = DiagnosisContext(
             installation_id=run.installation_id,
@@ -584,13 +612,19 @@ class DiagnoseFailedRun:
             explain=explain,
         )
         slots = asyncio.Semaphore(self._config.concurrency)
+        pull_diff = (
+            await self._pull_diff(run, repo, pr_number, loaded, context)
+            if repo is not None and pr_number is not None
+            else None
+        )
 
         async def one(analysis: JobAnalysis, embedding: Sequence[float] | None) -> JobDiagnosis:
             async with slots:
                 cached = await self._cached(run, analysis, context)
                 # D-94: nothing of the history reaches the prompt of a fork run.
                 similar = [] if run.is_fork else await self._similar(run, embedding)
-                job_context = replace(context, cached=cached, similar=similar)
+                job_diff = select_for_prompt(pull_diff, analysis.excerpt, self._counter)
+                job_context = replace(context, cached=cached, similar=similar, diff=job_diff)
                 return await self._diagnose.run(analysis, job_context)
 
         results = await asyncio.gather(
@@ -649,10 +683,58 @@ class DiagnoseFailedRun:
             exclude_run_id=run.run_id,
         )
 
+    # --- suggested changes (D-97) -----------------------------------------------------------
+
+    async def _suggest(
+        self, payload: DiagnoseRunPayload, record: RunAnalysisRecord, loaded: LoadedConfig
+    ) -> dict[UUID, str]:
+        """Post the validated suggestions of the stored diagnoses as review comments and say what
+        became of each (a key of ``render.SUGGESTION_TEXT``). Nothing is posted when the
+        repository turned comments off, when there is no pull request, or when no diagnosis has
+        a suggestion. It never raises for a problem of the suggestion."""
+        pr_number = _pr_number(payload, record)
+        if pr_number is None or not loaded.config.comment or not record.items:
+            return {}
+        return await self._suggestions.publish(payload.run, _repo_ref(payload), pr_number, record)
+
+    async def _pull_diff(
+        self,
+        run: RunRef,
+        repo: RepoRef,
+        pr_number: int,
+        loaded: LoadedConfig,
+        context: DiagnosisContext,
+    ) -> PullDiff | None:
+        """The diff of the pull request, to show the model the lines it may touch (D-97).
+
+        Read only when a call to the model is possible and the repository wants comments, and only
+        when the pull request is open and its head is the commit of this run (the lines of
+        another commit would be wrong). Any error is "no diff": the diagnosis goes on without a
+        suggestion, and only the class of the error is logged.
+        """
+        if (
+            not self._diagnose.has_llm
+            or not loaded.config.comment
+            or decide(_policy_without_cache(context)).action != "llm"
+        ):
+            return None
+        try:
+            pull = await self._pulls.get(repo, pr_number, for_explain=False)
+            if pull is None or pull.state != "open" or pull.head_sha != run.head_sha:
+                return None
+            return await self._pulls.diff(repo, pr_number)
+        except (TransientError, PermanentError) as exc:
+            logger.warning("no diff for the prompt of this run (%s)", type(exc).__name__)
+            return None
+
     # --- the report -------------------------------------------------------------------------
 
     async def _report(
-        self, payload: DiagnoseRunPayload, record: RunAnalysisRecord, loaded: LoadedConfig
+        self,
+        payload: DiagnoseRunPayload,
+        record: RunAnalysisRecord,
+        loaded: LoadedConfig,
+        suggestions: dict[UUID, str] | None = None,
     ) -> DiagnosisReport:
         """The report of a stored analysis. The run carries the pull request that was found."""
         run = payload.run.model_copy(update={"pr_number": _pr_number(payload, record)})
@@ -663,6 +745,7 @@ class DiagnoseFailedRun:
             similar_k=self._config.similar_k,
             similar_min_score=self._config.similar_min_score,
             config_problems=loaded.problems,
+            suggestions=suggestions,
         )
 
     def _log_published(self, kind: str, run: RunRef, completed_at: datetime | None) -> None:
@@ -695,7 +778,22 @@ def _pr_number(payload: DiagnoseRunPayload, record: RunAnalysisRecord) -> int | 
     (a fork run is not linked to its pull request by GitHub), the one of the command (D-95)."""
     if record.run.pr_number is not None:
         return record.run.pr_number
+    return _command_pr(payload)
+
+
+def _command_pr(payload: DiagnoseRunPayload) -> int | None:
+    """The pull request of an ``explain`` command (None for an automatic job)."""
     return payload.pr_number if payload.trigger == "explain" else None
+
+
+def _repo_ref(payload: DiagnoseRunPayload) -> RepoRef:
+    run = payload.run
+    return RepoRef(
+        installation_id=run.installation_id,
+        repo_id=run.repo_id,
+        full_name=run.repo_full_name,
+        default_branch=payload.default_branch,
+    )
 
 
 def _statuses(record: RunAnalysisRecord) -> list[tuple[FailureStatus, str | None]]:

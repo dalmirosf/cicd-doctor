@@ -43,8 +43,11 @@ from cicd_doctor.core.models import (
     DiagnosisRequest,
     DiagnosisUsage,
     LLMResult,
+    PromptDiff,
+    ShownFile,
     StoredFailure,
 )
+from tests.diffs import hunk
 from tests.factories import T0, make_failure
 from tests.llmcases import analysis_for
 from tests.llmcases import raw as llm_raw
@@ -106,7 +109,7 @@ async def test_a_valid_answer_is_published(analysis: JobAnalysis) -> None:
     assert published.category is Category.DEPENDENCY  # the fake follows the rule hint
     assert published.fallback_reason is None
     assert published.evidence_verified is True
-    assert (published.model, published.prompt_version) == ("fake-model", "diag-v2")
+    assert (published.model, published.prompt_version) == ("fake-model", "diag-v3")
     assert published.confidence == 0.9
     assert len(harness.fake.calls) == 1
 
@@ -534,3 +537,55 @@ async def test_every_outcome_of_the_pipeline_is_a_storable_failure(analysis: Job
         assert [published for _, published in rows].count(True) == 1, expected
         assert rows[-1][0] == result.published, expected
         assert (result.published.fallback_reason or result.published.source) == expected
+
+
+# --- the diff of the pull request (D-97) -------------------------------------------------------
+
+
+def _shown(token_count: int = 100) -> PromptDiff:
+    return PromptDiff(
+        files=[ShownFile(path="src/a.py", status="modified", hunks=[hunk(1, 40)])],
+        token_count=token_count,
+    )
+
+
+async def test_the_tokens_of_the_diff_count_in_the_reservation(analysis: JobAnalysis) -> None:
+    def tight() -> Harness:
+        ledger = InMemoryUsageLedger(FakeClock(T0), daily_budget_usd=Decimal("1"))
+        return Harness([valid()], ledger=ledger)
+
+    small, large = tight(), tight()
+
+    ok = await small.job.run(
+        analysis, DiagnosisContext(installation_id=1, is_fork=False, diff=_shown(100))
+    )
+    refused = await large.job.run(
+        analysis,
+        DiagnosisContext(installation_id=1, is_fork=False, diff=_shown(5_000_000)),  # ~$4
+    )
+
+    assert ok.published.source == "llm"
+    assert refused.published.fallback_reason == "budget"
+    assert large.fake.calls == []
+
+
+async def test_the_model_sees_the_diff_and_its_suggestion_is_checked_against_it(
+    analysis: JobAnalysis,
+) -> None:
+    inside = {"path": "src/a.py", "start_line": 3, "end_line": 4, "replacement": "x = 1"}
+    outside = {"path": "src/a.py", "start_line": 41, "end_line": 42, "replacement": "x = 1"}
+    context = DiagnosisContext(installation_id=1, is_fork=False, diff=_shown())
+    harness = Harness(
+        [valid(suggestion=inside), valid(suggestion=outside), valid(suggestion=inside)]
+    )
+
+    kept = await harness.job.run(analysis, context)
+    dropped = await harness.job.run(analysis, context)
+    no_diff = await harness.job.run(analysis, DiagnosisContext(installation_id=1, is_fork=False))
+
+    assert harness.fake.calls[0].diff == _shown()
+    assert kept.published.suggestion is not None
+    assert (kept.published.suggestion.start_line, kept.published.suggestion.end_line) == (3, 4)
+    assert dropped.published.suggestion is None
+    assert dropped.published.source == "llm"  # only the suggestion goes, never the diagnosis
+    assert no_diff.published.suggestion is None

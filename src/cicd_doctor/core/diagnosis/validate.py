@@ -14,22 +14,18 @@ from pydantic import ValidationError
 from cicd_doctor.core.diagnosis.prompt import CANARY, escape_untrusted
 from cicd_doctor.core.diagnosis.schema import LLMDiagnosisOutput, LLMEvidence, LLMSuggestion
 from cicd_doctor.core.errors import CicdDoctorError
-from cicd_doctor.core.models import Diagnosis, Evidence, LogExcerpt, Suggestion
+from cicd_doctor.core.models import Diagnosis, Evidence, LogExcerpt, PromptDiff, Suggestion
 from cicd_doctor.core.redaction import redact
+from cicd_doctor.core.suggestions import checked_against_diff
 
 UNVERIFIED_CONFIDENCE_CAP = 0.3  # SPEC §5.1 rule 2
-MAX_SUGGESTION_LINES = 30  # SPEC §5.1 rule 3
-MAX_PATH_CHARS = 260
 MAX_ERROR_CHARS = 600  # what is sent back to the model on the repair attempt
 
 _PROBABLE_CAUSE_MAX = 500
 _SUGGESTED_FIX_MAX = 1000
 _EVIDENCE_TEXT_MAX = 300
-_REPLACEMENT_MAX = 2000
 
 _LINE_PREFIX = re.compile(r"^L(\d+):\s*")  # the model may copy the "L<n>: " of the prompt
-_DRIVE = re.compile(r"^[A-Za-z]:")
-_CONTROL = re.compile(r"[\x00-\x1f\x7f]")
 
 
 class InvalidOutputError(CicdDoctorError):
@@ -58,9 +54,14 @@ def describe_validation_error(exc: ValidationError) -> str:
 
 
 def finalize(
-    output: LLMDiagnosisOutput, excerpt: LogExcerpt, *, model: str, prompt_version: str
+    output: LLMDiagnosisOutput,
+    excerpt: LogExcerpt,
+    *,
+    model: str,
+    prompt_version: str,
+    diff: PromptDiff | None = None,
 ) -> Diagnosis:
-    """The published form of a schema-valid answer."""
+    """The published form of a schema-valid answer. ``diff`` is what the model was shown."""
     texts = [output.probable_cause, output.suggested_fix]
     texts += [item.text for item in output.evidence]
     if output.suggestion is not None:
@@ -78,7 +79,7 @@ def finalize(
         probable_cause=_clean(output.probable_cause, _PROBABLE_CAUSE_MAX),
         evidence=evidence,
         suggested_fix=_clean(output.suggested_fix, _SUGGESTED_FIX_MAX),
-        suggestion=checked_suggestion(output.suggestion),
+        suggestion=checked_suggestion(output.suggestion, diff),
         confidence=confidence,
         source="llm",
         model=model,
@@ -124,32 +125,24 @@ def quotes_line(quoted: str, line_text: str) -> bool:
     return any(quoted in haystack for haystack in haystacks)
 
 
-def checked_suggestion(suggestion: LLMSuggestion | None) -> Suggestion | None:
-    """Keep a suggestion only if it is safe to show as a change (SPEC §5.1 rule 3).
-
-    The path must be relative and stay inside the repository, the lines must make a range, and
-    the range is at most 30 lines. Otherwise it is dropped and ``suggested_fix`` stays as text.
+def checked_suggestion(
+    suggestion: LLMSuggestion | None, diff: PromptDiff | None
+) -> Suggestion | None:
+    """Keep a suggestion only if it can be applied as a change to the diff the model saw (SPEC
+    §5.1 rule 3, D-97): a file of that diff, a range inside one of its shown hunks, at most 30
+    lines, a clean replacement. Without a diff there is no suggestion. Otherwise it is dropped and
+    ``suggested_fix`` stays as text.
     """
     if suggestion is None:
         return None
-    path = suggestion.path.strip()
-    segments = re.split(r"[\\/]", path)
-    unsafe = (
-        not path
-        or len(path) > MAX_PATH_CHARS
-        or path.startswith(("/", "\\", "~"))
-        or _DRIVE.match(path) is not None
-        or ".." in segments
-        or _CONTROL.search(path) is not None
-    )
-    span = suggestion.end_line - suggestion.start_line + 1
-    if unsafe or suggestion.start_line < 1 or not 1 <= span <= MAX_SUGGESTION_LINES:
-        return None
-    return Suggestion(
-        path=path,
-        start_line=suggestion.start_line,
-        end_line=suggestion.end_line,
-        replacement=redact(suggestion.replacement)[:_REPLACEMENT_MAX],
+    return checked_against_diff(
+        Suggestion(
+            path=suggestion.path,
+            start_line=suggestion.start_line,
+            end_line=suggestion.end_line,
+            replacement=suggestion.replacement,
+        ),
+        diff,
     )
 
 

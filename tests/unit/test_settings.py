@@ -125,3 +125,16 @@ def test_a_command_diagnoses_at_most_three_runs_by_default(
     monkeypatch.setenv("EXPLAIN_MAX_RUNS", "0")
     with pytest.raises(ValidationError):
         Settings(_env_file=None)
+
+
+def test_suggestions_default_to_three_per_attempt_and_zero_turns_them_off(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("DATABASE_URL", URL)
+
+    assert Settings(_env_file=None).explain_max_suggestions == 3
+    monkeypatch.setenv("EXPLAIN_MAX_SUGGESTIONS", "0")
+    assert Settings(_env_file=None).explain_max_suggestions == 0
+    monkeypatch.setenv("EXPLAIN_MAX_SUGGESTIONS", "-1")
+    with pytest.raises(ValidationError):
+        Settings(_env_file=None)

@@ -434,6 +434,11 @@ class FakeRepoWrites:
     pulls: list[dict[str, Any]] = field(default_factory=list)
     runs: list[dict[str, Any]] = field(default_factory=list)  # ``actions/runs`` items (P3 d2)
     reactions: list[tuple[int, str]] = field(default_factory=list)  # (comment id, content)
+    # P3 (e): ``pulls/{n}/files`` and review comments. ``review_status`` forces the answer of
+    # the next ``POST`` of a review comment (422, 403, 502...); None means "behave".
+    pull_files: dict[tuple[str, int], list[dict[str, Any]]] = field(default_factory=dict)
+    review_comments: dict[int, dict[str, Any]] = field(default_factory=dict)
+    review_status: int | None = None
     _next_id: int = 9000
 
     def __post_init__(self) -> None:
@@ -448,6 +453,10 @@ class FakeRepoWrites:
         add("GET", f"{base}/pulls", self._list_pulls)
         add("GET", f"{base}/pulls/{{number}}", self._get_pull)
         add("GET", f"{base}/actions/runs", self._list_runs)
+        add("GET", f"{base}/pulls/{{number}}/files", self._list_pull_files)
+        add("GET", f"{base}/pulls/{{pull_number}}/comments", self._list_review_comments)
+        add("POST", f"{base}/pulls/{{pull_number}}/comments", self._create_review_comment)
+        add("PATCH", f"{base}/pulls/comments/{{comment_id}}", self._update_review_comment)
         add("POST", f"{base}/issues/comments/{{comment_id}}/reactions", self._create_reaction)
 
     # --- state the tests set up ----------------------------------------------------------
@@ -558,6 +567,29 @@ class FakeRepoWrites:
         }
         self.runs.append(run)
         return run
+
+    def add_pull_files(
+        self, number: int, files: list[dict[str, Any]], *, repo: str = "acme/widgets"
+    ) -> None:
+        """The files of a pull request, as ``GET /pulls/{n}/files`` lists them (``filename``,
+        ``status``, ``patch``, ``previous_filename``...)."""
+        self.pull_files[(repo, number)] = files
+
+    def add_bot_review_comment(
+        self, pr_number: int, body: str, *, repo: str = "acme/widgets", login: str | None = None
+    ) -> dict[str, Any]:
+        comment_id = self._new_id()
+        comment: dict[str, Any] = {
+            "id": comment_id,
+            "body": body,
+            "user": {"login": login or f"{self.github.app_slug}[bot]", "type": "Bot"},
+            "path": "x",
+            "line": 1,
+            "_repo": repo,
+            "_pr": pr_number,
+        }
+        self.review_comments[comment_id] = comment
+        return comment
 
     def requests_by(self, method: str, template: str) -> list[RecordedRequest]:
         return self.github.requests_to(method, template)
@@ -768,6 +800,83 @@ class FakeRepoWrites:
         comment["body"] = text
         comment["updated_at"] = _timestamp(self.github.clock.now())
         return json_response(200, _public(comment))
+
+    # --- pull request files and review comments (P3 e, D-97) ---------------------------
+
+    def _list_pull_files(self, request: RecordedRequest) -> httpx2.Response:
+        if (denied := self._lacks(request, "pull_requests", "read")) is not None:
+            return denied
+        repo = f"{request.params['owner']}/{request.params['repo']}"
+        files = self.pull_files.get((repo, int(request.params["number"])))
+        if files is None:
+            return error_response(404, "Not Found")
+        page, link = _page(request, self.page_cap, files)
+        return json_response(200, page, link)
+
+    def _list_review_comments(self, request: RecordedRequest) -> httpx2.Response:
+        if (denied := self._lacks(request, "pull_requests", "read")) is not None:
+            return denied
+        repo = f"{request.params['owner']}/{request.params['repo']}"
+        number = int(request.params["pull_number"])
+        found = [
+            c for c in self.review_comments.values() if c["_repo"] == repo and c["_pr"] == number
+        ]
+        page, link = _page(request, self.page_cap, [_public(c) for c in found])
+        return json_response(200, page, link)
+
+    def _create_review_comment(self, request: RecordedRequest) -> httpx2.Response:
+        """A review comment on a line of the diff. Like the real API it answers 422 for a line
+        that is not in the diff of the pull request; that rule is an APPROXIMATION (the exact
+        answer was not measurable read-only: it is verified live in P3 (g))."""
+        if (denied := self._lacks(request, "pull_requests", "write")) is not None:
+            return denied
+        if self.review_status is not None:
+            status, self.review_status = self.review_status, None
+            return error_response(status, "forced by the test")
+        body = request.json if isinstance(request.json, dict) else {}
+        text, path, line = body.get("body"), body.get("path"), body.get("line")
+        if (
+            not isinstance(text, str)
+            or not isinstance(path, str)
+            or not isinstance(line, int)
+            or body.get("side") != "RIGHT"
+            or not isinstance(body.get("commit_id"), str)
+        ):
+            return error_response(422, "Validation Failed")
+        repo = f"{request.params['owner']}/{request.params['repo']}"
+        number = int(request.params["pull_number"])
+        start = body.get("start_line", line)
+        if not isinstance(start, int) or not self._range_in_diff(repo, number, path, start, line):
+            return error_response(422, "Validation Failed: line must be part of the diff")
+        comment = self.add_bot_review_comment(number, text, repo=repo)
+        comment.update({"path": path, "line": line, "start_line": body.get("start_line")})
+        comment["commit_id"] = body["commit_id"]
+        return json_response(201, _public(comment))
+
+    def _update_review_comment(self, request: RecordedRequest) -> httpx2.Response:
+        if (denied := self._lacks(request, "pull_requests", "write")) is not None:
+            return denied
+        comment = self.review_comments.get(int(request.params["comment_id"]))
+        if comment is None:
+            return error_response(404, "Not Found")
+        if comment["user"]["login"] != f"{self.github.app_slug}[bot]":
+            return error_response(403, "Resource not accessible by integration")
+        body = request.json if isinstance(request.json, dict) else {}
+        if not isinstance(body.get("body"), str) or not body["body"]:
+            return error_response(422, "Validation Failed")
+        comment["body"] = body["body"]
+        return json_response(200, _public(comment))
+
+    def _range_in_diff(self, repo: str, number: int, path: str, start: int, end: int) -> bool:
+        from cicd_doctor.core.diff import parse_patch
+
+        for file in self.pull_files.get((repo, number), []):
+            if file["filename"] == path:
+                return any(
+                    hunk.first <= start <= end <= hunk.last
+                    for hunk in parse_patch(file.get("patch"))
+                )
+        return False
 
     # --- reactions -----------------------------------------------------------------------
 

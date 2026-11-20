@@ -87,8 +87,8 @@ def test_every_fixture_is_json_without_credentials(path: Path) -> None:
     assert "sig=" not in text  # the signed query of a log URL is never recorded
 
 
-def test_there_are_twenty_two_recorded_fixtures() -> None:
-    assert len(list(FIXTURES.glob("*.json"))) == 22
+def test_there_are_twenty_four_recorded_fixtures() -> None:
+    assert len(list(FIXTURES.glob("*.json"))) == 24
 
 
 # --- jobs ------------------------------------------------------------------------------------

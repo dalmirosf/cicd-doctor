@@ -262,6 +262,7 @@ async def test_the_check_starts_before_anything_else_is_read_from_github() -> No
         "reporter.start_check",
         "log_source.jobs",
         "log_source.job_log",
+        "pulls.get",  # the head of the pull request, before the model reads the diff (D-97)
         "reporter.complete_check",
         "reporter.upsert_comment",
     ]
