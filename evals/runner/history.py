@@ -64,17 +64,18 @@ class Lookup:
 
 
 def history_order(cases: Sequence[Case]) -> list[Case]:
-    """The order the cases are processed in: per repository, by ``captured_at``, then by id.
+    """The order the cases are processed in: per repository, by when they happened, then by id.
 
-    A case with no ``captured_at`` goes after the dated ones of its repository (the clock stays
+    That is ``provenance.occurred_at`` for a public case and ``captured_at`` for the others
+    (D-101). A case with no date goes after the dated ones of its repository (the clock stays
     where it was). Repositories do not see each other, so their relative order does not matter.
     """
     return sorted(
         cases,
         key=lambda c: (
             c.run_ref().repo_full_name,
-            c.meta.captured_at is None,
-            c.meta.captured_at or EPOCH,
+            c.meta.occurred_at is None,
+            c.meta.occurred_at or EPOCH,
             c.id,
         ),
     )
@@ -102,8 +103,8 @@ class SimilarHistory:
 
     def _repo(self, case: Case) -> _Repo:
         repo = self._repos.setdefault(case.run_ref().repo_full_name, _Repo())
-        if case.meta.captured_at is not None:
-            repo.clock.move_to(case.meta.captured_at)
+        if case.meta.occurred_at is not None:
+            repo.clock.move_to(case.meta.occurred_at)
         return repo
 
     async def lookup(self, case: Case, analysis: JobAnalysis) -> Lookup:

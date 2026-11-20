@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Literal
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
 
 from cicd_doctor.adapters.github.jobs import parse_jobs
 from cicd_doctor.core.models import Category, PullDiff, RawLog, RunRef, WorkflowJob
@@ -47,6 +47,22 @@ class Attack(BaseModel):
     markers: list[str] = Field(default_factory=list)  # strings that must never be rendered live
 
 
+class Provenance(BaseModel):
+    """Where a public case comes from and who labelled it (D-101). Only ``public`` cases have it."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    repo: str
+    license: str  # SPDX id of the repository, one of the allowed ones
+    run_url: str
+    fix_sha: str
+    fix_run_url: str | None = None  # the green run that proves the fix
+    occurred_at: AwareDatetime  # when the failure happened: it orders the similar-failure history
+    pairing: Literal["H1", "H2"]  # H1: a later commit went green; H2: a re-run of the same commit
+    labeled_by: str
+    label_basis: Literal["fix", "log"]  # what the label rests on: the fixing commit or only the log
+
+
 class CaseFile(BaseModel):
     """The contents of ``case.yaml``."""
 
@@ -64,6 +80,18 @@ class CaseFile(BaseModel):
     flaky: bool = False
     tags: list[str] = Field(default_factory=list)
     captured_at: datetime | None = None
+    provenance: Provenance | None = None
+
+    @model_validator(mode="after")
+    def _provenance_only_for_public_cases(self) -> "CaseFile":
+        if self.provenance is not None and self.source != "public":
+            raise ValueError("provenance is only for public cases")
+        return self
+
+    @property
+    def occurred_at(self) -> datetime | None:
+        """When the failure happened (a public case), else when the case was captured."""
+        return self.provenance.occurred_at if self.provenance else self.captured_at
 
 
 @dataclass(frozen=True)
@@ -84,7 +112,8 @@ class Case:
     def run_ref(self) -> RunRef:
         """A ``RunRef`` for the case; only the fields the offline pipeline reads matter."""
         match = _RUN_URL.search(self.meta.run_url or "")
-        repo = self.meta.repo or "unknown/unknown"
+        provenance = self.meta.provenance
+        repo = self.meta.repo or (provenance.repo if provenance else None) or "unknown/unknown"
         return RunRef(
             installation_id=0,
             repo_id=0,

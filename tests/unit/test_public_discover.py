@@ -1,0 +1,307 @@
+"""``python -m evals discover`` (D-101): pairing a failed run with its fix, with a fake ``gh``.
+
+No network and no GitHub. Every case builds a few runs and checks which become candidates and why
+the others are discarded.
+"""
+
+from datetime import UTC, datetime
+from pathlib import Path
+from typing import Any
+
+import pytest
+import yaml
+
+from evals.runner import cli, public_cli
+from evals.runner.public_common import BudgetedGh
+from evals.runner.public_discover import discover, render_candidates
+from tests.public_fakes import (
+    FIX_SHA,
+    INJECTION,
+    REPO,
+    FakePublicGh,
+    compare_json,
+    job,
+    jobs_payload,
+    run_json,
+)
+
+NOW = datetime(2026, 11, 20, 12, 0, tzinfo=UTC)
+SHA = {n: f"{n:040x}" for n in range(1, 8)}  # distinct commit ids
+
+
+def run(run_id: int, sha_no: int, conclusion: str, day: int, **kw: Any) -> dict[str, Any]:
+    return run_json(
+        run_id,
+        conclusion=conclusion,
+        sha=SHA[sha_no],
+        created=f"2026-11-{day:02d}T10:00:00Z",
+        **kw,
+    )
+
+
+def gh_with(*runs: dict[str, Any], greens_by_attempt: bool = False) -> FakePublicGh:
+    """A fake where ``runs`` are every run of workflow 7 on the branch, and the failed ones are
+    also answered as the listing of failures."""
+    gh = FakePublicGh()
+    gh.branch_runs = list(runs)
+    gh.failed = [r for r in runs if r["conclusion"] == "failure"]
+    for item in runs:
+        gh.jobs[f"{item['id']}/{item['run_attempt']}"] = jobs_payload(job(item["id"] * 10, "test"))
+    return gh
+
+
+def find(gh: FakePublicGh, **kwargs: Any):  # type: ignore[no-untyped-def]
+    return discover(REPO, gh=gh, now=lambda: NOW, calls=lambda: len(gh.calls), **kwargs)
+
+
+def reasons(found) -> dict[Any, str]:  # type: ignore[no-untyped-def]
+    return {d["run_id"]: d["reason"] for d in found.discarded}
+
+
+def with_compare(gh: FakePublicGh, failed: int, green: int, **kwargs: int) -> None:
+    gh.compares[f"{SHA[failed]}...{SHA[green]}"] = compare_json(**kwargs)
+
+
+# --- H1 ------------------------------
+
+
+def test_three_failures_and_a_green_leave_one_candidate_the_last_failure() -> None:
+    gh = gh_with(
+        run(1, 1, "failure", 10),
+        run(2, 2, "failure", 11),
+        run(3, 3, "failure", 12),
+        run(4, 4, "success", 13),
+    )
+    with_compare(gh, 3, 4)
+
+    found = find(gh)
+
+    [candidate] = found.candidates
+    assert (candidate["run_id"], candidate["pairing"], candidate["fix_run_id"]) == (3, "H1", 4)
+    assert candidate["failed_sha"] == SHA[3]
+    assert candidate["fix_sha"] == SHA[4]
+    assert (candidate["commits"], candidate["files"], candidate["days"]) == (1, 2, 1.0)
+    assert (candidate["additions"], candidate["deletions"]) == (6, 2)
+    assert reasons(found) == {
+        1: "superseded by a later failure",
+        2: "superseded by a later failure",
+    }
+
+
+def test_a_green_run_with_the_same_commit_is_not_an_h1_pair() -> None:
+    gh = gh_with(run(1, 1, "failure", 10), run(2, 1, "success", 11))
+
+    found = find(gh)
+
+    assert found.candidates == []
+    assert reasons(found) == {1: "the green run has the same commit (see H2)"}
+
+
+def test_a_green_run_of_another_branch_is_no_answer() -> None:
+    gh = gh_with(run(1, 1, "failure", 10), run(2, 2, "success", 11, branch="other"))
+
+    found = find(gh)
+
+    assert found.candidates == []
+    assert reasons(found) == {1: "no green run after it"}
+
+
+def test_a_cancelled_run_in_between_is_ignored() -> None:
+    gh = gh_with(run(1, 1, "failure", 10), run(2, 2, "cancelled", 11), run(3, 3, "success", 12))
+    with_compare(gh, 1, 3)
+
+    [candidate] = find(gh).candidates
+
+    assert (candidate["run_id"], candidate["fix_run_id"]) == (1, 3)
+
+
+def test_a_green_run_30_days_later_is_too_late() -> None:
+    gh = gh_with(run(1, 1, "failure", 1), run(2, 2, "success", 31 - 1))
+    gh.branch_runs[1]["created_at"] = "2026-11-30T10:00:00Z"
+    with_compare(gh, 1, 2)
+
+    found = find(gh)
+
+    assert found.candidates == []
+    assert reasons(found) == {1: "the green run is 29 days later"}
+    assert not any("compare" in endpoint for endpoint in gh.endpoints())  # cheap filters first
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "reason"),
+    [
+        ({"files": 0}, "no files changed"),
+        ({"files": 11}, "11 files changed"),
+        ({"commits": 4}, "4 commits between the runs"),
+    ],
+)
+def test_the_pair_must_be_small(kwargs: dict[str, int], reason: str) -> None:
+    gh = gh_with(run(1, 1, "failure", 10), run(2, 2, "success", 11))
+    with_compare(gh, 1, 2, **kwargs)
+
+    found = find(gh)
+
+    assert found.candidates == []
+    assert reasons(found) == {1: reason}
+
+
+def test_a_pull_request_from_a_fork_cannot_be_paired() -> None:
+    gh = gh_with(run(1, 1, "failure", 10, fork=True))
+
+    assert reasons(find(gh)) == {1: "pull request from a fork: cannot be paired by branch"}
+    assert not any("workflows" in endpoint for endpoint in gh.endpoints())
+
+
+def test_workflows_on_the_exclusion_list_are_discarded() -> None:
+    gh = gh_with(
+        run(1, 1, "failure", 10, name="PR Checklist"), run(2, 2, "failure", 11, name="Lint gate")
+    )
+    gh.failed = list(gh.branch_runs)
+
+    found = find(gh, exclude=["gate"])
+
+    assert reasons(found) == {
+        1: "workflow is on the exclusion list",
+        2: "workflow is on the exclusion list",
+    }
+
+
+def test_the_limit_stops_after_enough_candidates() -> None:
+    gh = FakePublicGh()
+    for number, (branch, workflow) in enumerate([("a", 7), ("b", 8), ("c", 9)]):
+        base = number * 10
+        failed = run(base + 1, 1, "failure", 10, branch=branch, workflow_id=workflow)
+        green = run(base + 2, 2, "success", 11, branch=branch, workflow_id=workflow)
+        gh.branch_runs += [failed, green]
+        gh.failed.append(failed)
+        gh.jobs[f"{base + 1}/1"] = jobs_payload(job(base + 10, "t"))
+    with_compare(gh, 1, 2)
+
+    assert len(find(gh, limit=2).candidates) == 2
+
+
+# --- the matrix rule ------------------------------
+
+
+def test_a_matrix_failing_at_the_same_step_takes_the_lowest_job_id() -> None:
+    gh = gh_with(run(1, 1, "failure", 10), run(2, 2, "success", 11))
+    gh.jobs["1/1"] = jobs_payload(job(30, "t (3.13)"), job(20, "t (3.12)"), job(40, "t (3.11)"))
+    with_compare(gh, 1, 2)
+
+    [candidate] = find(gh).candidates
+
+    assert (candidate["job_id"], candidate["failed_jobs"]) == (20, 3)
+    assert candidate["step"] == "Run pytest"
+
+
+def test_a_matrix_failing_at_different_steps_and_a_job_that_never_started_are_discarded() -> None:
+    gh = gh_with(run(1, 1, "failure", 10), run(2, 2, "success", 11))
+    gh.jobs["1/1"] = jobs_payload(job(20, "a"), job(30, "b", step="Run mypy"))
+    with_compare(gh, 1, 2)
+    assert reasons(find(gh)) == {1: "failed jobs fail at different steps"}
+
+    gh.jobs["1/1"] = jobs_payload(job(20, "a", step="Set up job"))
+    assert reasons(find(gh)) == {1: "the failed job never started its steps"}
+
+
+# --- H2 ------------------------------
+
+
+def test_a_later_green_attempt_of_the_same_commit_is_an_h2_candidate() -> None:
+    gh = FakePublicGh()
+    gh.green = [run(5, 1, "success", 12, attempt=2, name="Tests"), run(6, 2, "success", 12)]
+    gh.green[0]["updated_at"] = "2026-11-12T11:00:00Z"
+    gh.runs["5/1"] = run(5, 1, "failure", 12, attempt=1)
+    gh.jobs["5/1"] = jobs_payload(job(50, "t"))
+
+    found = find(gh)
+
+    [candidate] = found.candidates
+    assert (candidate["pairing"], candidate["run_id"], candidate["attempt"]) == ("H2", 5, 1)
+    assert (candidate["fix_attempt"], candidate["fix_sha"], candidate["files"]) == (2, SHA[1], 0)
+    assert any(endpoint.endswith("/runs/5/attempts/1") for endpoint in gh.endpoints())
+    assert not any("compare" in endpoint for endpoint in gh.endpoints())
+
+
+def test_an_h2_whose_previous_attempt_did_not_fail_is_discarded() -> None:
+    gh = FakePublicGh()
+    gh.green = [run(5, 1, "success", 12, attempt=2)]
+    gh.runs["5/1"] = run(5, 1, "cancelled", 12, attempt=1)
+
+    found = find(gh)
+
+    assert found.candidates == []
+    assert reasons(found) == {5: "the previous attempt did not fail"}
+
+
+# --- licence, budget, output ------------------------------
+
+
+def test_a_repository_without_an_allowed_licence_reads_nothing_else() -> None:
+    gh = gh_with(run(1, 1, "failure", 10))
+    gh.repos[REPO] = {"license": {"spdx_id": "AGPL-3.0"}, "private": False}
+
+    found = find(gh)
+
+    assert found.candidates == []
+    assert [d["reason"] for d in found.discarded] == ["licence not allowed"]
+    assert gh.endpoints() == [f"repos/{REPO}"]
+
+
+def test_the_budget_stops_discovery_and_says_so() -> None:
+    gh = gh_with(run(1, 1, "failure", 10), run(2, 2, "success", 11))
+    with_compare(gh, 1, 2)
+    budget = BudgetedGh(gh, max_calls=2)
+
+    found = discover(REPO, gh=budget, now=lambda: NOW, calls=lambda: budget.calls)
+
+    assert found.stopped == "reached --max-api-calls (2)"
+    assert found.api_calls == 2
+
+
+def test_candidates_yaml_holds_cleaned_third_party_names_and_no_log_text() -> None:
+    gh = gh_with(
+        run(1, 1, "failure", 10, name=f"CI\n{INJECTION}‮", branch="feat/x​"),
+        run(2, 2, "success", 11, branch="feat/x\u200b"),
+    )
+    with_compare(gh, 1, 2)
+
+    text = render_candidates([find(gh)])
+
+    document = yaml.safe_load(text)
+    [candidate] = document["repos"][0]["candidates"]
+    assert "\n" not in candidate["workflow"]
+    assert "‮" not in text
+    assert "​" not in text
+    assert candidate["branch"] == "feat/x"
+    assert document["discard_reasons"] == {}
+    assert document["repos"][0]["license"] == "MIT"
+    assert FIX_SHA not in text  # only the commits of this scenario
+
+
+def test_discover_is_read_only_and_its_cli_prints_counts_only(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    gh = gh_with(run(1, 1, "failure", 10, name=INJECTION), run(2, 2, "success", 11))
+    with_compare(gh, 1, 2)
+    monkeypatch.setattr(public_cli, "run_gh", gh)
+    out = tmp_path / "candidates.yaml"
+
+    code = cli.main(["discover", "--repo", REPO, "--since", "30d", "--out", str(out)])
+
+    assert code == 0
+    shown = capsys.readouterr().out
+    assert f"{REPO}: 1 candidates, 0 discarded" in shown
+    assert INJECTION not in shown
+    assert yaml.safe_load(out.read_text("utf-8"))["repos"][0]["candidates"][0]["run_id"] == 1
+    assert all(call[0] == "api" and "-X" not in call for call in gh.calls)
+
+
+def test_discover_cli_rejects_a_bad_window(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    assert (
+        cli.main(["discover", "--repo", REPO, "--since", "soon", "--out", str(tmp_path / "c.yaml")])
+        == 1
+    )
+    assert "--since must be a number of days" in capsys.readouterr().err

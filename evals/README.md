@@ -7,7 +7,7 @@ real runs of the lab, and `evals/cases/injection` 30 synthetic ones (16 log payl
 
 ```
 evals/
-├── cases/<source>/<case_id>/   # lab | public | injection: case.yaml, log.txt, jobs.json (fix.diff for public; annotations.json when a job ended cancelled, D-73)
+├── cases/<source>/<case_id>/   # lab | public | injection: case.yaml, log.txt, jobs.json (fix.json for public, D-101; annotations.json when a job ended cancelled, D-73)
 ├── runner/                     # cases, variants, metrics, report, capture, injection, markdown_threats, live, cli
 ├── answers/                    # committed LLM answers, ab/ab12….json, keyed by (model, prompt version, prompt fingerprint, request); empty until a live run (D-100)
 ├── reports/                    # <date>-<git-sha>.{json,md}
@@ -19,6 +19,8 @@ uv run python -m evals run --variant rules                 # lab cases by defaul
 uv run python -m evals run --variant all --sources lab,public,injection
 uv run python -m evals capture --repo <owner>/cicd-doctor-lab --all   # see lab/README.md
 uv run python -m evals write-injection                     # regenerate evals/cases/injection
+uv run python -m evals discover --repo <owner>/<name>      # public candidates (read only, D-101)
+uv run python -m evals capture-public --manifest evals/public-sources.yaml   # public cases from the manifest
 ```
 
 `run` exits with an error when no case exists for the requested sources, or when an LLM variant
