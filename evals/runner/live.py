@@ -16,9 +16,12 @@ from cicd_doctor.adapters.llm.cache import CachedLLMClient
 from cicd_doctor.adapters.llm.openai_client import OpenAILLMClient, make_openai_client
 from cicd_doctor.core.diagnosis.cost import CostModel
 from cicd_doctor.core.ports import LLMClient
+from evals.runner.recording import GuardedLLM, RecordingLLM, SpendGuard
 from evals.runner.run import EvalError, LLMSetup
 
-DEFAULT_CACHE_DIR = Path(__file__).resolve().parents[1] / ".cache"
+DEFAULT_CACHE_DIR = Path(__file__).resolve().parents[1] / "answers"
+DEFAULT_MAX_COST_USD = Decimal("0.25")
+DEFAULT_MAX_CALLS = 150
 
 
 class LiveSettings(BaseSettings):
@@ -84,8 +87,19 @@ def build_setups(
     cache_dir: Path = DEFAULT_CACHE_DIR,
     prices: Mapping[str, CostModel] | None = None,
     settings: LiveSettings | None = None,
+    guard: SpendGuard | None = None,
+    read_cache: bool = True,
+    run_suffix: str | None = None,
 ) -> list[LLMSetup]:
-    """One setup per model. Live ones call OpenAI and fill the cache; the others only read it."""
+    """One setup per model. Live ones call OpenAI and fill the cache; the others only read it.
+
+    Live calls go through ``guard`` (one for the whole run, D-108): ``--live`` without one is
+    refused. ``read_cache=False`` always calls and writes beside the official entries.
+    """
+    if live and guard is None:
+        raise EvalError("--live needs spending caps (--max-cost-usd and --max-calls, D-108)")
+    if not read_cache and not live:
+        raise EvalError("--no-cache-read needs --live")
     settings = settings or LiveSettings()
     default_cost = CostModel(
         input_per_mtok=settings.llm_price_input_per_mtok or Decimal(0),
@@ -108,12 +122,21 @@ def build_setups(
                 max_output_tokens=settings.llm_max_output_tokens,
                 timeout_s=settings.llm_timeout_s,
             )
+        cost = (prices or {}).get(model, default_cost)
+        if inner is not None and guard is not None:
+            inner = GuardedLLM(inner, guard, cost)
+        cache = CachedLLMClient(
+            inner, cache_dir, model=model, read=read_cache, run_suffix=run_suffix
+        )
+        recorder = RecordingLLM(cache)
         setups.append(
             LLMSetup(
-                client=CachedLLMClient(inner, cache_dir, model=model),
+                client=recorder,
                 label=model,
-                cost=(prices or {}).get(model, default_cost),
+                cost=cost,
                 max_output_tokens=settings.llm_max_output_tokens,
+                recorder=recorder,
+                cache=cache,
             )
         )
     return setups

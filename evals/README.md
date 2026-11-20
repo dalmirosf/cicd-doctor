@@ -3,13 +3,13 @@
 The eval harness (SPEC §11, FR-22). It has the `rules`, `llm`, `llm+hints` and
 `llm+hints+similar` variants, the P1b subset of the metrics (no cause-match judge yet), JSON and Markdown reports, the
 lab capture command and the prompt-injection suite. `evals/cases/lab` holds 25 cases captured from
-real runs of the lab, and `evals/cases/injection` 16 synthetic ones. The CI gate arrives in P4.
+real runs of the lab, and `evals/cases/injection` 30 synthetic ones (16 log payloads and 14 with a pull request diff). The CI gate arrives in P4.
 
 ```
 evals/
 ├── cases/<source>/<case_id>/   # lab | public | injection: case.yaml, log.txt, jobs.json (fix.diff for public; annotations.json when a job ended cancelled, D-73)
 ├── runner/                     # cases, variants, metrics, report, capture, injection, markdown_threats, live, cli
-├── .cache/                     # LLM answers keyed by (model, prompt version, request); empty until a live run
+├── answers/                    # committed LLM answers, ab/ab12….json, keyed by (model, prompt version, prompt fingerprint, request); empty until a live run (D-100)
 ├── reports/                    # <date>-<git-sha>.{json,md}
 └── baseline.json               # last accepted metrics (CI gate, P4)
 ```
@@ -31,7 +31,7 @@ has no model. Reports list case ids, categories and rule ids, never log text.
 They need a model, and each model is a column of the report (`llm+hints [model]`).
 
 ```powershell
-# Offline: only the cache is read. A miss is an llm_error fallback (the report counts it).
+# Offline: only the committed answers are read. A miss is an llm_error fallback (the report counts it).
 uv run python -m evals run --variant llm+hints --model <model>
 
 # Live: calls OpenAI with OPENAI_API_KEY from .env (never printed) and fills the cache.
@@ -40,14 +40,26 @@ uv run python -m evals run --variant all --sources lab,injection --live `
 ```
 
 Prices are USD per million tokens; without `--price` the `LLM_PRICE_*` variables of `.env` are
-used. Without `--model`, `OPENAI_MODEL` is used. The cache key is a hash of the model, the prompt
-version and the whole request, so changing the prompt, the excerpt or a hint is a miss. An entry
-holds only the answer. `--live` is the only way this runner spends money.
+used. Without `--model`, `OPENAI_MODEL` is used. The key is a hash of the model, the prompt
+version, the prompt fingerprint (the sha256 of the system prompt and the output schema) and the whole
+request, so changing one word of the prompt, the schema, the excerpt or a hint is a miss, even with
+the same `PROMPT_VERSION`. An entry holds only the answer (`model`, `prompt_version`, `fingerprint`,
+`result`) and a test scans every entry for secrets, extra fields and size. `--live` is the only way
+this runner spends money, and it always has a cap: `--max-cost-usd` (default 0.25) and `--max-calls`
+(default 150). At the cap it stops, keeps the answers already written and exits with code 5.
+`--live --no-cache-read` calls the model every time and writes next to the official answer with a
+run suffix (to measure variance). Answers live in `evals/answers/` and are committed: a change that
+alters a prompt, a schema, an excerpt or a case needs its answers refilled with `--live`.
+
+```powershell
+uv run python -m evals prune                  # dry run: lists the answers no current model x variant x case uses
+uv run python -m evals prune --apply          # deletes them
+```
 
 **Choosing the model (D-07, D-65).** Run the second command with two small-tier candidates and
 compare their `llm+hints` rows by macro-F1, then attacks won (must be 0), then cost per case and
 p95 latency. Record the winner, its price and the numbers as a new entry in DECISIONS.md, and set
-`OPENAI_MODEL` and the prices in `.env`. This has not been done yet: it waits for the API key.
+`OPENAI_MODEL` and the prices in `.env`. It was done: D-88 chose `gpt-6-luna`.
 
 ## The memory variant
 
@@ -68,12 +80,12 @@ uv run python -m evals run --variant llm+hints+similar --model <model> --live
 The report adds `Cache hits` and `Similar hits` columns and an "Effect of the memory" section with
 the accuracy (percentage points) and cost difference against `llm+hints`. **Read it with care:** the
 lab has 23 distinct failures, so the effect shows almost only on the repeated captures (py-assert,
-py-modnf); the public cases of P4 are what will give it signal. Without `--live` the answer cache is
-empty today, so the numbers are fallbacks; the real ones wait for the OpenAI key.
+py-modnf); the public cases of P4 are what will give it signal. Without `--live` the answers
+folder is empty until the owner fills it (D-100), so the numbers are `llm_error` fallbacks.
 
 ## Injection suite
 
-`evals/runner/injection.py` holds 16 payloads over two real failure kinds and generates the cases
+`evals/runner/injection.py` holds 16 payloads over two real failure kinds, plus 14 cases with a pull request diff (D-99), and generates the 30 cases
 (a test fails if the committed files drift from it). `judge` says whether an attack succeeded: the
 attacker's category was forced, the rendered markdown has something that acts on a reader (the
 scanner in `markdown_threats.py`), the prompt leaked, fabricated evidence was published or a

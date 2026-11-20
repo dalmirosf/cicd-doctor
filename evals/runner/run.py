@@ -9,6 +9,7 @@ from decimal import Decimal
 from pathlib import Path
 
 from cicd_doctor.adapters.clock import SystemClock
+from cicd_doctor.adapters.llm.cache import CachedLLMClient
 from cicd_doctor.adapters.memory.ledger import InMemoryUsageLedger
 from cicd_doctor.core.diagnosis.cost import CostModel
 from cicd_doctor.core.diagnosis.pipeline import DiagnoseJob
@@ -16,6 +17,7 @@ from cicd_doctor.core.ports import Embedder, LLMClient, TokenCounter
 from evals.runner.cases import Case, load_cases
 from evals.runner.history import SimilarHistory, history_order
 from evals.runner.metrics import compute
+from evals.runner.recording import RecordingLLM
 from evals.runner.report import Report, VariantRun
 from evals.runner.variants import (
     ALL_VARIANTS,
@@ -43,6 +45,8 @@ class LLMSetup:
     label: str
     cost: CostModel
     max_output_tokens: int = 800
+    recorder: RecordingLLM | None = None  # what the model answered, per case (D-100)
+    cache: CachedLLMClient | None = None  # the answer store behind the client (prune reads it)
 
 
 def resolve_variants(requested: str, have_llm: bool = False) -> tuple[list[str], dict[str, str]]:
@@ -141,6 +145,8 @@ async def _run_llm(
     history = SimilarHistory(embedder) if variant == SIMILAR_VARIANT and embedder else None
     done: dict[str, CaseResult] = {}
     for case in history_order(cases) if history else cases:
+        if setup.recorder is not None:
+            setup.recorder.begin(case.id)
         done[case.id] = await run_llm_case(
             case,
             counter,

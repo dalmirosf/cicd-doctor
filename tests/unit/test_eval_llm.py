@@ -20,12 +20,19 @@ from cicd_doctor.core.models import DiagnosisRequest, LLMResult
 from evals.runner import cli
 from evals.runner.cases import DEFAULT_CASES_DIR
 from evals.runner.live import LiveSettings, build_setups, parse_prices
+from evals.runner.recording import SpendGuard
 from evals.runner.report import Report, render_markdown
 from evals.runner.run import EvalError, LLMSetup, run_evals_async
 from tests.evalcases import SYNTHETIC, write_case
 from tests.llmcases import make_hint, make_request
 
 COUNTER = CharTokenCounter()
+
+
+def GUARD() -> SpendGuard:  # noqa: N802
+    return SpendGuard(max_cost_usd=Decimal("1"), max_calls=100)
+
+
 PRICES = CostModel(input_per_mtok=Decimal("0.40"), output_per_mtok=Decimal("1.60"))
 CALL_COST = 0.00128  # a FakeLLM reply: 2000 tokens in, 300 out, at PRICES
 
@@ -49,7 +56,7 @@ def cases_dir(tmp_path: Path) -> Path:
 
 def entries(directory: Path, pattern: str = "*.json") -> list[Path]:
     """The files of a directory (blocking IO stays out of the async tests)."""
-    return sorted(directory.glob(pattern))
+    return sorted(directory.rglob(pattern))
 
 
 def setup_for(fake: FakeLLM, label: str = "model-a") -> LLMSetup:
@@ -112,7 +119,7 @@ async def test_the_cache_serves_the_second_identical_request_without_a_call(
 async def test_an_offline_miss_is_a_permanent_llm_error(tmp_path: Path) -> None:
     client = CachedLLMClient(None, tmp_path, model="m")
 
-    with pytest.raises(LLMError, match="run with --live to fill the cache"):
+    with pytest.raises(LLMError, match="run with --live to fill them"):
         await client.diagnose(make_request())
 
 
@@ -122,7 +129,7 @@ async def test_errors_are_not_cached(tmp_path: Path) -> None:
     with pytest.raises(LLMError, match="boom"):
         await client.diagnose(make_request())
 
-    assert entries(tmp_path, "*") == []
+    assert [p for p in entries(tmp_path, "*") if p.is_file()] == []
 
 
 def test_the_key_depends_on_the_model_the_prompt_the_hints_and_the_repair() -> None:
@@ -155,7 +162,8 @@ async def test_an_entry_has_the_answer_and_never_the_request(tmp_path: Path) -> 
 
     [entry] = entries(tmp_path)
     data = json.loads(entry.read_text("utf-8"))
-    assert set(data) == {"model", "prompt_version", "result"}
+    assert set(data) == {"model", "prompt_version", "fingerprint", "result"}
+    assert entry.parent.name == entry.name[:2]
     assert "ModuleNotFoundError" not in entry.read_text("utf-8")  # no log text
     assert entries(tmp_path, "*.tmp") == []
 
@@ -332,18 +340,18 @@ def test_offline_setups_need_no_key(tmp_path: Path) -> None:
     setups = build_setups(["m1", "m2"], live=False, cache_dir=tmp_path)
 
     assert [s.label for s in setups] == ["m1", "m2"]
-    assert all(isinstance(s.client, CachedLLMClient) for s in setups)
+    assert all(isinstance(s.cache, CachedLLMClient) for s in setups)
 
 
 def test_live_needs_the_key_and_never_shows_it(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     with pytest.raises(EvalError, match="OPENAI_API_KEY"):
-        build_setups(["m1"], live=True, cache_dir=tmp_path)
+        build_setups(["m1"], live=True, cache_dir=tmp_path, guard=GUARD())
 
     key = "sk-test-not-a-real-key"
     monkeypatch.setenv("OPENAI_API_KEY", key)
-    setups = build_setups(["m1"], live=True, cache_dir=tmp_path)
+    setups = build_setups(["m1"], live=True, cache_dir=tmp_path, guard=GUARD())
 
     assert len(setups) == 1
     settings = LiveSettings()
