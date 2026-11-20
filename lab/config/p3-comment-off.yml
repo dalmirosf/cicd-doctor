@@ -1,0 +1,6 @@
+# P3 live verification, box 4: no sticky comment, the check run stays. Copied by hand to
+# .github/cicd-doctor.yml of the lab.
+llm: on_demand
+comment: false
+ignore_workflows:
+  - pr-flaky

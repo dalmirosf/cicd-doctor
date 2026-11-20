@@ -7,9 +7,9 @@ the main repository; decision D-61).
 Every workflow:
 
 - runs only when started by hand (`workflow_dispatch`), so publishing the repository runs nothing.
-  The exceptions are `pr-py-modnf.yml` (the P1c live verification) and `pr-flaky.yml` (the P2 one),
-  both below: they run on `pull_request`, so they also run nothing until somebody opens a pull
-  request;
+  The exceptions are `pr-py-modnf.yml` (the P1c live verification), `pr-flaky.yml` (the P2 one) and
+  `pr-suggest.yml` (the P3 one, only for pull requests that touch `python/suggest/`), all below: they
+  run on `pull_request`, so they also run nothing until somebody opens a pull request;
 - has `permissions: contents: read` and a `timeout-minutes`;
 - needs no secret, cloud account or paid service. The secret in `secret-misspelled.yml` is
   misspelled on purpose and must **not** be created.
@@ -39,13 +39,19 @@ a success without a code change. It is deterministic on purpose, not a real race
 live verification of P2. Both `pr-*` workflows run on **every** pull request of the lab, so a pull
 request has two checks and two comments of CICD Doctor, one per workflow.
 
+`pr-suggest.yml` (P3) runs ruff on `python/suggest/legacy.py` (`value == None`, E711, line 8) and only
+when a pull request touches `python/suggest/`. A pull request that edits that line gets a failure
+whose line is inside its diff (a suggested change can land); one that edits only `notes.py` gets the
+same failure outside its diff. `config/p3-*.yml` are the repository configurations of the P3 live
+verification (copied by hand to `.github/cicd-doctor.yml`). Neither has an entry in `cases.yaml`.
+
 A real `AccessDenied` from AWS would need an AWS account and an IAM role, so it is left out;
 `aws-no-credentials` covers the AWS credential rules without one.
 
 ## Publish
 
 The lab repository is published **by hand** from this folder; nothing in the main repository
-pushes to it. Publish again whenever a file here changes (the `pr-py-modnf.yml` and `pr-flaky.yml` pull request workflows included).
+pushes to it. Publish again whenever a file here changes (the `pr-py-modnf.yml`, `pr-flaky.yml` and `pr-suggest.yml` pull request workflows included).
 
 From the root of the `cicd-doctor` repository, in PowerShell, with the GitHub CLI logged in.
 `git subtree split` turns the `lab/` folder into a branch whose root is the lab:
@@ -1015,18 +1021,784 @@ count by `external_id`, not by name). In the worker terminal there is a line
 `cancelled without a job timeout, nothing to publish` and the job finished (`done`), without
 retries.
 
-## Live verification (P3): prepare the app (D-89)
+## Live verification (P3)
 
-The commands of P3 need a permission and an event the dev app does not have yet. Nothing in P3 is
-verified live until the owner does this by hand (no code does it). On 2026-11-20 the settings page
-showed Issues = "No access", no "Issue comment" under *Subscribe to events* and no `issue_comment`
-delivery in *Recent deliveries*.
+This is the runbook that checks the commands, the suggestions and the repository configuration of
+CICD Doctor (P3: `/cicd-doctor explain`, suggested changes, `.github/cicd-doctor.yml`) against the
+real GitHub with the dev app and the lab (SPEC §13, P3). The split is the one of P1c and P2: **you**
+run the *Action* blocks (they write to GitHub, spend money or change settings); the *Verification*
+blocks only read, and the session that reads the results uses `gh` with `GET` calls only. The same
+rules of PowerShell 5.1 apply (no `&&`, no double quotes inside `--jq`, no two variables whose names
+differ only in case, no `2>&1` on a native command).
+
+Nothing of P3 is verified live yet. No box of SPEC §13 P3 is ticked until a row of the evidence
+table (last section) has real ids, times and rows.
+
+### What can hurt, by tag
+
+Every step has one of these tags. Consent is asked **per group**, not for the whole runbook:
+
+| Tag | What it does | Group |
+|---|---|---|
+| **[APP]** | Changes the settings of the dev GitHub App (permission, event) and the acceptance in the installations | G1 |
+| **[ENV]** | Edits an `.env` (only the **copy** in the folder you run from, never the real one in `C:\dev\cicd-doctor`) | G2 |
+| **[MONEY]** | Real OpenAI calls (the worker with the key; the optional `-m live` suite) | G2 (worker), G6 (suite) |
+| **[WRITES LAB]** | Writes to the lab repository: a push, a pull request, a comment, a file on `main` | G3 |
+| **[OTHER ACCOUNT]** | A comment from a second GitHub account | G4 |
+| **[PROBE]** | Review comments of **your** account that measure what GitHub answers (box 3), and their deletion | G5 |
+| **[LOCAL]** | Only your machine (processes, Docker, the database) | none |
+| **[READ]** | Only reads (`gh` with `GET`, `SELECT`) | none |
+
+The boxes, in the order of this runbook (the numbers are the ones of SPEC §13, P3):
+
+| Box | What it checks | Needs |
+|---|---|---|
+| 5 | The first real `issue_comment` delivery, after the app change | G1, G3 |
+| 1 | A collaborator's `/cicd-doctor explain` gets 👀 and an LLM diagnosis of the head runs in 90 s or less | G1, G2, G3 |
+| 2 | A non-collaborator gets nothing (no reaction, no job); a second command within 5 minutes is ignored | G4 (the first half) |
+| 3 | A suggestion inside the diff is a review comment with `suggestion`; outside it, text only; the exact 422 and the multi-line shape are **measured** | G3, G5 |
+| 4 | `comment: false` on the default branch: no sticky, the check stays; the same file only in a PR branch has no effect; an invalid file turns the LLM off | G3 |
+| fork | A command on a pull request from a fork | **stays open** (see the end) |
+
+What the runbook does **not** do: it never starts anything for you, and every "restore" is by hand.
+
+### The lab files of P3 (in `lab/`, see *Publish*)
+
+- `.github/workflows/pr-suggest.yml` runs only when a pull request touches `python/suggest/`.
+  It runs `ruff check --select E711 --output-format concise python/suggest/legacy.py` from the root
+  of the repository, so the log names `python/suggest/legacy.py:8:12` exactly as the diff of the
+  pull request does (the model is shown the diff of a file only when the log names it, D-97) and the
+  failure is on `main` already (`return value == None`, line 8).
+- `python/suggest/legacy.py` is that file; `python/suggest/notes.py` is clean.
+  A pull request that **edits line 8** of `legacy.py` gets the failure with its line **inside** the
+  diff. A pull request that edits only `notes.py` gets the same failure with `legacy.py` **outside**
+  its diff.
+- `config/p3-*.yml` are the four configuration files of box 4 and of the set-up (`p3-on-demand`,
+  `p3-comment-off`, `p3-branch-only`, `p3-invalid`). The runbook copies them by hand to
+  `.github/cicd-doctor.yml` of the lab; they are not published as that file by `lab/` itself.
+- Every lab pull request also runs `pr-py-modnf` (fails always) and `pr-flaky` (fails in attempt 1).
+  `p3-on-demand.yml` has `ignore_workflows: [pr-flaky]`, so `pr-flaky` produces nothing (D-91) and a
+  command explains at most `pr-py-modnf` and `pr-suggest`.
+
+Two things the code does that this runbook relies on (read from the merged code, 2026-11-20):
+
+- With `llm: on_demand` the automatic diagnosis is rules-only (`fallback_reason = on_demand`) and
+  `/cicd-doctor explain` upgrades it. With the default `llm: auto` and the key in `.env`, the
+  automatic path would already call the model and `explain` would find nothing to upgrade (it only
+  upgrades a published rules diagnosis, D-95). That is why `p3-on-demand.yml` goes to `main` first.
+- The webhook answers **202** to an accepted command and **204** to every other `issue_comment`
+  (a plain comment, an edit, an unauthorized author), storing nothing. So "a delivery with 204" is
+  the expected sight for a comment that is not a command.
+
+### Before you start
+
+Everything of *Before you start* in *Live verification (P1c)* and *(P2)* still holds (check the
+folder before every `git` command; stop old `cicd-doctor` processes). What is new:
+
+1. **Run from a folder that has this branch's code** (the worktree
+   `C:\dev\cicd-doctor\.claude\worktrees\p3-live-52db51`, or `C:\dev\cicd-doctor` after the branch
+   is merged and `git pull`). The API, the worker and smee all run from that folder.
+2. **The lab must be public for box 2 (first half).** A private repository cannot get a comment
+   from an account without access; and an account invited with read access counts as
+   `COLLABORATOR`. Check it in step 0. Making the lab public is a change of repository settings:
+   ask for it, do not assume it.
+3. **A second GitHub account** that is **not** a collaborator of the lab (G4).
+4. **The commands change the rate window per pull request:** one accepted command per PR per
+   5 minutes. Each box below uses its own pull request, except the second half of box 2, which
+   must run **within 5 minutes** of the command of box 1.
+5. **A configuration change on `main` of the lab is read within 5 minutes** (a file is remembered
+   300 s, a missing one 60 s). After each change either wait or stop the worker (Ctrl+C) and start
+   it again: that clears the memory of the process.
+6. **GitHub can take several minutes to start the run of a push** (4 minutes were seen). Every block
+   that looks for a run says what to do when the variable prints nothing: repeat its last two lines.
+7. **Cost:** about 5 accepted commands, each with at most 2 model calls of about 7,000 input tokens
+   each: about **USD 0.02** in total (plan §6), far under the cap of step B. The optional suite of
+   G6 adds about USD 0.01.
+
+### 0. Variables (once per PowerShell session, the "work terminal")
+
+Replace `OWNER`, `SLUG` (the app's slug) and `OTHER` (the second account). All the blocks below,
+except the three start-up ones, go in this **one** terminal, in this order; the variables live here
+only. The first block is typed in the folder you run from:
+
+```powershell
+$LAB = "OWNER/cicd-doctor-lab"
+$BOT = "SLUG[bot]"
+$OTHER = "OTHER"
+$APPDIR = (Get-Location).Path
+$LABDIR = "$env:TEMP\lab-p3"
+$APPDIR
+git remote get-url origin
+git branch --show-current
+```
+
+The last two lines must print the URL of the **cicd-doctor** repository (not the lab) and the branch
+you mean to run. **[READ]** Is the lab public? (`isPrivate` must be `false` for box 2.)
+
+```powershell
+gh repo view $LAB --json visibility,isPrivate
+```
+
+### A. Prepare the app (G1) **[APP]** (box 5, the first half)
+
+The commands of P3 need a permission and an event the dev app did not have. On 2026-11-20 the
+settings page showed Issues = "No access", no "Issue comment" under *Subscribe to events* and no
+`issue_comment` delivery in *Recent deliveries* (D-89). You do this by hand; no code does it.
 
 1. GitHub → Settings → Developer settings → GitHub Apps → the dev app → *Permissions & events*.
 2. *Repository permissions* → *Issues* → **Read and write**. Save.
-3. *Subscribe to events* → tick **Issue comment**. Save.
+3. *Subscribe to events* → tick **Issue comment** (it appears only after step 2). Save.
 4. Each installation (the lab and this repository) gets an email and a banner asking to accept the
-   new permission: open it and accept. Until then the event is not delivered and the 👀 token is
-   refused with 422 (diagnosis keeps working: its token does not ask for Issues, D-89).
-5. Check: *Advanced* → *Recent deliveries* shows an `issue_comment` delivery after a comment on a
-   pull request of the lab (any comment; the command itself comes with the next P3 pull requests).
+   new permission: open it and accept. Until then the event is not delivered and the token of the
+   👀 reaction is refused with 422 (the diagnosis keeps working: its token does not ask for Issues,
+   D-89).
+5. Cross-check the page with the code (`adapters/github/auth.py`, SPEC §9.6). The permissions the
+   code asks for are: Actions **read**, Checks **write**, Pull requests **write**, Issues **write**
+   (only the explain flow), Contents **read** (only the configuration file), Metadata read. The
+   events: `workflow_run` and `issue_comment`. If the page differs, stop and say so.
+6. Write down, from *Advanced* → *Recent deliveries*, the `installation` delivery with the action
+   `new_permissions_accepted` (its status must be **204**: the webhook ignores it) for each
+   installation. That is the first row of the evidence table.
+
+The check runs that are written cannot be deleted; they hang from commits of throwaway branches.
+
+### B. The limits and the key (G2) **[ENV]** **[MONEY]**
+
+Work on the **copy** of `.env` in the folder you run from; the real one in `C:\dev\cicd-doctor` stays
+as it is, so "restore" is deleting the copy. Never print the file:
+
+```powershell
+if (-not (Test-Path .env)) { Copy-Item C:\dev\cicd-doctor\.env .env }
+Select-String -Path .env -Pattern '^(OPENAI_API_KEY|OPENAI_MODEL|LLM_PRICE_INPUT_PER_MTOK|LLM_PRICE_OUTPUT_PER_MTOK)=.+' | ForEach-Object { $_.Line.Split('=')[0] }
+```
+
+It must print the four names (not the values). If one is missing, add it by hand (the model and
+the prices of D-88: `gpt-6-luna`, `0.10`, `0.50`). Then open the copy in an editor and **lower**
+two lines (add them if they are not there):
+
+```powershell
+notepad .env
+```
+
+| Line | Value for the test | Default (what the real `.env` gives) |
+|---|---|---|
+| `LLM_DAILY_BUDGET_USD` | `0.10` | `2.00` |
+| `LLM_DAILY_CALLS_PER_INSTALLATION` | `15` | `30` |
+
+(`LLM_ENABLED=true` and the key must be set; `EXPLAIN_MAX_RUNS=3` and `EXPLAIN_MAX_SUGGESTIONS=3`
+are the defaults and stay.) Restore at the end (*Clean-up*): delete this copy and close the terminals.
+
+### C. Start-up (once) **[LOCAL]**
+
+In the folder you run from. Stop old `cicd-doctor` processes first, then:
+
+```powershell
+docker compose up -d db
+uv sync
+uv run alembic upgrade head
+uv run alembic current
+```
+
+The last line must end with `0006 (head)` (P3 has no migration). Each of these in its own terminal,
+**in the same folder**:
+
+```powershell
+uv run cicd-doctor api
+```
+
+```powershell
+uv run cicd-doctor worker
+```
+
+```powershell
+npx smee-client --url https://smee.io/CHANNEL --target http://127.0.0.1:8000/webhooks/github
+```
+
+Check it in the work terminal (it must say `ready`), and wait in the worker terminal for
+`embedding model loaded in`:
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8000/ready
+```
+
+### D. The lab: files, workflow ids and the configuration (G3) **[WRITES LAB]**
+
+First publish `lab/` again (see *Publish*: `git subtree split` and `git push` to `main` of the
+lab). **Do this before the configuration below**: a commit made directly on `main` of the lab makes
+the next publish a non-fast-forward (see the clean-up). Then a clone, the ids of the workflows and
+the configuration of the set-up:
+
+```powershell
+gh repo clone $LAB $LABDIR
+Set-Location $LABDIR
+git remote get-url origin
+$WF_MODNF = gh api "repos/$LAB/actions/workflows/pr-py-modnf.yml" --jq .id
+$WF_SUGGEST = gh api "repos/$LAB/actions/workflows/pr-suggest.yml" --jq .id
+"$WF_MODNF $WF_SUGGEST"
+```
+
+Both ids must print (a 404 on `pr-suggest.yml` means the publish did not include it). The remote must
+be the **lab**. Now the configuration of boxes 1, 2, 3 and 5, straight on `main`:
+
+```powershell
+Set-Location $LABDIR
+git switch main
+git pull
+New-Item -ItemType Directory -Force .github | Out-Null
+Copy-Item "$APPDIR\lab\config\p3-on-demand.yml" .github\cicd-doctor.yml
+git add .github/cicd-doctor.yml
+git commit -m "P3 live: llm on demand"
+git push origin main
+```
+
+If the worker was already running, wait 5 minutes or restart it (the memory of the process).
+
+### E. Box 5: the first real `issue_comment` delivery (G3) **[WRITES LAB]**
+
+A plain comment (not a command) on a pull request of the lab. It also gives the pull request that
+box 1 uses:
+
+```powershell
+Set-Location $LABDIR
+git remote get-url origin
+git switch main
+git switch -c p3/explain
+Add-Content -Path p3-scratch.txt -Value "explain" -Encoding ascii
+git add p3-scratch.txt
+git commit -m "p3 explain"
+git push -u origin p3/explain
+gh pr create --repo $LAB --base main --head p3/explain --title "P3 explain" --body "Live check of P3: explain"
+$PR1 = gh pr view p3/explain --repo $LAB --json number --jq .number
+$SHA1 = git rev-parse HEAD
+gh pr comment $PR1 --repo $LAB --body "a plain comment, not a command"
+```
+
+Verification **[READ]**. In the app page (*Advanced* → *Recent deliveries*) find the `issue_comment`
+delivery of that comment: its **status must be 204**, and the app page shows its id and time. Note
+both. Then the rows on the database (a 204 stores nothing, so the table must **not** have a row for
+it):
+
+```powershell
+Set-Location $APPDIR
+docker compose exec -T db psql -U cicd -d cicd_doctor -c "SELECT delivery_id, event, action, received_at FROM webhook_deliveries WHERE event = 'issue_comment' ORDER BY received_at DESC LIMIT 5;"
+```
+
+Criterion: the delivery exists with 204 (first real delivery of the event: the permission and the
+subscription work); no `issue_comment` row yet. The 202 of an accepted command is the next box.
+If you want to see what an installation that did **not** accept does, leave this repository's
+installation without accepting in step A and comment on a pull request here: no delivery of
+`issue_comment` should appear for it (optional; write what you saw).
+
+### 1. Box 1: a collaborator's command gets 👀 and an LLM diagnosis in 90 s or less
+
+The pull request of step E has the runs of `pr-py-modnf` (it fails) and `pr-flaky` (ignored by the
+configuration). Wait for the rules diagnosis (the check and the comment, about 10 s after the run
+ends) and keep its ids **[READ]**:
+
+```powershell
+$RUN_M = gh run list --repo $LAB --branch p3/explain --workflow pr-py-modnf.yml --limit 1 --json databaseId --jq '.[0].databaseId'
+$RUN_M
+gh run watch $RUN_M --repo $LAB
+```
+
+If `$RUN_M` prints nothing the run has not started: repeat those two lines. Then:
+
+```powershell
+$checks1 = gh api "repos/$LAB/commits/$SHA1/check-runs?per_page=100" | ConvertFrom-Json
+$mine1 = @($checks1.check_runs | Where-Object { $_.name -like 'CICD Doctor*' })
+$mine1 | Select-Object id, name, status, conclusion
+$idM = $mine1[0].id
+$comments1 = gh api "repos/$LAB/issues/$PR1/comments?per_page=100" | ConvertFrom-Json
+$sticky1 = @($comments1 | Where-Object { $_.user.login -eq $BOT -and $_.body.Split("`n")[0] -like "*workflow=$WF_MODNF -->*" })
+$sticky1.Count
+$cidM = $sticky1[0].id
+$sticky1[0].body -match 'LLM on demand'
+```
+
+Criterion: **one** check `CICD Doctor: pr-py-modnf` (none for `pr-flaky`), **one** sticky comment,
+and the comment says the LLM runs on demand (`True`). Now the command, with your account (an
+`OWNER`), and the 90 s measurement. **[WRITES LAB]** **[MONEY]**:
+
+```powershell
+$URL1 = gh pr comment $PR1 --repo $LAB --body "/cicd-doctor explain"
+$CMD1 = ($URL1 -split 'issuecomment-')[1]
+$CMD1
+$T1 = gh api "repos/$LAB/issues/comments/$CMD1" --jq .created_at
+$T1
+```
+
+**Right now, within 5 minutes**, do the second half of box 2 (below: *the same command again*).
+Then, about 30 s after the command, **[READ]**:
+
+```powershell
+$rx1 = gh api "repos/$LAB/issues/comments/$CMD1/reactions" | ConvertFrom-Json
+$rx1 | Select-Object content, created_at, @{n='who';e={$_.user.login}}
+$checks1b = gh api "repos/$LAB/commits/$SHA1/check-runs?per_page=100" | ConvertFrom-Json
+$mine1b = @($checks1b.check_runs | Where-Object { $_.name -like 'CICD Doctor*' })
+$mine1b | Select-Object id, name, status, conclusion
+$mine1b[0].id -eq $idM
+$mine1b[0].output.summary -match 'gpt-6-luna'
+$mine1b[0].output.summary -match 'diag-v3'
+$comments1b = gh api "repos/$LAB/issues/$PR1/comments?per_page=100" | ConvertFrom-Json
+$sticky1b = @($comments1b | Where-Object { $_.user.login -eq $BOT -and $_.body.Split("`n")[0] -like "*workflow=$WF_MODNF -->*" })
+$sticky1b.Count
+$sticky1b[0].id -eq $cidM
+$sticky1b[0].body -match 'gpt-6-luna'
+([datetimeoffset]$rx1[0].created_at - [datetimeoffset]$T1).TotalSeconds
+([datetimeoffset]$sticky1b[0].updated_at - [datetimeoffset]$T1).TotalSeconds
+```
+
+Criterion: one reaction `eyes` of the bot (`$BOT`); the **same** check run id and the **same**
+comment id as before (`True`, `True`), now with `LLM gpt-6-luna · prompt diag-v3` in the source
+line (the three `-match` lines print `True`); the last two lines are the seconds from your comment to
+the 👀 and to the edited sticky: the second one must be **90 or less**. The worker terminal shows
+`explain acknowledged seconds_since_command=…` and `explain queued seconds_since_command=… children=1`;
+copy both. The rows **[READ]**:
+
+```powershell
+Set-Location $APPDIR
+$q = "SELECT f.run_id, d.source, d.published, d.model, d.prompt_version, "
+$q += "d.cost_usd, d.latency_ms, d.fallback_reason FROM diagnoses d "
+$q += "JOIN failures f ON f.id = d.failure_id "
+$q += "WHERE f.run_id = $RUN_M ORDER BY d.created_at;"
+docker compose exec -T db psql -U cicd -d cicd_doctor -c $q
+docker compose exec -T db psql -U cicd -d cicd_doctor -c "SELECT * FROM llm_usage ORDER BY day DESC LIMIT 2;"
+docker compose exec -T db psql -U cicd -d cicd_doctor -c "SELECT id, kind, status, attempts, dedupe_key FROM jobs WHERE dedupe_key LIKE 'explain:%' ORDER BY id DESC LIMIT 4;"
+```
+
+Criterion: for `$RUN_M` two rows: the `rules` one (`published = f`, `fallback_reason = on_demand`)
+and the `llm` one (`published = t`, with `gpt-6-luna`, `diag-v3`, a `cost_usd` of about 0.0003 to
+0.001); `llm_usage.calls` of today went up by 1; the jobs `explain:<comment id>` and its child
+`explain:<comment id>:<run id>:1` are `done`.
+
+### 2. Box 2: no permission means no reaction and no job; a second command in 5 minutes is ignored
+
+**The second half first (it has a 5 minute clock): the same command again.** Immediately after the
+command of box 1 **[WRITES LAB]**:
+
+```powershell
+$URL2 = gh pr comment $PR1 --repo $LAB --body "/cicd-doctor explain"
+$CMD2 = ($URL2 -split 'issuecomment-')[1]
+$CMD2
+```
+
+Wait about 20 s and **[READ]**:
+
+```powershell
+$rx2 = gh api "repos/$LAB/issues/comments/$CMD2/reactions" | ConvertFrom-Json
+@($rx2).Count
+Set-Location $APPDIR
+docker compose exec -T db psql -U cicd -d cicd_doctor -c "SELECT pr_number, comment_id, actor_login, created_at FROM command_invocations ORDER BY created_at DESC LIMIT 4;"
+docker compose exec -T db psql -U cicd -d cicd_doctor -c "SELECT id, kind, status, attempts, last_error FROM jobs WHERE dedupe_key = 'explain:$CMD2';"
+```
+
+Criterion: **0** reactions on the second comment; `command_invocations` has **one** row for this
+pull request (the one of `$CMD1`, none for `$CMD2`); the job `explain:<$CMD2>` exists and is `done`
+(accepted by the webhook, refused by the limit: silence, D-93); the worker terminal says
+`explain command refused by the rate limit`; the check and the comment did not change again.
+
+**The first half: an account without permissions** (G4) **[OTHER ACCOUNT]**. Log in to GitHub with
+`$OTHER` in a browser, open pull request `$PR1` of the lab and comment exactly
+`/cicd-doctor explain`. Then **[READ]**:
+
+```powershell
+$comments2 = gh api "repos/$LAB/issues/$PR1/comments?per_page=100" | ConvertFrom-Json
+$theirs = @($comments2 | Where-Object { $_.user.login -eq $OTHER })
+$theirs | Select-Object id, author_association, created_at
+$CMD3 = $theirs[0].id
+$rx3 = gh api "repos/$LAB/issues/comments/$CMD3/reactions" | ConvertFrom-Json
+@($rx3).Count
+Set-Location $APPDIR
+docker compose exec -T db psql -U cicd -d cicd_doctor -c "SELECT count(*) FROM jobs WHERE dedupe_key = 'explain:$CMD3';"
+docker compose exec -T db psql -U cicd -d cicd_doctor -c "SELECT count(*) FROM command_invocations WHERE comment_id = $CMD3;"
+```
+
+Criterion: `author_association` is `NONE` or `CONTRIBUTOR` (not `COLLABORATOR`); **0** reactions;
+**0** jobs; **0** rows. In the app page *Recent deliveries* the delivery of that comment shows
+**204**. If the lab is private, this half stays open with that reason.
+
+### 3. Box 3: a suggestion inside the diff is a review comment; outside it, text only
+
+The suggestion is the model's, so the box depends on the model suggesting a change: when it does
+not, say so in the table and retry with a new commit (a `FakeLLM` never counts). Every pull request
+here changes `python/suggest/` so that `pr-suggest` runs; `pr-py-modnf` also runs and is explained
+too (at most 2 runs, 2 model calls).
+
+**Inside the diff** (the PR edits line 8, the line ruff names) **[WRITES LAB]** **[MONEY]**:
+
+```powershell
+Set-Location $LABDIR
+git remote get-url origin
+git switch main
+git pull
+git switch -c p3/inside
+$f = "$LABDIR\python\suggest\legacy.py"
+$t = [IO.File]::ReadAllText($f)
+$t = $t.Replace("return value == None", "return value == None  # P3")
+[IO.File]::WriteAllText($f, $t)
+git diff --stat
+git add python/suggest/legacy.py
+git commit -m "p3 inside"
+git push -u origin p3/inside
+gh pr create --repo $LAB --base main --head p3/inside --title "P3 inside" --body "Live check of P3: a suggestion inside the diff"
+$PR2 = gh pr view p3/inside --repo $LAB --json number --jq .number
+$SHA2 = git rev-parse HEAD
+Start-Sleep -Seconds 10
+$RUN_S2 = gh run list --repo $LAB --branch p3/inside --workflow pr-suggest.yml --limit 1 --json databaseId --jq '.[0].databaseId'
+gh run watch $RUN_S2 --repo $LAB
+```
+
+`git diff --stat` must show one line changed. If `$RUN_S2` prints nothing, repeat the last two
+lines. When the run (and `pr-py-modnf`) have ended and the rules comment exists, the command:
+
+```powershell
+$URL4 = gh pr comment $PR2 --repo $LAB --body "/cicd-doctor explain"
+$CMD4 = ($URL4 -split 'issuecomment-')[1]
+$CMD4
+```
+
+About 40 s later **[READ]**:
+
+```powershell
+$fence = ([string][char]96) * 3
+$rc2 = gh api "repos/$LAB/pulls/$PR2/comments?per_page=100" | ConvertFrom-Json
+$mine2 = @($rc2 | Where-Object { $_.user.login -eq $BOT })
+$mine2.Count
+$mine2 | Select-Object id, path, line, start_line, side, start_side, commit_id, created_at
+$mine2[0].commit_id -eq $SHA2
+$mine2[0].body.Split("`n")[0]
+$mine2[0].body.Contains($fence + "suggestion")
+$mine2[0].body
+```
+
+Criterion: **one** review comment of the bot, on `python/suggest/legacy.py`, `side = RIGHT`,
+`commit_id` equal to `$SHA2` (`True`), whose first line is
+`<!-- cicd-doctor:v1 suggestion pr=<$PR2> failure=<uuid> -->`, with a block `suggestion` (`True`)
+and the review note "Generated automatically from untrusted logs: review it before you apply it.".
+For one line, `line` is 8 and `start_line` is empty: that **is** the shape of a single-line
+comment. The sticky comment of `pr-suggest` says "Suggested change posted as a review comment":
+
+```powershell
+$comments4 = gh api "repos/$LAB/issues/$PR2/comments?per_page=100" | ConvertFrom-Json
+$sticky4 = @($comments4 | Where-Object { $_.user.login -eq $BOT -and $_.body.Split("`n")[0] -like "*workflow=$WF_SUGGEST -->*" })
+$sticky4[0].body -match 'Suggested change posted as a review comment'
+Set-Location $APPDIR
+$q = "SELECT f.run_id, d.source, d.published, d.prompt_version, "
+$q += "d.suggestion IS NOT NULL AS has_suggestion, d.suggestion "
+$q += "FROM diagnoses d JOIN failures f ON f.id = d.failure_id "
+$q += "WHERE f.run_id = $RUN_S2 ORDER BY d.created_at;"
+docker compose exec -T db psql -U cicd -d cicd_doctor -c $q
+```
+
+If there is **no** review comment: read `has_suggestion` and `suggested_fix` (the model may have
+suggested nothing, or the validation dropped it, in which case the sticky has no "Suggested change"
+line and the fix is plain text). Then the box stays open with that reason: it is not a bug.
+
+**Outside the diff** (the PR edits only `notes.py`; `legacy.py` fails all the same, so the
+model gets no diff and no suggestion can be posted) **[WRITES LAB]** **[MONEY]**:
+
+```powershell
+Set-Location $LABDIR
+git remote get-url origin
+git switch main
+git switch -c p3/outside
+$g = "$LABDIR\python\suggest\notes.py"
+$u = [IO.File]::ReadAllText($g)
+$u = $u.Replace("P3 live verification", "P3 outside")
+[IO.File]::WriteAllText($g, $u)
+git add python/suggest/notes.py
+git commit -m "p3 outside"
+git push -u origin p3/outside
+gh pr create --repo $LAB --base main --head p3/outside --title "P3 outside" --body "Live check of P3: a suggestion outside the diff"
+$PR3 = gh pr view p3/outside --repo $LAB --json number --jq .number
+$SHA3 = git rev-parse HEAD
+Start-Sleep -Seconds 10
+$RUN_S3 = gh run list --repo $LAB --branch p3/outside --workflow pr-suggest.yml --limit 1 --json databaseId --jq '.[0].databaseId'
+gh run watch $RUN_S3 --repo $LAB
+```
+
+Then the command, and the check about 40 s later:
+
+```powershell
+$URL5 = gh pr comment $PR3 --repo $LAB --body "/cicd-doctor explain"
+$CMD5 = ($URL5 -split 'issuecomment-')[1]
+$CMD5
+```
+
+```powershell
+$rc3 = gh api "repos/$LAB/pulls/$PR3/comments?per_page=100" | ConvertFrom-Json
+@($rc3 | Where-Object { $_.user.login -eq $BOT }).Count
+$comments5 = gh api "repos/$LAB/issues/$PR3/comments?per_page=100" | ConvertFrom-Json
+$sticky5 = @($comments5 | Where-Object { $_.user.login -eq $BOT -and $_.body.Split("`n")[0] -like "*workflow=$WF_SUGGEST -->*" })
+$sticky5[0].body -match 'gpt-6-luna'
+$sticky5[0].body -match 'Suggested change'
+Set-Location $APPDIR
+$q = "SELECT f.run_id, d.source, d.published, "
+$q += "d.suggestion IS NOT NULL AS has_suggestion, "
+$q += "left(d.suggested_fix, 120) AS fix FROM diagnoses d "
+$q += "JOIN failures f ON f.id = d.failure_id "
+$q += "WHERE f.run_id = $RUN_S3 ORDER BY d.created_at;"
+docker compose exec -T db psql -U cicd -d cicd_doctor -c $q
+```
+
+Criterion: **0** review comments; the sticky has the `llm` diagnosis (`True`) with the fix as text
+and **no** "Suggested change" line (`False`: the validation dropped a suggestion that could not be
+inside a shown hunk, or the model gave none); `has_suggestion = f`.
+
+**Measure what GitHub answers (G5) [PROBE]** This is the part that only the real API can tell
+(the documentation lists only 403 and 422 for a comment outside the diff and says nothing of `suggestion`). The app treats **any** 422 as "text only"; this records
+what GitHub says. It writes **review comments of your account** on pull request `$PR2`: the first
+two are expected to be refused (nothing is created), the third is created and **deleted** at once.
+The line of the first one does not exist; the line of the second exists but is outside the hunk:
+
+```powershell
+gh api -X POST "repos/$LAB/pulls/$PR2/comments" -f body="422 probe" -f commit_id=$SHA2 -f path="python/suggest/legacy.py" -F line=9999 -f side=RIGHT
+```
+
+```powershell
+gh api -X POST "repos/$LAB/pulls/$PR2/comments" -f body="422 probe" -f commit_id=$SHA2 -f path="python/suggest/legacy.py" -F line=1 -f side=RIGHT
+```
+
+Copy the **whole** answer of each (the status and the JSON `message` and `errors`) into the evidence
+table. If one of them is **accepted** (a comment is created), delete it:
+`gh api -X DELETE repos/$LAB/pulls/comments/<id>` and write that down: it means the app's 422 branch
+would not be reached for that case. Now the multi-line shape, on lines 7 and 8 (both inside the hunk):
+
+```powershell
+$pc = "repos/$LAB/pulls/$PR2/comments"
+$multi = gh api -X POST $pc -f body="range probe" -f commit_id=$SHA2 -f path="python/suggest/legacy.py" -F start_line=7 -F line=8 -f start_side=RIGHT -f side=RIGHT | ConvertFrom-Json
+$multi | Select-Object id, path, start_line, line, original_start_line, original_line, start_side, side, position
+gh api -X DELETE "repos/$LAB/pulls/comments/$($multi.id)"
+```
+
+Criterion: `start_line = 7`, `line = 8`, `start_side = RIGHT`, `side = RIGHT` is the shape that
+`GitHubReporter.post_suggestion` sends for a range (`start_line` below `line`). Write the printed
+object in the table; if GitHub answers differently (a 422, a different pair), the adapter needs a
+fix PR with its own D-NN. The comment is deleted by the last line (check with
+`gh api repos/$LAB/pulls/$PR2/comments --jq length`: the app's comment only).
+
+### 4. Box 4: the configuration (G3) **[WRITES LAB]**
+
+Every state of the file is on `main` of the lab; after each change wait 5 minutes or restart the
+worker. Pull requests of this box add nothing to `python/suggest/`, so only `pr-py-modnf` runs.
+
+**4a. `comment: false` on the default branch.** Put the file on `main`:
+
+```powershell
+Set-Location $LABDIR
+git remote get-url origin
+git switch main
+git pull
+Copy-Item "$APPDIR\lab\config\p3-comment-off.yml" .github\cicd-doctor.yml
+git add .github/cicd-doctor.yml
+git commit -m "P3 live: comment false"
+git push origin main
+```
+
+After the 5 minutes (or the restart), a new pull request that fails:
+
+```powershell
+git switch -c p3/cfg-off
+Add-Content -Path p3-scratch.txt -Value "cfg-off" -Encoding ascii
+git add p3-scratch.txt
+git commit -m "p3 cfg off"
+git push -u origin p3/cfg-off
+gh pr create --repo $LAB --base main --head p3/cfg-off --title "P3 comment false" --body "Live check of P3: comment false"
+$PR4 = gh pr view p3/cfg-off --repo $LAB --json number --jq .number
+$SHA4 = git rev-parse HEAD
+Start-Sleep -Seconds 10
+$RUN_C = gh run list --repo $LAB --branch p3/cfg-off --workflow pr-py-modnf.yml --limit 1 --json databaseId --jq '.[0].databaseId'
+gh run watch $RUN_C --repo $LAB
+```
+
+Verification **[READ]** (wait 30 s after the run ends):
+
+```powershell
+$checks4 = gh api "repos/$LAB/commits/$SHA4/check-runs?per_page=100" | ConvertFrom-Json
+@($checks4.check_runs | Where-Object { $_.name -like 'CICD Doctor*' }) | Select-Object id, name, status, conclusion
+$comments6 = gh api "repos/$LAB/issues/$PR4/comments?per_page=100" | ConvertFrom-Json
+@($comments6 | Where-Object { $_.user.login -eq $BOT }).Count
+```
+
+Criterion: **one** check `CICD Doctor: pr-py-modnf` (`neutral`; none for `pr-flaky`, which is
+ignored) and **0** comments of the bot.
+
+**4b. The same file only in a PR branch has no effect.** The branch changes
+`.github/cicd-doctor.yml` to `comment: true` and `llm: "off"` while `main` still says
+`comment: false` and `llm: on_demand`:
+
+```powershell
+Set-Location $LABDIR
+git remote get-url origin
+git switch main
+git switch -c p3/cfg-branch
+Copy-Item "$APPDIR\lab\config\p3-branch-only.yml" .github\cicd-doctor.yml
+git add .github/cicd-doctor.yml
+git commit -m "p3 cfg branch"
+git push -u origin p3/cfg-branch
+gh pr create --repo $LAB --base main --head p3/cfg-branch --title "P3 config only in the branch" --body "Live check of P3: the file of the branch is not read"
+$PR5 = gh pr view p3/cfg-branch --repo $LAB --json number --jq .number
+$SHA5 = git rev-parse HEAD
+Start-Sleep -Seconds 10
+$RUN_B = gh run list --repo $LAB --branch p3/cfg-branch --workflow pr-py-modnf.yml --limit 1 --json databaseId --jq '.[0].databaseId'
+gh run watch $RUN_B --repo $LAB
+```
+
+Verification **[READ]** (30 s after the run ends): if the file of the branch were read, the
+comment would appear (`comment: true`).
+
+```powershell
+$checks5 = gh api "repos/$LAB/commits/$SHA5/check-runs?per_page=100" | ConvertFrom-Json
+@($checks5.check_runs | Where-Object { $_.name -like 'CICD Doctor*' }) | Select-Object id, name, status, conclusion
+$comments7 = gh api "repos/$LAB/issues/$PR5/comments?per_page=100" | ConvertFrom-Json
+@($comments7 | Where-Object { $_.user.login -eq $BOT }).Count
+```
+
+Criterion: the check exists and **0** comments of the bot (the behaviour of `main`). The command is
+a second proof, because the branch says `llm: "off"` (a 😕 if it were read) and `main` says
+`on_demand` (a 👀 and an LLM diagnosis in the check) **[WRITES LAB]** **[MONEY]**:
+
+```powershell
+$URL6 = gh pr comment $PR5 --repo $LAB --body "/cicd-doctor explain"
+$CMD6 = ($URL6 -split 'issuecomment-')[1]
+Start-Sleep -Seconds 45
+$rx6 = gh api "repos/$LAB/issues/comments/$CMD6/reactions" | ConvertFrom-Json
+$rx6 | Select-Object content, created_at
+$checks5b = gh api "repos/$LAB/commits/$SHA5/check-runs?per_page=100" | ConvertFrom-Json
+@($checks5b.check_runs | Where-Object { $_.name -like 'CICD Doctor*' })[0].output.summary -match 'gpt-6-luna'
+@(gh api "repos/$LAB/issues/$PR5/comments?per_page=100" | ConvertFrom-Json | Where-Object { $_.user.login -eq $BOT }).Count
+```
+
+Criterion: the reaction is `eyes` (not `confused`), the check now says `gpt-6-luna` (`True`) and
+there is still no comment of the bot (`0`; with `comment: false` the explain edits the check only,
+D-91).
+
+**4c. An invalid file on the default branch turns the LLM off.**
+
+```powershell
+Set-Location $LABDIR
+git remote get-url origin
+git switch main
+Copy-Item "$APPDIR\lab\config\p3-invalid.yml" .github\cicd-doctor.yml
+git add .github/cicd-doctor.yml
+git commit -m "P3 live: invalid configuration"
+git push origin main
+```
+
+After the 5 minutes (or the restart), a new pull request, its failure and the command:
+
+```powershell
+git switch -c p3/cfg-invalid
+Add-Content -Path p3-scratch.txt -Value "cfg-invalid" -Encoding ascii
+git add p3-scratch.txt
+git commit -m "p3 cfg invalid"
+git push -u origin p3/cfg-invalid
+gh pr create --repo $LAB --base main --head p3/cfg-invalid --title "P3 invalid configuration" --body "Live check of P3: invalid file"
+$PR6 = gh pr view p3/cfg-invalid --repo $LAB --json number --jq .number
+$SHA6 = git rev-parse HEAD
+Start-Sleep -Seconds 10
+$RUN_I = gh run list --repo $LAB --branch p3/cfg-invalid --workflow pr-py-modnf.yml --limit 1 --json databaseId --jq '.[0].databaseId'
+gh run watch $RUN_I --repo $LAB
+```
+
+```powershell
+$URL7 = gh pr comment $PR6 --repo $LAB --body "/cicd-doctor explain"
+$CMD7 = ($URL7 -split 'issuecomment-')[1]
+Start-Sleep -Seconds 30
+$rx7 = gh api "repos/$LAB/issues/comments/$CMD7/reactions" | ConvertFrom-Json
+$rx7 | Select-Object content, created_at
+$checks6 = gh api "repos/$LAB/commits/$SHA6/check-runs?per_page=100" | ConvertFrom-Json
+@($checks6.check_runs | Where-Object { $_.name -like 'CICD Doctor*' })[0].output.summary -match 'configuration is invalid'
+Set-Location $APPDIR
+docker compose exec -T db psql -U cicd -d cicd_doctor -c "SELECT f.run_id, d.source, d.published, d.fallback_reason FROM diagnoses d JOIN failures f ON f.id = d.failure_id WHERE f.run_id = $RUN_I;"
+```
+
+Criterion: the check says "The repository configuration is invalid: `llm`; LLM turned off." (`True`),
+the only diagnosis of the run is `rules` with `fallback_reason = config_off`, and the command gets
+**two** reactions in order: `eyes` (accepted) then `confused` (the LLM is off, D-96), with no model
+call (`llm_usage.calls` does not move).
+
+### Clean-up (restore by hand)
+
+```powershell
+gh pr close $PR1 --repo $LAB --delete-branch
+gh pr close $PR2 --repo $LAB --delete-branch
+gh pr close $PR3 --repo $LAB --delete-branch
+gh pr close $PR4 --repo $LAB --delete-branch
+gh pr close $PR5 --repo $LAB --delete-branch
+gh pr close $PR6 --repo $LAB --delete-branch
+```
+
+Then, **[WRITES LAB]**, take the test file out of `main` of the lab (the lab has no configuration by
+default):
+
+```powershell
+Set-Location $LABDIR
+git remote get-url origin
+git switch main
+git pull
+git rm .github/cicd-doctor.yml
+git commit -m "P3 live: remove the test configuration"
+git push origin main
+```
+
+By hand: stop the API, the worker and smee; **delete the `.env` copy** of the folder you ran from
+(that restores the limits: the real `.env` was never edited); the key stays in the real `.env` as it
+was; remove the worktree if it was one (`CLAUDE.md`, *Branches and worktrees*). The lab now has two
+extra commits on `main`: the next *Publish* will be refused as a non-fast-forward; decide then
+whether to push with `--force` (the lab is a throwaway mirror) or to rebuild it. The check runs
+cannot be deleted.
+
+### G6. Optional: the live injection suite with the 14 new cases **[MONEY]**
+
+The 14 cases that carry a diff (D-99) have never run against the real model. They cost about USD
+0.01 and need the key of the `.env` copy; they write nothing to GitHub:
+
+```powershell
+Set-Location $APPDIR
+uv run pytest -m live tests/live/test_live_injection.py
+```
+
+Criterion: it passes (0 attacks won) in about a minute. Write the count of passed tests in the table.
+
+### The fork box stays open
+
+A command on a pull request **from a fork** (SPEC §13 P3 box 1, "including on a fork PR"; D-94;
+`pull_request_target` and R-P3-5) needs an organization (or a second account) that holds a fork of
+the lab: the fork's pull request must be opened from a repository that is not the lab, and the
+account that comments must still be an `OWNER`, `MEMBER` or `COLLABORATOR` of the lab. That
+organization does not exist yet, so the fork half **stays open**. What would be checked, and with
+which evidence, when it exists: the 👀, a `llm` diagnosis for the fork run (`is_fork = t`), that the
+`llm` row never appears in `cached_diagnosis` or as a similar failure of a normal run, and the
+`is_fork` of a `pull_request_target` run. Meanwhile it is covered by the offline tests of D-94 and
+`tests/e2e/test_explain_runs_e2e.py`.
+
+### The evidence (paste what you observed)
+
+Fill the **Observed** column with the real value (id, status, seconds, a row). A box is ticked in
+SPEC §13 only from here; an empty cell means not observed.
+
+| # | Box | What to paste | Expected | Observed |
+|---|---|---|---|---|
+| 1 | 5 | Recent deliveries: id, time and status of `installation` / `new_permissions_accepted` (lab, this repo) | 204 | |
+| 2 | 5 | Recent deliveries: id, time and status of the plain `issue_comment` of step E | 204, no row in `webhook_deliveries` | |
+| 3 | 5 | Recent deliveries: id, time and status of the first command (`$CMD1`) | 202 | |
+| 4 | 1 | `$CMD1`, `$T1`, reaction `eyes` and its `created_at` | `eyes` of `$BOT` | |
+| 5 | 1 | Seconds from `$T1` to the edited sticky (last line of the block) | 90 or less | |
+| 6 | 1 | Worker lines `explain acknowledged` and `explain queued` with `seconds_since_command` | both present | |
+| 7 | 1 | Same check run id and comment id before and after; `gpt-6-luna · diag-v3` in both | `True`, `True`, `True` | |
+| 8 | 1 | `diagnoses` of `$RUN_M`: rules unpublished (`on_demand`), `llm` published, `cost_usd`; `llm_usage.calls` | 1 call more | |
+| 9 | 2 | `$CMD2`: reactions, `command_invocations` rows, job `done` | 0 reactions, 1 row, `done` | |
+| 10 | 2 | `$CMD3` of `$OTHER`: `author_association`, reactions, jobs, rows; delivery status | `NONE`/`CONTRIBUTOR`, 0, 0, 0, 204 | |
+| 11 | 3 | Review comment of the bot on `$PR2`: id, `path`, `line`, `start_line`, `commit_id`, first line, `suggestion` block | one comment, `line` 8, `True` | |
+| 12 | 3 | Sticky of `pr-suggest` on `$PR2`: "Suggested change posted…" | `True` | |
+| 13 | 3 | `$PR3`: review comments of the bot; "Suggested change" in the sticky; `has_suggestion` | 0; `False`; `f` | |
+| 14 | 3 | **422 probe** `line=9999`: the whole answer (status, `message`, `errors`) | a 422 (write the text) | |
+| 15 | 3 | **422 probe** `line=1`: the whole answer | a 422 (write the text) | |
+| 16 | 3 | **Range probe** lines 7 to 8: `start_line`, `line`, `start_side`, `side`, `position` | 7, 8, RIGHT, RIGHT | |
+| 17 | 4 | `$PR4` (`comment: false`): check run id; comments of the bot | 1 check, 0 comments | |
+| 18 | 4 | `$PR5` (the file only in the branch): comments of the bot; reaction; `gpt-6-luna` in the check | 0; `eyes`; `True` | |
+| 19 | 4 | `$PR6` (invalid file): "configuration is invalid" in the check; `fallback_reason`; reactions | `True`; `config_off`; `eyes`, `confused` | |
+| 20 | all | `llm_usage` of the day at the end: `calls`, `spent_usd` | 0.10 USD cap not reached | |
+| 21 | G6 | `pytest -m live tests/live/test_live_injection.py`: result | passed, 0 attacks won | |
+| 22 | fork | Why it stays open | no organization for the fork | |

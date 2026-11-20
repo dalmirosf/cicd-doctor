@@ -12,8 +12,13 @@ from typing import Any
 import pytest
 import yaml
 
-from cicd_doctor.core.models import Category
+from cicd_doctor.adapters.memory import CharTokenCounter
+from cicd_doctor.core.diff import select_for_prompt
+from cicd_doctor.core.models import Category, DiffFile
+from cicd_doctor.core.repo_config import effective_llm, ignores, parse_repo_config
 from evals.runner.capture import load_manifest
+from tests.diffs import patch_of, pull_diff
+from tests.llmcases import make_excerpt
 
 LAB = Path(__file__).resolve().parents[2] / "lab"
 WORKFLOWS = LAB / ".github" / "workflows"
@@ -23,6 +28,8 @@ CASES = {case.id: case for case in MANIFEST.cases}
 LIVE_WORKFLOWS = {"pr-py-modnf.yml": "py-modnf"}
 # Live verification of P2: a flaky simulated by the run attempt, not a case of the evals.
 FLAKY_LIVE_WORKFLOW = "pr-flaky.yml"
+# Live verification of P3: the failure of a line that a pull request changes (suggestions).
+SUGGEST_LIVE_WORKFLOW = "pr-suggest.yml"
 
 
 def _workflow(name: str) -> dict[Any, Any]:
@@ -34,7 +41,8 @@ def _workflow(name: str) -> dict[Any, Any]:
 def test_case_ids_are_unique_and_every_workflow_has_a_case() -> None:
     assert len(CASES) == len(MANIFEST.cases)
     assert {case.workflow for case in MANIFEST.cases} | LIVE_WORKFLOWS.keys() | {
-        FLAKY_LIVE_WORKFLOW
+        FLAKY_LIVE_WORKFLOW,
+        SUGGEST_LIVE_WORKFLOW,
     } == {p.name for p in WORKFLOWS.glob("*.yml")}
 
 
@@ -112,3 +120,68 @@ def test_simulated_flaky_workflow_fails_in_attempt_one_and_passes_after() -> Non
     assert "timeout-minutes" in workflow["jobs"]["run"]
     assert 'if [ "$GITHUB_RUN_ATTEMPT" = 1 ]; then' in script
     assert "exit 1" in script
+
+
+def test_suggest_workflow_fails_on_a_named_line_of_a_file_that_the_diff_can_hold() -> None:
+    workflow = _workflow(SUGGEST_LIVE_WORKFLOW)
+    triggers = workflow.get("on", workflow.get(True))
+    job = workflow["jobs"]["run"]
+    script = "\n".join(step.get("run", "") for step in job["steps"] if isinstance(step, dict))
+
+    assert triggers == {"pull_request": {"paths": ["python/suggest/**"]}}
+    assert workflow["name"] == "pr-suggest"
+    assert workflow["permissions"] == {"contents": "read"}
+    assert "timeout-minutes" in job
+    assert "working-directory" not in str(job)  # the log must name the path as the diff does
+    assert "python/suggest/legacy.py" in script
+    assert "--output-format concise" in script  # path:line:col right after the path
+    legacy = (LAB / "python" / "suggest" / "legacy.py").read_text("utf-8")
+    assert len(re.findall(r"[=!]= None", legacy)) == 1  # one failure, on main
+    assert "None" not in (LAB / "python" / "suggest" / "notes.py").read_text("utf-8")
+
+
+@pytest.mark.parametrize(
+    ("name", "state", "llm", "comment"),
+    [
+        ("p3-on-demand.yml", "file", "on_demand", True),
+        ("p3-comment-off.yml", "file", "on_demand", False),
+        ("p3-branch-only.yml", "file", "off", True),
+        ("p3-invalid.yml", "invalid", "off", True),
+    ],
+)
+def test_p3_config_samples_say_what_the_runbook_expects(
+    name: str, state: str, llm: str, comment: bool
+) -> None:
+    loaded = parse_repo_config((LAB / "config" / name).read_text("utf-8"))
+
+    assert loaded.state == state
+    assert effective_llm(loaded) == llm
+    assert loaded.config.comment is comment
+    assert ignores(loaded, "pr-flaky") is (name in {"p3-on-demand.yml", "p3-comment-off.yml"})
+
+
+def test_the_log_of_pr_suggest_makes_the_diff_reach_the_model_only_when_the_file_is_in_it() -> None:
+    log = [
+        "##[group]Run uvx ruff check --isolated --select E711 --output-format concise "
+        "python/suggest/legacy.py",
+        "python/suggest/legacy.py:8:12: E711 [*] Comparison to `None` should be `cond is None`",
+        "Found 2 errors.",
+    ]
+    excerpt = make_excerpt(log)
+    legacy = DiffFile(
+        filename="python/suggest/legacy.py",
+        status="modified",
+        patch=patch_of(
+            (5, 5, [" ", " ", " def is_missing(value: object) -> bool:", "-    old", "+    new"])
+        ),
+    )
+    notes = DiffFile(
+        filename="python/suggest/notes.py", status="modified", patch=patch_of((3, 3, ["+x"]))
+    )
+
+    inside = select_for_prompt(pull_diff(legacy, notes), excerpt, CharTokenCounter())
+    outside = select_for_prompt(pull_diff(notes), excerpt, CharTokenCounter())
+
+    assert inside is not None
+    assert [file.path for file in inside.files] == ["python/suggest/legacy.py"]
+    assert outside is None  # the model gets no diff, so no suggestion can be posted

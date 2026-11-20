@@ -1,0 +1,6 @@
+# P3 live verification, boxes 1 and 3: the LLM runs only on `/cicd-doctor explain`, so every first
+# diagnosis is rules-only and the command has something to upgrade. pr-flaky is left out to keep
+# the commands at one or two runs. Copied by hand to .github/cicd-doctor.yml of the lab.
+llm: on_demand
+ignore_workflows:
+  - pr-flaky
