@@ -29,6 +29,7 @@ from evals.runner.live import (
     parse_prices,
 )
 from evals.runner.prune import prune, used_entries
+from evals.runner.public_cli import PUBLIC_COMMANDS, add_public_commands, run_public
 from evals.runner.recording import BudgetExceeded, SpendGuard
 from evals.runner.report import DEFAULT_REPORTS_DIR, write_report
 from evals.runner.run import EvalError, run_evals
@@ -142,6 +143,8 @@ def build_parser() -> argparse.ArgumentParser:
     cap.add_argument("--case", action="append", help="case id in lab/cases.yaml (repeatable)")
     cap.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
     cap.add_argument("--out-dir", type=Path, default=DEFAULT_CASES_DIR / "lab")
+
+    add_public_commands(commands)
     return parser
 
 
@@ -156,6 +159,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return calibrate(args)
         if args.command == "write-injection":
             return _write_injection()
+        if args.command in PUBLIC_COMMANDS:
+            return run_public(args)
         return _capture(args)
     except BudgetExceeded as exc:
         print(
