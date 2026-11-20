@@ -44,6 +44,12 @@ DIAGNOSIS_PERMISSIONS: Permissions = frozenset(
     {("actions", "read"), ("checks", "write"), ("pull_requests", "write")}
 )
 
+# D-89: ``explain`` also reacts to the command comment (Issues write); the config file is read with
+# Contents read. Separate sets: a permission the installation has not accepted yet must not break
+# the diagnosis token above.
+EXPLAIN_PERMISSIONS: Permissions = DIAGNOSIS_PERMISSIONS | {("issues", "write")}
+CONFIG_PERMISSIONS: Permissions = frozenset({("contents", "read")})
+
 JWT_ALGORITHM = "RS256"
 JWT_BACKDATE = timedelta(seconds=60)  # ``iat`` in the past: absorbs a slow local clock
 JWT_LIFETIME = timedelta(minutes=9)  # GitHub accepts up to 10

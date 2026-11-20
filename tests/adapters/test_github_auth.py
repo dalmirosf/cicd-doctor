@@ -20,7 +20,9 @@ from pydantic import SecretStr
 
 from cicd_doctor.adapters.clock import FakeClock
 from cicd_doctor.adapters.github.auth import (
+    CONFIG_PERMISSIONS,
     DIAGNOSIS_PERMISSIONS,
+    EXPLAIN_PERMISSIONS,
     AppIdentity,
     GitHubAppAuth,
     load_private_key,
@@ -626,3 +628,59 @@ async def test_no_key_jwt_or_token_reaches_a_message_a_log_or_a_repr(
     assert len(secrets) >= 5  # tokens, JWTs, the key and the canary were all really in play
     for secret in secrets:
         assert not any(secret in text for text in texts), f"a {len(secret)}-character secret leaked"
+
+
+# --- the permission sets of P3 (D-89) -----------------------------------------------------------
+
+
+def test_the_explain_permissions_are_the_diagnosis_ones_plus_issues_write() -> None:
+    assert {("issues", "write")} == EXPLAIN_PERMISSIONS - DIAGNOSIS_PERMISSIONS
+    assert DIAGNOSIS_PERMISSIONS <= EXPLAIN_PERMISSIONS
+
+
+def test_the_diagnosis_permissions_never_include_issues_or_contents() -> None:
+    assert not {name for name, _ in DIAGNOSIS_PERMISSIONS} & {"issues", "contents"}
+    assert {("contents", "read")} == CONFIG_PERMISSIONS
+
+
+async def test_an_explain_token_asks_for_exactly_its_set(
+    http: GitHubHttp, auth: GitHubAppAuth, github: FakeGitHub
+) -> None:
+    github.installations[INSTALLATION_ID].permissions["issues"] = "write"
+    credential = auth.installation_credential(INSTALLATION_ID, REPO_ID, EXPLAIN_PERMISSIONS)
+
+    await http.request("GET", PING, path={"owner": "a", "repo": "b"}, credential=credential)
+
+    assert token_requests(github)[0].json == {
+        "repository_ids": [REPO_ID],
+        "permissions": {
+            "actions": "read",
+            "checks": "write",
+            "issues": "write",
+            "pull_requests": "write",
+        },
+    }
+
+
+async def test_an_installation_without_issues_write_refuses_explain_but_not_the_diagnosis(
+    http: GitHubHttp, auth: GitHubAppAuth, github: FakeGitHub
+) -> None:
+    explain = auth.installation_credential(INSTALLATION_ID, REPO_ID, EXPLAIN_PERMISSIONS)
+    with pytest.raises(GitHubPermanentError) as caught:
+        await http.request("GET", PING, path={"owner": "a", "repo": "b"}, credential=explain)
+    assert caught.value.status_code == 422
+    assert UNAVAILABLE in str(caught.value)
+
+    await ping(http, auth)  # the diagnosis token is untouched by the missing permission
+
+    assert len(pings(github)) == 1
+
+
+async def test_a_config_token_carries_only_contents_read(
+    http: GitHubHttp, auth: GitHubAppAuth, github: FakeGitHub
+) -> None:
+    credential = auth.installation_credential(INSTALLATION_ID, REPO_ID, CONFIG_PERMISSIONS)
+
+    await http.request("GET", PING, path={"owner": "a", "repo": "b"}, credential=credential)
+
+    assert token_requests(github)[0].json["permissions"] == {"contents": "read"}
