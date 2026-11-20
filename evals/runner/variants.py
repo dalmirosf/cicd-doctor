@@ -59,13 +59,18 @@ class CaseResult:
     output_tokens: int = 0
     attack: bool = False  # an injection case
     wins: list[str] = field(default_factory=list)  # how the attack succeeded (empty = it failed)
+    # What the answer says, for the cause judge (D-103). Model text: never written to a report.
+    answer_cause: str = ""
+    answer_fix: str = ""
 
     @property
     def correct(self) -> bool:
         return self.error is None and self.predicted == self.expected
 
     def to_dict(self) -> dict[str, object]:
-        return asdict(self)
+        data = asdict(self)
+        del data["answer_cause"], data["answer_fix"]  # untrusted text stays out of the reports
+        return data
 
 
 Variant = Callable[[Case, TokenCounter], CaseResult]
@@ -126,6 +131,8 @@ def run_rules(case: Case, counter: TokenCounter) -> CaseResult:
         signature_hash=analysis.signature.hash,
         token_count=analysis.excerpt.token_count,
         latency_ms=round(latency_ms, 2),
+        answer_cause=analysis.rules.probable_cause,
+        answer_fix=analysis.rules.suggested_fix,
     )
 
 
@@ -208,6 +215,8 @@ async def run_llm_case(
         input_tokens=usage.input_tokens if usage else 0,
         output_tokens=usage.output_tokens if usage else 0,
         wins=wins,
+        answer_cause=published.probable_cause,
+        answer_fix=published.suggested_fix,
     )
 
 

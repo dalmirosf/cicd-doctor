@@ -18,6 +18,7 @@ from evals.runner.capture import (
 )
 from evals.runner.cases import DEFAULT_CASES_DIR, SOURCES
 from evals.runner.injection import write_cases
+from evals.runner.judge_cli import add_calibrate_command, add_run_arguments, apply_judge, calibrate
 from evals.runner.live import (
     DEFAULT_CACHE_DIR,
     DEFAULT_MAX_CALLS,
@@ -120,6 +121,8 @@ def build_parser() -> argparse.ArgumentParser:
     prune_cmd.add_argument("--model", help="comma-separated model ids (default: OPENAI_MODEL)")
     prune_cmd.add_argument("--answers-dir", type=Path, default=DEFAULT_CACHE_DIR)
     prune_cmd.add_argument("--apply", action="store_true", help="delete (default: dry run)")
+    add_run_arguments(run)
+    add_calibrate_command(commands)
 
     commands.add_parser(
         "write-injection",
@@ -149,6 +152,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return _run(args)
         if args.command == "prune":
             return _prune(args)
+        if args.command == "calibrate":
+            return calibrate(args)
         if args.command == "write-injection":
             return _write_injection()
         return _capture(args)
@@ -198,6 +203,7 @@ def _run(args: argparse.Namespace) -> int:
     report = run_evals(
         args.variant, sources, args.cases_dir, TiktokenCounter(), llms=llms, embedder=embedder
     )
+    report = apply_judge(args, report, sources)
     json_path, md_path = write_report(report, args.out_dir)
     if guard is not None:
         spent = f"${guard.cost_usd:.4f} of ${guard.max_cost_usd}"
