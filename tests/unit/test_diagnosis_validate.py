@@ -169,7 +169,7 @@ def _suggestion(path: str = "pyproject.toml", start: int = 3, end: int = 4) -> L
 
 @pytest.mark.parametrize(
     "path",
-    ["pyproject.toml", "src/app/main.py", "a b/c.txt", ".github/workflows/ci.yml", "dir\\file.py"],
+    ["pyproject.toml", "src/app/main.py", "a b/c.txt", ".github/workflows/ci.yml"],
 )
 def test_a_relative_path_inside_the_repository_is_kept(path: str) -> None:
     kept = checked_suggestion(_suggestion(path), DIFF)
@@ -187,6 +187,7 @@ def test_a_relative_path_inside_the_repository_is_kept(path: str) -> None:
         "/etc/passwd",
         "\\\\server\\share\\x",
         "C:\\Windows\\x",
+        "dir\\file.py",
         "c:relative",
         "~/.ssh/config",
         "",

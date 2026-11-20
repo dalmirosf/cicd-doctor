@@ -101,6 +101,8 @@ def test_a_renamed_file_is_addressed_by_its_new_name() -> None:
         ("/etc/passwd", False),
         ("~/x", False),
         ("C:\\x", False),
+        ("a\\..\\b", False),
+        ("a\\b", False),
         ("a\x00b", False),
         ("a\nb", False),
         ("x" * 300, False),
@@ -120,7 +122,16 @@ def test_a_clean_replacement_loses_its_trailing_line_breaks_only() -> None:
 
 @pytest.mark.parametrize(
     "text",
-    ["", "   ", "\n\n", "x\x00y", "x\x1b[31m", "y" * 2001],
+    [
+        "",
+        "   ",
+        "\n\n",
+        "x\x00y",
+        "x\x1b[31m",
+        "y" * 2001,
+        "if x: " + chr(0x202E) + "# " + chr(0x2066),  # bidirectional controls
+        "a" + chr(0x2028) + "b",  # a Unicode line separator
+    ],
 )
 def test_an_empty_odd_or_oversized_replacement_is_refused(text: str) -> None:
     assert clean_replacement(text) is None

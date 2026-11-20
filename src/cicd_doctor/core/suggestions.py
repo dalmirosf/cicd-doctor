@@ -19,7 +19,14 @@ MAX_PATH_CHARS = 260
 _DRIVE = re.compile(r"^[A-Za-z]:")
 _CONTROL = re.compile(r"[\x00-\x1f\x7f]")
 # Controls that cannot be part of source text (a tab and the line breaks can).
-_BAD_REPLACEMENT_CHARS = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+# Also the bidirectional controls and the Unicode line separators: one click would commit text
+# that reads differently from what it does ("Trojan Source").
+_BAD_REPLACEMENT_CHARS = re.compile(
+    r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f\x85"
+    + "".join(chr(code) for code in (0x200E, 0x200F, 0x2028, 0x2029))
+    + "".join(f"{chr(a)}-{chr(b)}" for a, b in ((0x202A, 0x202E), (0x2066, 0x2069)))
+    + "]"
+)
 
 
 def suggestion_marker(pr_number: int, failure_id: object) -> str:
@@ -30,11 +37,12 @@ def suggestion_marker(pr_number: int, failure_id: object) -> str:
 
 def safe_path(path: str) -> bool:
     """A path relative to the repository root that stays inside it."""
-    segments = re.split(r"[\/]", path)
+    segments = path.split("/")
     return not (
         not path
         or len(path) > MAX_PATH_CHARS
-        or path.startswith(("/", "\\", "~"))
+        or "\\" in path  # git paths use "/": a backslash is a Windows-style traversal
+        or path.startswith(("/", "~"))
         or _DRIVE.match(path) is not None
         or ".." in segments
         or "" in segments
