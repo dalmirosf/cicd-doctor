@@ -5,14 +5,16 @@ from pydantic import ValidationError
 
 from cicd_doctor.core.models import (
     Category,
+    DiagnoseRunPayload,
     Diagnosis,
     Evidence,
     PublicationKey,
     PublicationKind,
+    PublishedUpgrade,
     RepoConfig,
     SimilarFailure,
 )
-from tests.factories import make_diagnosis, make_run_ref
+from tests.factories import make_diagnosis, make_rules_diagnosis, make_run_ref, make_usage
 
 
 def test_category_has_exactly_the_eight_spec_values() -> None:
@@ -110,3 +112,41 @@ def test_a_similar_failure_rounds_its_score_to_three_decimals() -> None:
 def test_a_similar_failure_rejects_impossible_ids(changes: dict[str, int]) -> None:
     with pytest.raises(ValidationError):
         _similar(**changes)
+
+
+# --- the explain trigger and the upgrade of a published diagnosis (D-95) -----------------------
+
+
+def test_a_diagnose_run_payload_is_automatic_unless_it_says_otherwise() -> None:
+    body = {
+        "run": make_run_ref().model_dump(mode="json"),
+        "conclusion": "failure",
+        "completed_at": "2026-11-12T12:03:00+00:00",
+        "default_branch": "main",
+        "private": False,
+    }
+    old = DiagnoseRunPayload.model_validate(body)
+    assert (old.trigger, old.pr_number, old.command_comment_id) == ("automatic", None, None)
+    command = DiagnoseRunPayload.model_validate(
+        body | {"trigger": "explain", "pr_number": 3, "command_comment_id": 9}
+    )
+    assert (command.trigger, command.pr_number, command.command_comment_id) == ("explain", 3, 9)
+    with pytest.raises(ValidationError):
+        DiagnoseRunPayload.model_validate(body | {"trigger": "manual"})
+
+
+def test_an_upgrade_is_never_a_rules_diagnosis() -> None:
+    with pytest.raises(ValidationError, match="llm or a cache"):
+        PublishedUpgrade(failure_id=uuid4(), published=make_rules_diagnosis())
+
+
+def test_an_upgrade_checks_the_same_invariants_as_a_stored_failure() -> None:
+    answer = make_diagnosis(model="gpt-a", prompt_version="v1")
+    with pytest.raises(ValidationError, match="names the model"):
+        PublishedUpgrade(failure_id=uuid4(), published=answer, usage=make_usage(model="gpt-b"))
+    with pytest.raises(ValidationError, match="only a cached"):
+        PublishedUpgrade(failure_id=uuid4(), published=answer, cached_from=uuid4())
+    cached = answer.model_copy(update={"source": "cache"})
+    with pytest.raises(ValidationError, match="made no LLM call"):
+        PublishedUpgrade(failure_id=uuid4(), published=cached, usage=make_usage(model="gpt-a"))
+    assert PublishedUpgrade(failure_id=uuid4(), published=cached, cached_from=uuid4())

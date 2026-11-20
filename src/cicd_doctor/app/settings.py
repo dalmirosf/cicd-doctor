@@ -54,6 +54,9 @@ class Settings(BaseSettings):
     similar_min_score: float = Field(default=0.85, ge=0, le=1)
     similar_use_hnsw: bool = False  # D-79: the exact search is the default; pgvector >= 0.8
 
+    # Commands (D-92, D-95): the most recent failed runs one `/cicd-doctor explain` diagnoses
+    explain_max_runs: int = Field(default=3, ge=1)
+
     # Repository configuration (D-90): how long one answer is kept in the process
     config_ttl_s: int = Field(default=300, ge=0)
     config_missing_ttl_s: int = Field(default=60, ge=0)

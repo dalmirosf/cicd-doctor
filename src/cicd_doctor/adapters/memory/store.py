@@ -4,7 +4,7 @@ import asyncio
 import math
 from collections.abc import AsyncIterator, Sequence
 from contextlib import asynccontextmanager
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timedelta
 from uuid import UUID, uuid4
 
@@ -18,6 +18,7 @@ from cicd_doctor.core.models import (
     FailureStatus,
     Publication,
     PublicationKey,
+    PublishedUpgrade,
     PurgeCounts,
     ResolvedBy,
     RunAnalysisRecord,
@@ -123,6 +124,48 @@ class InMemoryFailureStore:
                 for item in items
             ],
         )
+
+    async def upgrade_published(
+        self, run_id: int, attempt: int, upgrades: Sequence[PublishedUpgrade]
+    ) -> RunAnalysisRecord:
+        key = (run_id, attempt)
+        items = self._analyses.get(key)
+        if items is None:
+            raise KeyError(f"run {run_id} attempt {attempt} has no analysis")
+        by_id = {item.failure.id: index for index, item in enumerate(items)}
+        unknown = [str(up.failure_id) for up in upgrades if up.failure_id not in by_id]
+        if unknown:  # all or nothing, like the Postgres transaction
+            raise KeyError("unknown failure among " + ", ".join(unknown))
+        now = self._clock.now()
+        for upgrade in upgrades:
+            index = by_id[upgrade.failure_id]
+            item = items[index]
+            if item.published.source != "rules":  # already upgraded: nothing changes
+                continue
+            failure_id = item.failure.id
+            # The old row stays, unpublished and plain; its usage stays on it (the real spend).
+            self._diagnoses[failure_id] = [
+                replace(row, diagnosis=item.rules, published=False) if row.published else row
+                for row in self._diagnoses[failure_id]
+            ] + [
+                StoredDiagnosis(
+                    upgrade.published,
+                    now,
+                    True,
+                    upgrade.usage,
+                    cached_from=upgrade.cached_from,
+                )
+            ]
+            items[index] = StoredFailure(
+                failure=item.failure,
+                published=upgrade.published,
+                rules=item.rules,
+                usage=upgrade.usage,
+                cached_from=upgrade.cached_from,
+            )
+        stored = await self.run_analysis(run_id, attempt)
+        assert stored is not None
+        return stored
 
     def _origin_run(self, diagnosis_id: UUID | None) -> int | None:
         """The run of the ``diagnoses`` row with this id, like the join of the Postgres read."""

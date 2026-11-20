@@ -45,6 +45,7 @@ from cicd_doctor.core.models import (
     Publication,
     PublicationKey,
     PublicationKind,
+    PublishedUpgrade,
     PurgeCounts,
     ResolvedBy,
     RunAnalysisRecord,
@@ -139,6 +140,20 @@ _INSERT_DIAGNOSIS = text(
             :cached_from, :now)
     """
 )
+
+# D-95: the upgrade of a published rules diagnosis. The old row keeps its usage columns (the spend
+# of the calls that failed) and loses its fallback reason: unpublished, it is the plain rules row.
+_ANALYSED_ATTEMPT = text(
+    "SELECT 1 FROM run_attempts WHERE run_id = :run_id AND attempt = :attempt "
+    "AND analyzed_at IS NOT NULL"
+)
+_ATTEMPT_FAILURE_IDS = text(
+    "SELECT id FROM failures WHERE run_id = :run_id AND run_attempt = :attempt"
+)
+_LOCK_PUBLISHED = text(
+    "SELECT id, source FROM diagnoses WHERE failure_id = :failure_id AND published FOR UPDATE"
+)
+_UNPUBLISH = text("UPDATE diagnoses SET published = false, fallback_reason = NULL WHERE id = :id")
 
 _FAILURE_COLUMNS = """
     f.id, f.repository_id, f.run_id, f.run_attempt, f.job_id, f.job_name, f.step_name,
@@ -564,6 +579,52 @@ class PostgresFailureStore:
         with transient_db_errors():
             async with self._engine.connect() as conn:
                 return await _load_analysis(conn, run_id, attempt)
+
+    async def upgrade_published(
+        self, run_id: int, attempt: int, upgrades: Sequence[PublishedUpgrade]
+    ) -> RunAnalysisRecord:
+        now = self._clock.now()
+        params = {"run_id": run_id, "attempt": attempt}
+        with transient_db_errors():
+            async with self._engine.begin() as conn:
+                if (await conn.execute(_ANALYSED_ATTEMPT, params)).first() is None:
+                    raise KeyError(f"run {run_id} attempt {attempt} has no analysis")
+                known = {row[0] for row in await conn.execute(_ATTEMPT_FAILURE_IDS, params)}
+                unknown = [str(up.failure_id) for up in upgrades if up.failure_id not in known]
+                if unknown:
+                    raise KeyError("unknown failure among " + ", ".join(unknown))
+                # Failure ids in order, so two concurrent calls never lock the rows crosswise.
+                for upgrade in sorted(upgrades, key=lambda up: str(up.failure_id)):
+                    await self._upgrade_one(conn, upgrade, now)
+                stored = await _load_analysis(conn, run_id, attempt)
+        if stored is None:  # pragma: no cover  (checked above, and an analysis is never removed)
+            raise RuntimeError(f"run {run_id} attempt {attempt} has no analysis after upgrading it")
+        return stored
+
+    @staticmethod
+    async def _upgrade_one(conn: AsyncConnection, upgrade: PublishedUpgrade, now: datetime) -> None:
+        # The row lock makes a concurrent upgrade of the same failure wait, read the new state
+        # and skip: whoever comes second finds an ``llm`` or ``cache`` row published.
+        row = (
+            (await conn.execute(_LOCK_PUBLISHED, {"failure_id": upgrade.failure_id}))
+            .mappings()
+            .first()
+        )
+        if row is None or row["source"] != "rules":
+            return
+        # The old row first: the unique index lets one published row per failure exist.
+        await conn.execute(_UNPUBLISH, {"id": row["id"]})
+        await conn.execute(
+            _INSERT_DIAGNOSIS,
+            _diagnosis_params(
+                upgrade.failure_id,
+                upgrade.published,
+                True,
+                upgrade.usage,
+                upgrade.cached_from,
+                now,
+            ),
+        )
 
     async def _insert_items(
         self, conn: AsyncConnection, items: Sequence[StoredFailure], now: datetime

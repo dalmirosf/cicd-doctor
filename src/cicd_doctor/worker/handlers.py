@@ -147,7 +147,11 @@ def diagnose_run_handler(
         except InstallationUnavailable:
             raise  # no token: there is nowhere to publish
         except Exception as exc:
-            if isinstance(exc, PermanentError) or job.attempts >= job.max_attempts:
+            # An ``explain`` job improves a diagnosis that is already published: giving up must
+            # not overwrite it with "Could not diagnose" (D-95). The worker still records it.
+            if payload.trigger == "automatic" and (
+                isinstance(exc, PermanentError) or job.attempts >= job.max_attempts
+            ):
                 await _give_up(use_case, payload, _reason(exc), give_up_timeout_s)
             raise
 

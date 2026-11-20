@@ -11,6 +11,7 @@ from cicd_doctor.core.logs import ExcerptConfig, build_excerpts
 from cicd_doctor.core.models import (
     Diagnosis,
     FailedJob,
+    Failure,
     LogExcerpt,
     RawLog,
     RuleMatch,
@@ -28,6 +29,23 @@ class JobAnalysis:
     matches: list[RuleMatch]  # best first
     rules: Diagnosis  # source "rules"; always computed (SPEC §7.1 step 7)
     signature: Signature
+
+
+def analysis_from_stored(failure: Failure, rules: Sequence[Rule] = RULES) -> JobAnalysis:
+    """The analysis of a failure that was already analysed, rebuilt from what is stored (D-95).
+
+    The stored excerpt is the redacted and bounded one the first analysis made, and the signature
+    is the stored one, so nothing is downloaded or cut again. The rule matches are recomputed
+    from the excerpt: they are the hints of the prompt, and they depend on nothing else.
+    """
+    matches = match_rules(failure.job, failure.excerpt, rules)
+    return JobAnalysis(
+        job=failure.job,
+        excerpt=failure.excerpt,
+        matches=matches,
+        rules=rules_diagnosis(failure.excerpt, matches),
+        signature=failure.signature,
+    )
 
 
 def analyze_jobs(

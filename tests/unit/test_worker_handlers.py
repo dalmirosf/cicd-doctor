@@ -491,3 +491,40 @@ def test_the_purge_settings_have_the_decided_defaults_and_reach_the_config() -> 
         stale_after_days=30,
         uninstall_grace_days=7,
     )
+
+
+# --- diagnose_run of an explain command (D-95) -----------------------------------------------
+
+
+def explain_payload() -> dict[str, Any]:
+    body = make_payload().model_copy(
+        update={"trigger": "explain", "pr_number": 12, "command_comment_id": 99}
+    )
+    return body.model_dump(mode="json")
+
+
+@pytest.mark.parametrize("error", [PermanentError("gone"), TransientError("down")])
+async def test_an_explain_that_gives_up_never_overwrites_the_published_diagnosis(
+    error: Exception,
+) -> None:
+    use_case = StubUseCase(error=error)
+
+    with pytest.raises(type(error)):
+        await diagnose_run_handler(use_case)(
+            diagnose_job(attempts=5, max_attempts=5, payload=explain_payload())
+        )
+
+    assert use_case.published == []
+
+
+async def test_a_job_queued_before_explain_existed_is_an_automatic_one() -> None:
+    body = make_payload().model_dump(mode="json")
+    for name in ("trigger", "pr_number", "command_comment_id"):
+        body.pop(name)
+    use_case = StubUseCase(error=PermanentError("gone"))
+
+    with pytest.raises(PermanentError):
+        await diagnose_run_handler(use_case)(diagnose_job(payload=body))
+
+    assert use_case.ran[0].trigger == "automatic"
+    assert [reason for _, reason, _ in use_case.published] == ["internal_error"]

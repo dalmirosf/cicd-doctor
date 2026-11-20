@@ -4,6 +4,7 @@ The GitHub side is ``FakeGitHub`` behind the real GitHub adapters and the LLM is
 is real here is the database. The rows are read back with plain SQL, not through the adapters.
 """
 
+import asyncio
 from collections.abc import AsyncIterator
 from datetime import datetime
 from typing import Any
@@ -13,11 +14,12 @@ import pytest
 
 from cicd_doctor.adapters.clock import FakeClock
 from cicd_doctor.adapters.memory import FakeEmbedder
+from cicd_doctor.adapters.memory.llm import valid
 from cicd_doctor.adapters.postgres.installations import PostgresInstallationStore
 from cicd_doctor.adapters.postgres.ledger import PostgresUsageLedger
 from cicd_doctor.adapters.postgres.queue import PostgresJobQueue
 from cicd_doctor.adapters.postgres.store import PostgresFailureStore
-from cicd_doctor.core.models import JobStatus
+from cicd_doctor.core.models import DiagnoseRunPayload, JobStatus
 from tests.diagnose_world import (
     INSTALLATION_ID,
     PR_NUMBER,
@@ -25,6 +27,14 @@ from tests.diagnose_world import (
     DiagnoseWorld,
     diagnose_world,
     job_id_for,
+)
+from tests.e2e.test_explain_upgrade_e2e import (
+    FORK,
+    HEAD_SHA,
+    fork_explain_job,
+)
+from tests.e2e.test_explain_upgrade_e2e import (
+    enqueue as enqueue_fork,
 )
 from tests.e2e.test_similar_e2e import add_similar_runs, assert_second_run_lists_the_first
 from tests.pg import libpq_url
@@ -232,3 +242,93 @@ async def test_a_similar_failure_is_found_by_pgvector_and_listed_in_the_report(
         assert await world.worker.run_one("pg")
 
         assert_second_run_lists_the_first(world)
+
+
+# --- explain upgrades what is published (P3 d1, D-94, D-95) -----------------------------------
+
+
+@pytest.fixture
+async def fork_world(pg_clean: str, clock: FakeClock) -> AsyncIterator[DiagnoseWorld]:
+    """Postgres everywhere and an LLM that has nothing to say until a test gives it a script."""
+    async with (
+        PostgresJobQueue.connect(pg_clean, clock, listen=False) as queue,
+        PostgresFailureStore.connect(pg_clean, clock) as store,
+        PostgresUsageLedger.connect(pg_clean, clock) as ledger,
+        PostgresInstallationStore.connect(pg_clean) as installations,
+        diagnose_world(
+            clock=clock,
+            queue=queue,
+            store=store,
+            ledger=ledger,
+            installations=installations,
+            llm_script=[],
+        ) as built,
+    ):
+        yield built
+
+
+async def _fork_run_with_rules(world: DiagnoseWorld) -> None:
+    world.add_run()
+    world.writes.add_pull(PR_NUMBER, head_repo=FORK, head_ref="patch-1", head_sha=HEAD_SHA)
+    await enqueue_fork(world, explain=False)
+    assert await world.worker.run_one("pg")
+
+
+async def test_a_fork_run_is_upgraded_in_place_and_the_database_keeps_one_published_row(
+    fork_world: DiagnoseWorld, pg_clean: str
+) -> None:
+    world = fork_world
+    await _fork_run_with_rules(world)
+    assert rows(pg_clean, "SELECT source, published FROM diagnoses") == [("rules", True)]
+    world.llm.add(valid())
+
+    await enqueue_fork(world, explain=True)
+    assert await world.worker.run_one("pg")
+
+    assert rows(
+        pg_clean, "SELECT source, published, fallback_reason FROM diagnoses ORDER BY published"
+    ) == [("rules", False, None), ("llm", True, None)]
+    [(calls, reserved, spent)] = rows(
+        pg_clean, "SELECT calls, reserved_usd, spent_usd FROM llm_usage"
+    )
+    assert (calls, reserved) == (1, 0)
+    assert spent > 0
+    [(cost,)] = rows(pg_clean, "SELECT cost_usd FROM diagnoses WHERE published")
+    assert cost == spent  # the cost lives on the published row
+    assert len(world.writes.check_runs) == 1
+    assert len(world.writes.comments) == 1
+    with (
+        pytest.raises(psycopg.errors.UniqueViolation),  # the index of published rows
+        psycopg.connect(libpq_url(pg_clean)) as conn,
+    ):
+        conn.execute(
+            "INSERT INTO diagnoses (failure_id, source, published, category, probable_cause, "
+            "evidence, evidence_verified, suggested_fix, confidence, rule_ids, created_at) "
+            "SELECT failure_id, 'llm', true, category, probable_cause, evidence, true, "
+            "suggested_fix, confidence, rule_ids, now() FROM diagnoses WHERE published"
+        )
+    # The upgraded row of a fork never feeds the cache or the similar failures of other runs.
+    assert rows(
+        pg_clean,
+        "SELECT count(*) FROM diagnoses d JOIN failures f ON f.id = d.failure_id "
+        "JOIN workflow_runs r ON r.id = f.run_id WHERE d.source = 'llm' AND NOT r.is_fork",
+    ) == [(0,)]
+
+
+async def test_two_explains_of_one_attempt_call_the_model_once_on_postgres(
+    fork_world: DiagnoseWorld, pg_clean: str
+) -> None:
+    world = fork_world
+    await _fork_run_with_rules(world)
+    world.llm.add(valid(), valid())
+    payload = DiagnoseRunPayload.model_validate(fork_explain_job().payload)
+
+    await asyncio.gather(world.use_case.run(payload), world.use_case.run(payload))
+
+    assert len(world.llm.calls) == 1
+    [(calls,)] = rows(pg_clean, "SELECT calls FROM llm_usage")
+    assert calls == 1
+    assert rows(pg_clean, "SELECT source, published FROM diagnoses ORDER BY published") == [
+        ("rules", False),
+        ("llm", True),
+    ]
