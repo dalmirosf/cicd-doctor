@@ -45,7 +45,7 @@ planes son intención; el `README.md` de cada fase dice dónde difieren del cód
 
 ## 3. La historia, fase por fase
 
-### P0, P1a y P1b: construir sin GitHub y sin OpenAI (13 al 16 de noviembre de 2026)
+### P0, P1a y P1b: construir sin GitHub y sin OpenAI (12 al 16 de noviembre de 2026)
 
 Primero se armó el esqueleto: Python 3.13, `uv`, `ruff`, `mypy` estricto, tests, `pre-commit`, Docker Compose con
 Postgres y la extensión de vectores, y CI. La arquitectura es *hexagonal*: el centro (`core/`) contiene las reglas

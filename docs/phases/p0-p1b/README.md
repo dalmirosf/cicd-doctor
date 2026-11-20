@@ -17,7 +17,7 @@ LLM path tested with a fake model, a safe renderer and an injection suite (P1b).
 
 | PR | Date (2026) | What it did |
 |---|---|---|
-| (direct commits) `d716912` … `c42a95c` | Nov 13 | The specification, `DECISIONS.md` (D-01 to D-45), the P0 skeleton (uv, ruff, mypy strict, pytest, `core/` import test, pre-commit, Compose with pgvector, CI), `CLAUDE.md`. |
+| (direct commits) `d716912` … `c42a95c` | Nov 12 to 13 | The specification, `DECISIONS.md` (D-01 to D-45), the P0 skeleton (uv, ruff, mypy strict, pytest, `core/` import test, pre-commit, Compose with pgvector, CI), `CLAUDE.md`. |
 | #1 | Nov 13 | Switched the production target from GCP to AWS (D-46). Docs only; also the first PR, so it closed the P0 boxes "CI green on a pull request". |
 | #2 P1a-1 | Nov 13 | The whole §6 schema as hand-written Alembic SQL (D-50), settings, the Postgres and in-memory `JobQueue` with one contract suite, the worker (leases, heartbeat, full-jitter backoff, drain on shutdown). D-47 to D-52. |
 | #3 P1a-2 | Nov 13 | `POST /webhooks/github` (signature, size cap, ordered checks, dedupe in one transaction, 503 within 5 s), `GET /ready`, installation tracking through a `sync_installation` job, the load script. D-53 to D-56. |
