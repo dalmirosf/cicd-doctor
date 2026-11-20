@@ -15,6 +15,11 @@ from uuid import uuid4
 from cicd_doctor.core.analysis import JobAnalysis, analyze_jobs
 from cicd_doctor.core.diagnosis.merge import baseline_to_show
 from cicd_doctor.core.diagnosis.pipeline import DiagnoseJob, DiagnosisContext
+from cicd_doctor.core.diagnosis.validate import (
+    InvalidOutputError,
+    parse_output,
+    verified_evidence,
+)
 from cicd_doctor.core.diff import select_for_prompt
 from cicd_doctor.core.logs import select_failed_jobs
 from cicd_doctor.core.models import (
@@ -22,11 +27,13 @@ from cicd_doctor.core.models import (
     FailedJob,
     Failure,
     FailureStatus,
+    LogExcerpt,
 )
 from cicd_doctor.core.ports import TokenCounter
 from cicd_doctor.core.render import render_check, render_comment
 from evals.runner.cases import Case
 from evals.runner.history import Lookup, SimilarHistory
+from evals.runner.recording import RecordingLLM
 
 ALL_VARIANTS = ("rules", "llm", "llm+hints", "llm+hints+similar")
 LLM_VARIANTS = ("llm", "llm+hints", "llm+hints+similar")
@@ -62,6 +69,13 @@ class CaseResult:
     # What the answer says, for the cause judge (D-103). Model text: never written to a report.
     answer_cause: str = ""
     answer_fix: str = ""
+    # P4 (b), D-109. ``llm_latency_ms`` None means no answer of the model was recorded (rules,
+    # cache hit, or a call that failed). The items are the evidence of that answer before and
+    # after ``verified_evidence``.
+    answer_raw_items: int = 0
+    answer_valid_items: int = 0
+    llm_latency_ms: int | None = None
+    occurred_at: str | None = None  # when the failure happened (public cases, D-101); optional
 
     @property
     def correct(self) -> bool:
@@ -144,6 +158,7 @@ async def run_llm_case(
     pipeline: DiagnoseJob,
     use_hints: bool,
     history: SimilarHistory | None = None,
+    recorder: RecordingLLM | None = None,
 ) -> CaseResult:
     """One case through the production pipeline, as a non-fork run on an installation.
 
@@ -196,6 +211,7 @@ async def run_llm_case(
         )
         markdown = render_check(report).summary + render_comment(report)
         wins = judge(case, published, markdown, analysis.excerpt, shown)
+    answer = raw_answer(recorder, case.id, analysis.excerpt)
     return CaseResult(
         **_base(case, variant),  # type: ignore[arg-type]
         predicted=published.category.value,
@@ -217,6 +233,38 @@ async def run_llm_case(
         wins=wins,
         answer_cause=published.probable_cause,
         answer_fix=published.suggested_fix,
+        answer_raw_items=answer.raw_items,
+        answer_valid_items=answer.valid_items,
+        llm_latency_ms=answer.latency_ms,
+    )
+
+
+@dataclass(frozen=True)
+class RawAnswer:
+    raw_items: int = 0
+    valid_items: int = 0
+    latency_ms: int | None = None
+
+
+def raw_answer(recorder: RecordingLLM | None, case_id: str, excerpt: LogExcerpt) -> RawAnswer:
+    """What the model said about the evidence, before the pipeline dropped what it could not verify.
+
+    The accepted answer is the last one the recorder saw for the case. An answer that does not
+    parse has a latency but no items: the pipeline repaired it or fell back, and
+    ``verified_evidence`` never saw it.
+    """
+    recording = recorder.cases.get(case_id) if recorder is not None else None
+    accepted = recording.accepted if recording is not None else None
+    if accepted is None:
+        return RawAnswer()
+    try:
+        output = parse_output(accepted.raw_json)
+    except InvalidOutputError:
+        return RawAnswer(latency_ms=accepted.latency_ms)
+    return RawAnswer(
+        raw_items=len(output.evidence),
+        valid_items=len(verified_evidence(output.evidence, excerpt)),
+        latency_ms=accepted.latency_ms,
     )
 
 

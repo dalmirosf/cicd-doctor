@@ -10,8 +10,9 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from pathlib import Path
 
+from evals.runner.flaky import FlakyMetrics
 from evals.runner.judge import CauseMatch, cause_match_lines
-from evals.runner.metrics import Metrics
+from evals.runner.metrics import SCHEMA_VERSION, Metrics
 from evals.runner.variants import CaseResult
 
 DEFAULT_REPORTS_DIR = Path(__file__).resolve().parents[1] / "reports"
@@ -32,15 +33,18 @@ class Report:
     runs: list[VariantRun]
     skipped: dict[str, str] = field(default_factory=dict)  # variant -> why it did not run
     cause_match: CauseMatch | None = None  # None: not judged (no ``--judge``, D-103)
+    flaky: FlakyMetrics | None = None  # the outcome state machine over simulated sequences
 
     def to_dict(self) -> dict[str, object]:
         return {
+            "schema_version": SCHEMA_VERSION,
             "cause_match": self.cause_match.to_dict() if self.cause_match else None,
             "generated_at": self.generated_at.isoformat(),
             "git_sha": self.git_sha,
             "sources": self.sources,
             "skipped_variants": self.skipped,
             "memory_effect": [asdict(effect) for effect in memory_effects(self)],
+            "flaky_sequences": self.flaky.to_dict() if self.flaky else None,
             "variants": {
                 run.variant: {
                     "metrics": run.metrics.to_dict(),
@@ -72,7 +76,7 @@ def render_markdown(report: Report) -> str:
         "",
         "| Variant | Cases | Accuracy | Macro-F1 | Evidence in excerpt | Evidence cited "
         "| Abstention | LLM share | Cache hits | Similar hits | Fallbacks | Attacks won "
-        "| p50 / p95 latency (ms) | Cost (USD) | Cost per case |",
+        "| Pipeline p50 / p95 (ms, with stored answers) | Cost (USD) | Cost per case |",
         "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
     ]
     for run in report.runs:
@@ -91,10 +95,12 @@ def render_markdown(report: Report) -> str:
         lines.append(f"| {variant} | not run: {reason} | | | | | | | | | | | | | |")
     lines += _memory_effect(report)
     lines += cause_match_lines(report.cause_match)
+    lines += _p4_table(report)
+    lines += _flaky(report)
     for run in report.runs:
         lines += ["", f"## {run.variant}", "", *_per_category(run.metrics), ""]
         lines += [*_confusion(run.metrics.confusion), ""]
-        lines += [*_calibration(run.metrics.calibration), ""]
+        lines += [*_calibration(run.metrics.calibration, run.metrics.calibration_deciles), ""]
         lines += _cases(run.results)
     return "\n".join(lines) + "\n"
 
@@ -156,6 +162,83 @@ def _memory_effect(report: Report) -> list[str]:
     return lines
 
 
+def _p4_table(report: Report) -> list[str]:
+    """Latency of the model call, NFR-03 cost, evidence and calibration (D-109). No log text."""
+    if not report.runs:
+        return []
+    lines = [
+        "",
+        "## Model call, cost, evidence and calibration",
+        "",
+        "Model latency is the recorded one of the answer (the run that filled the store). Cost is "
+        "the stored tokens times the prices, over the diagnoses published from the model.",
+        "",
+        "| Variant | Model call p50 / p95 (ms) | LLM diagnoses | Cost per LLM diagnosis (USD) "
+        "| Cost p95 | Evidence validity | Answers without valid evidence | Unknown "
+        "| Low confidence "
+        "| High-confidence accuracy | ECE |",
+        "|---|---|---|---|---|---|---|---|---|---|---|",
+    ]
+    for run in report.runs:
+        m = run.metrics
+        latency = (
+            "n/a"
+            if m.llm_latency_ms_p50 is None
+            else f"{m.llm_latency_ms_p50:.0f} / {m.llm_latency_ms_p95 or 0:.0f}"
+        )
+        cost = (
+            "n/a" if m.cost_usd_per_llm_diagnosis is None else f"{m.cost_usd_per_llm_diagnosis:.5f}"
+        )
+        if m.cost_usd_per_llm_diagnosis is not None and m.priced is False:
+            cost += " (no prices: cost is 0)"
+        p95 = "n/a" if m.cost_usd_p95 is None else f"{m.cost_usd_p95:.5f}"
+        ece = (
+            "n/a" if m.expected_calibration_error is None else f"{m.expected_calibration_error:.3f}"
+        )
+        lines.append(
+            f"| {run.variant} | {latency} | {m.llm_diagnoses} | {cost} | {p95} "
+            f"| {_pct(m.evidence_validity)} | {m.answers_without_valid_evidence} of {m.answers} "
+            f"| {_pct(m.abstention_unknown)} | {_pct(m.abstention_low_confidence)} "
+            f"| {_pct(m.high_confidence_accuracy)} | {ece} |"
+        )
+    lines += [
+        "",
+        "95% bootstrap intervals (1,000 resamples, fixed seed; informational, D-105):",
+        "",
+    ]
+    lines += ["| Variant | Group | Cases | Accuracy | Macro-F1 |", "|---|---|---|---|---|"]
+    for run in report.runs:
+        for group, data in run.metrics.intervals.items():
+            acc, f1 = _bounds(data["accuracy"]), _bounds(data["macro_f1"])
+            lines.append(f"| {run.variant} | {group} | {data['cases']} | {acc} | {f1} |")
+    return lines
+
+
+def _bounds(interval: object) -> str:
+    assert isinstance(interval, dict)
+    return f"{interval['low'] * 100:.1f}% to {interval['high'] * 100:.1f}%"
+
+
+def _flaky(report: Report) -> list[str]:
+    f = report.flaky
+    if f is None:
+        return []
+    return [
+        "",
+        "## Flaky and fix resolution over simulated sequences (D-107)",
+        "",
+        f.note,
+        "",
+        "| Sequences | Correct | resolved_flaky precision / recall "
+        "| resolved_by_commit precision / recall | Lab-shaped |",
+        "|---|---|---|---|---|",
+        f"| {f.sequences} | {f.correct} | {_pct(f.flaky_precision)} / {_pct(f.flaky_recall)} "
+        f"| {_pct(f.by_commit_precision)} / {_pct(f.by_commit_recall)} "
+        f"| {f.lab_correct} of {f.lab_sequences} |",
+        *(["", *(f"- miss: {miss}" for miss in f.misses)] if f.misses else []),
+    ]
+
+
 def _hits(count: int | None, rate: float | None) -> str:
     return "n/a" if count is None else f"{count} ({_pct(rate)})"
 
@@ -187,10 +270,21 @@ def _confusion(confusion: Mapping[str, Mapping[str, int]]) -> list[str]:
     return rows
 
 
-def _calibration(calibration: Mapping[str, Mapping[str, float]]) -> list[str]:
+def _calibration(
+    calibration: Mapping[str, Mapping[str, float]],
+    deciles: Sequence[Mapping[str, float]] = (),
+) -> list[str]:
     rows = ["| Confidence | Cases | Accuracy |", "|---|---|---|"]
     for name, values in calibration.items():
         rows.append(f"| {name} | {int(values['cases'])} | {_pct(values['accuracy'])} |")
+    if deciles:
+        rows += ["", "By decile (only deciles with 5 or more cases):", ""]
+        rows += ["| Confidence | Cases | Accuracy | Mean confidence |", "|---|---|---|---|"]
+        for d in deciles:
+            rows.append(
+                f"| {d['from']:.1f} to {d['to']:.1f} | {int(d['cases'])} | {_pct(d['accuracy'])} "
+                f"| {d['mean_confidence']:.2f} |"
+            )
     return rows
 
 

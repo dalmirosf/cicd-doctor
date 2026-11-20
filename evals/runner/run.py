@@ -15,6 +15,7 @@ from cicd_doctor.core.diagnosis.cost import CostModel
 from cicd_doctor.core.diagnosis.pipeline import DiagnoseJob
 from cicd_doctor.core.ports import Embedder, LLMClient, TokenCounter
 from evals.runner.cases import Case, load_cases
+from evals.runner.flaky import run_flaky_metric
 from evals.runner.history import SimilarHistory, history_order
 from evals.runner.metrics import compute
 from evals.runner.recording import RecordingLLM
@@ -102,7 +103,12 @@ async def run_evals_async(
             for setup in llms:
                 results = await _run_llm(name, setup, cases, counter, embedder)
                 runs.append(
-                    _variant_run(f"{name} [{setup.label}]", results, name == SIMILAR_VARIANT)
+                    _variant_run(
+                        f"{name} [{setup.label}]",
+                        results,
+                        name == SIMILAR_VARIANT,
+                        priced=setup.cost.input_per_mtok > 0 or setup.cost.output_per_mtok > 0,
+                    )
                 )
         else:
             results = [VARIANTS[name](case, counter) for case in cases]
@@ -113,12 +119,20 @@ async def run_evals_async(
         sources=list(sources),
         runs=runs,
         skipped=skipped,
+        flaky=run_flaky_metric(),
     )
 
 
-def _variant_run(name: str, results: list[CaseResult], with_history: bool = False) -> VariantRun:
+def _variant_run(
+    name: str,
+    results: list[CaseResult],
+    with_history: bool = False,
+    priced: bool | None = None,
+) -> VariantRun:
     return VariantRun(
-        variant=name, metrics=compute(results, with_history=with_history), results=results
+        variant=name,
+        metrics=compute(results, with_history=with_history, priced=priced),
+        results=results,
     )
 
 
@@ -154,6 +168,7 @@ async def _run_llm(
             pipeline=pipeline,
             use_hints=variant != "llm",
             history=history,
+            recorder=setup.recorder,
         )
     return [done[case.id] for case in cases]
 
