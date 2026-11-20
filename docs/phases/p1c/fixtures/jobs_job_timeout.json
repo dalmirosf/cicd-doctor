@@ -1,0 +1,73 @@
+{
+  "total_count": 1,
+  "jobs": [
+    {
+      "id": 90000022,
+      "run_id": 90000023,
+      "workflow_name": "job-timeout",
+      "head_branch": "main",
+      "run_url": "https://api.github.com/repos/acme/cicd-doctor-lab/actions/runs/90000023",
+      "run_attempt": 1,
+      "node_id": "NODE_ID",
+      "head_sha": "29a3134988e125132932b329c576fe394e44d3e4",
+      "url": "https://api.github.com/repos/acme/cicd-doctor-lab/actions/jobs/90000022",
+      "html_url": "https://github.com/acme/cicd-doctor-lab/actions/runs/90000023/job/90000022",
+      "status": "completed",
+      "conclusion": "cancelled",
+      "created_at": "2026-11-14T00:59:01Z",
+      "started_at": "2026-11-14T00:59:04Z",
+      "completed_at": "2026-11-14T01:00:20Z",
+      "name": "run",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-14T00:59:05Z",
+          "completed_at": "2026-11-14T00:59:05Z"
+        },
+        {
+          "name": "Run actions/checkout@d4c803c71c361394ed6a55a5e6b3fc2581c256a0",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-14T00:59:05Z",
+          "completed_at": "2026-11-14T00:59:06Z"
+        },
+        {
+          "name": "Run sleep 300",
+          "status": "completed",
+          "conclusion": "cancelled",
+          "number": 3,
+          "started_at": "2026-11-14T00:59:06Z",
+          "completed_at": "2026-11-14T01:00:17Z"
+        },
+        {
+          "name": "Post Run actions/checkout@d4c803c71c361394ed6a55a5e6b3fc2581c256a0",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-11-14T01:00:17Z",
+          "completed_at": "2026-11-14T01:00:18Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-11-14T01:00:18Z",
+          "completed_at": "2026-11-14T01:00:18Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/acme/cicd-doctor-lab/check-runs/90000022",
+      "labels": [
+        "ubuntu-24.04"
+      ],
+      "runner_id": 90000024,
+      "runner_name": "GitHub Actions 90000024",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions"
+    }
+  ]
+}
