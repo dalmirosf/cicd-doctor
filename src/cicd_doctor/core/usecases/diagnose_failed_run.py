@@ -19,6 +19,12 @@ job exceeded its ``timeout-minutes`` does the flow continue (that job then count
 budget reservation: a manual cancellation or a ``concurrency: cancel-in-progress`` stays silent.
 The gate is recomputed on a retry, unless the analysis is already stored.
 
+An ``explain`` call (D-94, D-95) runs the same steps over an attempt that is usually already
+published: the check run it finds for this very attempt is edited in place (not restarted), the
+failures whose published diagnosis is a rules one are analysed again from what is stored with the
+LLM allowed (``upgrade_published``, no log is downloaded), and the check run and the comment are
+rewritten from the stored result. An attempt with no checkpoint yet is analysed normally.
+
 Steps 2, 4 and 5 are idempotent, so a failure while publishing is retried by running the use case
 again. Nothing here imports an adapter: the ports and the small ``DiagnoseConfig`` are injected.
 Logs, excerpts and the text of a diagnosis are never logged.
@@ -32,7 +38,7 @@ from datetime import datetime, timedelta
 from typing import NoReturn
 from uuid import UUID
 
-from cicd_doctor.core.analysis import JobAnalysis, analyze_jobs
+from cicd_doctor.core.analysis import JobAnalysis, analysis_from_stored, analyze_jobs
 from cicd_doctor.core.diagnosis.cache import reuse_cached
 from cicd_doctor.core.diagnosis.pipeline import DiagnoseJob, DiagnosisContext, JobDiagnosis
 from cicd_doctor.core.diagnosis.prompt import PROMPT_VERSION
@@ -52,6 +58,7 @@ from cicd_doctor.core.models import (
     LoadedConfig,
     Publication,
     PublicationKey,
+    PublishedUpgrade,
     RawLog,
     RepoRef,
     ResolvedBy,
@@ -170,12 +177,17 @@ class DiagnoseFailedRun:
             return
         if await self._superseded(check_key, run):
             return
-        check_id = await self._start_check(run, check_key)
+        explain = payload.trigger == "explain"
+        check_id = await self._explained_check(run, check_key) if explain else None
+        if check_id is None:
+            check_id = await self._start_check(run, check_key)
         if check_id is None:
             return
         record = await self._store.run_analysis(run.run_id, run.run_attempt)
         if record is None:
             record = await self._analyze(payload, loaded, examined)
+        elif explain:
+            record = await self._upgrade(payload, loaded, check_key)
         record = await self._resolve_late(record)
         report = await self._report(payload, record, loaded)
         if not await self._complete_check(payload, record, report, check_id, check_key):
@@ -339,6 +351,60 @@ class DiagnoseFailedRun:
             )
         return check_id if saved else None
 
+    async def _explained_check(self, run: RunRef, key: PublicationKey) -> int | None:
+        """The check run this very attempt already published, for ``explain`` to edit in place
+        (D-95). It is not started again: it is ``completed`` and GitHub would ignore it. None
+        when this attempt has no check run yet (or only an older one): the normal start follows.
+        """
+        existing = await self._store.publication(key)
+        if existing is not None and (existing.run_id, existing.attempt) == _id_of(run):
+            return existing.external_id
+        return None
+
+    async def _upgrade(
+        self, payload: DiagnoseRunPayload, loaded: LoadedConfig, key: PublicationKey
+    ) -> RunAnalysisRecord:
+        """Improve the published diagnosis of an analysed attempt with the LLM (D-95).
+
+        Only the failures whose published diagnosis is still a rules one are analysed again, from
+        what is stored: no log is downloaded and nothing is cut again. The whole step runs under
+        the lock of the check run, and the record is read again under it, so two explains of the
+        same attempt call the model once: the second finds the upgraded diagnosis and does
+        nothing. A newer attempt that already published makes the step a no-op. The LLM, the
+        budget and the cache are used exactly as in the automatic flow, so a failure whose call
+        falls back (budget, error, ``llm: off``) keeps its rules diagnosis and its reason.
+        """
+        run = payload.run
+        async with self._store.publication_lock(key):
+            if _newer(await self._store.publication(key), run):
+                return await self._stored(run)
+            record = await self._stored(run)
+            pending = [item for item in record.items if item.published.source == "rules"]
+            if not pending:
+                return record
+            analyses = [analysis_from_stored(item.failure) for item in pending]
+            embeddings = [item.failure.embedding for item in pending]
+            results = await self._diagnose_all(run, analyses, embeddings, loaded, explain=True)
+            upgrades = [
+                PublishedUpgrade(
+                    failure_id=failure_id_for(run.run_id, run.run_attempt, analysis.job.job.job_id),
+                    published=result.published,
+                    usage=result.usage,
+                    cached_from=result.cached_from,
+                )
+                for analysis, result in results
+                if result.published.source != "rules"
+            ]
+            if not upgrades:
+                return record
+            return await self._store.upgrade_published(run.run_id, run.run_attempt, upgrades)
+
+    async def _stored(self, run: RunRef) -> RunAnalysisRecord:
+        record = await self._store.run_analysis(run.run_id, run.run_attempt)
+        if record is None:  # an analysis is never removed while its job runs
+            raise TransientError("the analysis of this attempt is gone; the job starts again")
+        return record
+
     async def _complete_check(
         self,
         payload: DiagnoseRunPayload,
@@ -374,7 +440,7 @@ class DiagnoseFailedRun:
         loaded: LoadedConfig,
     ) -> None:
         run = report.run
-        pr_number = record.run.pr_number
+        pr_number = _pr_number(payload, record)
         if pr_number is None or not loaded.config.comment or not record.items:
             return
         key = PublicationKey.comment(run.repo_id, pr_number, run.workflow_id)
@@ -426,7 +492,9 @@ class DiagnoseFailedRun:
             ),
         )
         embeddings = await self._embed(analyses)
-        results = await self._diagnose_all(run, analyses, embeddings, loaded)
+        results = await self._diagnose_all(
+            run, analyses, embeddings, loaded, explain=payload.trigger == "explain"
+        )
         record = RunAnalysisRecord(
             run=_workflow_run(run),
             attempt=RunAttempt(
@@ -503,21 +571,25 @@ class DiagnoseFailedRun:
         self,
         run: RunRef,
         analyses: list[JobAnalysis],
-        embeddings: list[list[float] | None],
+        embeddings: Sequence[Sequence[float] | None],
         loaded: LoadedConfig,
+        *,
+        explain: bool = False,
     ) -> list[tuple[JobAnalysis, JobDiagnosis]]:
         context = DiagnosisContext(
             installation_id=run.installation_id,
             is_fork=run.is_fork,
             llm_enabled=self._config.llm_enabled,
             repo_llm=effective_llm(loaded),
+            explain=explain,
         )
         slots = asyncio.Semaphore(self._config.concurrency)
 
-        async def one(analysis: JobAnalysis, embedding: list[float] | None) -> JobDiagnosis:
+        async def one(analysis: JobAnalysis, embedding: Sequence[float] | None) -> JobDiagnosis:
             async with slots:
                 cached = await self._cached(run, analysis, context)
-                similar = await self._similar(run, embedding)
+                # D-94: nothing of the history reaches the prompt of a fork run.
+                similar = [] if run.is_fork else await self._similar(run, embedding)
                 job_context = replace(context, cached=cached, similar=similar)
                 return await self._diagnose.run(analysis, job_context)
 
@@ -540,8 +612,8 @@ class DiagnoseFailedRun:
         anything of this attempt is stored, so a matrix whose jobs share a signature calls the
         model once per job: the cache serves later runs, not siblings.
         """
-        if self._config.cache_ttl_days <= 0:
-            return None
+        if self._config.cache_ttl_days <= 0 or run.is_fork:
+            return None  # a fork run neither reads nor writes the cache (D-94)
         if decide(_policy_without_cache(context)).action != "llm":
             return None
         hit = await self._store.cached_diagnosis(
@@ -583,7 +655,7 @@ class DiagnoseFailedRun:
         self, payload: DiagnoseRunPayload, record: RunAnalysisRecord, loaded: LoadedConfig
     ) -> DiagnosisReport:
         """The report of a stored analysis. The run carries the pull request that was found."""
-        run = payload.run.model_copy(update={"pr_number": record.run.pr_number})
+        run = payload.run.model_copy(update={"pr_number": _pr_number(payload, record)})
         return await build_report(
             self._store,
             run,
@@ -616,6 +688,14 @@ def _policy_without_cache(context: DiagnosisContext) -> PolicyInput:
         explain=context.explain,
         cache_hit=False,
     )
+
+
+def _pr_number(payload: DiagnoseRunPayload, record: RunAnalysisRecord) -> int | None:
+    """The pull request of the comment: the one stored with the run or, when the run has none
+    (a fork run is not linked to its pull request by GitHub), the one of the command (D-95)."""
+    if record.run.pr_number is not None:
+        return record.run.pr_number
+    return payload.pr_number if payload.trigger == "explain" else None
 
 
 def _statuses(record: RunAnalysisRecord) -> list[tuple[FailureStatus, str | None]]:

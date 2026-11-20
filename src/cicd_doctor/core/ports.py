@@ -28,6 +28,7 @@ from cicd_doctor.core.models import (
     NewJob,
     Publication,
     PublicationKey,
+    PublishedUpgrade,
     PurgeCounts,
     RawLog,
     RepoRef,
@@ -108,6 +109,21 @@ class FailureStore(Protocol):
     async def run_analysis(self, run_id: int, attempt: int) -> RunAnalysisRecord | None:
         """The stored analysis of an attempt, or None if it was never analysed. An attempt
         without failures is a valid checkpoint."""
+        ...
+
+    async def upgrade_published(
+        self, run_id: int, attempt: int, upgrades: Sequence[PublishedUpgrade]
+    ) -> RunAnalysisRecord:
+        """Replace the published rules diagnosis of some failures of an analysed attempt by an
+        ``llm`` or ``cache`` one and return the stored record (D-95).
+
+        One transaction for all of them: per failure the published row becomes a plain,
+        unpublished rules row (its usage stays on it, so ``SUM(cost_usd)`` is the real spend) and
+        the new row is published with its usage. A failure whose published diagnosis is no longer
+        a rules one is left alone, so a repeated or concurrent call changes nothing. ``KeyError``
+        for an attempt that was never analysed or a failure that is not one of its failures
+        (nothing is written then).
+        """
         ...
 
     async def cached_diagnosis(

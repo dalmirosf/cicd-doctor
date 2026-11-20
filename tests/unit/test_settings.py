@@ -114,3 +114,14 @@ def test_embedding_settings_defaults_and_validation(monkeypatch: pytest.MonkeyPa
     monkeypatch.setenv("EMBEDDING_THREADS", "0")
     with pytest.raises(ValidationError):
         Settings(_env_file=None)
+
+
+def test_a_command_diagnoses_at_most_three_runs_by_default(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("DATABASE_URL", URL)
+
+    assert Settings(_env_file=None).explain_max_runs == 3
+    monkeypatch.setenv("EXPLAIN_MAX_RUNS", "0")
+    with pytest.raises(ValidationError):
+        Settings(_env_file=None)

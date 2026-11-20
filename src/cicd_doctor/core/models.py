@@ -388,6 +388,29 @@ class StoredFailure(DomainModel):
         return [(self.rules, False), (self.published, True)]
 
 
+class PublishedUpgrade(DomainModel):
+    """A better published diagnosis for one stored failure: what ``upgrade_published`` writes
+    (D-95). It is always an ``llm`` or a ``cache`` diagnosis, never a rules one."""
+
+    failure_id: UUID
+    published: Diagnosis
+    usage: DiagnosisUsage | None = None  # the calls that produced it; None for a cache hit
+    cached_from: UUID | None = None  # the ``diagnoses.id`` a ``cache`` diagnosis was copied from
+
+    @model_validator(mode="after")
+    def _check_source(self) -> Self:
+        if self.published.source == "rules":
+            raise ValueError("an upgrade is an llm or a cache diagnosis")
+        if self.published.source == "cache":
+            if self.usage is not None:
+                raise ValueError("a cached diagnosis made no LLM call")
+        elif self.cached_from is not None:
+            raise ValueError("only a cached diagnosis has an origin")
+        elif self.usage is not None and self.usage.model != self.published.model:
+            raise ValueError("the usage of an LLM diagnosis names the model that produced it")
+        return self
+
+
 class RunAnalysisRecord(DomainModel):
     """The analysis of one run attempt: the checkpoint that makes publishing repeatable (D-69).
 
@@ -626,6 +649,12 @@ class DiagnoseRunPayload(DomainModel):
     # queued before P1c carry no account.
     account_login: str | None = None
     account_type: str | None = None
+    # How the job came about (D-95). ``explain`` is a ``/cicd-doctor explain`` command: it upgrades
+    # what is published instead of starting from nothing. Jobs queued before P3 have neither the
+    # trigger nor the pull request, and stay ``automatic``.
+    trigger: Literal["automatic", "explain"] = "automatic"
+    pr_number: int | None = None  # the pull request of the command (``explain`` only)
+    command_comment_id: int | None = None  # the command comment (``explain`` only)
 
 
 # --- Installations (FR-03, D-54) ----------------------------------------------------------

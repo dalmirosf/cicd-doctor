@@ -33,8 +33,10 @@ from cicd_doctor.core.models import (
     Installation,
     Publication,
     PublicationKey,
+    PublishedUpgrade,
     Repository,
     ResolvedBy,
+    RunAnalysisRecord,
     RunRef,
     StoredFailure,
     SuccessRef,
@@ -45,10 +47,12 @@ from tests.factories import (
     T0,
     make_diagnosis,
     make_failure,
+    make_rules_diagnosis,
     make_run_analysis,
     make_run_attempt,
     make_run_ref,
     make_stored_failure,
+    make_usage,
     make_workflow_run,
 )
 
@@ -775,6 +779,190 @@ async def test_analysed_failures_belong_to_their_repository_only(harness: Harnes
     assert await harness.store.open_failures(200, mine.workflow_id, mine.branch_key) == []
     assert await harness.store.cached_diagnosis(200, "f" * 64, WEEK, "v1") is None
     assert await harness.store.run_analysis(6000, 1) is None
+
+
+# --- upgrading what is published (D-95) ---------------------------------------------------
+
+
+def _upgrade_of(item: StoredFailure, **changes: Any) -> PublishedUpgrade:
+    return PublishedUpgrade(
+        failure_id=item.failure.id,
+        published=make_diagnosis(model="gpt-test", prompt_version="v1", **changes),
+        usage=make_usage(cost_usd=Decimal("0.002000"), calls=1, failed_calls=0),
+    )
+
+
+async def _analysed(harness: Harness, run: RunRef | None = None) -> RunAnalysisRecord:
+    run = run or make_run_ref()
+    await harness.prepare(run)
+    return await harness.store.save_run_analysis(make_run_analysis(run))
+
+
+async def test_upgrading_leaves_one_published_row_and_keeps_the_rules_one(
+    harness: Harness,
+) -> None:
+    record = await _analysed(harness)
+    fork_policy = record.items[2]  # fell back to the rules, no call was made
+    harness.clock.advance(timedelta(minutes=1))
+
+    stored = await harness.store.upgrade_published(
+        5000, 1, [_upgrade_of(fork_policy, probable_cause="the model's cause")]
+    )
+
+    item = stored.items[2]
+    assert item.published.source == "llm"
+    assert item.published.probable_cause == "the model's cause"
+    assert item.rules == fork_policy.rules  # the plain rules diagnosis, with no reason
+    assert item.usage is not None
+    assert item.usage.cost_usd == Decimal("0.002000")
+    assert [
+        (r.source, r.published, r.fallback_reason) for r in await harness.rows(item.failure.id)
+    ] == [
+        ("rules", False, None),
+        ("llm", True, None),
+    ]
+    assert stored.items[:2] == record.items[:2]  # the other failures are untouched
+    assert await harness.store.run_analysis(5000, 1) == stored
+
+
+async def test_the_cost_of_an_upgrade_adds_to_what_was_already_spent(harness: Harness) -> None:
+    record = await _analysed(harness)
+    billed = record.items[1]  # a rules fallback whose two calls were billed: 0.000900
+    harness.clock.advance(timedelta(minutes=1))
+
+    stored = await harness.store.upgrade_published(5000, 1, [_upgrade_of(billed)])
+
+    rows = await harness.rows(billed.failure.id)
+    assert [(r.source, r.published, r.cost_usd) for r in rows] == [
+        ("rules", False, Decimal("0.000900")),
+        ("llm", True, Decimal("0.002000")),
+    ]
+    assert sum((r.cost_usd or Decimal(0) for r in rows), Decimal(0)) == Decimal("0.002900")
+    assert stored.items[1].usage == make_usage(
+        cost_usd=Decimal("0.002000"), calls=1, failed_calls=0
+    )
+
+
+async def test_upgrading_twice_changes_nothing(harness: Harness) -> None:
+    record = await _analysed(harness)
+    first = await harness.store.upgrade_published(5000, 1, [_upgrade_of(record.items[2])])
+    before = await harness.rows(record.items[2].failure.id)
+
+    again = await harness.store.upgrade_published(
+        5000, 1, [_upgrade_of(record.items[2], probable_cause="another answer")]
+    )
+
+    assert again == first
+    assert await harness.rows(record.items[2].failure.id) == before
+
+
+async def test_a_failure_that_already_has_an_llm_diagnosis_is_not_upgraded(
+    harness: Harness,
+) -> None:
+    record = await _analysed(harness)
+    llm_item = record.items[0]
+
+    stored = await harness.store.upgrade_published(
+        5000, 1, [_upgrade_of(llm_item, probable_cause="not this one")]
+    )
+
+    assert stored == record
+    assert len(await harness.rows(llm_item.failure.id)) == 2
+
+
+async def test_an_upgrade_of_an_unknown_failure_or_attempt_writes_nothing(
+    harness: Harness,
+) -> None:
+    record = await _analysed(harness)
+    stranger = PublishedUpgrade(
+        failure_id=failure_id_for(1, 1, 1), published=make_diagnosis(model="gpt-test")
+    )
+
+    with pytest.raises(KeyError):
+        await harness.store.upgrade_published(5000, 1, [_upgrade_of(record.items[2]), stranger])
+    with pytest.raises(KeyError):
+        await harness.store.upgrade_published(5000, 2, [_upgrade_of(record.items[2])])
+
+    assert await harness.store.run_analysis(5000, 1) == record
+    assert len(await harness.rows(record.items[2].failure.id)) == 1
+
+
+async def test_concurrent_upgrades_of_one_failure_leave_one_published_row(
+    harness: Harness,
+) -> None:
+    record = await _analysed(harness)
+    target = record.items[2]
+
+    await asyncio.gather(
+        *(
+            harness.store.upgrade_published(
+                5000, 1, [_upgrade_of(target, probable_cause=f"answer {n}")]
+            )
+            for n in range(4)
+        )
+    )
+
+    rows = await harness.rows(target.failure.id)
+    assert sorted((r.source, r.published) for r in rows) == [("llm", True), ("rules", False)]
+
+
+async def test_an_upgraded_cache_diagnosis_records_where_it_came_from(harness: Harness) -> None:
+    origin_run = make_run_ref(run_id=4000)
+    origin = make_stored_failure(run=origin_run, job_id=1)
+    await harness.prepare(origin_run)
+    await harness.store.save_run_analysis(make_run_analysis(origin_run, [origin]))
+    cached = await harness.store.cached_diagnosis(origin_run.repo_id, "f" * 64, WEEK, "v1")
+    assert cached is not None
+    run = make_run_ref(run_id=5000)
+    await harness.prepare(run)
+    rules_item = make_stored_failure(
+        run=run,
+        job_id=1,
+        published=make_rules_diagnosis().model_copy(update={"fallback_reason": "on_demand"}),
+        signature_hash="e" * 64,
+    )
+    await harness.store.save_run_analysis(make_run_analysis(run, [rules_item]))
+
+    stored = await harness.store.upgrade_published(
+        5000,
+        1,
+        [
+            PublishedUpgrade(
+                failure_id=rules_item.failure.id,
+                published=origin.published.model_copy(update={"source": "cache"}),
+                cached_from=cached.origin_id,
+            )
+        ],
+    )
+
+    assert stored.items[0].published.source == "cache"
+    assert stored.items[0].usage is None
+    assert stored.items[0].cached_from == cached.origin_id
+    assert stored.items[0].cached_from_run_id == 4000
+
+
+async def test_an_upgrade_of_a_fork_run_never_feeds_the_cache_or_the_similar_ones(
+    harness: Harness,
+) -> None:
+    """D-94, R-P3-3: the answer of the model about a fork's log must not reach normal runs."""
+    fork = make_run_ref(is_fork=True)
+    embedding = _embedding("No module named requests")
+    item = make_stored_failure(
+        run=fork,
+        job_id=1,
+        published=make_rules_diagnosis().model_copy(update={"fallback_reason": "fork_policy"}),
+        signature_hash="d" * 64,
+        embedding=embedding,
+    )
+    await harness.prepare(fork)
+    await harness.store.save_run_analysis(make_run_analysis(fork, [item]))
+
+    stored = await harness.store.upgrade_published(5000, 1, [_upgrade_of(item)])
+
+    assert stored.items[0].published.source == "llm"
+    assert await harness.store.cached_diagnosis(fork.repo_id, "d" * 64, WEEK, "v1") is None
+    assert await harness.store.similar(fork.repo_id, embedding, 3, 0.0) == []
+    assert await harness.store.similar(fork.repo_id, embedding, 3, 0.0, exclude_run_id=1) == []
 
 
 # --- publications (idempotent outputs) ----------------------------------------------------

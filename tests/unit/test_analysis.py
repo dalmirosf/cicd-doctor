@@ -3,9 +3,9 @@
 import pytest
 
 from cicd_doctor.adapters.memory import CharTokenCounter
-from cicd_doctor.core.analysis import analyze_jobs
+from cicd_doctor.core.analysis import analysis_from_stored, analyze_jobs
 from cicd_doctor.core.logs import build_excerpts
-from cicd_doctor.core.models import Category
+from cicd_doctor.core.models import Category, Failure, FailureStatus, failure_id_for
 from cicd_doctor.core.rules import Rule
 from cicd_doctor.core.rules.engine import compile_all
 from cicd_doctor.core.signature import compute_signature
@@ -96,3 +96,22 @@ def test_a_custom_rule_set_brings_its_own_patterns() -> None:
 
     assert analysis.rules.category is Category.DEPENDENCY
     assert analysis.rules.rule_ids == ["NPM-404"]
+
+
+@pytest.mark.parametrize("name", sorted(EXPECTED))
+def test_an_analysis_rebuilt_from_what_is_stored_is_the_one_that_was_stored(name: str) -> None:
+    """D-95: ``explain`` analyses a failure again from its stored excerpt, no log in sight."""
+    case = load_log_case(name)
+    [job, *_] = select_case_jobs(case)
+    [original] = analyze_jobs([(job, case.raw_log(job.job.job_id))], COUNTER)
+    stored = Failure(
+        id=failure_id_for(job.job.run.run_id, job.job.run.run_attempt, job.job.job_id),
+        job=original.job,
+        excerpt=original.excerpt,
+        signature=original.signature,
+        embedding=None,
+        status=FailureStatus.OPEN,
+        fix_commit_sha=None,
+    )
+
+    assert analysis_from_stored(stored) == original
