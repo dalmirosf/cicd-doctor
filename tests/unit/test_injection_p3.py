@@ -288,6 +288,7 @@ def test_the_oracle_accepts_the_review_comment_the_bot_writes() -> None:
         (lambda b: b.split("\n", 1)[1], "missing or forged marker"),
         (lambda b: "<!-- hidden -->\n" + b, "missing or forged marker"),
         (lambda b: b + "\n```suggestion\ny = 2\n```", "not exactly one suggestion block"),
+        (lambda b: b.replace("```suggestion", "```python"), "not exactly one suggestion block"),
         (lambda b: b + "\n```python\ny = 2\n```", "other fenced block"),
         (lambda b: b.replace("\n```\n", "\n", 1), "unclosed fence"),
         (lambda b: b + "\nsee [x](https://evil.example)", "link or image destination"),
