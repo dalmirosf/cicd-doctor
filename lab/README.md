@@ -1014,3 +1014,19 @@ Criterion: the run's `conclusion` is `cancelled`; the annotations (if any) do **
 count by `external_id`, not by name). In the worker terminal there is a line
 `cancelled without a job timeout, nothing to publish` and the job finished (`done`), without
 retries.
+
+## Live verification (P3): prepare the app (D-89)
+
+The commands of P3 need a permission and an event the dev app does not have yet. Nothing in P3 is
+verified live until the owner does this by hand (no code does it). On 2026-11-20 the settings page
+showed Issues = "No access", no "Issue comment" under *Subscribe to events* and no `issue_comment`
+delivery in *Recent deliveries*.
+
+1. GitHub → Settings → Developer settings → GitHub Apps → the dev app → *Permissions & events*.
+2. *Repository permissions* → *Issues* → **Read and write**. Save.
+3. *Subscribe to events* → tick **Issue comment**. Save.
+4. Each installation (the lab and this repository) gets an email and a banner asking to accept the
+   new permission: open it and accept. Until then the event is not delivered and the 👀 token is
+   refused with 422 (diagnosis keeps working: its token does not ask for Issues, D-89).
+5. Check: *Advanced* → *Recent deliveries* shows an `issue_comment` delivery after a comment on a
+   pull request of the lab (any comment; the command itself comes with the next P3 pull requests).

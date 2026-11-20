@@ -264,10 +264,10 @@ Over any limit, the rules diagnosis is published with `fallback_reason = budget`
 | Metadata | read |
 | Pull requests | write |
 
-Events: `workflow_run` and `issue_comment`. No Issues, Administration or Workflows permission. Installation tokens are requested with `repository_ids: [repo]` and only the permissions the use case needs, and cached until 5 minutes before expiry.
+Events: `workflow_run` and `issue_comment`. No Administration or Workflows permission. Issues write was added by D-89 (the P3 check: `issue_comment` and reactions need Issues, not Pull requests). Installation tokens are requested with `repository_ids: [repo]` and only the permissions the use case needs, and cached until 5 minutes before expiry.
 **Why:** Each permission maps to a feature (SPEC §9.6). `contents: read` is needed for the default-branch config, compare for fix tracking, and file context for suggestions. Comments on PRs, review comments and reactions are covered by Pull requests write. Narrowing each token reduces the impact of a leaked token.
 **Alternatives:** Issues write for comments (broader, since it also covers non-PR issues); skipping `contents: read` (would remove the config file and fix diffs).
-**Consequences:** **To verify in P3:** whether `issue_comment` events on PRs are delivered with only the Pull requests permission. If not, add Issues: read and update this entry.
+**Consequences:** Verified for P3 in D-89: `issue_comment` and reactions need Issues, so the table above gains Issues: write.
 
 ## D-22 — Command authorization by `author_association` + rate limit
 **Origin:** Proposed
@@ -1062,3 +1062,13 @@ The result is never longer than 80 characters. **No markdown escaping is applied
 **Why:** The metric that matters most here is not accuracy alone: a diagnosis that is wrong and sure of itself is worse than "I do not know", and only luna abstained. The comparison is small (41 cases, 25 from one repository), so 95% is a way to rank two models, not a promise; the public cases of P4 are what will measure the real accuracy, and the choice is revisited then.
 **Alternatives:** `gpt-5.4-mini` (worse and ten times dearer here); `gpt-6.2-sol` (over the NFR-03 cost before any result); `gpt-5.5` and the `pro` models (not tried: price class far above NFR-03); no pinned model (an alias that changes behaviour breaks D-65's cache key and the reproducibility of a report).
 **Consequences:** `.env` carries `OPENAI_MODEL` and the two prices (by hand; `.env.example` stays empty). SPEC §13 P1b (smoke and model choice) and the open item of the model in §17 change. The reports of `evals/reports` and the answer cache stay untracked; the numbers above are the record. The cache box of P2 (box 2) and the real numbers of box 8 can now run.
+
+## D-89 — `issue_comment` needs Issues permission: the app adds Issues write and the `issue_comment` event (modifies D-21)
+**Origin:** Proposed (resolves the "to verify in P3" of D-21)
+**Decision:**
+- GitHub documents `issue_comment` (also for comments on pull requests) under the **Issues** permission, and the reaction endpoint `POST /repos/{o}/{r}/issues/comments/{id}/reactions` under **Issues: write**. The Pull requests permission covers neither. So the app gains **Issues: write** (read alone would receive the event but could not add the 👀 reaction of FR-19) and subscribes to `issue_comment`.
+- Seen on 2026-11-20 in the settings page of the dev app: Issues = "No access", no "Issue comment" in *Subscribe to events* (GitHub offers the event only with the permission), and no `issue_comment` delivery in *Recent deliveries*. This confirms the documentation. The first real delivery is checked in the live verification of P3 (SPEC §13, P3 box 5).
+- Tokens stay scoped per use case (D-68). `DIAGNOSIS_PERMISSIONS` does **not** change: an installation that has not yet accepted the new permission must keep diagnosing (a token requested with a permission the installation lacks is refused with 422). Two new sets exist in `adapters/github/auth.py`: `EXPLAIN_PERMISSIONS` (`actions: read`, `checks: write`, `pull_requests: write`, `issues: write`) for the `/cicd-doctor explain` flow and `CONFIG_PERMISSIONS` (`contents: read`) for reading `.github/cicd-doctor.yml`.
+**Why:** The permission a feature needs must be known, not guessed (D-21 left it open on purpose). Keeping the diagnosis token unchanged makes the permission change safe to roll out: nothing that works today depends on the owner accepting it.
+**Alternatives:** Issues read only (the event arrives, but no reaction: breaks FR-19); one token with every permission (simpler, but a bug in one flow could use a permission it never needed, NFR-06); asking for the new permissions in the diagnosis token (a not yet accepted permission would break all diagnoses).
+**Consequences:** The owner changes the app by hand (Issues write, subscribe to `issue_comment`) and every installation must accept the new permission before the event is delivered and the reaction works; until then P3 does nothing and P1/P2 are untouched. D-21's table gains the Issues row. SPEC §9.6 and §13 are aligned.

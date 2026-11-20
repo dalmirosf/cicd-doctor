@@ -944,11 +944,12 @@ Evaluated in order; the first match decides:
 |---|---|---|
 | Actions | read | List the jobs of a run and download job logs. |
 | Checks | write | Create and update the `CICD Doctor` check run. |
+| Issues | write | Receive `issue_comment` events and add the 👀 reaction to command comments (P3, D-89). |
 | Contents | read | Read `.github/cicd-doctor.yml` from the default branch (P3), compare commits for fix tracking (P2), and read file context for suggestions (P3). |
 | Metadata | read | Mandatory. |
-| Pull requests | write | Find the PR for a run, create and edit the sticky comment, post review suggestions (P3), add reactions to command comments (P3). |
+| Pull requests | write | Find the PR for a run, create and edit the sticky comment, post review suggestions (P3). |
 
-Subscribed events: `workflow_run`, `issue_comment` (P3). Installation events are delivered by default. P3 verifies that `issue_comment` events on PRs are delivered with the Pull requests permission; if not, add **Issues: read** and record it in DECISIONS.md.
+Subscribed events: `workflow_run`, `issue_comment` (P3). Installation events are delivered by default. `issue_comment` and reactions need **Issues** (write), not Pull requests (D-89; first real delivery checked in §13 P3 box 5).
 
 Installation tokens are requested with `repository_ids: [repo_id]` and only the permissions the use case needs (for example, `{actions: read, checks: write, pull_requests: write}` for diagnosis). They are cached in memory until 5 minutes before expiry, with one request in flight per (installation, repository, permission set) (D-68). The app private key and webhook secret live in AWS Secrets Manager (prod) or `.env` (dev, git-ignored).
 
@@ -1160,7 +1161,7 @@ Scope: FR-19…FR-21.
 - [ ] The same command by a non-collaborator (`CONTRIBUTOR`, `NONE`, …) → no reaction, no job. A second valid command within 5 minutes → ignored.
 - [ ] An LLM suggestion on lines inside the PR diff → a review comment with a `suggestion` block. Outside the diff → text only.
 - [ ] `.github/cicd-doctor.yml` with `comment: false` on the default branch → no PR comment (check run still posted). The same file changed only in a fork PR head has no effect.
-- [ ] The `issue_comment` permission behavior is verified and DECISIONS.md is updated.
+- [ ] The `issue_comment` permission behavior is verified and DECISIONS.md is updated. (Settings seen and D-89 written 2026-11-20; ticked when the first real `issue_comment` delivery is observed.)
 
 ### P4 — Evals at scale
 Scope: FR-22 complete.
@@ -1190,6 +1191,6 @@ Scope: Docker, Terraform on AWS, CD, prod app, Langfuse.
 - ~~Job-level timeouts~~ — **resolved by D-73, option (a).** Found by the first real lab capture (P1b) and measured on the real API in the P1c spike (2026-11-16): a job that exceeds its `timeout-minutes` ends **`cancelled`** (the job and the run), not `timed_out` or `failure`, and its log only says `##[error]The operation was canceled.`, like a manual cancellation. The text "The job has exceeded the maximum execution time of 1m0s" is an annotation of the job's check run (`GET /repos/{o}/{r}/check-runs/{job_id}/annotations`, 200; the job id is the check run id), together with `The operation was canceled.`, both of level `failure`; a manual cancellation has no such annotation (`tests/fixtures/github/jobs_job_timeout.json`, `annotations_job_timeout.json`). So `cancelled` runs are enqueued (FR-04), the annotations of their cancelled jobs are read, and the run is diagnosed only when one reports the timeout (FR-06, §7.1 step 4); every other cancellation stays silent. A step-level `timeout-minutes` is different: it ends `failure` with `##[error]The action '…' has timed out after N minutes.`, which GHA-CANCEL-TIMEOUT diagnoses. The live check passed on 2026-11-17 (§13); the lab case `job-timeout` is still to be captured.
 - ~~Exact OpenAI model ID and price table~~ → closed by D-88: `gpt-6-luna` (prices to be confirmed by the author on the pricing page). The strict schema of D-63 is accepted (the smoke passed).
 - Whether lint and type-check failures deserve their own category → after the P4 evals (D-13).
-- `issue_comment` delivery with Pull requests vs Issues permission → P3 (D-21).
+- `issue_comment` delivery: needs Issues permission (D-89); the first real delivery is checked in P3.
 - HTTPS entry for the API: Application Load Balancer + ACM certificate (needs a domain) vs App Runner (HTTPS URL without a domain); and Secrets Manager vs SSM Parameter Store for secrets → at P5 deploy time (D-46).
 - ~~fastembed on Python 3.13~~ — **resolved by D-78.** Confirmed on Windows 11 (CPython 3.13.7) and on Linux (`python:3.13-slim`, CPython 3.13.18) with fastembed 0.9.1 and onnxruntime 1.32.0: it loads in 0.1 s with the model on disk (a cold download took 12 to 166 s), returns 384-d L2-normalised vectors that are deterministic and identical between the two systems, and takes 4 to 14 ms per attempt; pinning 3.12 is not needed. Still open: fastembed serves `BAAI/bge-small-en-v1.5` from the Qdrant ONNX build `Qdrant/bge-small-en-v1.5-onnx-Q` (`model_optimized.onnx`, 67 MB), not from the original weights, so check in P2 that the `SIMILAR_MIN_SCORE` of 0.85 is calibrated against that build (D-08).
