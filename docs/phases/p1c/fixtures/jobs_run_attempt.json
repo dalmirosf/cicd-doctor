@@ -1,0 +1,89 @@
+{
+  "total_count": 1,
+  "jobs": [
+    {
+      "id": 90000020,
+      "run_id": 90000018,
+      "workflow_name": "flaky-timing",
+      "head_branch": "main",
+      "run_url": "https://api.github.com/repos/acme/cicd-doctor-lab/actions/runs/90000018",
+      "run_attempt": 1,
+      "node_id": "NODE_ID",
+      "head_sha": "29a3134988e125132932b329c576fe394e44d3e4",
+      "url": "https://api.github.com/repos/acme/cicd-doctor-lab/actions/jobs/90000020",
+      "html_url": "https://github.com/acme/cicd-doctor-lab/actions/runs/90000018/job/90000020",
+      "status": "completed",
+      "conclusion": "failure",
+      "created_at": "2026-11-14T01:03:04Z",
+      "started_at": "2026-11-14T01:03:07Z",
+      "completed_at": "2026-11-14T01:03:18Z",
+      "name": "run",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-14T01:03:08Z",
+          "completed_at": "2026-11-14T01:03:09Z"
+        },
+        {
+          "name": "Run actions/checkout@d4c803c71c361394ed6a55a5e6b3fc2581c256a0",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-14T01:03:09Z",
+          "completed_at": "2026-11-14T01:03:10Z"
+        },
+        {
+          "name": "Run astral-sh/setup-uv@32d882783e6513e67a807c7ea519eada9438af55",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-11-14T01:03:10Z",
+          "completed_at": "2026-11-14T01:03:13Z"
+        },
+        {
+          "name": "Run uv run pytest tests/test_flaky_timing.py",
+          "status": "completed",
+          "conclusion": "failure",
+          "number": 4,
+          "started_at": "2026-11-14T01:03:13Z",
+          "completed_at": "2026-11-14T01:03:15Z"
+        },
+        {
+          "name": "Post Run astral-sh/setup-uv@32d882783e6513e67a807c7ea519eada9438af55",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 7,
+          "started_at": "2026-11-14T01:03:15Z",
+          "completed_at": "2026-11-14T01:03:15Z"
+        },
+        {
+          "name": "Post Run actions/checkout@d4c803c71c361394ed6a55a5e6b3fc2581c256a0",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8,
+          "started_at": "2026-11-14T01:03:15Z",
+          "completed_at": "2026-11-14T01:03:16Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9,
+          "started_at": "2026-11-14T01:03:16Z",
+          "completed_at": "2026-11-14T01:03:16Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/acme/cicd-doctor-lab/check-runs/90000020",
+      "labels": [
+        "ubuntu-24.04"
+      ],
+      "runner_id": 90000021,
+      "runner_name": "GitHub Actions 90000021",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions"
+    }
+  ]
+}

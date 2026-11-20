@@ -1,0 +1,2106 @@
+{
+ "labels": "same = same failure family with a different signature text; different = two different lab cases",
+ "pairs": [
+  {
+   "a": "modnf-httpx",
+   "b": "lab-py-modnf-01",
+   "label": "same",
+   "cosine_windows": 0.926965,
+   "cosine_linux": 0.926965
+  },
+  {
+   "a": "modnf-yaml",
+   "b": "lab-py-modnf-01",
+   "label": "same",
+   "cosine_windows": 0.905305,
+   "cosine_linux": 0.905305
+  },
+  {
+   "a": "modnf-other-workflow-name",
+   "b": "lab-py-modnf-01",
+   "label": "same",
+   "cosine_windows": 0.99578,
+   "cosine_linux": 0.99578
+  },
+  {
+   "a": "assert-other-test",
+   "b": "lab-py-assert-01",
+   "label": "same",
+   "cosine_windows": 0.95535,
+   "cosine_linux": 0.95535
+  },
+  {
+   "a": "dns-other-host",
+   "b": "lab-dns-01",
+   "label": "same",
+   "cosine_windows": 0.976623,
+   "cosine_linux": 0.976623
+  },
+  {
+   "a": "mypy-other-type",
+   "b": "lab-py-mypy-01",
+   "label": "same",
+   "cosine_windows": 0.979271,
+   "cosine_linux": 0.979271
+  },
+  {
+   "a": "nodist-other-package",
+   "b": "lab-pip-no-dist-01",
+   "label": "same",
+   "cosine_windows": 0.988249,
+   "cosine_linux": 0.988249
+  },
+  {
+   "a": "input-other-name",
+   "b": "lab-missing-input-01",
+   "label": "same",
+   "cosine_windows": 0.974049,
+   "cosine_linux": 0.974049
+  },
+  {
+   "a": "copy-other-file",
+   "b": "lab-docker-copy-01",
+   "label": "same",
+   "cosine_windows": 0.986861,
+   "cosine_linux": 0.986861
+  },
+  {
+   "a": "base-other-image",
+   "b": "lab-docker-base-01",
+   "label": "same",
+   "cosine_windows": 0.976025,
+   "cosine_linux": 0.976025
+  },
+  {
+   "a": "flaky-timing-other-test",
+   "b": "lab-flaky-timing-01",
+   "label": "same",
+   "cosine_windows": 0.998664,
+   "cosine_linux": 0.998664
+  },
+  {
+   "a": "lab-aws-no-credentials-01",
+   "b": "lab-conn-refused-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.577846,
+   "cosine_linux": 0.577846
+  },
+  {
+   "a": "lab-aws-no-credentials-01",
+   "b": "lab-disk-full-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.507531,
+   "cosine_linux": 0.507531
+  },
+  {
+   "a": "lab-aws-no-credentials-01",
+   "b": "lab-dns-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.652085,
+   "cosine_linux": 0.652085
+  },
+  {
+   "a": "lab-aws-no-credentials-01",
+   "b": "lab-docker-base-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.575445,
+   "cosine_linux": 0.575445
+  },
+  {
+   "a": "lab-aws-no-credentials-01",
+   "b": "lab-docker-copy-01",
+   "label": "different",
+   "same_category": true,
+   "cosine_windows": 0.606758,
+   "cosine_linux": 0.606758
+  },
+  {
+   "a": "lab-aws-no-credentials-01",
+   "b": "lab-flaky-random-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.534704,
+   "cosine_linux": 0.534704
+  },
+  {
+   "a": "lab-aws-no-credentials-01",
+   "b": "lab-flaky-timing-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.526415,
+   "cosine_linux": 0.526415
+  },
+  {
+   "a": "lab-aws-no-credentials-01",
+   "b": "lab-job-timeout-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.575053,
+   "cosine_linux": 0.575053
+  },
+  {
+   "a": "lab-aws-no-credentials-01",
+   "b": "lab-missing-input-01",
+   "label": "different",
+   "same_category": true,
+   "cosine_windows": 0.596315,
+   "cosine_linux": 0.596315
+  },
+  {
+   "a": "lab-aws-no-credentials-01",
+   "b": "lab-obscure-tool-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.589545,
+   "cosine_linux": 0.589545
+  },
+  {
+   "a": "lab-aws-no-credentials-01",
+   "b": "lab-oom-137-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.526531,
+   "cosine_linux": 0.526531
+  },
+  {
+   "a": "lab-aws-no-credentials-01",
+   "b": "lab-opaque-exit-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.531347,
+   "cosine_linux": 0.531347
+  },
+  {
+   "a": "lab-aws-no-credentials-01",
+   "b": "lab-pip-no-dist-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.593481,
+   "cosine_linux": 0.593481
+  },
+  {
+   "a": "lab-aws-no-credentials-01",
+   "b": "lab-py-assert-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.522865,
+   "cosine_linux": 0.522865
+  },
+  {
+   "a": "lab-aws-no-credentials-01",
+   "b": "lab-py-modnf-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.568138,
+   "cosine_linux": 0.568138
+  },
+  {
+   "a": "lab-aws-no-credentials-01",
+   "b": "lab-py-mypy-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.565048,
+   "cosine_linux": 0.565048
+  },
+  {
+   "a": "lab-aws-no-credentials-01",
+   "b": "lab-py-resolve-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.534373,
+   "cosine_linux": 0.534373
+  },
+  {
+   "a": "lab-aws-no-credentials-01",
+   "b": "lab-py-ruff-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.575923,
+   "cosine_linux": 0.575923
+  },
+  {
+   "a": "lab-aws-no-credentials-01",
+   "b": "lab-secret-misspelled-01",
+   "label": "different",
+   "same_category": true,
+   "cosine_windows": 0.654432,
+   "cosine_linux": 0.654432
+  },
+  {
+   "a": "lab-aws-no-credentials-01",
+   "b": "lab-step-timeout-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.469504,
+   "cosine_linux": 0.469504
+  },
+  {
+   "a": "lab-aws-no-credentials-01",
+   "b": "lab-tf-init-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.593894,
+   "cosine_linux": 0.593894
+  },
+  {
+   "a": "lab-aws-no-credentials-01",
+   "b": "lab-tf-validate-01",
+   "label": "different",
+   "same_category": true,
+   "cosine_windows": 0.578913,
+   "cosine_linux": 0.578913
+  },
+  {
+   "a": "lab-conn-refused-01",
+   "b": "lab-disk-full-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.592371,
+   "cosine_linux": 0.592371
+  },
+  {
+   "a": "lab-conn-refused-01",
+   "b": "lab-dns-01",
+   "label": "different",
+   "same_category": true,
+   "cosine_windows": 0.722798,
+   "cosine_linux": 0.722798
+  },
+  {
+   "a": "lab-conn-refused-01",
+   "b": "lab-docker-base-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.622942,
+   "cosine_linux": 0.622942
+  },
+  {
+   "a": "lab-conn-refused-01",
+   "b": "lab-docker-copy-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.647097,
+   "cosine_linux": 0.647097
+  },
+  {
+   "a": "lab-conn-refused-01",
+   "b": "lab-flaky-random-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.618394,
+   "cosine_linux": 0.618394
+  },
+  {
+   "a": "lab-conn-refused-01",
+   "b": "lab-flaky-timing-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.65473,
+   "cosine_linux": 0.65473
+  },
+  {
+   "a": "lab-conn-refused-01",
+   "b": "lab-job-timeout-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.680986,
+   "cosine_linux": 0.680986
+  },
+  {
+   "a": "lab-conn-refused-01",
+   "b": "lab-missing-input-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.661877,
+   "cosine_linux": 0.661877
+  },
+  {
+   "a": "lab-conn-refused-01",
+   "b": "lab-obscure-tool-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.621993,
+   "cosine_linux": 0.621993
+  },
+  {
+   "a": "lab-conn-refused-01",
+   "b": "lab-oom-137-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.702725,
+   "cosine_linux": 0.702725
+  },
+  {
+   "a": "lab-conn-refused-01",
+   "b": "lab-opaque-exit-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.59122,
+   "cosine_linux": 0.59122
+  },
+  {
+   "a": "lab-conn-refused-01",
+   "b": "lab-pip-no-dist-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.661911,
+   "cosine_linux": 0.661911
+  },
+  {
+   "a": "lab-conn-refused-01",
+   "b": "lab-py-assert-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.625085,
+   "cosine_linux": 0.625085
+  },
+  {
+   "a": "lab-conn-refused-01",
+   "b": "lab-py-modnf-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.670893,
+   "cosine_linux": 0.670893
+  },
+  {
+   "a": "lab-conn-refused-01",
+   "b": "lab-py-mypy-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.633878,
+   "cosine_linux": 0.633878
+  },
+  {
+   "a": "lab-conn-refused-01",
+   "b": "lab-py-resolve-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.65864,
+   "cosine_linux": 0.65864
+  },
+  {
+   "a": "lab-conn-refused-01",
+   "b": "lab-py-ruff-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.58635,
+   "cosine_linux": 0.58635
+  },
+  {
+   "a": "lab-conn-refused-01",
+   "b": "lab-secret-misspelled-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.636973,
+   "cosine_linux": 0.636973
+  },
+  {
+   "a": "lab-conn-refused-01",
+   "b": "lab-step-timeout-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.62219,
+   "cosine_linux": 0.62219
+  },
+  {
+   "a": "lab-conn-refused-01",
+   "b": "lab-tf-init-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.658637,
+   "cosine_linux": 0.658637
+  },
+  {
+   "a": "lab-conn-refused-01",
+   "b": "lab-tf-validate-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.628983,
+   "cosine_linux": 0.628983
+  },
+  {
+   "a": "lab-disk-full-01",
+   "b": "lab-dns-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.611796,
+   "cosine_linux": 0.611796
+  },
+  {
+   "a": "lab-disk-full-01",
+   "b": "lab-docker-base-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.701166,
+   "cosine_linux": 0.701166
+  },
+  {
+   "a": "lab-disk-full-01",
+   "b": "lab-docker-copy-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.719725,
+   "cosine_linux": 0.719725
+  },
+  {
+   "a": "lab-disk-full-01",
+   "b": "lab-flaky-random-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.640145,
+   "cosine_linux": 0.640145
+  },
+  {
+   "a": "lab-disk-full-01",
+   "b": "lab-flaky-timing-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.640737,
+   "cosine_linux": 0.640737
+  },
+  {
+   "a": "lab-disk-full-01",
+   "b": "lab-job-timeout-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.599379,
+   "cosine_linux": 0.599379
+  },
+  {
+   "a": "lab-disk-full-01",
+   "b": "lab-missing-input-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.598828,
+   "cosine_linux": 0.598828
+  },
+  {
+   "a": "lab-disk-full-01",
+   "b": "lab-obscure-tool-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.653192,
+   "cosine_linux": 0.653192
+  },
+  {
+   "a": "lab-disk-full-01",
+   "b": "lab-oom-137-01",
+   "label": "different",
+   "same_category": true,
+   "cosine_windows": 0.730677,
+   "cosine_linux": 0.730677
+  },
+  {
+   "a": "lab-disk-full-01",
+   "b": "lab-opaque-exit-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.651254,
+   "cosine_linux": 0.651254
+  },
+  {
+   "a": "lab-disk-full-01",
+   "b": "lab-pip-no-dist-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.632707,
+   "cosine_linux": 0.632707
+  },
+  {
+   "a": "lab-disk-full-01",
+   "b": "lab-py-assert-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.627433,
+   "cosine_linux": 0.627433
+  },
+  {
+   "a": "lab-disk-full-01",
+   "b": "lab-py-modnf-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.624942,
+   "cosine_linux": 0.624942
+  },
+  {
+   "a": "lab-disk-full-01",
+   "b": "lab-py-mypy-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.590525,
+   "cosine_linux": 0.590525
+  },
+  {
+   "a": "lab-disk-full-01",
+   "b": "lab-py-resolve-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.646676,
+   "cosine_linux": 0.646676
+  },
+  {
+   "a": "lab-disk-full-01",
+   "b": "lab-py-ruff-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.614884,
+   "cosine_linux": 0.614884
+  },
+  {
+   "a": "lab-disk-full-01",
+   "b": "lab-secret-misspelled-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.61553,
+   "cosine_linux": 0.61553
+  },
+  {
+   "a": "lab-disk-full-01",
+   "b": "lab-step-timeout-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.498458,
+   "cosine_linux": 0.498458
+  },
+  {
+   "a": "lab-disk-full-01",
+   "b": "lab-tf-init-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.634036,
+   "cosine_linux": 0.634036
+  },
+  {
+   "a": "lab-disk-full-01",
+   "b": "lab-tf-validate-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.620582,
+   "cosine_linux": 0.620582
+  },
+  {
+   "a": "lab-dns-01",
+   "b": "lab-docker-base-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.685319,
+   "cosine_linux": 0.685319
+  },
+  {
+   "a": "lab-dns-01",
+   "b": "lab-docker-copy-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.701715,
+   "cosine_linux": 0.701715
+  },
+  {
+   "a": "lab-dns-01",
+   "b": "lab-flaky-random-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.658417,
+   "cosine_linux": 0.658417
+  },
+  {
+   "a": "lab-dns-01",
+   "b": "lab-flaky-timing-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.6327,
+   "cosine_linux": 0.6327
+  },
+  {
+   "a": "lab-dns-01",
+   "b": "lab-job-timeout-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.647992,
+   "cosine_linux": 0.647992
+  },
+  {
+   "a": "lab-dns-01",
+   "b": "lab-missing-input-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.647365,
+   "cosine_linux": 0.647365
+  },
+  {
+   "a": "lab-dns-01",
+   "b": "lab-obscure-tool-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.633087,
+   "cosine_linux": 0.633087
+  },
+  {
+   "a": "lab-dns-01",
+   "b": "lab-oom-137-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.698568,
+   "cosine_linux": 0.698568
+  },
+  {
+   "a": "lab-dns-01",
+   "b": "lab-opaque-exit-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.594257,
+   "cosine_linux": 0.594257
+  },
+  {
+   "a": "lab-dns-01",
+   "b": "lab-pip-no-dist-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.75855,
+   "cosine_linux": 0.75855
+  },
+  {
+   "a": "lab-dns-01",
+   "b": "lab-py-assert-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.621178,
+   "cosine_linux": 0.621178
+  },
+  {
+   "a": "lab-dns-01",
+   "b": "lab-py-modnf-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.633437,
+   "cosine_linux": 0.633437
+  },
+  {
+   "a": "lab-dns-01",
+   "b": "lab-py-mypy-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.648043,
+   "cosine_linux": 0.648043
+  },
+  {
+   "a": "lab-dns-01",
+   "b": "lab-py-resolve-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.685372,
+   "cosine_linux": 0.685372
+  },
+  {
+   "a": "lab-dns-01",
+   "b": "lab-py-ruff-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.628786,
+   "cosine_linux": 0.628786
+  },
+  {
+   "a": "lab-dns-01",
+   "b": "lab-secret-misspelled-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.66208,
+   "cosine_linux": 0.66208
+  },
+  {
+   "a": "lab-dns-01",
+   "b": "lab-step-timeout-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.552969,
+   "cosine_linux": 0.552969
+  },
+  {
+   "a": "lab-dns-01",
+   "b": "lab-tf-init-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.637706,
+   "cosine_linux": 0.637706
+  },
+  {
+   "a": "lab-dns-01",
+   "b": "lab-tf-validate-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.611881,
+   "cosine_linux": 0.611881
+  },
+  {
+   "a": "lab-docker-base-01",
+   "b": "lab-docker-copy-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.786262,
+   "cosine_linux": 0.786262
+  },
+  {
+   "a": "lab-docker-base-01",
+   "b": "lab-flaky-random-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.66133,
+   "cosine_linux": 0.66133
+  },
+  {
+   "a": "lab-docker-base-01",
+   "b": "lab-flaky-timing-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.666627,
+   "cosine_linux": 0.666627
+  },
+  {
+   "a": "lab-docker-base-01",
+   "b": "lab-job-timeout-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.549767,
+   "cosine_linux": 0.549767
+  },
+  {
+   "a": "lab-docker-base-01",
+   "b": "lab-missing-input-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.632682,
+   "cosine_linux": 0.632682
+  },
+  {
+   "a": "lab-docker-base-01",
+   "b": "lab-obscure-tool-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.709835,
+   "cosine_linux": 0.709835
+  },
+  {
+   "a": "lab-docker-base-01",
+   "b": "lab-oom-137-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.693185,
+   "cosine_linux": 0.693185
+  },
+  {
+   "a": "lab-docker-base-01",
+   "b": "lab-opaque-exit-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.598651,
+   "cosine_linux": 0.598651
+  },
+  {
+   "a": "lab-docker-base-01",
+   "b": "lab-pip-no-dist-01",
+   "label": "different",
+   "same_category": true,
+   "cosine_windows": 0.723067,
+   "cosine_linux": 0.723067
+  },
+  {
+   "a": "lab-docker-base-01",
+   "b": "lab-py-assert-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.628269,
+   "cosine_linux": 0.628269
+  },
+  {
+   "a": "lab-docker-base-01",
+   "b": "lab-py-modnf-01",
+   "label": "different",
+   "same_category": true,
+   "cosine_windows": 0.664117,
+   "cosine_linux": 0.664117
+  },
+  {
+   "a": "lab-docker-base-01",
+   "b": "lab-py-mypy-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.634181,
+   "cosine_linux": 0.634181
+  },
+  {
+   "a": "lab-docker-base-01",
+   "b": "lab-py-resolve-01",
+   "label": "different",
+   "same_category": true,
+   "cosine_windows": 0.722278,
+   "cosine_linux": 0.722278
+  },
+  {
+   "a": "lab-docker-base-01",
+   "b": "lab-py-ruff-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.652254,
+   "cosine_linux": 0.652254
+  },
+  {
+   "a": "lab-docker-base-01",
+   "b": "lab-secret-misspelled-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.635906,
+   "cosine_linux": 0.635906
+  },
+  {
+   "a": "lab-docker-base-01",
+   "b": "lab-step-timeout-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.465955,
+   "cosine_linux": 0.465955
+  },
+  {
+   "a": "lab-docker-base-01",
+   "b": "lab-tf-init-01",
+   "label": "different",
+   "same_category": true,
+   "cosine_windows": 0.653975,
+   "cosine_linux": 0.653975
+  },
+  {
+   "a": "lab-docker-base-01",
+   "b": "lab-tf-validate-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.623745,
+   "cosine_linux": 0.623745
+  },
+  {
+   "a": "lab-docker-copy-01",
+   "b": "lab-flaky-random-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.682288,
+   "cosine_linux": 0.682288
+  },
+  {
+   "a": "lab-docker-copy-01",
+   "b": "lab-flaky-timing-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.681026,
+   "cosine_linux": 0.681026
+  },
+  {
+   "a": "lab-docker-copy-01",
+   "b": "lab-job-timeout-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.606301,
+   "cosine_linux": 0.606301
+  },
+  {
+   "a": "lab-docker-copy-01",
+   "b": "lab-missing-input-01",
+   "label": "different",
+   "same_category": true,
+   "cosine_windows": 0.657314,
+   "cosine_linux": 0.657314
+  },
+  {
+   "a": "lab-docker-copy-01",
+   "b": "lab-obscure-tool-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.67848,
+   "cosine_linux": 0.67848
+  },
+  {
+   "a": "lab-docker-copy-01",
+   "b": "lab-oom-137-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.72679,
+   "cosine_linux": 0.72679
+  },
+  {
+   "a": "lab-docker-copy-01",
+   "b": "lab-opaque-exit-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.631671,
+   "cosine_linux": 0.631671
+  },
+  {
+   "a": "lab-docker-copy-01",
+   "b": "lab-pip-no-dist-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.740706,
+   "cosine_linux": 0.740706
+  },
+  {
+   "a": "lab-docker-copy-01",
+   "b": "lab-py-assert-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.677731,
+   "cosine_linux": 0.677731
+  },
+  {
+   "a": "lab-docker-copy-01",
+   "b": "lab-py-modnf-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.654722,
+   "cosine_linux": 0.654722
+  },
+  {
+   "a": "lab-docker-copy-01",
+   "b": "lab-py-mypy-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.660505,
+   "cosine_linux": 0.660505
+  },
+  {
+   "a": "lab-docker-copy-01",
+   "b": "lab-py-resolve-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.669858,
+   "cosine_linux": 0.669858
+  },
+  {
+   "a": "lab-docker-copy-01",
+   "b": "lab-py-ruff-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.639731,
+   "cosine_linux": 0.639731
+  },
+  {
+   "a": "lab-docker-copy-01",
+   "b": "lab-secret-misspelled-01",
+   "label": "different",
+   "same_category": true,
+   "cosine_windows": 0.694366,
+   "cosine_linux": 0.694366
+  },
+  {
+   "a": "lab-docker-copy-01",
+   "b": "lab-step-timeout-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.510338,
+   "cosine_linux": 0.510338
+  },
+  {
+   "a": "lab-docker-copy-01",
+   "b": "lab-tf-init-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.657418,
+   "cosine_linux": 0.657418
+  },
+  {
+   "a": "lab-docker-copy-01",
+   "b": "lab-tf-validate-01",
+   "label": "different",
+   "same_category": true,
+   "cosine_windows": 0.683681,
+   "cosine_linux": 0.683681
+  },
+  {
+   "a": "lab-flaky-random-01",
+   "b": "lab-flaky-timing-01",
+   "label": "different",
+   "same_category": true,
+   "cosine_windows": 0.842278,
+   "cosine_linux": 0.842278
+  },
+  {
+   "a": "lab-flaky-random-01",
+   "b": "lab-job-timeout-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.587664,
+   "cosine_linux": 0.587664
+  },
+  {
+   "a": "lab-flaky-random-01",
+   "b": "lab-missing-input-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.563972,
+   "cosine_linux": 0.563972
+  },
+  {
+   "a": "lab-flaky-random-01",
+   "b": "lab-obscure-tool-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.677414,
+   "cosine_linux": 0.677414
+  },
+  {
+   "a": "lab-flaky-random-01",
+   "b": "lab-oom-137-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.658847,
+   "cosine_linux": 0.658847
+  },
+  {
+   "a": "lab-flaky-random-01",
+   "b": "lab-opaque-exit-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.613985,
+   "cosine_linux": 0.613985
+  },
+  {
+   "a": "lab-flaky-random-01",
+   "b": "lab-pip-no-dist-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.669577,
+   "cosine_linux": 0.669577
+  },
+  {
+   "a": "lab-flaky-random-01",
+   "b": "lab-py-assert-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.779426,
+   "cosine_linux": 0.779426
+  },
+  {
+   "a": "lab-flaky-random-01",
+   "b": "lab-py-modnf-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.611885,
+   "cosine_linux": 0.611885
+  },
+  {
+   "a": "lab-flaky-random-01",
+   "b": "lab-py-mypy-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.692105,
+   "cosine_linux": 0.692105
+  },
+  {
+   "a": "lab-flaky-random-01",
+   "b": "lab-py-resolve-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.676064,
+   "cosine_linux": 0.676064
+  },
+  {
+   "a": "lab-flaky-random-01",
+   "b": "lab-py-ruff-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.670945,
+   "cosine_linux": 0.670945
+  },
+  {
+   "a": "lab-flaky-random-01",
+   "b": "lab-secret-misspelled-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.627202,
+   "cosine_linux": 0.627202
+  },
+  {
+   "a": "lab-flaky-random-01",
+   "b": "lab-step-timeout-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.523427,
+   "cosine_linux": 0.523427
+  },
+  {
+   "a": "lab-flaky-random-01",
+   "b": "lab-tf-init-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.610071,
+   "cosine_linux": 0.610071
+  },
+  {
+   "a": "lab-flaky-random-01",
+   "b": "lab-tf-validate-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.618883,
+   "cosine_linux": 0.618883
+  },
+  {
+   "a": "lab-flaky-timing-01",
+   "b": "lab-job-timeout-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.665827,
+   "cosine_linux": 0.665827
+  },
+  {
+   "a": "lab-flaky-timing-01",
+   "b": "lab-missing-input-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.598866,
+   "cosine_linux": 0.598866
+  },
+  {
+   "a": "lab-flaky-timing-01",
+   "b": "lab-obscure-tool-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.7089,
+   "cosine_linux": 0.7089
+  },
+  {
+   "a": "lab-flaky-timing-01",
+   "b": "lab-oom-137-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.673046,
+   "cosine_linux": 0.673046
+  },
+  {
+   "a": "lab-flaky-timing-01",
+   "b": "lab-opaque-exit-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.658665,
+   "cosine_linux": 0.658665
+  },
+  {
+   "a": "lab-flaky-timing-01",
+   "b": "lab-pip-no-dist-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.648913,
+   "cosine_linux": 0.648913
+  },
+  {
+   "a": "lab-flaky-timing-01",
+   "b": "lab-py-assert-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.836203,
+   "cosine_linux": 0.836203
+  },
+  {
+   "a": "lab-flaky-timing-01",
+   "b": "lab-py-modnf-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.679187,
+   "cosine_linux": 0.679187
+  },
+  {
+   "a": "lab-flaky-timing-01",
+   "b": "lab-py-mypy-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.702286,
+   "cosine_linux": 0.702286
+  },
+  {
+   "a": "lab-flaky-timing-01",
+   "b": "lab-py-resolve-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.668323,
+   "cosine_linux": 0.668323
+  },
+  {
+   "a": "lab-flaky-timing-01",
+   "b": "lab-py-ruff-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.717227,
+   "cosine_linux": 0.717227
+  },
+  {
+   "a": "lab-flaky-timing-01",
+   "b": "lab-secret-misspelled-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.600045,
+   "cosine_linux": 0.600045
+  },
+  {
+   "a": "lab-flaky-timing-01",
+   "b": "lab-step-timeout-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.608648,
+   "cosine_linux": 0.608648
+  },
+  {
+   "a": "lab-flaky-timing-01",
+   "b": "lab-tf-init-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.668669,
+   "cosine_linux": 0.668669
+  },
+  {
+   "a": "lab-flaky-timing-01",
+   "b": "lab-tf-validate-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.659958,
+   "cosine_linux": 0.659958
+  },
+  {
+   "a": "lab-job-timeout-01",
+   "b": "lab-missing-input-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.674897,
+   "cosine_linux": 0.674897
+  },
+  {
+   "a": "lab-job-timeout-01",
+   "b": "lab-obscure-tool-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.63288,
+   "cosine_linux": 0.63288
+  },
+  {
+   "a": "lab-job-timeout-01",
+   "b": "lab-oom-137-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.684745,
+   "cosine_linux": 0.684745
+  },
+  {
+   "a": "lab-job-timeout-01",
+   "b": "lab-opaque-exit-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.609273,
+   "cosine_linux": 0.609273
+  },
+  {
+   "a": "lab-job-timeout-01",
+   "b": "lab-pip-no-dist-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.539425,
+   "cosine_linux": 0.539425
+  },
+  {
+   "a": "lab-job-timeout-01",
+   "b": "lab-py-assert-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.596508,
+   "cosine_linux": 0.596508
+  },
+  {
+   "a": "lab-job-timeout-01",
+   "b": "lab-py-modnf-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.606792,
+   "cosine_linux": 0.606792
+  },
+  {
+   "a": "lab-job-timeout-01",
+   "b": "lab-py-mypy-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.584205,
+   "cosine_linux": 0.584205
+  },
+  {
+   "a": "lab-job-timeout-01",
+   "b": "lab-py-resolve-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.520008,
+   "cosine_linux": 0.520008
+  },
+  {
+   "a": "lab-job-timeout-01",
+   "b": "lab-py-ruff-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.577024,
+   "cosine_linux": 0.577024
+  },
+  {
+   "a": "lab-job-timeout-01",
+   "b": "lab-secret-misspelled-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.665079,
+   "cosine_linux": 0.665079
+  },
+  {
+   "a": "lab-job-timeout-01",
+   "b": "lab-step-timeout-01",
+   "label": "different",
+   "same_category": true,
+   "cosine_windows": 0.826185,
+   "cosine_linux": 0.826185
+  },
+  {
+   "a": "lab-job-timeout-01",
+   "b": "lab-tf-init-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.623311,
+   "cosine_linux": 0.623311
+  },
+  {
+   "a": "lab-job-timeout-01",
+   "b": "lab-tf-validate-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.624772,
+   "cosine_linux": 0.624772
+  },
+  {
+   "a": "lab-missing-input-01",
+   "b": "lab-obscure-tool-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.643157,
+   "cosine_linux": 0.643157
+  },
+  {
+   "a": "lab-missing-input-01",
+   "b": "lab-oom-137-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.637282,
+   "cosine_linux": 0.637282
+  },
+  {
+   "a": "lab-missing-input-01",
+   "b": "lab-opaque-exit-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.61893,
+   "cosine_linux": 0.61893
+  },
+  {
+   "a": "lab-missing-input-01",
+   "b": "lab-pip-no-dist-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.606046,
+   "cosine_linux": 0.606046
+  },
+  {
+   "a": "lab-missing-input-01",
+   "b": "lab-py-assert-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.608942,
+   "cosine_linux": 0.608942
+  },
+  {
+   "a": "lab-missing-input-01",
+   "b": "lab-py-modnf-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.646896,
+   "cosine_linux": 0.646896
+  },
+  {
+   "a": "lab-missing-input-01",
+   "b": "lab-py-mypy-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.627697,
+   "cosine_linux": 0.627697
+  },
+  {
+   "a": "lab-missing-input-01",
+   "b": "lab-py-resolve-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.631906,
+   "cosine_linux": 0.631906
+  },
+  {
+   "a": "lab-missing-input-01",
+   "b": "lab-py-ruff-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.601508,
+   "cosine_linux": 0.601508
+  },
+  {
+   "a": "lab-missing-input-01",
+   "b": "lab-secret-misspelled-01",
+   "label": "different",
+   "same_category": true,
+   "cosine_windows": 0.727883,
+   "cosine_linux": 0.727883
+  },
+  {
+   "a": "lab-missing-input-01",
+   "b": "lab-step-timeout-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.61978,
+   "cosine_linux": 0.61978
+  },
+  {
+   "a": "lab-missing-input-01",
+   "b": "lab-tf-init-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.64545,
+   "cosine_linux": 0.64545
+  },
+  {
+   "a": "lab-missing-input-01",
+   "b": "lab-tf-validate-01",
+   "label": "different",
+   "same_category": true,
+   "cosine_windows": 0.627218,
+   "cosine_linux": 0.627218
+  },
+  {
+   "a": "lab-obscure-tool-01",
+   "b": "lab-oom-137-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.656686,
+   "cosine_linux": 0.656686
+  },
+  {
+   "a": "lab-obscure-tool-01",
+   "b": "lab-opaque-exit-01",
+   "label": "different",
+   "same_category": true,
+   "cosine_windows": 0.774381,
+   "cosine_linux": 0.774381
+  },
+  {
+   "a": "lab-obscure-tool-01",
+   "b": "lab-pip-no-dist-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.694178,
+   "cosine_linux": 0.694178
+  },
+  {
+   "a": "lab-obscure-tool-01",
+   "b": "lab-py-assert-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.741039,
+   "cosine_linux": 0.741039
+  },
+  {
+   "a": "lab-obscure-tool-01",
+   "b": "lab-py-modnf-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.697917,
+   "cosine_linux": 0.697917
+  },
+  {
+   "a": "lab-obscure-tool-01",
+   "b": "lab-py-mypy-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.697452,
+   "cosine_linux": 0.697452
+  },
+  {
+   "a": "lab-obscure-tool-01",
+   "b": "lab-py-resolve-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.663289,
+   "cosine_linux": 0.663289
+  },
+  {
+   "a": "lab-obscure-tool-01",
+   "b": "lab-py-ruff-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.749117,
+   "cosine_linux": 0.749117
+  },
+  {
+   "a": "lab-obscure-tool-01",
+   "b": "lab-secret-misspelled-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.635563,
+   "cosine_linux": 0.635563
+  },
+  {
+   "a": "lab-obscure-tool-01",
+   "b": "lab-step-timeout-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.557029,
+   "cosine_linux": 0.557029
+  },
+  {
+   "a": "lab-obscure-tool-01",
+   "b": "lab-tf-init-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.642681,
+   "cosine_linux": 0.642681
+  },
+  {
+   "a": "lab-obscure-tool-01",
+   "b": "lab-tf-validate-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.628136,
+   "cosine_linux": 0.628136
+  },
+  {
+   "a": "lab-oom-137-01",
+   "b": "lab-opaque-exit-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.597855,
+   "cosine_linux": 0.597855
+  },
+  {
+   "a": "lab-oom-137-01",
+   "b": "lab-pip-no-dist-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.629873,
+   "cosine_linux": 0.629873
+  },
+  {
+   "a": "lab-oom-137-01",
+   "b": "lab-py-assert-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.629811,
+   "cosine_linux": 0.629811
+  },
+  {
+   "a": "lab-oom-137-01",
+   "b": "lab-py-modnf-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.648455,
+   "cosine_linux": 0.648455
+  },
+  {
+   "a": "lab-oom-137-01",
+   "b": "lab-py-mypy-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.673426,
+   "cosine_linux": 0.673426
+  },
+  {
+   "a": "lab-oom-137-01",
+   "b": "lab-py-resolve-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.635327,
+   "cosine_linux": 0.635327
+  },
+  {
+   "a": "lab-oom-137-01",
+   "b": "lab-py-ruff-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.632616,
+   "cosine_linux": 0.632616
+  },
+  {
+   "a": "lab-oom-137-01",
+   "b": "lab-secret-misspelled-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.630384,
+   "cosine_linux": 0.630384
+  },
+  {
+   "a": "lab-oom-137-01",
+   "b": "lab-step-timeout-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.605125,
+   "cosine_linux": 0.605125
+  },
+  {
+   "a": "lab-oom-137-01",
+   "b": "lab-tf-init-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.598511,
+   "cosine_linux": 0.598511
+  },
+  {
+   "a": "lab-oom-137-01",
+   "b": "lab-tf-validate-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.600445,
+   "cosine_linux": 0.600445
+  },
+  {
+   "a": "lab-opaque-exit-01",
+   "b": "lab-pip-no-dist-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.595246,
+   "cosine_linux": 0.595246
+  },
+  {
+   "a": "lab-opaque-exit-01",
+   "b": "lab-py-assert-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.68125,
+   "cosine_linux": 0.68125
+  },
+  {
+   "a": "lab-opaque-exit-01",
+   "b": "lab-py-modnf-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.609481,
+   "cosine_linux": 0.609481
+  },
+  {
+   "a": "lab-opaque-exit-01",
+   "b": "lab-py-mypy-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.624974,
+   "cosine_linux": 0.624974
+  },
+  {
+   "a": "lab-opaque-exit-01",
+   "b": "lab-py-resolve-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.612669,
+   "cosine_linux": 0.612669
+  },
+  {
+   "a": "lab-opaque-exit-01",
+   "b": "lab-py-ruff-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.710971,
+   "cosine_linux": 0.710971
+  },
+  {
+   "a": "lab-opaque-exit-01",
+   "b": "lab-secret-misspelled-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.633004,
+   "cosine_linux": 0.633004
+  },
+  {
+   "a": "lab-opaque-exit-01",
+   "b": "lab-step-timeout-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.527939,
+   "cosine_linux": 0.527939
+  },
+  {
+   "a": "lab-opaque-exit-01",
+   "b": "lab-tf-init-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.621834,
+   "cosine_linux": 0.621834
+  },
+  {
+   "a": "lab-opaque-exit-01",
+   "b": "lab-tf-validate-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.614632,
+   "cosine_linux": 0.614632
+  },
+  {
+   "a": "lab-pip-no-dist-01",
+   "b": "lab-py-assert-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.69473,
+   "cosine_linux": 0.69473
+  },
+  {
+   "a": "lab-pip-no-dist-01",
+   "b": "lab-py-modnf-01",
+   "label": "different",
+   "same_category": true,
+   "cosine_windows": 0.693436,
+   "cosine_linux": 0.693436
+  },
+  {
+   "a": "lab-pip-no-dist-01",
+   "b": "lab-py-mypy-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.667633,
+   "cosine_linux": 0.667633
+  },
+  {
+   "a": "lab-pip-no-dist-01",
+   "b": "lab-py-resolve-01",
+   "label": "different",
+   "same_category": true,
+   "cosine_windows": 0.724401,
+   "cosine_linux": 0.724401
+  },
+  {
+   "a": "lab-pip-no-dist-01",
+   "b": "lab-py-ruff-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.65927,
+   "cosine_linux": 0.65927
+  },
+  {
+   "a": "lab-pip-no-dist-01",
+   "b": "lab-secret-misspelled-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.61898,
+   "cosine_linux": 0.61898
+  },
+  {
+   "a": "lab-pip-no-dist-01",
+   "b": "lab-step-timeout-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.456926,
+   "cosine_linux": 0.456926
+  },
+  {
+   "a": "lab-pip-no-dist-01",
+   "b": "lab-tf-init-01",
+   "label": "different",
+   "same_category": true,
+   "cosine_windows": 0.634041,
+   "cosine_linux": 0.634041
+  },
+  {
+   "a": "lab-pip-no-dist-01",
+   "b": "lab-tf-validate-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.606827,
+   "cosine_linux": 0.606827
+  },
+  {
+   "a": "lab-py-assert-01",
+   "b": "lab-py-modnf-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.687918,
+   "cosine_linux": 0.687918
+  },
+  {
+   "a": "lab-py-assert-01",
+   "b": "lab-py-mypy-01",
+   "label": "different",
+   "same_category": true,
+   "cosine_windows": 0.72088,
+   "cosine_linux": 0.72088
+  },
+  {
+   "a": "lab-py-assert-01",
+   "b": "lab-py-resolve-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.698703,
+   "cosine_linux": 0.698703
+  },
+  {
+   "a": "lab-py-assert-01",
+   "b": "lab-py-ruff-01",
+   "label": "different",
+   "same_category": true,
+   "cosine_windows": 0.761178,
+   "cosine_linux": 0.761178
+  },
+  {
+   "a": "lab-py-assert-01",
+   "b": "lab-secret-misspelled-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.57433,
+   "cosine_linux": 0.57433
+  },
+  {
+   "a": "lab-py-assert-01",
+   "b": "lab-step-timeout-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.522611,
+   "cosine_linux": 0.522611
+  },
+  {
+   "a": "lab-py-assert-01",
+   "b": "lab-tf-init-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.63978,
+   "cosine_linux": 0.63978
+  },
+  {
+   "a": "lab-py-assert-01",
+   "b": "lab-tf-validate-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.643873,
+   "cosine_linux": 0.643873
+  },
+  {
+   "a": "lab-py-modnf-01",
+   "b": "lab-py-mypy-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.716228,
+   "cosine_linux": 0.716228
+  },
+  {
+   "a": "lab-py-modnf-01",
+   "b": "lab-py-resolve-01",
+   "label": "different",
+   "same_category": true,
+   "cosine_windows": 0.692311,
+   "cosine_linux": 0.692311
+  },
+  {
+   "a": "lab-py-modnf-01",
+   "b": "lab-py-ruff-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.716652,
+   "cosine_linux": 0.716652
+  },
+  {
+   "a": "lab-py-modnf-01",
+   "b": "lab-secret-misspelled-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.597467,
+   "cosine_linux": 0.597467
+  },
+  {
+   "a": "lab-py-modnf-01",
+   "b": "lab-step-timeout-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.51257,
+   "cosine_linux": 0.51257
+  },
+  {
+   "a": "lab-py-modnf-01",
+   "b": "lab-tf-init-01",
+   "label": "different",
+   "same_category": true,
+   "cosine_windows": 0.699377,
+   "cosine_linux": 0.699377
+  },
+  {
+   "a": "lab-py-modnf-01",
+   "b": "lab-tf-validate-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.661645,
+   "cosine_linux": 0.661645
+  },
+  {
+   "a": "lab-py-mypy-01",
+   "b": "lab-py-resolve-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.702338,
+   "cosine_linux": 0.702338
+  },
+  {
+   "a": "lab-py-mypy-01",
+   "b": "lab-py-ruff-01",
+   "label": "different",
+   "same_category": true,
+   "cosine_windows": 0.774853,
+   "cosine_linux": 0.774853
+  },
+  {
+   "a": "lab-py-mypy-01",
+   "b": "lab-secret-misspelled-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.586108,
+   "cosine_linux": 0.586108
+  },
+  {
+   "a": "lab-py-mypy-01",
+   "b": "lab-step-timeout-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.483446,
+   "cosine_linux": 0.483446
+  },
+  {
+   "a": "lab-py-mypy-01",
+   "b": "lab-tf-init-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.623661,
+   "cosine_linux": 0.623661
+  },
+  {
+   "a": "lab-py-mypy-01",
+   "b": "lab-tf-validate-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.639744,
+   "cosine_linux": 0.639744
+  },
+  {
+   "a": "lab-py-resolve-01",
+   "b": "lab-py-ruff-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.677482,
+   "cosine_linux": 0.677482
+  },
+  {
+   "a": "lab-py-resolve-01",
+   "b": "lab-secret-misspelled-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.5931,
+   "cosine_linux": 0.5931
+  },
+  {
+   "a": "lab-py-resolve-01",
+   "b": "lab-step-timeout-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.469236,
+   "cosine_linux": 0.469236
+  },
+  {
+   "a": "lab-py-resolve-01",
+   "b": "lab-tf-init-01",
+   "label": "different",
+   "same_category": true,
+   "cosine_windows": 0.626472,
+   "cosine_linux": 0.626472
+  },
+  {
+   "a": "lab-py-resolve-01",
+   "b": "lab-tf-validate-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.603362,
+   "cosine_linux": 0.603362
+  },
+  {
+   "a": "lab-py-ruff-01",
+   "b": "lab-secret-misspelled-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.567759,
+   "cosine_linux": 0.567759
+  },
+  {
+   "a": "lab-py-ruff-01",
+   "b": "lab-step-timeout-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.476826,
+   "cosine_linux": 0.476826
+  },
+  {
+   "a": "lab-py-ruff-01",
+   "b": "lab-tf-init-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.656797,
+   "cosine_linux": 0.656797
+  },
+  {
+   "a": "lab-py-ruff-01",
+   "b": "lab-tf-validate-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.64363,
+   "cosine_linux": 0.64363
+  },
+  {
+   "a": "lab-secret-misspelled-01",
+   "b": "lab-step-timeout-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.606716,
+   "cosine_linux": 0.606716
+  },
+  {
+   "a": "lab-secret-misspelled-01",
+   "b": "lab-tf-init-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.658071,
+   "cosine_linux": 0.658071
+  },
+  {
+   "a": "lab-secret-misspelled-01",
+   "b": "lab-tf-validate-01",
+   "label": "different",
+   "same_category": true,
+   "cosine_windows": 0.680234,
+   "cosine_linux": 0.680234
+  },
+  {
+   "a": "lab-step-timeout-01",
+   "b": "lab-tf-init-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.51781,
+   "cosine_linux": 0.51781
+  },
+  {
+   "a": "lab-step-timeout-01",
+   "b": "lab-tf-validate-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.522343,
+   "cosine_linux": 0.522343
+  },
+  {
+   "a": "lab-tf-init-01",
+   "b": "lab-tf-validate-01",
+   "label": "different",
+   "same_category": false,
+   "cosine_windows": 0.872584,
+   "cosine_linux": 0.872584
+  }
+ ]
+}
