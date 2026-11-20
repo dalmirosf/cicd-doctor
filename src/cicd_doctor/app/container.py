@@ -1,6 +1,7 @@
 """Composition root (D-39): builds the API and the worker from the settings.
 
-``sync_installation`` and ``diagnose_run`` have real handlers; every other job kind gets a
+``sync_installation``, ``diagnose_run``, ``record_outcome``, ``purge`` and ``explain`` have real
+handlers; every other job kind gets a
 placeholder that logs the job and completes it. The worker needs the GitHub App settings
 (``GITHUB_APP_ID``, ``GITHUB_PRIVATE_KEY``) and refuses to start without them; the LLM client
 exists only when both ``OPENAI_API_KEY`` and ``OPENAI_MODEL`` are set (otherwise the pipeline
@@ -31,6 +32,7 @@ from cicd_doctor.adapters.github.repo_config import GitHubRepoConfigSource
 from cicd_doctor.adapters.github.reporter import GitHubReporter
 from cicd_doctor.adapters.llm.openai_client import OpenAILLMClient, make_openai_client
 from cicd_doctor.adapters.llm.tiktoken_counter import TiktokenCounter
+from cicd_doctor.adapters.postgres.command_log import PostgresCommandLog
 from cicd_doctor.adapters.postgres.installations import PostgresInstallationStore
 from cicd_doctor.adapters.postgres.ledger import PostgresUsageLedger
 from cicd_doctor.adapters.postgres.queue import PostgresJobQueue
@@ -44,11 +46,13 @@ from cicd_doctor.core.models import Job, JobKind
 from cicd_doctor.core.ports import Clock, Embedder, InstallationStore, JobQueue, LLMClient
 from cicd_doctor.core.repo_config import CachedRepoConfig
 from cicd_doctor.core.usecases.diagnose_failed_run import DiagnoseConfig, DiagnoseFailedRun
+from cicd_doctor.core.usecases.explain_command import ExplainCommand
 from cicd_doctor.core.usecases.purge import PurgeConfig
 from cicd_doctor.core.usecases.record_run_outcome import RecordRunOutcome
 from cicd_doctor.worker import Handler, Worker
 from cicd_doctor.worker.handlers import (
     diagnose_run_handler,
+    explain_handler,
     purge_handler,
     record_outcome_handler,
     sync_installation_handler,
@@ -218,6 +222,7 @@ def purge_config(settings: Settings) -> PurgeConfig:
         jobs_days=settings.retention_jobs_days,
         stale_after_days=settings.stale_after_days,
         uninstall_grace_days=settings.uninstall_grace_days,
+        commands_days=settings.retention_commands_days,
     )
 
 
@@ -226,12 +231,14 @@ def handlers(
     diagnose_run: Handler,
     purge: Handler,
     record_outcome: Handler,
+    explain: Handler,
 ) -> dict[JobKind, Handler]:
     registry: dict[JobKind, Handler] = dict.fromkeys(JobKind, placeholder_handler)
     registry[JobKind.SYNC_INSTALLATION] = sync_installation_handler(installations)
     registry[JobKind.DIAGNOSE_RUN] = diagnose_run
     registry[JobKind.PURGE] = purge
     registry[JobKind.RECORD_OUTCOME] = record_outcome
+    registry[JobKind.EXPLAIN] = explain
     return registry
 
 
@@ -252,6 +259,8 @@ class UseCases(NamedTuple):
 
     diagnose: DiagnoseFailedRun
     outcome: RecordRunOutcome
+    explain: ExplainCommand
+    commands: PostgresCommandLog
 
 
 @asynccontextmanager
@@ -326,7 +335,13 @@ async def worker_use_cases(
             embedder=embedder,
             config=config,
         )
-        yield UseCases(diagnose, outcome)
+        commands = await stack.enter_async_context(
+            PostgresCommandLog.connect(url, pool_size=consumers + 2)
+        )
+        explain = ExplainCommand(
+            commands, reporter, clock, window=timedelta(seconds=settings.command_window_s)
+        )
+        yield UseCases(diagnose, outcome, explain, commands)
 
 
 async def run_worker(settings: Settings, stop: asyncio.Event) -> None:
@@ -347,12 +362,20 @@ async def run_worker(settings: Settings, stop: asyncio.Event) -> None:
         PostgresFailureStore.connect(url, clock, pool_size=2) as purge_store,
         worker_use_cases(settings, clock, installations, embedder) as use_cases,
     ):
-        purge = purge_handler(queue, purge_store, installations, clock, purge_config(settings))
+        purge = purge_handler(
+            queue,
+            purge_store,
+            installations,
+            clock,
+            purge_config(settings),
+            use_cases.commands,
+        )
         registry = handlers(
             installations,
             diagnose_run_handler(use_cases.diagnose),
             purge,
             record_outcome_handler(use_cases.outcome),
+            explain_handler(use_cases.explain),
         )
         worker = build_worker(settings, queue, registry, clock)
         if not settings.purge_enabled:

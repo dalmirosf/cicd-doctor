@@ -9,6 +9,7 @@ import pytest
 from cicd_doctor.adapters.clock import FakeClock
 from cicd_doctor.adapters.memory import (
     FakeReporter,
+    InMemoryCommandLog,
     InMemoryFailureStore,
     InMemoryInstallationStore,
     InMemoryJobQueue,
@@ -286,3 +287,24 @@ async def test_the_log_carries_counts_and_no_content(
     assert "failures=3" in message
     assert "acme" not in message
     assert "ModuleNotFoundError" not in message
+
+
+async def test_command_claims_of_31_days_are_purged_and_those_of_29_are_not() -> None:
+    world = World()
+    commands = InMemoryCommandLog()
+    window = timedelta(minutes=5)
+    await commands.claim(100, 1, 1, "ann", world.clock.now(), window)
+    world.clock.advance(2 * DAY)
+    await commands.claim(100, 2, 2, "ann", world.clock.now(), window)
+    world.clock.advance(29 * DAY)
+
+    counts = await run_purge(
+        world.queue, world.store, world.installations, world.clock, CONFIG, commands
+    )
+
+    assert counts.deleted["command_invocations"] == 1
+    assert commands.count() == 1
+
+
+async def test_a_purge_without_a_command_log_still_works() -> None:
+    assert "command_invocations" not in (await World().purge()).deleted

@@ -99,9 +99,9 @@ async def test_another_delivery_of_the_same_attempt_records_the_delivery_but_no_
 
 async def test_ping_and_unhandled_events_store_nothing(api: Api) -> None:
     ping = await post(api, "ping", "ping")
-    comment = await post(api, "issue_comment", "issue_comment_created")
+    push = await post(api, "push", "ping")
 
-    assert (ping.status_code, comment.status_code) == (200, 204)
+    assert (ping.status_code, push.status_code) == (200, 204)
     assert (api.count("webhook_deliveries"), api.count("jobs")) == (0, 0)
 
 
@@ -170,3 +170,30 @@ async def test_ready_is_503_and_webhooks_are_503_when_the_database_is_unreachabl
 
     assert (ready.status_code, ready.json()) == (503, {"status": "unavailable"})
     assert webhook.status_code == 503
+
+
+# --- issue_comment (FR-19, D-92) ----------------------------------------------------------
+
+
+async def test_a_signed_command_creates_one_explain_job_and_a_redelivery_creates_none(
+    api: Api,
+) -> None:
+    first = await post(api, "issue_comment", "issue_comment_created")
+    again = await post(api, "issue_comment", "issue_comment_created")  # another delivery id
+
+    assert (first.status_code, again.status_code) == (202, 200)
+    assert api.count("jobs") == 1
+    assert scalar(api.url, "SELECT kind FROM jobs") == JobKind.EXPLAIN
+    assert scalar(api.url, "SELECT dedupe_key FROM jobs") == "explain:777"
+    assert "/cicd-doctor" not in str(scalar(api.url, "SELECT payload::text FROM jobs"))
+
+
+async def test_a_command_from_a_stranger_creates_no_row_at_all(api: Api) -> None:
+    payload = load("issue_comment_created")
+    payload["comment"]["author_association"] = "NONE"
+    body = encode(payload)
+
+    response = await api.client.post(URL, content=body, headers=headers("issue_comment", body))
+
+    assert response.status_code == 204
+    assert (api.count("webhook_deliveries"), api.count("jobs")) == (0, 0)

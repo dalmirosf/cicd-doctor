@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from datetime import timedelta
 
 from cicd_doctor.core.models import PurgeCounts
-from cicd_doctor.core.ports import Clock, FailureStore, InstallationStore, JobQueue
+from cicd_doctor.core.ports import Clock, CommandLog, FailureStore, InstallationStore, JobQueue
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +24,7 @@ class PurgeConfig:
     jobs_days: int = 30  # finished jobs: their payloads carry repository data
     stale_after_days: int = 30  # an open failure turns ``stale``
     uninstall_grace_days: int = 7  # after an uninstall or a removed repository
+    commands_days: int = 30  # accepted explain commands (D-93)
 
 
 async def run_purge(
@@ -32,6 +33,7 @@ async def run_purge(
     installations: InstallationStore,
     clock: Clock,
     config: PurgeConfig,
+    commands: CommandLog | None = None,
 ) -> PurgeCounts:
     """Apply the retention rules and return what was removed, by table."""
     now = clock.now()
@@ -43,6 +45,8 @@ async def run_purge(
     counts += await store.purge(failures_cut, failures_cut)
     gone = await installations.gone_repositories(now - timedelta(days=config.uninstall_grace_days))
     counts += await store.purge_repositories(gone)
+    if commands is not None:
+        counts += await commands.purge(now - timedelta(days=config.commands_days))
     logger.info(
         "purge done: %d failures marked stale, %d rows deleted (%s), %d repositories gone",
         stale,

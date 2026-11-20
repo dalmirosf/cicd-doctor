@@ -8,7 +8,11 @@ the check stays ``completed`` while ``name`` and ``output`` change. FakeGitHub b
 import pytest
 
 from cicd_doctor.adapters.clock import FakeClock
-from cicd_doctor.adapters.github.auth import DIAGNOSIS_PERMISSIONS, GitHubAppAuth
+from cicd_doctor.adapters.github.auth import (
+    DIAGNOSIS_PERMISSIONS,
+    EXPLAIN_PERMISSIONS,
+    GitHubAppAuth,
+)
 from cicd_doctor.adapters.github.http import (
     GitHubHttp,
     GitHubPermanentError,
@@ -17,6 +21,7 @@ from cicd_doctor.adapters.github.http import (
 from cicd_doctor.adapters.github.reporter import (
     CHECK_RUN,
     CHECK_RUNS,
+    COMMENT_REACTIONS,
     COMMIT_CHECK_RUNS,
     ISSUE_COMMENT,
     ISSUE_COMMENTS,
@@ -24,10 +29,11 @@ from cicd_doctor.adapters.github.reporter import (
     comment_marker,
     external_id_for,
 )
-from cicd_doctor.core.errors import PermanentError
+from cicd_doctor.core.errors import CommentGone, PermanentError
 from cicd_doctor.core.models import (
     Category,
     CheckOutput,
+    CommentRef,
     CommentTarget,
     Diagnosis,
     DiagnosisReport,
@@ -566,3 +572,107 @@ async def test_every_call_uses_the_token_of_the_diagnosis_permissions_for_one_re
     api = [r for r in github.requests if r.template and r.template.startswith("/repos/")]
     assert api
     assert all(any(r.has_bearer(t.token) for t in github.issued) for r in api)
+
+
+# --- reactions (D-89, D-92) -------------------------------------------------------------------
+
+
+@pytest.fixture
+def issues_write(github: FakeGitHub) -> None:
+    """The installation accepted the Issues permission (D-89)."""
+    github.installations[INSTALLATION_ID].permissions["issues"] = "write"
+
+
+def comment_ref(comment_id: int, **changes: object) -> CommentRef:
+    fields: dict[str, object] = {
+        "installation_id": INSTALLATION_ID,
+        "repo_id": REPO_ID,
+        "repo_full_name": "acme/widgets",
+        "comment_id": comment_id,
+    }
+    return CommentRef(**(fields | changes))  # type: ignore[arg-type]
+
+
+@pytest.mark.usefixtures("issues_write")
+async def test_a_reaction_is_posted_to_the_comment_with_the_explain_token(
+    reporter: GitHubReporter, repo: FakeRepoWrites, github: FakeGitHub
+) -> None:
+    comment = repo.add_user_comment(PR, "/cicd-doctor explain", login="maintainer")
+
+    await reporter.react(comment_ref(comment["id"]), "eyes")
+
+    (request,) = github.requests_to("POST", COMMENT_REACTIONS)
+    assert request.params["comment_id"] == str(comment["id"])
+    assert request.json == {"content": "eyes"}
+    assert repo.reactions == [(comment["id"], "eyes")]
+    (token,) = github.issued
+    assert token.repo_ids == (REPO_ID,)
+    assert set(token.permissions.items()) == set(EXPLAIN_PERMISSIONS)
+    assert request.has_bearer(token.token)
+
+
+@pytest.mark.usefixtures("issues_write")
+async def test_a_reaction_that_already_exists_is_a_success(
+    reporter: GitHubReporter, repo: FakeRepoWrites, github: FakeGitHub
+) -> None:
+    comment = repo.add_user_comment(PR, "/cicd-doctor explain")
+
+    await reporter.react(comment_ref(comment["id"]), "eyes")
+    await reporter.react(comment_ref(comment["id"]), "eyes")  # GitHub answers 200 the second time
+
+    assert len(github.requests_to("POST", COMMENT_REACTIONS)) == 2
+    assert repo.reactions == [(comment["id"], "eyes")]
+
+
+@pytest.mark.usefixtures("issues_write")
+async def test_a_deleted_comment_is_comment_gone_not_a_failure_of_the_job(
+    reporter: GitHubReporter, github: FakeGitHub
+) -> None:
+    with pytest.raises(CommentGone) as caught:
+        await reporter.react(comment_ref(123456), "eyes")
+
+    assert isinstance(caught.value, PermanentError)
+    assert CANARY not in str(caught.value)
+
+
+@pytest.mark.usefixtures("issues_write")
+async def test_a_403_names_the_missing_permission_and_leaks_no_body(
+    reporter: GitHubReporter, repo: FakeRepoWrites, github: FakeGitHub
+) -> None:
+    comment = repo.add_user_comment(PR, "/cicd-doctor explain")
+    github.fail("POST", COMMENT_REACTIONS, 403, message="Resource not accessible by integration")
+
+    with pytest.raises(GitHubPermanentError) as caught:
+        await reporter.react(comment_ref(comment["id"]), "eyes")
+
+    assert caught.value.status_code == 403
+    assert "Issues: write" in str(caught.value)
+    assert CANARY not in str(caught.value)
+    assert repo.reactions == []
+
+
+@pytest.mark.usefixtures("issues_write")
+async def test_a_5xx_on_a_reaction_is_transient_and_leaks_no_body(
+    reporter: GitHubReporter, repo: FakeRepoWrites, github: FakeGitHub
+) -> None:
+    comment = repo.add_user_comment(PR, "/cicd-doctor explain")
+    github.fail("POST", COMMENT_REACTIONS, 502)
+
+    with pytest.raises(GitHubTransientError) as caught:
+        await reporter.react(comment_ref(comment["id"]), "eyes")
+
+    assert CANARY not in str(caught.value)
+
+
+async def test_an_installation_that_has_not_accepted_issues_write_is_refused_at_the_token(
+    reporter: GitHubReporter, repo: FakeRepoWrites, github: FakeGitHub
+) -> None:
+    comment = repo.add_user_comment(PR, "/cicd-doctor explain")
+
+    with pytest.raises(PermanentError):
+        await reporter.react(comment_ref(comment["id"]), "eyes")
+
+    assert github.requests_to("POST", COMMENT_REACTIONS) == []
+    # The diagnosis keeps working with its own token.
+    check_id = await reporter.start_check(RUN, None)
+    assert check_id in repo.check_runs

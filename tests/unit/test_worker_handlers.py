@@ -110,8 +110,8 @@ async def test_a_malformed_payload_is_a_permanent_error() -> None:
         await sync_installation_handler(InMemoryInstallationStore())(job({"action": "nope"}))
 
 
-def test_every_kind_but_explain_has_a_real_handler() -> None:
-    registry = container.handlers(InMemoryInstallationStore(), noop, noop, noop)
+def test_every_kind_but_the_placeholders_has_a_real_handler() -> None:
+    registry = container.handlers(InMemoryInstallationStore(), noop, noop, noop, noop)
 
     assert set(registry) == set(JobKind)
     real = {
@@ -122,6 +122,7 @@ def test_every_kind_but_explain_has_a_real_handler() -> None:
         JobKind.DIAGNOSE_RUN,
         JobKind.PURGE,
         JobKind.RECORD_OUTCOME,
+        JobKind.EXPLAIN,
     }
     assert registry[JobKind.DIAGNOSE_RUN] is noop
 

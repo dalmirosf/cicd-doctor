@@ -231,7 +231,9 @@ class Reporter(Protocol):
         ...
 
     async def react(self, comment: CommentRef, reaction: str) -> None:
-        """P3."""
+        """Add ``reaction`` (``eyes``, ``confused``, ...) to an issue or PR comment, with the
+        permissions of ``explain`` (D-89). Adding one that is already there is a success. A
+        deleted comment raises ``CommentGone``; a missing permission raises ``PermanentError``."""
         ...
 
 
@@ -314,6 +316,29 @@ class RepoConfigSource(Protocol):
         """Read from the default branch only, never from another ref (D-90). A missing file is
         ``default``; an invalid one is ``invalid`` (the caller turns the LLM off); a transient
         error raises ``TransientError`` and is never turned into the defaults."""
+        ...
+
+
+class CommandLog(Protocol):
+    """The accepted ``explain`` commands, for the limit of one per PR per window (D-93)."""
+
+    async def claim(
+        self,
+        repo_id: int,
+        pr_number: int,
+        comment_id: int,
+        actor_login: str,
+        now: datetime,
+        window: timedelta,
+    ) -> bool:
+        """Decide and record, atomically per ``(repo_id, pr_number)``: ``True`` when this comment
+        already holds a claim (a retry of the same command) or no other claim of the PR is
+        younger than ``window``, in which case it is recorded at ``now``; ``False`` otherwise,
+        recording nothing (a refused command never extends the window)."""
+        ...
+
+    async def purge(self, before: datetime) -> PurgeCounts:
+        """Delete the claims made before ``before`` (retention, D-85)."""
         ...
 
 

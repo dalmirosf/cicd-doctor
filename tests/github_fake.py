@@ -432,6 +432,7 @@ class FakeRepoWrites:
     check_runs: dict[int, dict[str, Any]] = field(default_factory=dict)
     comments: dict[int, dict[str, Any]] = field(default_factory=dict)
     pulls: list[dict[str, Any]] = field(default_factory=list)
+    reactions: list[tuple[int, str]] = field(default_factory=list)  # (comment id, content)
     _next_id: int = 9000
 
     def __post_init__(self) -> None:
@@ -444,6 +445,7 @@ class FakeRepoWrites:
         add("POST", f"{base}/issues/{{issue_number}}/comments", self._create_comment)
         add("PATCH", f"{base}/issues/comments/{{comment_id}}", self._update_comment)
         add("GET", f"{base}/pulls", self._list_pulls)
+        add("POST", f"{base}/issues/comments/{{comment_id}}/reactions", self._create_reaction)
 
     # --- state the tests set up ----------------------------------------------------------
 
@@ -713,6 +715,26 @@ class FakeRepoWrites:
         comment["body"] = text
         comment["updated_at"] = _timestamp(self.github.clock.now())
         return json_response(200, _public(comment))
+
+    # --- reactions -----------------------------------------------------------------------
+
+    def _create_reaction(self, request: RecordedRequest) -> httpx2.Response:
+        """Like the real API: 201 for a new reaction, 200 when this app already left it. It needs
+        Issues write (D-89), which is what the 403 of an installation that has not accepted the
+        permission looks like."""
+        if (denied := self._lacks(request, "issues", "write")) is not None:
+            return denied
+        comment_id = int(request.params["comment_id"])
+        if comment_id not in self.comments:
+            return error_response(404, "Not Found")
+        body = request.json if isinstance(request.json, dict) else {}
+        content = body.get("content")
+        if content not in ("+1", "-1", "laugh", "confused", "heart", "hooray", "rocket", "eyes"):
+            return error_response(422, "Validation Failed")
+        status = 200 if (comment_id, content) in self.reactions else 201
+        if status == 201:
+            self.reactions.append((comment_id, content))
+        return json_response(status, {"id": 1, "content": content})
 
     # --- pulls ---------------------------------------------------------------------------
 
