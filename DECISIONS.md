@@ -261,13 +261,14 @@ Over any limit, the rules diagnosis is published with `fallback_reason = budget`
 | Actions | read |
 | Checks | write |
 | Contents | read |
+| Issues | write (added by D-89) |
 | Metadata | read |
 | Pull requests | write |
 
 Events: `workflow_run` and `issue_comment`. No Administration or Workflows permission. Issues write was added by D-89 (the P3 check: `issue_comment` and reactions need Issues, not Pull requests). Installation tokens are requested with `repository_ids: [repo]` and only the permissions the use case needs, and cached until 5 minutes before expiry.
-**Why:** Each permission maps to a feature (SPEC §9.6). `contents: read` is needed for the default-branch config, compare for fix tracking, and file context for suggestions. Comments on PRs, review comments and reactions are covered by Pull requests write. Narrowing each token reduces the impact of a leaked token.
-**Alternatives:** Issues write for comments (broader, since it also covers non-PR issues); skipping `contents: read` (would remove the config file and fix diffs).
-**Consequences:** Verified for P3 in D-89: `issue_comment` and reactions need Issues, so the table above gains Issues: write.
+**Why:** Each permission maps to a feature (SPEC §9.6). `contents: read` is needed for the default-branch config, compare for fix tracking, and file context for suggestions. Comments on PRs and review comments are covered by Pull requests write; reactions to command comments are not, they need Issues write (D-89). Narrowing each token reduces the impact of a leaked token.
+**Alternatives:** Issues write for the sticky comment (broader, since it also covers non-PR issues; the diagnosis token still does not ask for it, D-89); skipping `contents: read` (would remove the config file and fix diffs).
+**Consequences:** Verified for P3 in D-89: `issue_comment` and reactions need Issues, so the table above has the Issues: write row.
 
 ## D-22 — Command authorization by `author_association` + rate limit
 **Origin:** Proposed
