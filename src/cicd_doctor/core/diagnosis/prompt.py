@@ -6,10 +6,13 @@ each call, so a log cannot close the block, and the tag name is escaped inside t
 model gets no tools, no browsing and no retrieval: the only output is the JSON of SPEC §5.1.
 """
 
+import hashlib
+import json
 import re
 import secrets
 from dataclasses import dataclass
 
+from cicd_doctor.core.diagnosis.schema import strict_output_schema
 from cicd_doctor.core.diff import render_diff_line
 from cicd_doctor.core.logs.clean import strip_terminal_controls
 from cicd_doctor.core.logs.excerpt import render_line
@@ -83,6 +86,18 @@ How to fill the fields:
 Rule hints, when given, come from a deterministic rule engine. They are useful but can be wrong:
 check them against the log.
 """
+
+
+def prompt_fingerprint() -> str:
+    """sha256 of the exact system prompt and the strict output schema (D-100).
+
+    A canonical serialization (sorted keys, no spaces), so two runs give the same value and one
+    changed word of the prompt or one changed schema field gives another one. The eval answer
+    cache puts it in its key: a prompt edit without a new ``PROMPT_VERSION`` is still a miss.
+    """
+    payload = {"system_prompt": SYSTEM_PROMPT, "schema": strict_output_schema()}
+    text = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
 @dataclass(frozen=True)

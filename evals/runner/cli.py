@@ -1,8 +1,11 @@
 """Command line: ``python -m evals run`` and ``python -m evals capture`` (SPEC §11.3, D-61)."""
 
 import argparse
+import asyncio
 import sys
 from collections.abc import Sequence
+from datetime import UTC, datetime
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
 from cicd_doctor.adapters.llm.tiktoken_counter import TiktokenCounter
@@ -17,14 +20,40 @@ from evals.runner.cases import DEFAULT_CASES_DIR, SOURCES
 from evals.runner.injection import write_cases
 from evals.runner.live import (
     DEFAULT_CACHE_DIR,
+    DEFAULT_MAX_CALLS,
+    DEFAULT_MAX_COST_USD,
     LiveSettings,
     build_embedder,
     build_setups,
     parse_prices,
 )
+from evals.runner.prune import prune, used_entries
+from evals.runner.recording import BudgetExceeded, SpendGuard
 from evals.runner.report import DEFAULT_REPORTS_DIR, write_report
 from evals.runner.run import EvalError, run_evals
 from evals.runner.variants import ALL_VARIANTS, LLM_VARIANTS, SIMILAR_VARIANT
+
+EXIT_BUDGET = 5  # a live run stopped at --max-cost-usd or --max-calls (D-108)
+
+
+def _positive_decimal(value: str) -> Decimal:
+    try:
+        number = Decimal(value)
+    except InvalidOperation:
+        raise argparse.ArgumentTypeError(f"{value!r} is not a number") from None
+    if not number.is_finite() or number <= 0:
+        raise argparse.ArgumentTypeError("must be greater than 0")
+    return number
+
+
+def _positive_int(value: str) -> int:
+    try:
+        number = int(value)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"{value!r} is not an integer") from None
+    if number <= 0:
+        raise argparse.ArgumentTypeError("must be greater than 0")
+    return number
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -53,7 +82,44 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="MODEL=IN,OUT",
         help="USD per million tokens for a model (default: LLM_PRICE_* from .env)",
     )
-    run.add_argument("--cache-dir", type=Path, default=DEFAULT_CACHE_DIR)
+    run.add_argument(
+        "--cache-dir",
+        "--answers-dir",
+        dest="cache_dir",
+        type=Path,
+        default=DEFAULT_CACHE_DIR,
+        help="where the LLM answers live (default: evals/answers, committed, D-100)",
+    )
+    run.add_argument(
+        "--max-cost-usd",
+        type=_positive_decimal,
+        default=DEFAULT_MAX_COST_USD,
+        help=f"with --live: stop after this much spend (default {DEFAULT_MAX_COST_USD}, D-108)",
+    )
+    run.add_argument(
+        "--max-calls",
+        type=_positive_int,
+        default=DEFAULT_MAX_CALLS,
+        help=f"with --live: stop after this many model calls (default {DEFAULT_MAX_CALLS})",
+    )
+    run.add_argument(
+        "--no-cache-read",
+        action="store_true",
+        help="with --live: always call the model and write each answer next to the official "
+        "one with a run suffix, never over it (to measure variance)",
+    )
+
+    prune_cmd = commands.add_parser(
+        "prune",
+        help="delete the answers no current (case x variant x model) would use",
+        description="Dry run unless --apply. Runs the LLM variants offline and keeps every "
+        "entry they look up.",
+    )
+    prune_cmd.add_argument("--sources", default=",".join(SOURCES))
+    prune_cmd.add_argument("--cases-dir", type=Path, default=DEFAULT_CASES_DIR)
+    prune_cmd.add_argument("--model", help="comma-separated model ids (default: OPENAI_MODEL)")
+    prune_cmd.add_argument("--answers-dir", type=Path, default=DEFAULT_CACHE_DIR)
+    prune_cmd.add_argument("--apply", action="store_true", help="delete (default: dry run)")
 
     commands.add_parser(
         "write-injection",
@@ -81,9 +147,18 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         if args.command == "run":
             return _run(args)
+        if args.command == "prune":
+            return _prune(args)
         if args.command == "write-injection":
             return _write_injection()
         return _capture(args)
+    except BudgetExceeded as exc:
+        print(
+            f"stopped: {exc.reason}. The answers already written stay in the answers folder; "
+            "raise the cap to continue.",
+            file=sys.stderr,
+        )
+        return EXIT_BUDGET
     except (EvalError, CaptureError, ValueError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
@@ -101,6 +176,9 @@ def _run(args: argparse.Namespace) -> int:
     models = [m.strip() for m in (args.model or "").split(",") if m.strip()]
     llms = []
     embedder = None
+    guard = None
+    if args.live:
+        guard = SpendGuard(max_cost_usd=args.max_cost_usd, max_calls=args.max_calls)
     if wants_llm:
         settings = LiveSettings()
         models = models or ([settings.openai_model] if settings.openai_model else [])
@@ -111,6 +189,9 @@ def _run(args: argparse.Namespace) -> int:
                 cache_dir=args.cache_dir,
                 prices=parse_prices(args.price),
                 settings=settings,
+                guard=guard,
+                read_cache=not args.no_cache_read,
+                run_suffix=datetime.now(UTC).strftime("run-%Y%m%dT%H%M%SZ"),
             )
             if args.variant in (SIMILAR_VARIANT, "all"):
                 embedder = build_embedder(settings)
@@ -118,6 +199,9 @@ def _run(args: argparse.Namespace) -> int:
         args.variant, sources, args.cases_dir, TiktokenCounter(), llms=llms, embedder=embedder
     )
     json_path, md_path = write_report(report, args.out_dir)
+    if guard is not None:
+        spent = f"${guard.cost_usd:.4f} of ${guard.max_cost_usd}"
+        print(f"spent {spent}, {guard.calls} of {guard.max_calls} calls")
     for run in report.runs:
         m = run.metrics
         print(
@@ -132,6 +216,29 @@ def _run(args: argparse.Namespace) -> int:
     for variant, reason in report.skipped.items():
         print(f"{variant}: not run ({reason})")
     print(f"report: {json_path} and {md_path}")
+    return 0
+
+
+def _prune(args: argparse.Namespace) -> int:
+    settings = LiveSettings()
+    models = [m.strip() for m in (args.model or "").split(",") if m.strip()]
+    models = models or ([settings.openai_model] if settings.openai_model else [])
+    if not models:
+        raise EvalError("prune needs a model (--model or OPENAI_MODEL)")
+    sources = [s.strip() for s in args.sources.split(",") if s.strip()]
+    setups = build_setups(models, live=False, cache_dir=args.answers_dir, settings=settings)
+    used = asyncio.run(
+        used_entries(setups, sources, args.cases_dir, TiktokenCounter(), build_embedder(settings))
+    )
+    result = prune(args.answers_dir, used, apply=args.apply)
+    verb = "deleted" if result.deleted else "would delete"
+    for path in result.orphans:
+        print(f"{verb}: {path.relative_to(args.answers_dir)}")
+    print(
+        f"{len(result.kept)} kept, {len(result.orphans)} {verb.replace('would delete', 'orphan')}"
+    )
+    if result.orphans and not result.deleted:
+        print("dry run: pass --apply to delete them")
     return 0
 
 
