@@ -2,7 +2,12 @@
 
 from cicd_doctor.adapters.memory.command_log import InMemoryCommandLog
 from cicd_doctor.adapters.memory.embedder import FakeEmbedder
-from cicd_doctor.adapters.memory.github import FakeLogSource, FakePullRequests, FakeReporter
+from cicd_doctor.adapters.memory.github import (
+    FakeLogSource,
+    FakePullRequests,
+    FakeReporter,
+    FakeRunSource,
+)
 from cicd_doctor.adapters.memory.installations import InMemoryInstallationStore
 from cicd_doctor.adapters.memory.ledger import InMemoryUsageLedger
 from cicd_doctor.adapters.memory.llm import FakeLLM
@@ -17,6 +22,7 @@ __all__ = [
     "FakeLogSource",
     "FakePullRequests",
     "FakeReporter",
+    "FakeRunSource",
     "InMemoryCommandLog",
     "InMemoryFailureStore",
     "InMemoryInstallationStore",

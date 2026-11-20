@@ -6,11 +6,19 @@ that belongs to this repository. That list is empty for fork pull requests and f
 the branch are searched, and only one that matches the run exactly is accepted.
 """
 
-from cicd_doctor.adapters.github.auth import DIAGNOSIS_PERMISSIONS, GitHubAppAuth
-from cicd_doctor.adapters.github.http import GitHubHttp
-from cicd_doctor.core.models import RunRef
+from pydantic import BaseModel, ValidationError
+
+from cicd_doctor.adapters.github.auth import (
+    DIAGNOSIS_PERMISSIONS,
+    EXPLAIN_PERMISSIONS,
+    GitHubAppAuth,
+)
+from cicd_doctor.adapters.github.http import GitHubHttp, GitHubPermanentError
+from cicd_doctor.core.errors import PermanentError
+from cicd_doctor.core.models import PullRequestInfo, RepoRef, RunRef
 
 PULLS = "/repos/{owner}/{repo}/pulls"
+PULL = "/repos/{owner}/{repo}/pulls/{number}"
 MAX_PAGES = 3
 
 
@@ -45,6 +53,67 @@ class GitHubPullRequests:
             and _matches(item, run)
         ]
         return min(numbers) if numbers else None
+
+    async def get(self, repo: RepoRef, number: int) -> PullRequestInfo | None:
+        """``GET /pulls/{n}`` with the permissions of ``explain`` (D-96). A 404 is ``None``."""
+        owner, _, name = repo.full_name.partition("/")
+        try:
+            response = await self._http.request(
+                "GET",
+                PULL,
+                path={"owner": owner, "repo": name, "number": number},
+                credential=self._auth.installation_credential(
+                    repo.installation_id, repo.repo_id, EXPLAIN_PERMISSIONS
+                ),
+            )
+        except GitHubPermanentError as exc:
+            if exc.status_code == 404:
+                return None
+            raise
+        try:
+            raw = _Pull.model_validate(response.json())
+        except (ValidationError, ValueError) as exc:
+            raise PermanentError("GET /pulls/{number}: the answer has an unexpected shape") from exc
+        head_repo = raw.head.repo
+        return PullRequestInfo(
+            number=raw.number,
+            state="open" if raw.state == "open" else "closed",
+            draft=raw.draft,
+            merged=raw.merged,
+            head_sha=raw.head.sha,
+            head_branch=raw.head.ref,
+            head_repo_id=head_repo.id if head_repo is not None else None,
+            head_repo_full_name=head_repo.full_name if head_repo is not None else "",
+            base_repo_id=raw.base.repo.id,
+        )
+
+
+class _HeadRepo(BaseModel):
+    id: int
+    full_name: str
+
+
+class _Head(BaseModel):
+    sha: str
+    ref: str
+    repo: _HeadRepo | None = None
+
+
+class _BaseRepo(BaseModel):
+    id: int
+
+
+class _Base(BaseModel):
+    repo: _BaseRepo
+
+
+class _Pull(BaseModel):
+    number: int
+    state: str
+    draft: bool = False
+    merged: bool = False
+    head: _Head
+    base: _Base
 
 
 def _matches(pull: dict[str, object], run: RunRef) -> bool:

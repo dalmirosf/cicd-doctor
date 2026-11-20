@@ -30,6 +30,7 @@ from cicd_doctor.adapters.github.logs import GitHubLogSource
 from cicd_doctor.adapters.github.pulls import GitHubPullRequests
 from cicd_doctor.adapters.github.repo_config import GitHubRepoConfigSource
 from cicd_doctor.adapters.github.reporter import GitHubReporter
+from cicd_doctor.adapters.github.runs import GitHubRunSource
 from cicd_doctor.adapters.llm.openai_client import OpenAILLMClient, make_openai_client
 from cicd_doctor.adapters.llm.tiktoken_counter import TiktokenCounter
 from cicd_doctor.adapters.postgres.command_log import PostgresCommandLog
@@ -268,6 +269,7 @@ async def worker_use_cases(
     settings: Settings,
     clock: Clock,
     installations: InstallationStore,
+    queue: JobQueue,
     embedder: Embedder | None = None,
 ) -> AsyncIterator[UseCases]:
     """The real graph of the diagnosis and outcome flows; its connections close when the block
@@ -317,9 +319,10 @@ async def worker_use_cases(
             similar_k=config.similar_k,
             similar_min_score=config.similar_min_score,
         )
+        pulls = GitHubPullRequests(http, auth)
         diagnose = DiagnoseFailedRun(
             logs=logs,
-            pulls=GitHubPullRequests(http, auth),
+            pulls=pulls,
             repo_config=repo_config,
             reporter=reporter,
             store=store,
@@ -339,7 +342,16 @@ async def worker_use_cases(
             PostgresCommandLog.connect(url, pool_size=consumers + 2)
         )
         explain = ExplainCommand(
-            commands, reporter, clock, window=timedelta(seconds=settings.command_window_s)
+            commands,
+            reporter,
+            pulls,
+            GitHubRunSource(http, auth),
+            repo_config,
+            queue,
+            clock,
+            window=timedelta(seconds=settings.command_window_s),
+            max_runs=settings.explain_max_runs,
+            llm_enabled=settings.llm_enabled,
         )
         yield UseCases(diagnose, outcome, explain, commands)
 
@@ -360,7 +372,7 @@ async def run_worker(settings: Settings, stop: asyncio.Event) -> None:
             url, pool_size=settings.worker_concurrency + 2
         ) as installations,
         PostgresFailureStore.connect(url, clock, pool_size=2) as purge_store,
-        worker_use_cases(settings, clock, installations, embedder) as use_cases,
+        worker_use_cases(settings, clock, installations, queue, embedder) as use_cases,
     ):
         purge = purge_handler(
             queue,

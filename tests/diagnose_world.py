@@ -22,18 +22,31 @@ from cicd_doctor.adapters.github.logs import GitHubLogSource
 from cicd_doctor.adapters.github.pulls import GitHubPullRequests
 from cicd_doctor.adapters.github.repo_config import GitHubRepoConfigSource
 from cicd_doctor.adapters.github.reporter import GitHubReporter
+from cicd_doctor.adapters.github.runs import GitHubRunSource
 from cicd_doctor.adapters.github.webhooks import route_event
-from cicd_doctor.adapters.memory import CharTokenCounter, FakeLLM
+from cicd_doctor.adapters.memory import CharTokenCounter, FakeLLM, InMemoryCommandLog
 from cicd_doctor.adapters.memory.llm import ScriptItem, valid
 from cicd_doctor.core.diagnosis.cost import CostModel
 from cicd_doctor.core.diagnosis.pipeline import DiagnoseJob
 from cicd_doctor.core.models import Job, JobKind
-from cicd_doctor.core.ports import Embedder, FailureStore, InstallationStore, JobQueue, UsageLedger
+from cicd_doctor.core.ports import (
+    CommandLog,
+    Embedder,
+    FailureStore,
+    InstallationStore,
+    JobQueue,
+    UsageLedger,
+)
 from cicd_doctor.core.repo_config import CachedRepoConfig
 from cicd_doctor.core.usecases.diagnose_failed_run import DiagnoseConfig, DiagnoseFailedRun
+from cicd_doctor.core.usecases.explain_command import ExplainCommand
 from cicd_doctor.core.usecases.record_run_outcome import RecordRunOutcome
 from cicd_doctor.worker import Worker
-from cicd_doctor.worker.handlers import diagnose_run_handler, record_outcome_handler
+from cicd_doctor.worker.handlers import (
+    diagnose_run_handler,
+    explain_handler,
+    record_outcome_handler,
+)
 from tests.github_fake import (
     FakeGitHub,
     FakeRepoContents,
@@ -116,6 +129,7 @@ class DiagnoseWorld:
     installations: InstallationStore
     llm: FakeLLM
     use_case: DiagnoseFailedRun
+    explain: ExplainCommand
     worker: Worker
 
     def add_run(
@@ -196,9 +210,12 @@ async def diagnose_world(
     embedder: Embedder | None = None,
     give_up_timeout_s: float = 5.0,
     lease: timedelta = timedelta(minutes=5),
+    commands: CommandLog | None = None,
+    explain_max_runs: int = 3,
 ) -> AsyncIterator[DiagnoseWorld]:
     github = FakeGitHub(clock, app_key().public_key())
     github.install(INSTALLATION_ID, repo_ids={REPO_ID})
+    github.installations[INSTALLATION_ID].permissions["issues"] = "write"  # D-89: the 👀
     writes = FakeRepoWrites(github)
     contents = FakeRepoContents(github)
     logs = GitHubLogsFake(github)
@@ -228,10 +245,22 @@ async def diagnose_world(
                 config=DiagnoseConfig(),
             )
             handler = diagnose_run_handler(use_case, give_up_timeout_s=give_up_timeout_s)
+            pulls = GitHubPullRequests(http, auth)
+            explain = ExplainCommand(
+                commands if commands is not None else InMemoryCommandLog(),
+                GitHubReporter(http, auth, clock),
+                pulls,
+                GitHubRunSource(http, auth),
+                repo_config,
+                queue,
+                clock,
+                max_runs=explain_max_runs,
+            )
             worker = Worker(
                 queue,
                 {
                     JobKind.DIAGNOSE_RUN: handler,
+                    JobKind.EXPLAIN: explain_handler(explain),
                     JobKind.RECORD_OUTCOME: record_outcome_handler(
                         RecordRunOutcome(
                             store=store,
@@ -258,6 +287,7 @@ async def diagnose_world(
                 installations=installations,
                 llm=llm,
                 use_case=use_case,
+                explain=explain,
                 worker=worker,
             )
         finally:
