@@ -1,0 +1,4 @@
+# P3 live verification, box 4: this file goes ONLY to the branch of a pull request, never to main.
+# If the app read it, the sticky comment would come back (comment: true) and the LLM would be off.
+llm: "off"
+comment: true

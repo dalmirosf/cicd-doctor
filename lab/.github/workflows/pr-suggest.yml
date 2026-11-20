@@ -1,0 +1,25 @@
+# suggestion (P3): ruff finds `== None` (E711) in python/suggest/legacy.py, on every run. It runs
+# only when a pull request touches python/suggest/, so the pull requests of the other boxes do not
+# get a third failure. A pull request that edits the line that ruff names gets a suggested change
+# INSIDE its diff; one that edits only python/suggest/notes.py gets the same failure with the
+# line OUTSIDE its diff ("Live verification (P3)" in README.md). Fails on purpose.
+# It runs from the root of the repository, so the log names the path exactly as the diff does
+# (python/suggest/legacy.py), and the concise format puts the line number right after it.
+name: pr-suggest
+
+on:
+  pull_request:
+    paths:
+      - python/suggest/**
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+      - run: uvx ruff check --isolated --select E711 --output-format concise python/suggest/legacy.py

@@ -1,0 +1,3 @@
+# P3 live verification, box 4: an invalid file (llm: maybe). It turns the LLM off and the check run
+# names the field. Copied by hand to .github/cicd-doctor.yml of the lab.
+llm: maybe
