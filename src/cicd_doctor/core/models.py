@@ -463,6 +463,7 @@ class CommentTarget(DomainModel):
 
 class CommentRef(DomainModel):
     installation_id: int
+    repo_id: int  # the installation token is scoped to one repository (D-68)
     repo_full_name: str
     comment_id: int
 
@@ -574,6 +575,31 @@ class Job(DomainModel):
 def outcome_dedupe_key(run_id: int, run_attempt: int) -> str:
     """One ``record_outcome`` job per successful run attempt, whatever the delivery (D-83)."""
     return f"outcome:{run_id}:{run_attempt}"
+
+
+def explain_dedupe_key(comment_id: int) -> str:
+    """One ``explain`` job per command comment, whatever the delivery (D-92)."""
+    return f"explain:{comment_id}"
+
+
+class ExplainPayload(DomainModel):
+    """Payload of an ``explain`` job: a command comment that passed the authorization of D-92.
+
+    It never carries the comment body or the raw JSON (D-56): the webhook already checked the
+    body, and the job needs only who asked, where and when.
+    """
+
+    installation_id: int
+    repo_id: int
+    repo_full_name: str
+    private: bool
+    default_branch: str
+    account_login: str
+    account_type: str
+    pr_number: int
+    comment_id: int
+    actor_login: str
+    received_at: datetime
 
 
 class RecordOutcomePayload(DomainModel):

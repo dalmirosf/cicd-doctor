@@ -160,6 +160,7 @@ class FakeReporter:
         self.comments: dict[int, FakeComment] = {}
         self.calls: list[ReporterCall] = []
         self.comment_bodies: list[str] = []  # every body ever sent, in order
+        self.reactions: list[tuple[int, str]] = []  # (comment id, reaction), in order
         self._next_check = first_check_id
         self._next_comment = first_comment_id
         self._failures = _Failures()
@@ -222,7 +223,10 @@ class FakeReporter:
         raise NotImplementedError("P3")
 
     async def react(self, comment: CommentRef, reaction: str) -> None:
-        raise NotImplementedError("P3")
+        self.calls.append(ReporterCall("react", 0, 0, known_id=comment.comment_id))
+        await self._enter("react")
+        if (comment.comment_id, reaction) not in self.reactions:  # adding twice is a no-op
+            self.reactions.append((comment.comment_id, reaction))
 
     async def _enter(self, method: str) -> None:
         _note(self._journal, f"reporter.{method}")

@@ -71,6 +71,10 @@ class Settings(BaseSettings):
     retention_jobs_days: int = Field(default=30, ge=1)
     stale_after_days: int = Field(default=30, ge=1)
     uninstall_grace_days: int = Field(default=7, ge=0)
+    retention_commands_days: int = Field(default=30, ge=1)  # D-93
+
+    # Commands (FR-19, D-93)
+    command_window_s: int = Field(default=300, ge=1)  # one accepted explain per PR per window
 
     # Worker (SPEC §4.4, D-23)
     worker_concurrency: int = Field(default=4, ge=1)

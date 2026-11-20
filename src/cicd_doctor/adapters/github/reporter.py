@@ -18,9 +18,13 @@ from typing import Any
 
 import httpx2
 
-from cicd_doctor.adapters.github.auth import DIAGNOSIS_PERMISSIONS, GitHubAppAuth
+from cicd_doctor.adapters.github.auth import (
+    DIAGNOSIS_PERMISSIONS,
+    EXPLAIN_PERMISSIONS,
+    GitHubAppAuth,
+)
 from cicd_doctor.adapters.github.http import Credential, GitHubHttp, GitHubPermanentError
-from cicd_doctor.core.errors import PermanentError, TransientError
+from cicd_doctor.core.errors import CommentGone, PermanentError, TransientError
 from cicd_doctor.core.models import CheckOutput, CommentRef, CommentTarget, RunRef, Suggestion
 from cicd_doctor.core.ports import Clock
 from cicd_doctor.core.render import check_name
@@ -30,6 +34,7 @@ CHECK_RUN = "/repos/{owner}/{repo}/check-runs/{check_run_id}"
 COMMIT_CHECK_RUNS = "/repos/{owner}/{repo}/commits/{ref}/check-runs"
 ISSUE_COMMENTS = "/repos/{owner}/{repo}/issues/{issue_number}/comments"
 ISSUE_COMMENT = "/repos/{owner}/{repo}/issues/comments/{comment_id}"
+COMMENT_REACTIONS = "/repos/{owner}/{repo}/issues/comments/{comment_id}/reactions"
 
 COMMENT_PAGES = 10  # of 100 comments: more than 1,000 comments on one PR is an accepted residual
 CHECK_RUN_PAGES = 10
@@ -230,7 +235,29 @@ class GitHubReporter:
         raise NotImplementedError("P3")
 
     async def react(self, comment: CommentRef, reaction: str) -> None:
-        raise NotImplementedError("P3")
+        """``POST .../issues/comments/{id}/reactions``: 201 when created, 200 when the app had
+        already left this reaction (both are success). A 404 is a deleted comment."""
+        owner, _, repo = comment.repo_full_name.partition("/")
+        credential = self._auth.installation_credential(
+            comment.installation_id, comment.repo_id, EXPLAIN_PERMISSIONS
+        )
+        try:
+            await self._http.request(
+                "POST",
+                COMMENT_REACTIONS,
+                path={"owner": owner, "repo": repo, "comment_id": comment.comment_id},
+                json={"content": reaction},
+                credential=credential,
+            )
+        except GitHubPermanentError as exc:
+            if exc.status_code == 404:
+                raise CommentGone("the comment no longer exists") from exc
+            if exc.status_code == 403:
+                raise GitHubPermanentError(
+                    f"reaction refused: the installation has not accepted Issues: write ({exc})",
+                    status_code=403,
+                ) from exc
+            raise
 
     # --- helpers ---------------------------------------------------------------------------
 

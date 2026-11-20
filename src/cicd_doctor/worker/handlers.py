@@ -10,12 +10,13 @@ from pydantic import ValidationError
 from cicd_doctor.core.errors import InstallationUnavailable, LogsUnavailable, PermanentError
 from cicd_doctor.core.models import (
     DiagnoseRunPayload,
+    ExplainPayload,
     InstallationEvent,
     Job,
     RecordOutcomePayload,
     RunRef,
 )
-from cicd_doctor.core.ports import Clock, FailureStore, InstallationStore, JobQueue
+from cicd_doctor.core.ports import Clock, CommandLog, FailureStore, InstallationStore, JobQueue
 from cicd_doctor.core.usecases.purge import PurgeConfig, run_purge
 from cicd_doctor.core.usecases.track_installation import track_installation
 from cicd_doctor.worker.runner import Handler
@@ -50,12 +51,13 @@ def purge_handler(
     installations: InstallationStore,
     clock: Clock,
     config: PurgeConfig,
+    commands: CommandLog | None = None,
 ) -> Handler:
     """``purge`` jobs (D-85). The payload is empty; the cuts come from the clock and the config.
     A failure is retried by the worker, and every step is idempotent."""
 
     async def handle(job: Job) -> None:
-        await run_purge(queue, store, installations, clock, config)
+        await run_purge(queue, store, installations, clock, config, commands)
 
     return handle
 
@@ -77,6 +79,26 @@ def record_outcome_handler(use_case: OutcomeUseCase) -> Handler:
             raise PermanentError(
                 f"invalid record_outcome payload ({exc.error_count()} errors)"
             ) from exc
+        await use_case.run(payload)
+
+    return handle
+
+
+class ExplainUseCase(Protocol):
+    """What the handler needs of ``ExplainCommand``."""
+
+    async def run(self, payload: ExplainPayload) -> bool: ...
+
+
+def explain_handler(use_case: ExplainUseCase) -> Handler:
+    """``explain`` jobs (D-92, D-93). A refused command and a withdrawn one end ``done``; the
+    handler publishes nothing else, so there is no "Could not diagnose" for a command."""
+
+    async def handle(job: Job) -> None:
+        try:
+            payload = ExplainPayload.model_validate(job.payload)
+        except ValidationError as exc:
+            raise PermanentError(f"invalid explain payload ({exc.error_count()} errors)") from exc
         await use_case.run(payload)
 
     return handle

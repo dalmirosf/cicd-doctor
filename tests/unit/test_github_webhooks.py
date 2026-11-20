@@ -348,7 +348,7 @@ def test_repositories_added_and_removed() -> None:
 
 @pytest.mark.parametrize(
     ("event", "fixture"),
-    [("issue_comment", "issue_comment_created"), ("push", "ping"), ("ping", "ping")],
+    [("push", "ping"), ("ping", "ping")],
 )
 def test_unhandled_events_create_no_job(event: str, fixture: str) -> None:
     assert route(event, load(fixture)) is None

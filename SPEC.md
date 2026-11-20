@@ -59,7 +59,7 @@ Each requirement is delivered in the phase noted in brackets (see §13).
 | FR-16 | Find the top-3 similar past failures in the same repository (cosine similarity ≥ 0.85) and show them, with their fix commit if known, in the report. Also pass them to the LLM as additional untrusted context. | P2 |
 | FR-17 | On `workflow_run.completed` with `success`: if the same `head_sha` failed in an earlier attempt of the same run, mark those failures `resolved_flaky`; otherwise, if the same workflow and branch had open failures at a different `head_sha`, mark them `resolved_by_commit` with `fix_commit_sha`. Dedupe key `outcome:{run_id}:{run_attempt}`. A failure diagnosed **after** its success is resolved by the diagnosis itself (D-83). Update the sticky comment to the resolved state (the comment, not the check run, D-84). | P2 |
 | FR-18 | Purge data past retention with a daily job at 03:00 UTC: deliveries 30 days, finished jobs (`done`, `failed`, `dead`) 30 days, run attempts with their failures, diagnoses and publication records 90 days, the data of an uninstalled installation or a removed repository 7 days after the uninstall; open failures older than 30 days become `stale` (D-85). | P2 |
-| FR-19 | `/cicd-doctor explain` on a PR (by `OWNER`, `MEMBER` or `COLLABORATOR`) acknowledges with a 👀 reaction and diagnoses the latest failed runs of the PR head with the LLM, including fork PRs; rate limited to 1 per PR per 5 minutes. | P3 |
+| FR-19 | `/cicd-doctor explain` on a PR (by `OWNER`, `MEMBER` or `COLLABORATOR`) acknowledges with a 👀 reaction and diagnoses the latest failed runs of the PR head with the LLM, including fork PRs; rate limited to 1 per PR per 5 minutes (D-92, D-93). Only a new comment counts (not an edit), bots are ignored, and a refused command gets no answer at all. | P3 |
 | FR-20 | When the LLM proposes a code change whose lines are inside the PR diff, post it as a review comment with a ```` ```suggestion ```` block; otherwise show it only as text. | P3 |
 | FR-21 | Read optional per-repo settings from `.github/cicd-doctor.yml` **on the default branch only** (`comment`, `llm: auto|on_demand|off`, `ignore_workflows`; D-90, D-91). A file that does not validate turns the LLM off and the check run names the failing fields. | P3 |
 | FR-22 | Provide an eval runner over versioned cases that reports the metrics in §11 for the variants `rules`, `llm`, `llm+hints`, `llm+hints+similar`. | P1 (skeleton), P4 |
@@ -288,6 +288,8 @@ Settings come from the environment (`pydantic-settings` in `app/settings.py`; `.
 | `EMBEDDING_THREADS` | unset | ONNX threads; unset = onnxruntime decides |
 | `PURGE_ENABLED` / `PURGE_HOUR_UTC` | `true` / `3` | The scheduler of the daily purge job; the hour is UTC (D-85) |
 | `RETENTION_DELIVERIES_DAYS` / `RETENTION_JOBS_DAYS` / `RETENTION_FAILURES_DAYS` | `30` / `30` / `90` | FR-18 (D-85) |
+| `RETENTION_COMMANDS_DAYS` | `30` | accepted `explain` commands (D-93) |
+| `COMMAND_WINDOW_S` | `300` | one accepted `/cicd-doctor explain` per PR per window (FR-19, D-93) |
 | `STALE_AFTER_DAYS` / `UNINSTALL_GRACE_DAYS` | `30` / `7` | An open failure turns `stale`; grace before the data of an uninstall is purged (D-85) |
 | `CACHE_TTL_DAYS` | `7` | Days an `llm` diagnosis can be reused for the same signature in the same repository; `0` turns the cache off (P2, D-81) |
 | `SIMILAR_K` / `SIMILAR_MIN_SCORE` | `3` / `0.85` | P2; 0.85 was measured and stays (D-80). `SIMILAR_K=0` turns the search off (D-82) |
@@ -668,6 +670,7 @@ CREATE TABLE command_invocations (
     PRIMARY KEY (repository_id, comment_id)
 );
 CREATE INDEX command_invocations_pr_idx ON command_invocations (repository_id, pr_number, created_at DESC);
+-- One row per ACCEPTED command (D-93): `created_at` is the Clock's `now`; rows older than 30 days are purged.
 ```
 
 **Key queries** (`adapters/postgres/queue.py`, `store.py` and `ledger.py`). `:now` comes from the injected `Clock`, not from SQL `now()` (D-48); the cache window, `created_at`, `analyzed_at` and the budget day follow it too.
@@ -960,11 +963,12 @@ Installation tokens are requested with `repository_ids: [repo_id]` and only the 
 
 `/cicd-doctor explain` is accepted only when all of these hold:
 - The comment is on a PR.
+- The comment is new (`action = created`; an edited or deleted comment never counts) and its author is a person (`user.type = User`, not a bot).
 - The body's first line is exactly the command.
 - `comment.author_association ∈ {OWNER, MEMBER, COLLABORATOR}`.
-- There was no accepted invocation on the same PR in the last 5 minutes.
+- There was no accepted invocation on the same PR in the last 5 minutes (D-93: the worker decides, under a lock per PR, on `command_invocations`; a retry of the same comment is not a new invocation; a refused one does not extend the window).
 
-Rejected commands are ignored silently, so they don't add noise and don't reveal the policy. Accepted ones get a 👀 reaction, and the diagnosis uses the LLM even for forks. Budget limits still apply.
+Everything but the rate limit is decided by the webhook from the signed payload alone (D-92: no call to GitHub, the body is never stored); the rate limit is decided by the worker (D-93). Rejected commands are ignored silently, so they don't add noise and don't reveal the policy. Accepted ones get a 👀 reaction, and the diagnosis uses the LLM even for forks. Budget limits still apply.
 
 ---
 
@@ -1080,7 +1084,7 @@ Variants: `rules`, `llm` (no hints), `llm+hints` (production behavior in P1), `l
 | Layer | Scope | Tools | Runs in |
 |---|---|---|---|
 | Unit | Pure `core/`: noise filters, slicing, windowing, token budget, redaction, normalization/signature, each rule (positive and negative), policy, render/sanitization, outcome state machine, use cases with in-memory adapters + fake LLM | pytest, hypothesis (normalization idempotence, redaction never leaks pattern-shaped secrets), golden files for excerpts and rendered markdown | pre-commit + CI |
-| Contract | One shared test suite for `FailureStore`, `JobQueue`, `InstallationStore` and `UsageLedger`, run against both the in-memory and the Postgres adapters (all of them on both adapters, `FailureStore.similar` and `cached_diagnosis` included: isolation by repository, forks, the same run, the 1 000 closer rows of another repository) | pytest parametrized fixtures; the Postgres parameter is marked `integration` (D-51) | memory in pre-commit; both in CI |
+| Contract | One shared test suite for `FailureStore`, `JobQueue`, `InstallationStore`, `UsageLedger` and `CommandLog` (the 5-minute window, retries, isolation by repository and PR, one winner among racing claims), run against both the in-memory and the Postgres adapters (all of them on both adapters, `FailureStore.similar` and `cached_diagnosis` included: isolation by repository, forks, the same run, the 1 000 closer rows of another repository) | pytest parametrized fixtures; the Postgres parameter is marked `integration` (D-51) | memory in pre-commit; both in CI |
 | Adapter | GitHub client (JWT, token scoping, pagination, rate-limit headers and the error mapping: `tests/adapters/test_github_{http,auth}.py`, today; the log source (redirect without credentials, offset Range, ring buffer, 404/410: `tests/adapters/test_github_logs.py`, D-71) today; comment upsert by marker later in P1c), OpenAI client (schema, error mapping, retries and repair through the pipeline: `tests/adapters/test_openai_client.py`, today), fastembed (dims, determinism against reviewed vectors, latency: `tests/adapters/test_fastembed.py` with the real model, cached in CI, D-78; loading and retry logic on a fake model), tiktoken counts (`tests/adapters/`, today); webhook signature, routing and the jobs JSON parser (unit tests today) | `httpx2.MockTransport` for OpenAI (the SDK runs on `httpx2`, D-63) and for GitHub, where `tests/github_fake.py` is a stateful FakeGitHub (D-67; no respx); responses built inline, plus 21 reviewed and sanitized responses of the real API recorded on 2026-11-16 and 2026-11-17 in `tests/fixtures/github/` (`tests/adapters/test_github_fixtures.py` fails if one stops parsing); synthetic webhook payloads in `tests/fixtures/webhooks/` (D-56); synthetic job logs in `tests/fixtures/logs/` | CI |
 | Integration | API + worker + real Postgres: migrations, webhook (401 with no rows, delivery idempotency, 503 and `/ready` with the database unreachable), installation events through the worker, idempotency, lease expiry after a killed worker process, heartbeats, concurrent workers (no double processing), NOTIFY wake-ups, newer-attempt guard, budget under concurrency (two engines, 40 racing reservations), the analysis checkpoint (atomic, first writer wins) and the publication lock (a waiter, a dead connection, a cancelled waiter) | Compose / CI service container `pgvector/pgvector:0.8.7-pg17`; own `<db>_test` databases; skipped locally when Postgres is down, failing in CI (D-51) | CI (`-m integration`), and locally with Compose up |
 | E2E (offline) | Replay a recorded `workflow_run` delivery through the API → worker → FakeGitHub (`tests/github_fake.py`, D-67) and assert the exact check run and comment calls | pytest | CI |
@@ -1159,7 +1163,7 @@ Scope: FR-08b, FR-15…FR-18.
 ### P3 — Commands, suggestions, repo config
 Scope: FR-19…FR-21.
 - [ ] `/cicd-doctor explain` by a collaborator → 👀 reaction and an LLM diagnosis within 90 s, including on a fork PR.
-- [ ] The same command by a non-collaborator (`CONTRIBUTOR`, `NONE`, …) → no reaction, no job. A second valid command within 5 minutes → ignored.
+- [ ] The same command by a non-collaborator (`CONTRIBUTOR`, `NONE`, …) → no reaction, no job. A second valid command within 5 minutes → ignored. Offline evidence (P3 c, 2026-11-20): `tests/unit/test_command_webhook.py` (exact first line, six associations, bots, `edited`/`deleted`, issues that are not PRs: 204 and nothing stored), `tests/contract/test_command_log.py` (4:59 refused, 5:01 accepted, a retry accepted; memory and Postgres), `tests/integration/test_command_postgres.py` (two engines, one winner; 40 claims over 4 PRs leave 4 rows) and `tests/e2e/test_explain_e2e.py` (signed webhook → worker → FakeGitHub: one `eyes` reaction, no check, no comment). The live part waits for PR g.
 - [ ] An LLM suggestion on lines inside the PR diff → a review comment with a `suggestion` block. Outside the diff → text only.
 - [ ] `.github/cicd-doctor.yml` with `comment: false` on the default branch → no PR comment (check run still posted; a comment already published stays, D-91). The same file changed only in a fork PR head has no effect. **Offline only so far (P3 b, D-90):** `tests/adapters/test_github_repo_config.py` (no request carries a `ref`; a file on a PR head or another ref changes nothing; the token is `contents: read` and nothing else), `tests/unit/test_repo_config_flow.py` (`comment: false` writes the check and no comment, leaves an old comment as it is and skips the resolution rewrite; `ignore_workflows` writes and reserves nothing; an invalid file turns the LLM off and the check names the fields) and the e2e call sequences. The live check waits for P3 (g).
 - [ ] The `issue_comment` permission behavior is verified and DECISIONS.md is updated. (Settings seen and D-89 written 2026-11-20; ticked when the first real `issue_comment` delivery is observed.)

@@ -110,7 +110,7 @@ def test_ping_answers_pong_and_stores_nothing(api: Harness) -> None:
         ("workflow_run", "workflow_run_completed_failure", {"conclusion": "skipped"}),
         ("workflow_run", "workflow_run_completed_failure", {"conclusion": "stale"}),
         ("workflow_run", "workflow_run_completed_failure", {"action": "requested"}),
-        ("issue_comment", "issue_comment_created", {}),
+        ("issue_comment", "issue_comment_created", {"action": "edited"}),
         ("push", "ping", {}),
     ],
 )
@@ -284,3 +284,50 @@ def test_a_database_outage_is_503_so_the_delivery_can_be_redelivered() -> None:
     response = client.post(URL, content=body, headers=headers("workflow_run", body))
 
     assert response.status_code == 503
+
+
+# --- issue_comment (FR-19, D-92) ----------------------------------------------------------
+
+
+def test_an_authorized_command_is_enqueued_as_an_explain_job_and_a_redelivery_is_a_duplicate(
+    api: Harness,
+) -> None:
+    first = api.post("issue_comment", load("issue_comment_created"))
+    again = api.post("issue_comment", load("issue_comment_created"))
+
+    assert (first.status_code, first.json()) == (202, {"status": "accepted"})
+    assert (again.status_code, again.json()) == (200, {"status": "duplicate"})
+    jobs = asyncio.run(api.jobs())
+    assert [(job.kind, job.dedupe_key) for job in jobs] == [(JobKind.EXPLAIN, "explain:777")]
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"action": "edited"},
+        {"action": "deleted"},
+        {"comment": {"id": 1, "body": "/cicd-doctor explain", "author_association": "NONE"}},
+        {"comment": {"id": 1, "body": "looks good", "author_association": "OWNER"}},
+    ],
+)
+def test_an_issue_comment_that_is_not_a_command_is_204_and_stores_nothing(
+    api: Harness, changes: dict[str, Any]
+) -> None:
+    payload = load("issue_comment_created") | changes
+
+    response = api.post("issue_comment", payload)
+
+    assert response.status_code == 204
+    assert asyncio.run(api.jobs()) == []
+    assert api.queue.deliveries == {}
+
+
+def test_an_accepted_command_missing_a_field_is_400(api: Harness) -> None:
+    payload = load("issue_comment_created")
+    del payload["installation"]
+
+    response = api.post("issue_comment", payload)
+
+    assert response.status_code == 400
+    assert "installation" in response.json()["detail"]
+    assert api.queue.deliveries == {}

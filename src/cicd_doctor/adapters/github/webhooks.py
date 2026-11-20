@@ -14,6 +14,7 @@ from pydantic import BaseModel, ValidationError
 
 from cicd_doctor.core.models import (
     DiagnoseRunPayload,
+    ExplainPayload,
     Installation,
     InstallationAction,
     InstallationEvent,
@@ -23,6 +24,7 @@ from cicd_doctor.core.models import (
     Repository,
     RunRef,
     diagnose_dedupe_key,
+    explain_dedupe_key,
     outcome_dedupe_key,
 )
 
@@ -32,6 +34,10 @@ SIGNATURE_PREFIX = "sha256="
 # ``cancelled`` runs are enqueued too: a job that exceeds its ``timeout-minutes`` ends the run
 # ``cancelled``, and the use case decides whether it was a timeout (D-73).
 DIAGNOSED_CONCLUSIONS: frozenset[str] = frozenset({"failure", "timed_out", "cancelled"})
+
+COMMAND_EXPLAIN = "/cicd-doctor explain"
+# Who may give the command (D-92): decided by GitHub at the moment of the comment (D-22).
+COMMAND_ASSOCIATIONS: frozenset[str] = frozenset({"OWNER", "MEMBER", "COLLABORATOR"})
 
 _INSTALLATION_ACTIONS = {
     "created": InstallationAction.CREATED,
@@ -87,6 +93,8 @@ def route_event(
         if workflow_run.workflow_run.conclusion == "success":
             return _outcome_job(workflow_run, max_attempts)
         return _diagnose_job(workflow_run, max_attempts)
+    if event == "issue_comment":
+        return _explain_job(payload, received_at, max_attempts)
     if event == "installation" and action in _INSTALLATION_ACTIONS:
         parsed = _parse(_InstallationPayload, event, payload)
         action_ = _INSTALLATION_ACTIONS[action]
@@ -188,6 +196,85 @@ class _InstallationRepositoriesPayload(BaseModel):
     installation: _Installation
     repositories_added: list[_ListedRepository] = []
     repositories_removed: list[_ListedRepository] = []
+
+
+class _CommentUser(BaseModel):
+    login: str
+    type: str
+
+
+class _Comment(BaseModel):
+    id: int
+    user: _CommentUser
+
+
+class _Issue(BaseModel):
+    number: int
+
+
+class _IssueCommentEvent(BaseModel):
+    issue: _Issue
+    comment: _Comment
+    repository: _Repository
+    installation: _InstallationRef
+
+
+def _explain_job(
+    payload: Mapping[str, Any], received_at: datetime, max_attempts: int
+) -> NewJob | None:
+    """The ``explain`` job of a command comment, or None for every other ``issue_comment``.
+
+    The decision of D-92 uses only what the signed payload carries (no GitHub call, NFR-01) and
+    is taken on the raw mapping, before the strict parse: a comment that is not an authorized
+    command is a 204 whatever else it lacks, and only an accepted one can be a 400.
+    """
+    if not _is_authorized_command(payload):
+        return None
+    parsed = _parse(_IssueCommentEvent, "issue_comment", payload)
+    repo = parsed.repository
+    explain = ExplainPayload(
+        installation_id=parsed.installation.id,
+        repo_id=repo.id,
+        repo_full_name=repo.full_name,
+        private=repo.private,
+        default_branch=repo.default_branch,
+        account_login=repo.owner.login,
+        account_type=repo.owner.type,
+        pr_number=parsed.issue.number,
+        comment_id=parsed.comment.id,
+        actor_login=parsed.comment.user.login,
+        received_at=received_at,
+    )
+    return NewJob(
+        kind=JobKind.EXPLAIN,
+        payload=explain.model_dump(mode="json"),
+        dedupe_key=explain_dedupe_key(parsed.comment.id),
+        max_attempts=max_attempts,
+    )
+
+
+def _is_authorized_command(payload: Mapping[str, Any]) -> bool:
+    """D-92: a new comment on a pull request, by a human with write-like rights, whose first
+    line is exactly the command. ``edited`` and ``deleted`` never count."""
+    if payload.get("action") != "created":
+        return False
+    issue = payload.get("issue")
+    comment = payload.get("comment")
+    if not isinstance(issue, Mapping) or not isinstance(comment, Mapping):
+        return False
+    if not isinstance(issue.get("pull_request"), Mapping):
+        return False
+    if comment.get("author_association") not in COMMAND_ASSOCIATIONS:
+        return False
+    user = comment.get("user")
+    if not isinstance(user, Mapping) or user.get("type") != "User":
+        return False  # a Bot, an Organization or anything we do not know
+    body = comment.get("body")
+    return isinstance(body, str) and _first_line(body) == COMMAND_EXPLAIN
+
+
+def _first_line(body: str) -> str:
+    return body.split("\n", 1)[0].removesuffix("\r")
 
 
 def _parse[M: BaseModel](model: type[M], event: str, payload: Mapping[str, Any]) -> M:

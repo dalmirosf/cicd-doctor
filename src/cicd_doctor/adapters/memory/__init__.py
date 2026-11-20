@@ -1,5 +1,6 @@
 """In-memory adapters and fakes, used by tests and offline evals."""
 
+from cicd_doctor.adapters.memory.command_log import InMemoryCommandLog
 from cicd_doctor.adapters.memory.embedder import FakeEmbedder
 from cicd_doctor.adapters.memory.github import FakeLogSource, FakePullRequests, FakeReporter
 from cicd_doctor.adapters.memory.installations import InMemoryInstallationStore
@@ -16,6 +17,7 @@ __all__ = [
     "FakeLogSource",
     "FakePullRequests",
     "FakeReporter",
+    "InMemoryCommandLog",
     "InMemoryFailureStore",
     "InMemoryInstallationStore",
     "InMemoryJobQueue",

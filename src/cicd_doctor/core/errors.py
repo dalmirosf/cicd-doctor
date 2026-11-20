@@ -29,6 +29,11 @@ class InstallationUnavailable(PermanentError):  # noqa: N818  (a state, like ``P
     nothing either (D-74)."""
 
 
+class CommentGone(PermanentError):  # noqa: N818  (a state, like ``PolicyBlocked``)
+    """The comment a command or a reaction refers to was deleted (404). Not an error of the job:
+    a command withdrawn before the worker got to it is simply dropped (D-92)."""
+
+
 class LogsUnavailable(PermanentError):  # noqa: N818  (a state, like ``PolicyBlocked``)
     """GitHub no longer has the log of a job (404: not there, 410: expired or deleted).
 
