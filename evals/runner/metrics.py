@@ -1,5 +1,7 @@
 """Metrics of one variant over its case results (SPEC §11.2; P1b subset, no judge yet)."""
 
+import math
+import random
 from collections import Counter
 from collections.abc import Callable, Sequence
 from dataclasses import asdict, dataclass
@@ -10,6 +12,16 @@ from evals.runner.variants import CaseResult
 HIGH_CONFIDENCE = 0.75  # SPEC §5.1 confidence buckets
 MEDIUM_CONFIDENCE = 0.45
 LABELS = [category.value for category in Category]
+SCHEMA_VERSION = 2  # report JSON: 2 adds the P4 (b) metrics, every v1 field keeps its name (D-109)
+BOOTSTRAP_RESAMPLES = 1000
+BOOTSTRAP_SEED = 20261120  # fixed: the same results always give the same interval (D-105)
+MIN_DECILE_CASES = 5  # a decile with fewer cases is not shown (it is noise)
+INTERVAL_GROUPS = {
+    "lab": ("lab",),
+    "public": ("public",),
+    "injection": ("injection",),
+    "lab+public": ("lab", "public"),
+}
 
 
 @dataclass(frozen=True)
@@ -50,6 +62,27 @@ class Metrics:
     cache_hit_rate: float | None  # ... over the cases that have a history (not injection)
     similar_hits: int | None  # cases that had at least one similar past failure
     similar_hit_rate: float | None
+    # --- P4 (b), D-109 ---------------------------------------------------------------------
+    # Latency of the model call itself, from the recorded ``LLMResult.latency_ms``. ``latency_ms_*``
+    # above stay the pipeline time of THIS run (with stored answers it is the read of a file).
+    llm_latency_ms_p50: float | None
+    llm_latency_ms_p95: float | None
+    # Cost over the diagnoses published from the model (not cache, not fallback). ``priced`` says
+    # whether the prices were known: with none, every cost is 0 and the report says so.
+    priced: bool | None
+    llm_diagnoses: int
+    cost_usd_per_llm_diagnosis: float | None  # NFR-03 average
+    cost_usd_p95: float | None
+    # Evidence: raw items of the answer that ``verified_evidence`` keeps, over all raw items.
+    evidence_validity: float | None
+    answers: int  # cases with a recorded answer of the model
+    answers_without_valid_evidence: int
+    abstention_unknown: float  # share of cases that say ``unknown``
+    abstention_low_confidence: float  # share with confidence below 0.45
+    calibration_deciles: list[dict[str, float]]  # deciles with >= 5 cases
+    expected_calibration_error: float | None
+    high_confidence_accuracy: float | None
+    intervals: dict[str, dict[str, object]]  # bootstrap 95 % CI per source group (informational)
 
     def to_dict(self) -> dict[str, object]:
         return asdict(self)
@@ -61,10 +94,11 @@ def bucket(confidence: float) -> str:
     return "medium" if confidence >= MEDIUM_CONFIDENCE else "low"
 
 
-def compute(results: Sequence[CaseResult], *, with_history: bool = False) -> Metrics:
+def compute(
+    results: Sequence[CaseResult], *, with_history: bool = False, priced: bool | None = None
+) -> Metrics:
     n = len(results)
     per_category = _per_category(results)
-    supported = [score.f1 for score in per_category.values() if score.support]
     abstaining = [
         r for r in results if r.predicted == Category.UNKNOWN.value or bucket(r.confidence) == "low"
     ]
@@ -73,11 +107,18 @@ def compute(results: Sequence[CaseResult], *, with_history: bool = False) -> Met
     remembered = [result for result in results if result.source != "injection"]
     cache_hits = sum(r.diagnosis_source == "cache" for r in remembered)
     similar_hits = sum(r.similar_found > 0 for r in remembered)
+    llm_latencies = sorted(r.llm_latency_ms for r in results if r.llm_latency_ms is not None)
+    from_model = [r for r in results if r.diagnosis_source == "llm"]
+    model_costs = sorted(r.cost_usd for r in from_model)
+    answered = [r for r in results if r.llm_latency_ms is not None]
+    raw_items = sum(r.answer_raw_items for r in answered)
+    deciles, ece = _deciles(results)
+    high = [r for r in results if r.error is None and bucket(r.confidence) == "high"]
     return Metrics(
         cases=n,
         errors=sum(result.error is not None for result in results),
         accuracy=_share(sum(r.correct for r in results), n),
-        macro_f1=round(sum(supported) / len(supported), 4) if supported else 0.0,
+        macro_f1=macro_f1(results),
         per_category=per_category,
         confusion=_confusion(results),
         evidence_in_excerpt=_evidence_share(results, lambda r: r.excerpt_lines),
@@ -102,6 +143,31 @@ def compute(results: Sequence[CaseResult], *, with_history: bool = False) -> Met
         cache_hit_rate=_share(cache_hits, len(remembered)) if with_history else None,
         similar_hits=similar_hits if with_history else None,
         similar_hit_rate=_share(similar_hits, len(remembered)) if with_history else None,
+        llm_latency_ms_p50=_percentile(llm_latencies, 0.50) if llm_latencies else None,
+        llm_latency_ms_p95=_percentile(llm_latencies, 0.95) if llm_latencies else None,
+        priced=priced,
+        llm_diagnoses=len(from_model),
+        cost_usd_per_llm_diagnosis=(
+            round(sum(model_costs) / len(model_costs), 6) if model_costs else None
+        ),
+        cost_usd_p95=_percentile(model_costs, 0.95) if model_costs else None,
+        evidence_validity=(
+            _share(sum(r.answer_valid_items for r in answered), raw_items) if raw_items else None
+        ),
+        answers=len(answered),
+        answers_without_valid_evidence=sum(r.answer_valid_items == 0 for r in answered),
+        abstention_unknown=_share(
+            sum(r.error is None and r.predicted == Category.UNKNOWN.value for r in results), n
+        ),
+        abstention_low_confidence=_share(
+            sum(r.error is None and bucket(r.confidence) == "low" for r in results), n
+        ),
+        calibration_deciles=deciles,
+        expected_calibration_error=ece,
+        high_confidence_accuracy=(
+            _share(sum(r.correct for r in high), len(high)) if high else None
+        ),
+        intervals=bootstrap_intervals(results),
     )
 
 
@@ -111,6 +177,86 @@ def _confusion(results: Sequence[CaseResult]) -> dict[str, dict[str, int]]:
     for (expected, predicted), count in sorted(cells.items()):
         confusion.setdefault(expected, {})[predicted] = count
     return confusion
+
+
+def macro_f1(results: Sequence[CaseResult]) -> float:
+    supported = [score.f1 for score in _per_category(results).values() if score.support]
+    return round(sum(supported) / len(supported), 4) if supported else 0.0
+
+
+def bootstrap_intervals(
+    results: Sequence[CaseResult],
+    *,
+    resamples: int = BOOTSTRAP_RESAMPLES,
+    seed: int = BOOTSTRAP_SEED,
+) -> dict[str, dict[str, object]]:
+    """95 % percentile intervals of accuracy and macro-F1, per source group (informational).
+
+    Each group resamples its cases with replacement ``resamples`` times from its own
+    ``random.Random(seed)``, so the numbers do not depend on the order of the groups or of the
+    process. A group with no cases is left out.
+    """
+    intervals: dict[str, dict[str, object]] = {}
+    for name, sources in INTERVAL_GROUPS.items():
+        members = [r for r in results if r.source in sources]
+        if not members:
+            continue
+        rng = random.Random(seed)
+        accuracies: list[float] = []
+        f1s: list[float] = []
+        for _ in range(resamples):
+            sample = rng.choices(members, k=len(members))
+            accuracies.append(sum(r.correct for r in sample) / len(sample))
+            f1s.append(macro_f1(sample))
+        intervals[name] = {
+            "cases": len(members),
+            "resamples": resamples,
+            "accuracy": _interval(accuracies),
+            "macro_f1": _interval(f1s),
+        }
+    return intervals
+
+
+def _interval(values: list[float]) -> dict[str, float]:
+    ordered = sorted(values)
+    last = len(ordered) - 1
+    return {
+        "low": round(ordered[math.floor(0.025 * last)], 4),
+        "high": round(ordered[math.ceil(0.975 * last)], 4),
+    }
+
+
+def _deciles(results: Sequence[CaseResult]) -> tuple[list[dict[str, float]], float | None]:
+    """Accuracy per confidence decile (shown from 5 cases) and the expected calibration error.
+
+    The error weights every decile by its cases, small ones included: it is the standard ECE
+    over the answers that did not error.
+    """
+    bins: dict[int, list[CaseResult]] = {}
+    for r in results:
+        if r.error is None:
+            bins.setdefault(min(int(round(r.confidence * 10, 9)), 9), []).append(r)
+    total = sum(len(members) for members in bins.values())
+    if not total:
+        return [], None
+    table: list[dict[str, float]] = []
+    error = 0.0
+    for index in sorted(bins):
+        members = bins[index]
+        accuracy = sum(r.correct for r in members) / len(members)
+        confidence = sum(r.confidence for r in members) / len(members)
+        error += len(members) / total * abs(accuracy - confidence)
+        if len(members) >= MIN_DECILE_CASES:
+            table.append(
+                {
+                    "from": index / 10,
+                    "to": (index + 1) / 10,
+                    "cases": len(members),
+                    "accuracy": round(accuracy, 4),
+                    "mean_confidence": round(confidence, 4),
+                }
+            )
+    return table, round(error, 4)
 
 
 def _per_category(results: Sequence[CaseResult]) -> dict[str, CategoryScore]:

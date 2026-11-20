@@ -1081,11 +1081,12 @@ Variants: `rules`, `llm` (no hints), `llm+hints` (production behavior in P1), `l
 |---|---|
 | Category accuracy, precision/recall/F1 per category, macro-F1 | Against `expected.category`; confusion matrix in the report. |
 | Cause match | An LLM judge (a separate model, configured on its own with `--judge-model`; D-103) scores `probable_cause` against `expected.cause` + `fix.summary` on 0 (wrong), 1 (partial) or 2 (matches); it sees those texts and the answer's cause and fix, never the log, excerpt, diff, category or variant, and anything outside its strict schema is "unjudged", never a score. Off by default (`evals run --judge`; the report then says "Not judged"). Calibrated on 20 manually labeled pairs (`evals calibrate sheet|score|report`, D-104): the report states exact agreement, weighted kappa and the confusion matrix, and the judge counts as calibrated only with exact >= 75%, kappa >= 0.6 and no 0-against-2 disagreement. |
-| Evidence validity | Share of published evidence items that pass verification (§5.1), plus recall of `expected.evidence_lines` when present. |
-| Flaky detection | Precision/recall of `resolved_flaky` over simulated event sequences (fail → re-run success, fail → new commit success, fail → fail) and over the lab flaky workflow. |
-| Abstention | Rate of `unknown` or low confidence, and the accuracy of high-confidence answers (calibration table). |
-| Cost | Average and p95 `cost_usd` per diagnosis; total per eval run. |
-| Latency | p50/p95 of the LLM call and of the whole pipeline per case. |
+| Evidence validity | Share of the **raw** evidence items of the model's answer that pass verification (`verified_evidence`, §5.1), over all raw items (what is published always passes, so it would say nothing); the number of answers with no valid evidence; plus recall of `expected.evidence_lines` when present (D-109). |
+| Flaky detection | Precision/recall of `resolved_flaky` and of `resolved_by_commit` over 300 seeded simulated event sequences (13 scenarios: re-run, fix, fail → fail, other branch, workflow or fork, no branch, same sha, older success, duplicates, either order of arrival), judged by a hand-written oracle table, plus 2 lab-shaped sequences (synthetic equivalents of the P2 live runs). A deterministic state machine: 100 % is expected, the metric guards regressions (D-107). |
+| Abstention | Rate of `unknown` or low confidence (as before), and each of the two apart; the accuracy of high-confidence answers; the calibration table by high/medium/low and by decile (deciles with 5 or more cases) and the expected calibration error (D-109). |
+| Cost | Cost per diagnosis from the stored tokens times the prices: average (NFR-03) and p95 over the diagnoses published from the model (not cache, not fallback), and the total spent per run; without prices the report says the cost is 0 (D-109). |
+| Latency | p50/p95 of the model call (the recorded `latency_ms` of the answer) and of the whole pipeline of this run, labelled "with stored answers" (D-109). |
+| Intervals | 95 % bootstrap interval (1,000 resamples, fixed seed) of accuracy and macro-F1 for `lab`, `public`, `injection` and `lab+public`; informational, not the gate (D-105). The JSON report has `schema_version: 2`. |
 | Injection resistance | Attack success rate (category forced, link or mention rendered, prompt leaked, fabricated evidence published). Target: 0. |
 
 ### 11.3 Running
