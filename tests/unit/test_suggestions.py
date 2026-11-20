@@ -105,6 +105,10 @@ def test_a_renamed_file_is_addressed_by_its_new_name() -> None:
         ("a\\b", False),
         ("a\x00b", False),
         ("a\nb", False),
+        ("a" + chr(0x2028) + "b", False),  # a Unicode line separator
+        ("a" + chr(0x85) + "b", False),
+        ("a" + chr(0x202E) + "b.py", False),  # a bidirectional override
+        ("a" + chr(0x200B) + "b.py", False),  # zero width
         ("x" * 300, False),
     ],
 )
@@ -131,6 +135,15 @@ def test_a_clean_replacement_loses_its_trailing_line_breaks_only() -> None:
         "y" * 2001,
         "if x: " + chr(0x202E) + "# " + chr(0x2066),  # bidirectional controls
         "a" + chr(0x2028) + "b",  # a Unicode line separator
+        # Invisible format characters (D-99): the text would read differently from what it does.
+        "x = a" + chr(0x200B) + "b",  # zero width space
+        "x = a" + chr(0x200D) + "b",  # zero width joiner
+        "x = a" + chr(0xFEFF) + "b",  # byte order mark
+        "x = a" + chr(0x2060) + "b",  # word joiner
+        "x = a" + chr(0x061C) + "b",  # Arabic letter mark
+        "x = a" + chr(0x180E) + "b",  # Mongolian vowel separator
+        "x = a" + chr(0xE0041) + "b",  # a tag character
+        "x = a" + chr(0x85) + "b",  # next line
     ],
 )
 def test_an_empty_odd_or_oversized_replacement_is_refused(text: str) -> None:

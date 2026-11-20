@@ -267,7 +267,17 @@ def test_controls_and_long_lines_are_cleaned_when_rendered() -> None:
 
 @pytest.mark.parametrize(
     ("path", "usable"),
-    [("src/a.py", True), ("a b/c.txt", True), ("", False), ("a\nb", False), ("x" * 300, False)],
+    [
+        ("src/a.py", True),
+        ("a b/c.txt", True),
+        ("", False),
+        ("a\nb", False),
+        ("a" + chr(0x2028) + "file: .github/ci.yml (added)", False),  # a line break for a model
+        ("a" + chr(0x85) + "b", False),
+        ("a" + chr(0x202E) + "b", False),
+        ("a" + chr(0x200B) + "b", False),
+        ("x" * 300, False),
+    ],
 )
 def test_a_usable_path_is_short_and_has_no_controls(path: str, usable: bool) -> None:
     assert usable_path(path) is usable

@@ -231,6 +231,22 @@ def test_a_dropped_suggestion_leaves_the_text_of_the_fix() -> None:
     assert diagnosis.suggested_fix == "Declare requests."
 
 
+def test_a_suggestion_needs_verified_evidence_to_be_published() -> None:
+    """D-99: a one-click change next to "no line of the log supports this diagnosis" is the
+    shape of a model that obeyed the log, so the text of the fix stays and the change goes."""
+    suggestion = {"path": "a.py", "start_line": 3, "end_line": 4, "replacement": "x = 1"}
+    quoted = _final(diff=DIFF, suggestion=suggestion)
+    invented = _final(
+        diff=DIFF, suggestion=suggestion, evidence=[{"line": 5, "text": "invented quote"}]
+    )
+    empty = _final(diff=DIFF, suggestion=suggestion, evidence=[])
+
+    assert quoted.suggestion is not None  # the control: the same answer with a real quote
+    assert invented.suggestion is None
+    assert empty.suggestion is None
+    assert invented.suggested_fix == quoted.suggested_fix  # the text of the fix is untouched
+
+
 def test_no_suggestion_stays_none() -> None:
     assert checked_suggestion(None, DIFF) is None
 

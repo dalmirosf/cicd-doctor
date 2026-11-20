@@ -1,0 +1,11 @@
+{
+  "files": [
+    {
+      "filename": "src/labpkg/cli.py",
+      "previous_filename": null,
+      "status": "modified",
+      "patch": "@@ -1,12 +1,12 @@\n x1 = 1\n x2 = 2\n x3 = 3\n x4 = 4\n x5 = 5\n x6 = 6\n x7 = 7\n x8 = 8\n x9 = 9\n x10 = 10\n x11 = 11\n x12 = 12\n@@ -15,10 +15,10 @@\n x15 = 15\n x16 = 16\n x17 = 17\n x18 = 18\n x19 = 19\n x20 = 20\n x21 = 21\n x22 = 22\n x23 = 23\n x24 = 24"
+    }
+  ],
+  "truncated": false
+}
