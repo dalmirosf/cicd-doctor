@@ -29,6 +29,7 @@ from cicd_doctor.core.models import (
     Publication,
     PublicationKey,
     PublishedUpgrade,
+    PullRequestInfo,
     PurgeCounts,
     RawLog,
     RepoRef,
@@ -38,6 +39,7 @@ from cicd_doctor.core.models import (
     RunAnalysisRecord,
     RunAttempt,
     RunRef,
+    RunSummary,
     SimilarFailure,
     SuccessRef,
     Suggestion,
@@ -256,6 +258,20 @@ class Reporter(Protocol):
 class PullRequestSource(Protocol):
     async def find(self, run: RunRef) -> int | None:
         """The number of the open pull request this run belongs to, or None (D-72)."""
+        ...
+
+    async def get(self, repo: RepoRef, number: int) -> PullRequestInfo | None:
+        """The pull request, or None when it does not exist (404). Read with the permissions of
+        ``explain`` (D-89). Transient errors raise ``TransientError``; a missing permission
+        raises ``PermanentError``."""
+        ...
+
+
+class RunSource(Protocol):
+    async def runs_for_head(self, repo: RepoRef, head_sha: str) -> list[RunSummary]:
+        """The workflow runs of one head commit, newest first, one page of at most 100 (D-96).
+        Read with the permissions of ``explain``. Items that GitHub shapes in an unexpected way
+        are skipped. Transient errors raise ``TransientError``."""
         ...
 
 

@@ -17,8 +17,11 @@ from cicd_doctor.core.models import (
     CommentRef,
     CommentTarget,
     JobRef,
+    PullRequestInfo,
     RawLog,
+    RepoRef,
     RunRef,
+    RunSummary,
     Suggestion,
     WorkflowJob,
 )
@@ -245,6 +248,8 @@ class FakePullRequests:
         self._numbers = dict(numbers or {})
         self._error: Exception | None = None
         self.calls: list[RunRef] = []
+        self.gets: list[tuple[int, int]] = []  # (repo_id, number) of every ``get``
+        self._pulls: dict[tuple[int, int], PullRequestInfo] = {}
         self._journal = journal
 
     def set(self, run_id: int, number: int | None) -> None:
@@ -260,6 +265,42 @@ class FakePullRequests:
         if self._error is not None:
             raise self._error
         return self._numbers.get(run.run_id)
+
+    def add(self, repo_id: int, pull: PullRequestInfo) -> None:
+        """Make ``get`` know this pull request (a missing one answers ``None``, like a 404)."""
+        self._pulls[(repo_id, pull.number)] = pull
+
+    async def get(self, repo: RepoRef, number: int) -> PullRequestInfo | None:
+        self.gets.append((repo.repo_id, number))
+        _note(self._journal, "pulls.get")
+        await asyncio.sleep(0)
+        if self._error is not None:
+            raise self._error
+        return self._pulls.get((repo.repo_id, number))
+
+
+class FakeRunSource:
+    """Implements ``RunSource``: the runs programmed for each head commit, as listed."""
+
+    def __init__(self, journal: list[str] | None = None) -> None:
+        self._runs: dict[str, list[RunSummary]] = {}
+        self._error: Exception | None = None
+        self.calls: list[tuple[int, str]] = []  # (repo_id, head_sha)
+        self._journal = journal
+
+    def set(self, head_sha: str, runs: Sequence[RunSummary]) -> None:
+        self._runs[head_sha] = list(runs)
+
+    def fail(self, error: Exception | None) -> None:
+        self._error = error
+
+    async def runs_for_head(self, repo: RepoRef, head_sha: str) -> list[RunSummary]:
+        self.calls.append((repo.repo_id, head_sha))
+        _note(self._journal, "runs.for_head")
+        await asyncio.sleep(0)
+        if self._error is not None:
+            raise self._error
+        return list(self._runs.get(head_sha, []))
 
 
 def _note(journal: list[str] | None, event: str) -> None:

@@ -24,3 +24,5 @@ Never add a file here without sanitizing it first, and never commit a token, a k
 `workflow_run_success_pull_request.json` and `workflow_run_success_push.json` are successful runs of
 this repository recorded read-only on 2026-11-17 (the spike of P2) and sanitized the same way; the
 tests wrap them in a webhook envelope to check that a real `success` becomes a `record_outcome` job.
+
+`actions_runs_head_sha.json` is the answer of `GET /actions/runs?head_sha=<sha>` for the head of a lab pull request, recorded read-only on 2026-11-20 (the spike of P3, B1) and sanitized the same way; the test of `GitHubRunSource` checks that its item gives the same `RunRef` as the `workflow_run` webhook of that run. Its `pull_requests` is filled because the run belongs to a branch of the same repository: for a fork run GitHub leaves it empty (B1), which the synthetic tests of the adapter cover.

@@ -1,6 +1,8 @@
 """Offline end to end of the command (P3 c, D-92, D-93): a signed ``issue_comment`` webhook becomes
 an ``explain`` job; the real worker, use case and ``GitHubReporter`` leave one 👀 reaction on
-``FakeGitHub`` and nothing else. No network and no Postgres."""
+``FakeGitHub`` and nothing else (the pull request of these tests does not exist, so the command
+ends there; the runs it explains are in ``test_explain_runs_e2e.py``). No network and no
+Postgres."""
 
 from collections.abc import AsyncIterator
 from contextlib import AsyncExitStack
@@ -14,11 +16,15 @@ from fastapi.testclient import TestClient
 from cicd_doctor.adapters.clock import FakeClock
 from cicd_doctor.adapters.github.auth import GitHubAppAuth
 from cicd_doctor.adapters.github.http import GitHubHttp
+from cicd_doctor.adapters.github.pulls import GitHubPullRequests
+from cicd_doctor.adapters.github.repo_config import GitHubRepoConfigSource
 from cicd_doctor.adapters.github.reporter import GitHubReporter
+from cicd_doctor.adapters.github.runs import GitHubRunSource
 from cicd_doctor.adapters.memory import InMemoryCommandLog, InMemoryJobQueue
 from cicd_doctor.api.deps import ApiDependencies
 from cicd_doctor.api.main import create_app
 from cicd_doctor.core.models import JobKind, JobStatus
+from cicd_doctor.core.repo_config import CachedRepoConfig
 from cicd_doctor.core.usecases.explain_command import ExplainCommand
 from cicd_doctor.worker import Worker
 from cicd_doctor.worker.handlers import explain_handler
@@ -97,6 +103,10 @@ async def world() -> AsyncIterator[World]:
         command = ExplainCommand(
             InMemoryCommandLog(),
             GitHubReporter(http, auth, clock),
+            GitHubPullRequests(http, auth),
+            GitHubRunSource(http, auth),
+            CachedRepoConfig(GitHubRepoConfigSource(http, auth), clock),
+            queue,
             clock,
             window=timedelta(minutes=5),
         )

@@ -432,6 +432,7 @@ class FakeRepoWrites:
     check_runs: dict[int, dict[str, Any]] = field(default_factory=dict)
     comments: dict[int, dict[str, Any]] = field(default_factory=dict)
     pulls: list[dict[str, Any]] = field(default_factory=list)
+    runs: list[dict[str, Any]] = field(default_factory=list)  # ``actions/runs`` items (P3 d2)
     reactions: list[tuple[int, str]] = field(default_factory=list)  # (comment id, content)
     _next_id: int = 9000
 
@@ -445,6 +446,8 @@ class FakeRepoWrites:
         add("POST", f"{base}/issues/{{issue_number}}/comments", self._create_comment)
         add("PATCH", f"{base}/issues/comments/{{comment_id}}", self._update_comment)
         add("GET", f"{base}/pulls", self._list_pulls)
+        add("GET", f"{base}/pulls/{{number}}", self._get_pull)
+        add("GET", f"{base}/actions/runs", self._list_runs)
         add("POST", f"{base}/issues/comments/{{comment_id}}/reactions", self._create_reaction)
 
     # --- state the tests set up ----------------------------------------------------------
@@ -488,16 +491,25 @@ class FakeRepoWrites:
         base_repo_id: int = REPO_ID,
         state: str = "open",
         repo: str = "acme/widgets",
+        head_repo_id: int | None = None,
+        merged: bool = False,
+        draft: bool = False,
     ) -> dict[str, Any]:
-        """A pull request; ``head_repo=""`` is a fork that was deleted (``head.repo`` is null)."""
+        """A pull request; ``head_repo=""`` is a fork that was deleted (``head.repo`` is null).
+        The head repository id is ``REPO_ID`` for a branch of the base repository and 7777 for a
+        fork, unless ``head_repo_id`` says otherwise."""
         owner = head_repo.split("/")[0] if head_repo else "ghost"
+        if head_repo_id is None:
+            head_repo_id = REPO_ID if head_repo == repo else 7777
         pull = {
             "number": number,
             "state": state,
+            "draft": draft,
+            "merged": merged,
             "head": {
                 "ref": head_ref,
                 "sha": head_sha,
-                "repo": {"full_name": head_repo} if head_repo else None,
+                "repo": {"id": head_repo_id, "full_name": head_repo} if head_repo else None,
                 "label": f"{owner}:{head_ref}",
             },
             "base": {"ref": "main", "repo": {"id": base_repo_id, "full_name": repo}},
@@ -505,6 +517,47 @@ class FakeRepoWrites:
         }
         self.pulls.append(pull)
         return pull
+
+    def add_run(
+        self,
+        run_id: int,
+        *,
+        head_sha: str,
+        workflow_id: int = 11,
+        name: str = "CI",
+        status: str = "completed",
+        conclusion: str | None = "failure",
+        run_attempt: int = 1,
+        event: str = "pull_request",
+        head_repo: str = "acme/widgets",
+        head_repo_id: int | None = None,
+        head_branch: str | None = "feature/x",
+        pull_requests: list[int] | None = None,
+        repo: str = "acme/widgets",
+    ) -> dict[str, Any]:
+        """A workflow run, as ``GET /actions/runs`` lists it. ``pull_requests`` defaults to empty,
+        which is what GitHub answers for a fork run (spike of P3)."""
+        if head_repo_id is None:
+            head_repo_id = REPO_ID if head_repo == repo else 7777
+        run = {
+            "id": run_id,
+            "name": name,
+            "workflow_id": workflow_id,
+            "run_attempt": run_attempt,
+            "event": event,
+            "status": status,
+            "conclusion": conclusion if status == "completed" else None,
+            "head_sha": head_sha,
+            "head_branch": head_branch,
+            "updated_at": "2026-11-20T12:00:00Z",
+            "head_repository": {"id": head_repo_id, "full_name": head_repo} if head_repo else None,
+            "pull_requests": [
+                {"number": n, "base": {"repo": {"id": REPO_ID}}} for n in (pull_requests or [])
+            ],
+            "_repo": repo,
+        }
+        self.runs.append(run)
+        return run
 
     def requests_by(self, method: str, template: str) -> list[RecordedRequest]:
         return self.github.requests_to(method, template)
@@ -754,6 +807,29 @@ class FakeRepoWrites:
         ]
         page, link = _page(request, self.page_cap, [_public(pull) for pull in found])
         return json_response(200, page, link)
+
+    def _get_pull(self, request: RecordedRequest) -> httpx2.Response:
+        if (denied := self._lacks(request, "pull_requests", "read")) is not None:
+            return denied
+        repo = f"{request.params['owner']}/{request.params['repo']}"
+        number = int(request.params["number"])
+        found = next((p for p in self.pulls if p["_repo"] == repo and p["number"] == number), None)
+        if found is None:
+            return error_response(404, "Not Found")
+        return json_response(200, _public(found))
+
+    def _list_runs(self, request: RecordedRequest) -> httpx2.Response:
+        if (denied := self._lacks(request, "actions", "read")) is not None:
+            return denied
+        repo = f"{request.params['owner']}/{request.params['repo']}"
+        head_sha = request.query.get("head_sha")
+        found = [
+            run
+            for run in sorted(self.runs, key=lambda r: r["id"], reverse=True)  # newest first
+            if run["_repo"] == repo and (head_sha is None or run["head_sha"] == head_sha)
+        ]
+        page, link = _page(request, self.page_cap, [_public(run) for run in found])
+        return json_response(200, {"total_count": len(found), "workflow_runs": page}, link)
 
 
 def _public(obj: dict[str, Any]) -> dict[str, Any]:

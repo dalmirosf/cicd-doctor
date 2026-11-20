@@ -605,6 +605,44 @@ def explain_dedupe_key(comment_id: int) -> str:
     return f"explain:{comment_id}"
 
 
+def explain_run_dedupe_key(comment_id: int, run_id: int, run_attempt: int) -> str:
+    """One child ``diagnose_run`` per (command, run attempt) (D-96). It differs from
+    ``diagnose_dedupe_key`` on purpose: the automatic job of the same attempt must not swallow the
+    command, and a second command (another comment) explains again."""
+    return f"explain:{comment_id}:{run_id}:{run_attempt}"
+
+
+class PullRequestInfo(DomainModel):
+    """What ``explain`` needs of a pull request (D-96). ``head_repo_id`` is ``None`` when the head
+    repository was deleted (a fork that is gone), and then ``head_repo_full_name`` is empty."""
+
+    number: int
+    state: Literal["open", "closed"]
+    draft: bool
+    merged: bool
+    head_sha: str
+    head_branch: str
+    head_repo_id: int | None
+    head_repo_full_name: str
+    base_repo_id: int
+
+
+class RunSummary(DomainModel):
+    """One item of the runs of a head commit (``GET /actions/runs?head_sha=``, D-96).
+
+    ``run`` is built like the one of the ``workflow_run`` webhook, so a child ``diagnose_run`` job
+    is the same as the automatic one apart from its trigger. ``pull_requests`` of a fork run is
+    empty on GitHub: runs are matched to a pull request by head commit and head repository, never
+    by that list.
+    """
+
+    run: RunRef
+    status: str  # queued | in_progress | completed | ... (a value GitHub may add: kept as text)
+    conclusion: str | None  # None while it runs; ``action_required`` is not a failure
+    updated_at: datetime
+    head_repo_id: int | None  # None: the head repository was deleted
+
+
 class ExplainPayload(DomainModel):
     """Payload of an ``explain`` job: a command comment that passed the authorization of D-92.
 
