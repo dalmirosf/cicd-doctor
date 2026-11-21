@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\n  \"category\": \"broken_test\",\n  \"probable_cause\": \"Terraform validation failed because main.tf includes the unsupported argument \\\"bogus\\\" in the terraform_data resource.\",\n  \"evidence\": [\n    {\n      \"line\": 146,\n      \"text\": \"\u2502 Error: Unsupported argument\"\n    },\n    {\n      \"line\": 149,\n      \"text\": \"\u2502    4:   bogus = 1\"\n    },\n    {\n      \"line\": 151,\n      \"text\": \"\u2502 An argument named \\\"bogus\\\" is not expected here.\"\n    }\n  ],\n  \"suggested_fix\": \"Remove the bogus = 1 argument from the terraform_data resource in main.tf, or replace it with an argument supported by that resource, then rerun terraform validate.\",\n  \"suggestion\": null,\n  \"confidence\": 0.99\n}",
+    "model": "gpt-6-luna",
+    "input_tokens": 2252,
+    "output_tokens": 247,
+    "latency_ms": 2618
+  }
+}

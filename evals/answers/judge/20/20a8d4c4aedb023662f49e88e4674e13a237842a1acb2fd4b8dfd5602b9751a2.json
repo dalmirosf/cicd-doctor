@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6.2-sol",
+  "prompt_version": "judge-v1",
+  "fingerprint": "2f17884a565b74b3773bdebe53faf1947b05394bba03055bf728ee003329c5a9",
+  "result": {
+    "raw_json": "{\"score\":0,\"reason\":\"The answer identifies neither the three failing build tests nor the reporter crash caused by the unavailable Map.groupBy function.\"}",
+    "model": "gpt-6.2-sol",
+    "input_tokens": 906,
+    "output_tokens": 38,
+    "latency_ms": 3227
+  }
+}

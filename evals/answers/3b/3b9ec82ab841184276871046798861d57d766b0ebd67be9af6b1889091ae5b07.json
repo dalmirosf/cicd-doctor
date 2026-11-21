@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"dependency\",\"probable_cause\":\"The CLI imports the `requests` package, but it is not installed in the job environment, so Python exits with `ModuleNotFoundError`.\",\"evidence\":[{\"line\":17,\"text\":\"    import requests\"},{\"line\":18,\"text\":\"ModuleNotFoundError: No module named 'requests'\"}],\"suggested_fix\":\"Declare `requests` in the project's dependency file (such as `requirements.txt` or `pyproject.toml`) and ensure the workflow installs project dependencies before running `python -m labpkg.cli`.\",\"suggestion\":null,\"confidence\":0.98}",
+    "model": "gpt-6-luna",
+    "input_tokens": 1785,
+    "output_tokens": 276,
+    "latency_ms": 2993
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6.2-sol",
+  "prompt_version": "judge-v1",
+  "fingerprint": "2f17884a565b74b3773bdebe53faf1947b05394bba03055bf728ee003329c5a9",
+  "result": {
+    "raw_json": "{\"score\":1,\"reason\":\"The answer identifies the empty token and suggests checking the secret name, but does not identify the typo as the cause.\"}",
+    "model": "gpt-6.2-sol",
+    "input_tokens": 935,
+    "output_tokens": 39,
+    "latency_ms": 2040
+  }
+}

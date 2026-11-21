@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\n  \"category\": \"broken_test\",\n  \"probable_cause\": \"The concurrent TypeAdapter test fails because schema generation iterates a TypedDict namespace while another thread mutates it, raising RuntimeError on free-threaded Python.\",\n  \"evidence\": [\n    {\n      \"line\": 840,\n      \"text\": \"if any(not name.startswith('__') or not name.endswith('__') for name in namespace):\"\n    },\n    {\n      \"line\": 848,\n      \"text\": \"E   RuntimeError: dictionary changed size during iteration\"\n    },\n    {\n      \"line\": 871,\n      \"text\": \"         1 failed\"\n    }\n  ],\n  \"suggested_fix\": \"Make the namespace check safe under concurrent mutation\u2014for example, iterate over a stable snapshot of its keys, or synchronize access to the namespace while inspecting it. Add or retain a free-threaded concurrency regression test for TypedDict schema generation.\",\n  \"suggestion\": null,\n  \"confidence\": 0.98\n}",
+    "model": "gpt-6-luna",
+    "input_tokens": 4718,
+    "output_tokens": 409,
+    "latency_ms": 4660
+  }
+}

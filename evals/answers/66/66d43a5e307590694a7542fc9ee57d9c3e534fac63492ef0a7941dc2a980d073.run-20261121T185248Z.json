@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"dependency\",\"probable_cause\":\"Terraform init failed because the configuration requires the nonexistent provider hashicorp/cicd-doctor-lab-does-not-exist, which Terraform cannot find in the registry.\",\"evidence\":[{\"line\":136,\"text\":\"- Finding hashicorp/cicd-doctor-lab-does-not-exist versions matching \\\"~> 1.0\\\"...\"},{\"line\":138,\"text\":\"\u2502 Error: Failed to query available provider packages\"},{\"line\":143,\"text\":\"\u2502 registry.terraform.io/hashicorp/cicd-doctor-lab-does-not-exist\"}],\"suggested_fix\":\"Check the Terraform configuration's required_providers declarations and any modules that request this provider. Replace the incorrect provider source/name with the intended provider, or remove the dependency if it is not needed, then rerun terraform init.\",\"suggestion\":null,\"confidence\":0.99}",
+    "model": "gpt-6-luna",
+    "input_tokens": 2485,
+    "output_tokens": 236,
+    "latency_ms": 2725
+  }
+}

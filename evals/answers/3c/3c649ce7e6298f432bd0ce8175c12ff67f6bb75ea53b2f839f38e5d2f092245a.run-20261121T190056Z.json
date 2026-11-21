@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"config_or_secrets\",\"probable_cause\":\"The github-script step failed because its required `script` input was not supplied.\",\"evidence\":[{\"line\":129,\"text\":\"Error: Input required and not supplied: script\"},{\"line\":130,\"text\":\"##[error]Unhandled error: Error: Input required and not supplied: script\"}],\"suggested_fix\":\"Update the workflow step to provide the required `script` input, or use the action's supported script-file option to load the script from a file.\",\"suggestion\":null,\"confidence\":0.99}",
+    "model": "gpt-6-luna",
+    "input_tokens": 2556,
+    "output_tokens": 213,
+    "latency_ms": 2888
+  }
+}

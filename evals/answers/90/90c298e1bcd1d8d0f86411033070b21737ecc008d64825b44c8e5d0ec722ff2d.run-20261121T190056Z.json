@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"network\",\"probable_cause\":\"The curl health check failed because DNS could not resolve the requested host, cicd-doctor-lab.invalid.\",\"evidence\":[{\"line\":123,\"text\":\"curl: (6) Could not resolve host: cicd-doctor-lab.invalid\"}],\"suggested_fix\":\"Use a valid, resolvable health-check hostname or configure the required DNS/service alias, then rerun the workflow.\",\"suggestion\":null,\"confidence\":0.99}",
+    "model": "gpt-6-luna",
+    "input_tokens": 2024,
+    "output_tokens": 155,
+    "latency_ms": 3819
+  }
+}

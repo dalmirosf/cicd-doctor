@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"unknown\",\"probable_cause\":\"The unit-test command exited nonzero because Vitest detected an unhandled rejection, `Failed to get bundle state`, during the SSR runtime test file. The excerpt does not identify what caused that rejection.\",\"evidence\":[{\"line\":528,\"text\":\"Vitest caught 1 unhandled error during the test run.\"},{\"line\":533,\"text\":\"Error: Failed to get bundle state\"},{\"line\":535,\"text\":\"Serialized Error: { code: 'GenericFailure' }\"},{\"line\":536,\"text\":\"This error originated in \\\"packages/vite/src/node/ssr/runtime/__tests__/server-runtime.spec.ts\\\" test file.\"},{\"line\":546,\"text\":\"[ELIFECYCLE] Command failed with exit code 1.\"}],\"suggested_fix\":\"Investigate the asynchronous work and cleanup associated with the SSR runtime tests, especially around the cyclic fixture noted immediately before the rejection. Capture the originating stack or rejection context and ensure worker or bundle-state operations are awaited and their errors handled. Rerun to determine whether the failure is intermittent.\",\"suggestion\":null,\"confidence\":0.49}",
+    "model": "gpt-6-luna",
+    "input_tokens": 5101,
+    "output_tokens": 685,
+    "latency_ms": 6598
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"config_or_secrets\",\"probable_cause\":\"The manifest was rejected by frobnicate, likely because its contents or state are invalid for version 1.4.2.\",\"evidence\":[{\"line\":123,\"text\":\"frobnicate 1.4.2: checking manifest.lab\"},{\"line\":124,\"text\":\"E9921: the frobnicator rejected the manifest (state=QX)\"},{\"line\":125,\"text\":\"##[error]Process completed with exit code 1.\"}],\"suggested_fix\":\"Inspect manifest.lab and compare its format and allowed state values with the requirements for frobnicate 1.4.2. Correct the invalid manifest state or adjust the tool version if the manifest targets a different version.\",\"suggestion\":null,\"confidence\":0.83}",
+    "model": "gpt-6-luna",
+    "input_tokens": 2185,
+    "output_tokens": 375,
+    "latency_ms": 4124
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"broken_test\",\"probable_cause\":\"The validation check failed because rebuilding the project changed the tracked dist artifacts, so the generated output does not match the committed files.\",\"evidence\":[{\"line\":441,\"text\":\"ERROR: Build result differs. Please build first with \\\"docker buildx bake build\\\"\"},{\"line\":442,\"text\":\" M dist/index.cjs\"},{\"line\":443,\"text\":\" M dist/index.cjs.map\"},{\"line\":444,\"text\":\" M dist/licenses.txt\"},{\"line\":445,\"text\":\"if [ -n \\\"$(git status --porcelain -- dist)\\\" ]; then\"}],\"suggested_fix\":\"Run `docker buildx bake build` in the repository, review the changes to dist/index.cjs, dist/index.cjs.map, and dist/licenses.txt, then commit the intended generated artifacts. If those changes are unexpected, check for non-reproducible generation or mismatched build dependencies/configuration.\",\"suggestion\":null,\"confidence\":0.99}",
+    "model": "gpt-6-luna",
+    "input_tokens": 6235,
+    "output_tokens": 325,
+    "latency_ms": 3832
+  }
+}

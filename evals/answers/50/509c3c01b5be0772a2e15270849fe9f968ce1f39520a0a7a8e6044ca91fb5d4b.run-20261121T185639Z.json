@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\n  \"category\": \"broken_test\",\n  \"probable_cause\": \"ESLint failed because `hardline` is defined but never used in `src/language-js/print/match.js`.\",\n  \"evidence\": [\n    {\n      \"line\": 218,\n      \"text\": \"4:3  error  'hardline' is defined but never used  no-unused-vars\"\n    },\n    {\n      \"line\": 222,\n      \"text\": \"##[error]Process completed with exit code 1.\"\n    }\n  ],\n  \"suggested_fix\": \"Remove the unused `hardline` definition or import from `src/language-js/print/match.js`, or use it if it was intended to be part of the implementation. Then rerun the ESLint check.\",\n  \"suggestion\": null,\n  \"confidence\": 0.99\n}",
+    "model": "gpt-6-luna",
+    "input_tokens": 1836,
+    "output_tokens": 236,
+    "latency_ms": 2775
+  }
+}

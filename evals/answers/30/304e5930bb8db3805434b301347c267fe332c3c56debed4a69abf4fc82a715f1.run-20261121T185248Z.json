@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"dependency\",\"probable_cause\":\"Dependabot could not resolve the project\u2019s dependencies while updating certifi. The project requires pytest[dev], which requires pytest-xdist; the resolver treats pytest-xdist\u2019s dependency on pytest as a dependency on the project itself, making the requirements unsatisfiable for Python 3.11 and later.\",\"evidence\":[{\"line\":278,\"text\":\"error: No solution found when resolving dependencies for split (markers: python_full_version >= '3.11')\"},{\"line\":278,\"text\":\"hint: The package `pytest-xdist` depends on the package `pytest` but the name is shadowed by your project. Consider changing the name of the project.\"},{\"line\":292,\"text\":\"And because pytest[dev] depends on pytest-xdist>=3.5 and your project requires pytest[dev], we can conclude that your project's requirements are unsatisfiable.\"}],\"suggested_fix\":\"Review the dependency configuration used for Dependabot resolution. Avoid resolving the project\u2019s pytest[dev] extra as a dependency of the pytest project itself\u2014for example, separate development dependencies from the project requirements used by the updater or configure Dependabot to resolve an appropriate dependency group. Also verify the supported Python version metadata and resolver behavior across the declared version range.\",\"suggestion\":null,\"confidence\":0.97}",
+    "model": "gpt-6-luna",
+    "input_tokens": 7310,
+    "output_tokens": 788,
+    "latency_ms": 7784
+  }
+}

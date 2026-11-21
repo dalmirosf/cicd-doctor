@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"flaky\",\"probable_cause\":\"The test fails when random.random() returns a value of 0.5 or greater, so this run failed due to the random outcome rather than a deterministic code defect.\",\"evidence\":[{\"line\":198,\"text\":\"assert random.random() < 0.5, \\\"the coin landed on the wrong side\\\"\"},{\"line\":200,\"text\":\"E       assert 0.927971150601717 < 0.5\"}],\"suggested_fix\":\"Avoid asserting a single random outcome. Test the random-dependent behavior with a seeded or mocked random source, or validate the distribution across many samples with an appropriate tolerance.\",\"suggestion\":null,\"confidence\":0.99}",
+    "model": "gpt-6-luna",
+    "input_tokens": 2698,
+    "output_tokens": 219,
+    "latency_ms": 2691
+  }
+}

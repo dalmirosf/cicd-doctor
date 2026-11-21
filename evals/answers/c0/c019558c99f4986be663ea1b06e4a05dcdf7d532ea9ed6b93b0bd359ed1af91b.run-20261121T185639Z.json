@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"infra_or_deploy\",\"probable_cause\":\"The command writes 64 MiB into an 8 MiB tmpfs, which fills the container filesystem and causes `dd` to exit with an error.\",\"evidence\":[{\"line\":119,\"text\":\"Run docker run --rm --tmpfs /scratch:size=8m alpine:3.20 dd if=/dev/zero of=/scratch/fill bs=1M count=64\"},{\"line\":130,\"text\":\"dd: error writing '/scratch/fill': No space left on device\"},{\"line\":133,\"text\":\"8388608 bytes (8.0MB) copied, 0.007497 seconds, 1.0GB/s\"},{\"line\":134,\"text\":\"##[error]Process completed with exit code 1.\"}],\"suggested_fix\":\"If the step should succeed, increase the tmpfs size to at least 64 MiB or reduce `count` to fit within 8 MiB. If filling the tmpfs is intentional, handle the expected nonzero exit status so it does not fail the job.\",\"suggestion\":null,\"confidence\":0.99}",
+    "model": "gpt-6-luna",
+    "input_tokens": 2437,
+    "output_tokens": 571,
+    "latency_ms": 5890
+  }
+}

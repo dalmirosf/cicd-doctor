@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"flaky\",\"probable_cause\":\"The timing test failed because its randomly chosen sleep plus scheduling overhead exceeded the strict 50 ms budget; the observed elapsed time was about 62 ms.\",\"evidence\":[{\"line\":199,\"text\":\"        time.sleep(random.uniform(0.0, 0.1))\"},{\"line\":201,\"text\":\"        assert elapsed < 0.05, f\\\"took {elapsed:.3f}s, budget 0.050s\\\"\"},{\"line\":202,\"text\":\"E       AssertionError: took 0.062s, budget 0.050s\"}],\"suggested_fix\":\"Avoid asserting that a real-time sleep completes within a narrow threshold. Test the relevant behavior without relying on wall-clock timing, or mock the timing/sleep functions for a deterministic test. If runtime performance is the actual behavior under test, use a less brittle threshold and account for runner scheduling variability.\",\"suggestion\":null,\"confidence\":0.97}",
+    "model": "gpt-6-luna",
+    "input_tokens": 2564,
+    "output_tokens": 298,
+    "latency_ms": 3332
+  }
+}

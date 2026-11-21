@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"broken_test\",\"probable_cause\":\"The optional peer-dependency error stubs produce messages that do not match the test expectations: the dev-server message unexpectedly includes \u201cIs it installed?\u201d, while the production message differs in the opposite way. Both assertions in resolve.spec.ts fail.\",\"evidence\":[{\"line\":521,\"text\":\"\u276f packages/vite/src/node/__tests__/plugins/resolve.spec.ts (3 tests | 2 failed) 47ms\"},{\"line\":565,\"text\":\"AssertionError: expected a thrown error to be Error: Could not resolve \\\"peer${(() => { \u2026\"},{\"line\":577,\"text\":\"\u2029\u2029\\\". Is it installed?\\\"\"},{\"line\":596,\"text\":\"FAIL  packages/vite/src/node/__tests__/plugins/resolve.spec.ts > externalized module error stubs escape module names > production stubs are escaped\"},{\"line\":597,\"text\":\"AssertionError: expected a thrown error to be Error: Could not resolve \\\"peer${(() => { \u2026\"},{\"line\":612,\"text\":\"\u2029\u2029\\\". Is it installed?\\\"\"},{\"line\":629,\"text\":\"\u276f packages/vite/src/node/__tests__/plugins/resolve.spec.ts:78:38\"}],\"suggested_fix\":\"Check the optional peer-dependency stub generation for both dev-server and production paths. Make their error messages match the intended contract and update the assertions if the message change is intentional; retain escaping of module and parent names.\",\"suggestion\":null,\"confidence\":0.97}",
+    "model": "gpt-6-luna",
+    "input_tokens": 4968,
+    "output_tokens": 755,
+    "latency_ms": 7078
+  }
+}

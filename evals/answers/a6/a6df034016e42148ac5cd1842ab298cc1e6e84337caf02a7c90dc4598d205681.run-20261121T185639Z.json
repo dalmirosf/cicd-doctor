@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"broken_test\",\"probable_cause\":\"Two tests for escaped externalized-module error stubs fail because the thrown error messages do not match the expected messages. The actual message has an unexpected \u201cIs it installed?\u201d suffix in one test, while the other has the suffix missing.\",\"evidence\":[{\"line\":521,\"text\":\"\u276f packages/vite/src/node/__tests__/plugins/resolve.spec.ts (3 tests | 2 failed) 47ms\"},{\"line\":565,\"text\":\"AssertionError: expected a thrown error to be Error: Could not resolve \\\"peer${(() => { \u2026\"},{\"line\":577,\"text\":\"\u2028\u2029\\\". Is it installed?\\\"\"},{\"line\":597,\"text\":\"AssertionError: expected a thrown error to be Error: Could not resolve \\\"peer${(() => { \u2026\"},{\"line\":629,\"text\":\"  \u276f packages/vite/src/node/__tests__/plugins/resolve.spec.ts:78:38\"}],\"suggested_fix\":\"Inspect the generated externalized-module error stubs and make their error messages match the intended format for both optional peer dependencies and production stubs. Verify the escaping behavior and expected suffix, then rerun the resolve.spec.ts tests.\",\"suggestion\":null,\"confidence\":0.98}",
+    "model": "gpt-6-luna",
+    "input_tokens": 5011,
+    "output_tokens": 588,
+    "latency_ms": 5974
+  }
+}

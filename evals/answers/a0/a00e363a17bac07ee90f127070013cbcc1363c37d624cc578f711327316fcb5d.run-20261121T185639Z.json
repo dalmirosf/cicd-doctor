@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"broken_test\",\"probable_cause\":\"The spellcheck lint failed because CSpell does not recognize \u201ccombinators\u201d in src/language-css/printer-postcss.js.\",\"evidence\":[{\"line\":222,\"text\":\"src/language-css/printer-postcss.js:396:55 - Unknown word (combinators)\"},{\"line\":223,\"text\":\"CSpell: Files checked: 2867, Issues found: 1 in 1 file.\"},{\"line\":224,\"text\":\"##[error]Process completed with exit code 1.\"}],\"suggested_fix\":\"Check whether \u201ccombinators\u201d is the intended term. If so, add it to the project\u2019s CSpell dictionary; otherwise, correct the spelling or rephrase the text at src/language-css/printer-postcss.js:396.\",\"suggestion\":null,\"confidence\":0.99}",
+    "model": "gpt-6-luna",
+    "input_tokens": 1833,
+    "output_tokens": 283,
+    "latency_ms": 3137
+  }
+}

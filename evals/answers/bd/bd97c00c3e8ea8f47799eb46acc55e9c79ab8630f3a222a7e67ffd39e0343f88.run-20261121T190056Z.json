@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"broken_test\",\"probable_cause\":\"The bundled-dev HMR test failed because the browser did not produce the expected \u201chot updated\u201d log for the dynamic-import acceptExports scenario before the test's wait timed out.\",\"evidence\":[{\"line\":564,\"text\":\"FAIL   serve-bundled  playground/hmr/__tests__/hmr.spec.ts > acceptExports > indiscriminate imports: import * > dynamic import(...) > accepts itself if all its exports are accepted\"},{\"line\":566,\"text\":\"Error: Timeout waiting for browser logs. Waiting for: /hot updated/\"}],\"suggested_fix\":\"Investigate why this HMR scenario does not trigger or report a hot update in the bundled dev server. Check the test's module update flow and browser-log capture, then fix the behavior or adjust the test only if its expected output is incorrect.\",\"suggestion\":null,\"confidence\":0.78}",
+    "model": "gpt-6-luna",
+    "input_tokens": 3310,
+    "output_tokens": 399,
+    "latency_ms": 4675
+  }
+}

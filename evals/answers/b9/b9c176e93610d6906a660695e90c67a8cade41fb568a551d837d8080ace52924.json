@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\n  \"category\": \"timeout\",\n  \"probable_cause\": \"The step ran `sleep 300` but its one-minute timeout expired before the five-minute sleep could finish.\",\n  \"evidence\": [\n    {\n      \"line\": 119,\n      \"text\": \"Run sleep 300\"\n    },\n    {\n      \"line\": 123,\n      \"text\": \"##[error]The action 'Sleep for five minutes' has timed out after 1 minutes.\"\n    }\n  ],\n  \"suggested_fix\": \"Increase the step's timeout to longer than five minutes, or reduce the sleep duration to fit within the one-minute limit.\",\n  \"suggestion\": null,\n  \"confidence\": 0.99\n}",
+    "model": "gpt-6-luna",
+    "input_tokens": 2003,
+    "output_tokens": 198,
+    "latency_ms": 2238
+  }
+}

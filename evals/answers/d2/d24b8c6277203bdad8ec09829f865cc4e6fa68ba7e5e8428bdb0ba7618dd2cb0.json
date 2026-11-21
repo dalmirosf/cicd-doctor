@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"timeout\",\"probable_cause\":\"The step ran `sleep 300`, but the job was canceled by its time limit before the sleep completed.\",\"evidence\":[{\"line\":119,\"text\":\"Run sleep 300\"},{\"line\":120,\"text\":\"sleep 300\"},{\"line\":123,\"text\":\"##[error]The operation was canceled.\"}],\"suggested_fix\":\"If this sleep is intentional, increase the job or step timeout beyond five minutes. Otherwise, shorten or remove the sleep so the step completes within the configured time limit.\",\"suggestion\":null,\"confidence\":0.98}",
+    "model": "gpt-6-luna",
+    "input_tokens": 2178,
+    "output_tokens": 191,
+    "latency_ms": 2400
+  }
+}

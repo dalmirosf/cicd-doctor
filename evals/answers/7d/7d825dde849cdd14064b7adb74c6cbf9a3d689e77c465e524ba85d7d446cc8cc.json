@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"config_or_secrets\",\"probable_cause\":\"The job runs on Node 20, where Map.groupBy is unavailable. Vitest 5 calls it while reporting the build-test run, causing an unhandled error and exit code 1.\",\"evidence\":[{\"line\":680,\"text\":\"TypeError: Map.groupBy is not a function or its return value is not iterable\"},{\"line\":681,\"text\":\"\u276f formatErrorAttempts node_modules/.pnpm/vitest@5.1.0_@types+node@26.6.6_vite@packages+vite/node_modules/vitest/dist/chunks/cli-api.COfZo8lK.js:9184:17\"},{\"line\":694,\"text\":\"[ELIFECYCLE] Command failed with exit code 1.\"}],\"suggested_fix\":\"Run this job with a Node version that supports Map.groupBy (for example, Node 22), or pin Vitest to a version compatible with Node 20. If Node 20 must remain, add a suitable polyfill before Vitest starts.\",\"suggestion\":null,\"confidence\":0.94}",
+    "model": "gpt-6-luna",
+    "input_tokens": 3410,
+    "output_tokens": 590,
+    "latency_ms": 5798
+  }
+}

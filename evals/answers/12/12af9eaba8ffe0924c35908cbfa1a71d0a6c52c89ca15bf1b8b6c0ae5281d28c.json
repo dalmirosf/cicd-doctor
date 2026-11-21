@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"broken_test\",\"probable_cause\":\"Mypy failed because the function in src/labpkg/typing_gate.py returns a string where its declared return type is int.\",\"evidence\":[{\"line\":183,\"text\":\"src/labpkg/typing_gate.py:5: error: Incompatible return value type (got \\\"str\\\", expected \\\"int\\\")  [return-value]\"},{\"line\":184,\"text\":\"Found 1 error in 1 file (checked 1 source file)\"}],\"suggested_fix\":\"Update the function to return an int, or change its return type annotation to str if returning a string is intended. Ensure all return paths match the declared type.\",\"suggestion\":null,\"confidence\":0.99}",
+    "model": "gpt-6-luna",
+    "input_tokens": 2744,
+    "output_tokens": 212,
+    "latency_ms": 2710
+  }
+}

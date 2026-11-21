@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"config_or_secrets\",\"probable_cause\":\"The frobnicate tool rejected manifest.lab with state QX. The log does not explain what that state means, but the failure points to the manifest being invalid or incompatible with the tool.\",\"evidence\":[{\"line\":123,\"text\":\"frobnicate 1.4.2: checking manifest.lab\"},{\"line\":124,\"text\":\"E9921: the frobnicator rejected the manifest (state=QX)\"}],\"suggested_fix\":\"Check manifest.lab against the format and constraints expected by frobnicate 1.4.2. Look up the meaning of state QX, correct the manifest accordingly, and rerun the step.\",\"suggestion\":null,\"confidence\":0.67}",
+    "model": "gpt-6-luna",
+    "input_tokens": 2183,
+    "output_tokens": 313,
+    "latency_ms": 3318
+  }
+}

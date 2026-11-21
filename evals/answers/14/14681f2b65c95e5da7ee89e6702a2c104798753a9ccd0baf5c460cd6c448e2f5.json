@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"broken_test\",\"probable_cause\":\"The ESLint step failed because it found three code violations: two optional positional parameters that should use options objects, and one unnecessary nested ternary.\",\"evidence\":[{\"line\":218,\"text\":\"22:33  error  Prefer an options object over optional positional parameters  unicorn/prefer-options-parameter\"},{\"line\":221,\"text\":\"668:13  error  Do not use unnecessary nested ternary expressions  unicorn/no-unnecessary-nested-ternary\"},{\"line\":224,\"text\":\"153:22  error  Prefer an options object over optional positional parameters  unicorn/prefer-options-parameter\"},{\"line\":226,\"text\":\"\u2716 3 problems (3 errors, 0 warnings)\"},{\"line\":228,\"text\":\"##[error]Process completed with exit code 1.\"}],\"suggested_fix\":\"Update the flagged functions in src/document/builders/if-break.js and tests/integration/run-cli.js to accept optional arguments through an options object. Simplify the nested ternary in src/language-js/print/jsx.js, then rerun the ESLint step.\",\"suggestion\":null,\"confidence\":0.99}",
+    "model": "gpt-6-luna",
+    "input_tokens": 1959,
+    "output_tokens": 301,
+    "latency_ms": 2946
+  }
+}

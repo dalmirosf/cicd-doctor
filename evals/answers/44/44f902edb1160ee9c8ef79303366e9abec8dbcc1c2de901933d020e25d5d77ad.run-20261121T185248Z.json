@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\n  \"category\": \"timeout\",\n  \"probable_cause\": \"The bundled dev HMR test timed out while waiting for the browser to log the expected hot update, so the run failed before that update was observed.\",\n  \"evidence\": [\n    {\n      \"line\": 609,\n      \"text\": \"FAIL   serve-bundled  playground/hmr/__tests__/hmr.spec.ts > acceptExports > indiscriminate imports: import * > dynamic import(...) > accepts itself if all its exports are accepted\"\n    },\n    {\n      \"line\": 611,\n      \"text\": \"Error: Timeout waiting for browser logs. Waiting for: /hot updated/\"\n    },\n    {\n      \"line\": 613,\n      \"text\": \"\u276f Timeout._onTimeout playground/test-utils.ts:455:9\"\n    }\n  ],\n  \"suggested_fix\": \"Check why this HMR scenario does not emit the expected \u201chot updated\u201d browser log on Windows. Verify the update reaches the browser and the test\u2019s log matcher matches it; if the update is merely delayed, improve the test\u2019s synchronization or timeout rather than relying on a fixed short wait.\",\n  \"suggestion\": null,\n  \"confidence\": 0.91\n}",
+    "model": "gpt-6-luna",
+    "input_tokens": 3510,
+    "output_tokens": 427,
+    "latency_ms": 4213
+  }
+}

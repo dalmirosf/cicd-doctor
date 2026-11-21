@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"broken_test\",\"probable_cause\":\"The bundled-serve HMR test failed because the browser did not emit the expected \u201chot updated\u201d log while testing dynamic-import self-acceptance.\",\"evidence\":[{\"line\":609,\"text\":\"FAIL   serve-bundled  playground/hmr/__tests__/hmr.spec.ts > acceptExports > indiscriminate imports: import * > dynamic import(...) > accepts itself if all its exports are accepted\"},{\"line\":611,\"text\":\"Error: Timeout waiting for browser logs. Waiting for: /hot updated/\"}],\"suggested_fix\":\"Investigate why this HMR scenario does not produce the hot-updated event in the bundled Windows test. Check the test's update trigger and browser log handling against the HMR behavior; adjust the implementation or test expectation as appropriate. Increase the timeout only if evidence shows the update is merely slower than expected.\",\"suggestion\":null,\"confidence\":0.84}",
+    "model": "gpt-6-luna",
+    "input_tokens": 3510,
+    "output_tokens": 415,
+    "latency_ms": 4964
+  }
+}

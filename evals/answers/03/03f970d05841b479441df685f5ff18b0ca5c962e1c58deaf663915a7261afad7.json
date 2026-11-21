@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"broken_test\",\"probable_cause\":\"The test expects add(1, 2) to return 4, but it returns 3, so the assertion fails.\",\"evidence\":[{\"line\":197,\"text\":\"assert add(1, 2) == 4\"},{\"line\":198,\"text\":\"E       assert 3 == 4\"},{\"line\":203,\"text\":\"FAILED tests/test_math.py::test_add - assert 3 == 4\"}],\"suggested_fix\":\"Check the intended behavior of add. If it should perform ordinary addition, update the test expectation from 4 to 3; otherwise, change the implementation to match the intended result.\",\"suggestion\":null,\"confidence\":0.99}",
+    "model": "gpt-6-luna",
+    "input_tokens": 2958,
+    "output_tokens": 240,
+    "latency_ms": 2633
+  }
+}

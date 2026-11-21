@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\n  \"category\": \"broken_test\",\n  \"probable_cause\": \"The HMR test failed because it could not find the expected orphaned asset module in the module graph. The test then dereferenced the missing result and threw a TypeError.\",\n  \"evidence\": [\n    {\n      \"line\": 545,\n      \"text\": \"FAIL  packages/vite/src/node/server/__tests__/hmr.spec.ts:59 > removes orphaned file-only entries from the module graph\"\n    },\n    {\n      \"line\": 547,\n      \"text\": \"TypeError: Cannot read properties of undefined (reading 'importers')\"\n    },\n    {\n      \"line\": 558,\n      \"text\": \"expect(fileOnlyModule.importers.size).toBe(1)\"\n    }\n  ],\n  \"suggested_fix\": \"Investigate why the test setup or HMR cleanup leaves no matching file-only asset module in the graph. Fix the module graph behavior or update the test setup and assertion so the expected module is present before accessing its importers.\",\n  \"suggestion\": null,\n  \"confidence\": 0.98\n}",
+    "model": "gpt-6-luna",
+    "input_tokens": 4711,
+    "output_tokens": 348,
+    "latency_ms": 3672
+  }
+}

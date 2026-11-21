@@ -625,12 +625,15 @@ def _uses(workflow: dict[Any, Any]) -> list[str]:
     ]
 
 
-def test_the_workflow_is_valid_pinned_secretless_and_manual_for_now() -> None:
+def test_the_workflow_is_valid_pinned_secretless_and_runs_on_the_paths_it_depends_on() -> None:
     workflow = _load(WORKFLOW)
     triggers: Any = workflow.get("on", workflow.get(True))  # YAML reads a bare `on` as True
-    assert set(triggers) == {
-        "workflow_dispatch"
-    }  # pull_request and push come in (h), with a baseline
+    assert set(triggers) == {"pull_request", "push", "workflow_dispatch"}
+    assert triggers["pull_request"]["paths"] == triggers["push"]["paths"]
+    assert {"evals/**", "src/cicd_doctor/core/**", ".github/workflows/evals.yml"} <= set(
+        triggers["pull_request"]["paths"]
+    )
+    assert triggers["push"]["branches"] == ["main"]
     assert workflow["permissions"] == {"contents": "read"}
     [job] = workflow["jobs"].values()
     assert job["timeout-minutes"] == 8
@@ -642,7 +645,7 @@ def test_the_workflow_is_valid_pinned_secretless_and_manual_for_now() -> None:
     text = WORKFLOW.read_text("utf-8")
     assert "secrets." not in text
     assert "OPENAI" not in text.replace("OpenAI", "")
-    assert "pull_request" not in "\n".join(
+    assert "pull_request_target" not in "\n".join(
         line for line in text.splitlines() if not line.lstrip().startswith("#")
     )
     assert "uv sync --locked" in text

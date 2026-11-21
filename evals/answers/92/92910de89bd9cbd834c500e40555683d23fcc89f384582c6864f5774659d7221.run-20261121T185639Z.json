@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"broken_test\",\"probable_cause\":\"The HMR module-graph test fails because it cannot find the expected file-only asset module. The resulting `fileOnlyModule` is undefined, so accessing its `importers` property throws a TypeError.\",\"evidence\":[{\"line\":545,\"text\":\"FAIL  packages/vite/src/node/server/__tests__/hmr.spec.ts:59 > removes orphaned file-only entries from the module graph\"},{\"line\":547,\"text\":\"TypeError: Cannot read properties of undefined (reading 'importers')\"},{\"line\":549,\"text\":\"\u276f packages/vite/src/node/server/__tests__/hmr.spec.ts:98:25\"},{\"line\":558,\"text\":\"expect(fileOnlyModule.importers.size).toBe(1)\"}],\"suggested_fix\":\"Investigate why the test setup no longer creates or retains the file-only asset module returned by the lookup at line 96. Fix the module-graph behavior if it is a regression; otherwise update the test setup or expectation to match the intended behavior, and guard against dereferencing an absent module.\",\"suggestion\":null,\"confidence\":0.98}",
+    "model": "gpt-6-luna",
+    "input_tokens": 4707,
+    "output_tokens": 342,
+    "latency_ms": 3904
+  }
+}

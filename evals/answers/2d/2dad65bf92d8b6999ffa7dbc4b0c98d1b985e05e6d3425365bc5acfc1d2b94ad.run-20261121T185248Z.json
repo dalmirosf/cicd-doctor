@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"config_or_secrets\",\"probable_cause\":\"The job runs Terraform 1.0.0, which does not support the configuration syntax in the subnet module: optional object attributes require an experiment, and variable arguments such as nullable are unsupported. Terraform init therefore fails before validation.\",\"evidence\":[{\"line\":428,\"text\":\"'terraform init' failed, '/usr/bin/terraform validate' skipped: examples/network-firewall\"},{\"line\":442,\"text\":\"Error: Optional object type attributes are experimental\"},{\"line\":451,\"text\":\"module_variable_optional_attrs to the list of active experiments.\"},{\"line\":494,\"text\":\"Error: Unsupported argument\"},{\"line\":499,\"text\":\"An argument named \\\"nullable\\\" is not expected here.\"},{\"line\":561,\"text\":\"Optional attribute modifier expects only one argument: the attribute type.\"}],\"suggested_fix\":\"Use a Terraform version that supports the syntax used by the subnet module, and update the workflow's Terraform version accordingly. Alternatively, revise the module to use syntax supported by Terraform 1.0, enabling the optional-attributes experiment where needed and removing or replacing unsupported arguments.\",\"suggestion\":null,\"confidence\":0.98}",
+    "model": "gpt-6-luna",
+    "input_tokens": 4413,
+    "output_tokens": 413,
+    "latency_ms": 3990
+  }
+}

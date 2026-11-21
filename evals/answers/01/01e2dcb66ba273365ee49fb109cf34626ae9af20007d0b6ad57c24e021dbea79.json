@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"broken_test\",\"probable_cause\":\"The HMR SSR dependency update behavior is not matching the tests\u2019 expectations: an update notification did not arrive, and nested dependency propagation returned stale value 2 instead of 3. The invalidate test also received a dispose log where it expected an update notification.\",\"evidence\":[{\"line\":563,\"text\":\"Error: Timeout waiting for console logs. Waiting for: >>> vite:beforeUpdate -- update\"},{\"line\":577,\"text\":\"AssertionError: expected '(dep) foo was: 2' to match '(dep) foo was: 3'\"},{\"line\":598,\"text\":\"AssertionError: expected '(dep) foo from dispose: 2' to match '>>> vite:beforeUpdate -- update'\"}],\"suggested_fix\":\"Investigate the HMR SSR update and invalidation handling exercised by `playground/hmr-ssr/__tests__/hmr-ssr.spec.ts`. Ensure dependency changes propagate to nested dependents with the updated value, and that invalidation emits the expected before-update notification. Re-run the serve tests on Windows after the fix.\",\"suggestion\":null,\"confidence\":0.91}",
+    "model": "gpt-6-luna",
+    "input_tokens": 5364,
+    "output_tokens": 302,
+    "latency_ms": 3242
+  }
+}

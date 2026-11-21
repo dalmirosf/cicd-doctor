@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"dependency\",\"probable_cause\":\"The CLI imports `requests`, but that package is not installed in the environment created by `uv run`, so the module fails at startup.\",\"evidence\":[{\"line\":189,\"text\":\"    import requests\"},{\"line\":190,\"text\":\"ModuleNotFoundError: No module named 'requests'\"}],\"suggested_fix\":\"Declare `requests` as a runtime dependency in the `python/pyproject.toml` project, update the lockfile if the project uses one, and rerun the workflow.\",\"suggestion\":null,\"confidence\":0.99}",
+    "model": "gpt-6-luna",
+    "input_tokens": 2692,
+    "output_tokens": 178,
+    "latency_ms": 2259
+  }
+}

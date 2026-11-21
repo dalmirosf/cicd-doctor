@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"broken_test\",\"probable_cause\":\"Ruff failed because `src/labpkg/lint_gate.py` imports `os` but never uses it (F401).\",\"evidence\":[{\"line\":182,\"text\":\"F401 [*] `os` imported but unused\"},{\"line\":196,\"text\":\"Found 1 error.\"},{\"line\":197,\"text\":\"[*] 1 fixable with `--fix`.\"},{\"line\":198,\"text\":\"##[error]Process completed with exit code 1.\"}],\"suggested_fix\":\"Remove the unused `import os` from `src/labpkg/lint_gate.py`, then rerun Ruff.\",\"suggestion\":null,\"confidence\":0.99}",
+    "model": "gpt-6-luna",
+    "input_tokens": 2280,
+    "output_tokens": 198,
+    "latency_ms": 2520
+  }
+}

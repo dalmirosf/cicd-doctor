@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"dependency\",\"probable_cause\":\"Terraform 1.0.0 cannot validate the fetched rds_security_group module because it uses optional object attributes with default values, which this Terraform version does not support without an experiment.\",\"evidence\":[{\"line\":411,\"text\":\"pre-commit run terraform_validate --color=always --show-diff-on-failure --files ./examples/complete/*\"},{\"line\":428,\"text\":\"'terraform init' failed, '/usr/bin/terraform validate' skipped: examples/complete\"},{\"line\":442,\"text\":\"\u2502 Error: Optional object type attributes are experimental\"},{\"line\":451,\"text\":\"\u2502 module_variable_optional_attrs to the list of active experiments.\"},{\"line\":460,\"text\":\"\u2502 Optional attribute modifier expects only one argument: the attribute type.\"}],\"suggested_fix\":\"Pin the rds_security_group module to a release compatible with Terraform 1.0.0, or update the minimum Terraform version used by this job to one that supports optional object attributes with defaults. Keep the job's Terraform version and the module's required Terraform features aligned.\",\"suggestion\":null,\"confidence\":0.98}",
+    "model": "gpt-6-luna",
+    "input_tokens": 4073,
+    "output_tokens": 493,
+    "latency_ms": 5208
+  }
+}

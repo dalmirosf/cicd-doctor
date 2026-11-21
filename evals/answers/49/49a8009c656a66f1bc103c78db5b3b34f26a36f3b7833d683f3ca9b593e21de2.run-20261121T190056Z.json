@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"config_or_secrets\",\"probable_cause\":\"The AWS STS command failed because the runner had no AWS credentials configured.\",\"evidence\":[{\"line\":124,\"text\":\"aws: [ERROR]: An error occurred (NoCredentials): Unable to locate credentials. You can configure credentials by running \\\"aws login\\\".\"},{\"line\":125,\"text\":\"##[error]Process completed with exit code 253.\"}],\"suggested_fix\":\"Configure AWS credentials before running the STS command. Prefer GitHub Actions OIDC by granting the workflow permission to request an ID token and using an AWS credentials action with the appropriate role ARN and region. Alternatively, provide valid AWS access keys as repository or environment secrets.\",\"suggestion\":null,\"confidence\":0.99}",
+    "model": "gpt-6-luna",
+    "input_tokens": 2014,
+    "output_tokens": 203,
+    "latency_ms": 2565
+  }
+}

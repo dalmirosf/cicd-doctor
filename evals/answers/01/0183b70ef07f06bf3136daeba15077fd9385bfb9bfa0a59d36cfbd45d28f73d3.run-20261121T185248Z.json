@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"broken_test\",\"probable_cause\":\"The concurrent TypeAdapter test exposes a thread-safety bug: typed-dict schema generation iterates a live namespace while another thread mutates it, causing a RuntimeError on free-threaded Python.\",\"evidence\":[{\"line\":840,\"text\":\"if any(not name.startswith('__') or not name.endswith('__') for name in namespace):\"},{\"line\":848,\"text\":\"E   RuntimeError: dictionary changed size during iteration\"},{\"line\":868,\"text\":\"\u2502  tests\\\\test_freethreaded.py  \u2502  test_typed_dict_concurrent_type_adapter  \u2502  38             \u2502  48          \u2502  RuntimeError  \u2502\"}],\"suggested_fix\":\"In typed-dict schema generation, avoid iterating the live namespace mapping during concurrent initialization. Snapshot its keys or relevant entries before checking them, and protect any shared annotation-cache updates if needed. Re-run the free-threaded concurrency test and the full test suite.\",\"suggestion\":null,\"confidence\":0.97}",
+    "model": "gpt-6-luna",
+    "input_tokens": 4718,
+    "output_tokens": 399,
+    "latency_ms": 4112
+  }
+}

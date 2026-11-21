@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"broken_test\",\"probable_cause\":\"The Validate step rebuilt the project and found that the generated dist files differ from the checked-in versions, so the validation check exited with an error.\",\"evidence\":[{\"line\":441,\"text\":\"ERROR: Build result differs. Please build first with \\\"docker buildx bake build\\\"\"},{\"line\":442,\"text\":\" M dist/index.cjs\"},{\"line\":443,\"text\":\" M dist/index.cjs.map\"},{\"line\":444,\"text\":\" M dist/licenses.txt\"}],\"suggested_fix\":\"Run `docker buildx bake build` using the intended build environment, review the generated changes to dist/index.cjs, dist/index.cjs.map, and dist/licenses.txt, and commit the updated artifacts. Then rerun validation.\",\"suggestion\":null,\"confidence\":0.99}",
+    "model": "gpt-6-luna",
+    "input_tokens": 6413,
+    "output_tokens": 263,
+    "latency_ms": 3265
+  }
+}

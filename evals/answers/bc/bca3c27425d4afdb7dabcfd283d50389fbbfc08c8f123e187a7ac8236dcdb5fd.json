@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\n  \"category\": \"config_or_secrets\",\n  \"probable_cause\": \"Terraform validation failed because the configuration uses the `nullable` variable argument, which the Terraform 1.0.0 job does not recognize.\",\n  \"evidence\": [\n    {\n      \"line\": 442,\n      \"text\": \"An argument named \\\"nullable\\\" is not expected here.\"\n    },\n    {\n      \"line\": 460,\n      \"text\": \"An argument named \\\"nullable\\\" is not expected here.\"\n    },\n    {\n      \"line\": 411,\n      \"text\": \"pre-commit run terraform_validate --color=always --show-diff-on-failure --files ./examples/ipv6-only/*\"\n    }\n  ],\n  \"suggested_fix\": \"To keep compatibility with Terraform 1.0.0, remove the `nullable = false` arguments from the affected variable declarations and ensure the configuration does not use other syntax unsupported by 1.0. Alternatively, update the minimum Terraform version used by this job and the module to a version that supports `nullable`.\",\n  \"suggestion\": null,\n  \"confidence\": 0.99\n}",
+    "model": "gpt-6-luna",
+    "input_tokens": 4298,
+    "output_tokens": 426,
+    "latency_ms": 4542
+  }
+}

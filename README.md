@@ -76,7 +76,16 @@ table is generated: `uv run python -m evals readme-table` rewrites it and a test
 out of date. How the numbers are produced is in [evals/README.md](evals/README.md).
 
 <!-- evals:table:start -->
-_No baseline has been accepted yet (`evals/baseline.json` does not exist), so there are no numbers to show. After the first accepted baseline, `python -m evals readme-table` fills this table from it._
+| Variant | Model | N | Accuracy | Macro-F1 | Cause match (mean 0-2) | Cost per LLM diagnosis (USD) | Model call p50 / p95 (ms) |
+|---|---|---|---|---|---|---|---|
+| rules | - | 62 | 43.5% | 0.583 | 0.60 | n/a | n/a |
+| llm [gpt-6-luna] | gpt-6-luna | 62 | 83.9% | 0.817 | 1.92 | 0.00048 | 3318 / 5785 |
+| llm+hints [gpt-6-luna] | gpt-6-luna | 62 | 87.1% | 0.840 | 1.92 | 0.00050 | 3318 / 5894 |
+| llm+hints+similar [gpt-6-luna] | gpt-6-luna | 62 | 87.1% | 0.840 | 1.90 | 0.00050 | 3242 / 6396 |
+
+NFR-03 (average cost <= USD 0.01 per LLM diagnosis): met by llm [gpt-6-luna], llm+hints [gpt-6-luna], llm+hints+similar [gpt-6-luna].
+
+Numbers come from the accepted `evals/baseline.json` (answers stored in `evals/answers/`); latency is the recorded one of the model call, not of the offline run. `n/a`: not measured for that variant.
 <!-- evals:table:end -->
 
 ## Development checks

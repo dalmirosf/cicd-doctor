@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"infra_or_deploy\",\"probable_cause\":\"The container\u2019s /scratch tmpfs is limited to 8 MB, but dd tries to write 64 MB. The write fills the filesystem and exits with an error.\",\"evidence\":[{\"line\":119,\"text\":\"Run docker run --rm --tmpfs /scratch:size=8m alpine:3.20 dd if=/dev/zero of=/scratch/fill bs=1M count=64\"},{\"line\":130,\"text\":\"dd: error writing '/scratch/fill': No space left on device\"},{\"line\":133,\"text\":\"8388608 bytes (8.0MB) copied, 0.007497 seconds, 1.0GB/s\"}],\"suggested_fix\":\"If the step should succeed, increase the tmpfs size to more than 64 MB (for example, --tmpfs /scratch:size=80m), or reduce dd's count to fit within the 8 MB limit. If this is an intentional disk-full test, handle dd's expected nonzero exit status explicitly.\",\"suggestion\":null,\"confidence\":0.99}",
+    "model": "gpt-6-luna",
+    "input_tokens": 2408,
+    "output_tokens": 494,
+    "latency_ms": 5018
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"broken_test\",\"probable_cause\":\"The serve test for deduplicating server-rendered stylesheet links failed because the page's `.test-css-link` element remained black instead of changing to orange as expected.\",\"evidence\":[{\"line\":582,\"text\":\"FAIL   serve  playground/hmr/__tests__/hmr.spec.ts > deduplicate server rendered link stylesheet\"},{\"line\":584,\"text\":\"AssertionError: expected 'black' to be 'orange' // Object.is equality\"},{\"line\":590,\"text\":\"Received: \\\"black\\\"\"},{\"line\":600,\"text\":\"Caused by: Error: Matcher did not succeed in time.\"}],\"suggested_fix\":\"Investigate the CSS link deduplication and HMR update path exercised by `playground/hmr/__tests__/hmr.spec.ts`. Ensure the updated stylesheet is applied to the page, and rerun the serve test to verify the element changes to orange.\",\"suggestion\":null,\"confidence\":0.94}",
+    "model": "gpt-6-luna",
+    "input_tokens": 4728,
+    "output_tokens": 305,
+    "latency_ms": 3578
+  }
+}

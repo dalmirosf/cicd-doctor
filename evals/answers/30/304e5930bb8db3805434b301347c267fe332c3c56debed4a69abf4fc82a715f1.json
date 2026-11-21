@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"dependency\",\"probable_cause\":\"Dependabot could not resolve the project\u2019s dependencies for Python 3.11 and newer. The resolver treats pytest-xdist\u2019s dependency on pytest as a dependency on this project, whose dev requirements include pytest[dev], creating an unsatisfiable dependency graph.\",\"evidence\":[{\"line\":278,\"text\":\"error: No solution found when resolving dependencies for split (markers: python_full_version >= '3.11')\"},{\"line\":278,\"text\":\"pytest-xdist>=3.5.0 depends on your project\"},{\"line\":278,\"text\":\"pytest[dev] depends on pytest-xdist>=3.5 and your project requires pytest[dev], we can conclude that your project's requirements are unsatisfiable.\"}],\"suggested_fix\":\"Review the project\u2019s packaging and development dependency metadata to avoid resolving the project\u2019s own pytest[dev] extra as a dependency of itself; list the needed development",
+    "model": "gpt-6-luna",
+    "input_tokens": 7314,
+    "output_tokens": 800,
+    "latency_ms": 7897
+  }
+}

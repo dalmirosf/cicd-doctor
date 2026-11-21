@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"broken_test\",\"probable_cause\":\"The legacy styles-only watch test failed because `reRenderedCssLegacyFile` is undefined, so the expected CSS asset was not found or produced before the content assertion.\",\"evidence\":[{\"line\":583,\"text\":\"AssertionError: the given combination of arguments (undefined and string) is invalid for this assertion.\"},{\"line\":587,\"text\":\"expect(reRenderedCssLegacyFile).toContain('#ffb6c1')\"}],\"suggested_fix\":\"Inspect the watch build\u2019s legacy CSS asset emission and the test helper that assigns `reRenderedCssLegacyFile`. Ensure the stylesheet is emitted and detected after the change, or update the lookup if the output asset naming or location has changed.\",\"suggestion\":null,\"confidence\":0.95}",
+    "model": "gpt-6-luna",
+    "input_tokens": 3063,
+    "output_tokens": 255,
+    "latency_ms": 3226
+  }
+}

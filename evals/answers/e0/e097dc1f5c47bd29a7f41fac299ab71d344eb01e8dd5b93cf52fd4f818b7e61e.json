@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\n  \"category\": \"config_or_secrets\",\n  \"probable_cause\": \"The pre-commit step runs Terraform 1.0.0, which cannot parse features used in the subnet module, including optional object attributes and the nullable argument. Terraform initialization fails before validation can run.\",\n  \"evidence\": [\n    {\n      \"line\": 428,\n      \"text\": \"'terraform init' failed, '/usr/bin/terraform validate' skipped: examples/network-firewall\"\n    },\n    {\n      \"line\": 442,\n      \"text\": \"Error: Optional object type attributes are experimental\"\n    },\n    {\n      \"line\": 499,\n      \"text\": \"An argument named \\\"nullable\\\" is not expected here.\"\n    },\n    {\n      \"line\": 561,\n      \"text\": \"Optional attribute modifier expects only one argument: the attribute type.\"\n    }\n  ],\n  \"suggested_fix\": \"Update the pre-commit Terraform version for this job to a release that supports the configuration syntax (Terraform 1.3 or later), then rerun initialization and validation.\",\n  \"suggestion\": null,\n  \"confidence\": 0.98\n}",
+    "model": "gpt-6-luna",
+    "input_tokens": 4374,
+    "output_tokens": 461,
+    "latency_ms": 4125
+  }
+}

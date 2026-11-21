@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6.2-sol",
+  "prompt_version": "judge-v1",
+  "fingerprint": "2f17884a565b74b3773bdebe53faf1947b05394bba03055bf728ee003329c5a9",
+  "result": {
+    "raw_json": "{\"score\":2,\"reason\":\"The answer identifies the OOM kill and recommends reducing memory use or increasing available memory.\"}",
+    "model": "gpt-6.2-sol",
+    "input_tokens": 917,
+    "output_tokens": 33,
+    "latency_ms": 1893
+  }
+}

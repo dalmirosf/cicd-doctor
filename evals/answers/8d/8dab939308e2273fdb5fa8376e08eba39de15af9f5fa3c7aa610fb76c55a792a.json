@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\n  \"category\": \"broken_test\",\n  \"probable_cause\": \"The validation step rebuilt the distributable files and found that the generated output differs from the committed dist files.\",\n  \"evidence\": [\n    {\n      \"line\": 441,\n      \"text\": \"ERROR: Build result differs. Please build first with \\\"docker buildx bake build\\\"\"\n    },\n    {\n      \"line\": 442,\n      \"text\": \" M dist/index.cjs\"\n    },\n    {\n      \"line\": 443,\n      \"text\": \" M dist/index.cjs.map\"\n    },\n    {\n      \"line\": 444,\n      \"text\": \" M dist/licenses.txt\"\n    }\n  ],\n  \"suggested_fix\": \"Run `docker buildx bake build` (or the repository's equivalent build command) to regenerate the dist files, then commit the updated dist/index.cjs, dist/index.cjs.map, and dist/licenses.txt. Rerun the validation step.\",\n  \"suggestion\": null,\n  \"confidence\": 0.99\n}",
+    "model": "gpt-6-luna",
+    "input_tokens": 6215,
+    "output_tokens": 290,
+    "latency_ms": 2675
+  }
+}

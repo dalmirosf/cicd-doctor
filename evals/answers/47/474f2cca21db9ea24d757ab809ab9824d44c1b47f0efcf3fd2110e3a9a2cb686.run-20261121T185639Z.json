@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\n  \"category\": \"dependency\",\n  \"probable_cause\": \"The CLI imports requests, but requests is not installed in the environment created by uv, so the module exits with an import error.\",\n  \"evidence\": [\n    {\n      \"line\": 189,\n      \"text\": \"    import requests\"\n    },\n    {\n      \"line\": 190,\n      \"text\": \"ModuleNotFoundError: No module named 'requests'\"\n    }\n  ],\n  \"suggested_fix\": \"Add requests as a runtime dependency in the Python project's pyproject.toml, then update and commit uv.lock if the project uses a lockfile.\",\n  \"suggestion\": null,\n  \"confidence\": 0.99\n}",
+    "model": "gpt-6-luna",
+    "input_tokens": 2688,
+    "output_tokens": 207,
+    "latency_ms": 2854
+  }
+}

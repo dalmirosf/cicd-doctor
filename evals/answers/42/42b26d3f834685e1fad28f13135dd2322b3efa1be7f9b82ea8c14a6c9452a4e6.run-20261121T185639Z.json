@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\n  \"category\": \"broken_test\",\n  \"probable_cause\": \"The Vite build failed because its bundle exceeded the configured 71 kB limit, reaching 71.03 kB. This points to a bundle-size increase in the code being built.\",\n  \"evidence\": [\n    {\n      \"line\": 303,\n      \"text\": \"[error] Bundle size exceeded 71 kB, current size is 71.03kb.\"\n    },\n    {\n      \"line\": 310,\n      \"text\": \"[ELIFECYCLE] Command failed with exit code 1.\"\n    },\n    {\n      \"line\": 315,\n      \"text\": \"\u00d7 \\\"pnpm recursive run\\\" failed in /home/runner/work/vite/vite/packages/vite\"\n    }\n  ],\n  \"suggested_fix\": \"Inspect the Vite bundle-size check and identify which recent code or dependency changes increased the bundle. Reduce the emitted bundle below 71 kB, for example by removing unnecessary code, avoiding unintended imports, or improving tree-shaking, then rerun the build.\",\n  \"suggestion\": null,\n  \"confidence\": 0.98\n}",
+    "model": "gpt-6-luna",
+    "input_tokens": 3421,
+    "output_tokens": 395,
+    "latency_ms": 4103
+  }
+}

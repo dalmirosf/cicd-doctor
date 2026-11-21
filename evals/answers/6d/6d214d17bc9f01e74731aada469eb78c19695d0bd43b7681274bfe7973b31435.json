@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"flaky\",\"probable_cause\":\"The test randomly sleeps for up to 0.1 seconds but asserts elapsed time is below 0.05 seconds. This run slept long enough to exceed the threshold, so the test is inherently intermittent.\",\"evidence\":[{\"line\":199,\"text\":\"        time.sleep(random.uniform(0.0, 0.1))\"},{\"line\":201,\"text\":\"    >       assert elapsed < 0.05, f\\\"took {elapsed:.3f}s, budget 0.050s\\\"\"},{\"line\":202,\"text\":\"E       AssertionError: took 0.062s, budget 0.050s\"}],\"suggested_fix\":\"Make the test deterministic: remove the random sleep and avoid asserting on wall-clock timing, or set the timing budget above the maximum sleep with enough margin for runner scheduling delays.\",\"suggestion\":null,\"confidence\":0.99}",
+    "model": "gpt-6-luna",
+    "input_tokens": 2570,
+    "output_tokens": 306,
+    "latency_ms": 3581
+  }
+}

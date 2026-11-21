@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"flaky\",\"probable_cause\":\"The test randomly sleeps for up to 0.1 seconds but requires elapsed time to stay below 0.05 seconds. This run measured 0.062 seconds, so the timing assertion failed.\",\"evidence\":[{\"line\":199,\"text\":\"        time.sleep(random.uniform(0.0, 0.1))\"},{\"line\":201,\"text\":\">       assert elapsed < 0.05, f\\\"took {elapsed:.3f}s, budget 0.050s\\\"\"},{\"line\":202,\"text\":\"E       AssertionError: took 0.062s, budget 0.050s\"},{\"line\":207,\"text\":\"FAILED tests/test_flaky_timing.py::test_fast_enough - AssertionError: took 0.062s, budget 0.050s\"}],\"suggested_fix\":\"Avoid asserting a tight wall-clock limit on a randomly sleeping test. Remove the timing assertion if timing is not the behavior under test, or make the test deterministic and use a threshold that accounts for scheduler and runner variability.\",\"suggestion\":null,\"confidence\":0.97}",
+    "model": "gpt-6-luna",
+    "input_tokens": 2568,
+    "output_tokens": 348,
+    "latency_ms": 4060
+  }
+}

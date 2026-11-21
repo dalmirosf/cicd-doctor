@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"config_or_secrets\",\"probable_cause\":\"The deploy step failed because TOKEN was empty or unset, so the shell's required-value check exited with an error.\",\"evidence\":[{\"line\":119,\"text\":\"Run : \\\"${TOKEN:?Error: the deploy token is empty or not set}\\\"\"},{\"line\":124,\"text\":\"  TOKEN:\"},{\"line\":126,\"text\":\"TOKEN: Error: the deploy token is empty or not set\"}],\"suggested_fix\":\"Set the intended deploy token as a repository or environment secret, then map the correctly named secret to TOKEN in the workflow's deploy step (for example, env: TOKEN: ${{ secrets.DEPLOY_TOKEN }}). Verify the secret is available to this workflow and environment.\",\"suggestion\":null,\"confidence\":0.99}",
+    "model": "gpt-6-luna",
+    "input_tokens": 2260,
+    "output_tokens": 228,
+    "latency_ms": 2672
+  }
+}

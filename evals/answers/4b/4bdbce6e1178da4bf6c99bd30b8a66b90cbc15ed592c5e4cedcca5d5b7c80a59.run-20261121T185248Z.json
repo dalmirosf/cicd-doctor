@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\n  \"category\": \"dependency\",\n  \"probable_cause\": \"Vitest 5.1's error reporter calls Map.groupBy, which is unavailable in this Node 20 runtime. The reporter then crashes while summarizing three failed tests, obscuring their underlying causes.\",\n  \"evidence\": [\n    {\n      \"line\": 660,\n      \"text\": \"TypeError: Map.groupBy is not a function or its return value is not iterable\"\n    },\n    {\n      \"line\": 661,\n      \"text\": \"\u276f formatErrorAttempts node_modules/.pnpm/vitest@5.1.0_@types+node@26.6.6_vite@packages+vite/node_modules/vitest/dist/chunks/cli-api.COfZo8lK.js:9184:17\"\n    },\n    {\n      \"line\": 656,\n      \"text\": \"\u23af\u23af\u23af\u23af\u23af\u23af\u23af Failed Tests 3 \u23af\u23af\u23af\u23af\u23af\u23af\u23af\"\n    }\n  ],\n  \"suggested_fix\": \"Run this job on a Node version that supports Map.groupBy, such as Node 22, or use a Vitest version compatible with Node 20. Then rerun the tests to see and address the underlying three test failures hidden by the reporter crash.\",\n  \"suggestion\": null,\n  \"confidence\": 0.94\n}",
+    "model": "gpt-6-luna",
+    "input_tokens": 3398,
+    "output_tokens": 793,
+    "latency_ms": 7152
+  }
+}

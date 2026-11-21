@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"broken_test\",\"probable_cause\":\"The test expects add(1, 2) to return 4, but the function returns 3, the correct sum. The assertion's expected value is likely wrong.\",\"evidence\":[{\"line\":197,\"text\":\"assert add(1, 2) == 4\"},{\"line\":198,\"text\":\"E       assert 3 == 4\"},{\"line\":199,\"text\":\"E        +  where 3 = add(1, 2)\"}],\"suggested_fix\":\"Update the assertion in tests/test_math.py to expect 3. If the function is intentionally meant to return 4 for these inputs, correct its implementation instead.\",\"suggestion\":null,\"confidence\":0.97}",
+    "model": "gpt-6-luna",
+    "input_tokens": 2976,
+    "output_tokens": 302,
+    "latency_ms": 3398
+  }
+}

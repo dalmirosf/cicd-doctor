@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"unknown\",\"probable_cause\":\"The step failed because scripts/opaque.sh exited with status 3, but the log does not show which check failed or why.\",\"evidence\":[{\"line\":123,\"text\":\"running checks\"},{\"line\":124,\"text\":\"##[error]Process completed with exit code 3.\"}],\"suggested_fix\":\"Inspect scripts/opaque.sh and the checks it runs to determine what condition produces exit code 3. Add diagnostic output for the failing condition, then fix that underlying issue and rerun the workflow.\",\"suggestion\":null,\"confidence\":0.96}",
+    "model": "gpt-6-luna",
+    "input_tokens": 1964,
+    "output_tokens": 215,
+    "latency_ms": 2823
+  }
+}

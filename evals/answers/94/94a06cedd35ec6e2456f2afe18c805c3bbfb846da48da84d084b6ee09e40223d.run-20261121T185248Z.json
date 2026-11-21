@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"dependency\",\"probable_cause\":\"The JSDoc type-check failed because TypeScript could not resolve three imports from @prettier/cli. The CLI package or its expected dist files are unavailable in the workspace during this check.\",\"evidence\":[{\"line\":208,\"text\":\"src/experimental-cli/constants.evaluate.js(2,15): error TS2307: Cannot find module '@prettier/cli/dist/constants.js' or its corresponding type declarations.\"},{\"line\":209,\"text\":\"src/experimental-cli/index.js(1,15): error TS2307: Cannot find module '@prettier/cli/bin' or its corresponding type declarations.\"},{\"line\":210,\"text\":\"src/experimental-cli/worker.js(1,15): error TS2307: Cannot find module '@prettier/cli/dist/prettier_serial.js' or its corresponding type declarations.\"}],\"suggested_fix\":\"Ensure @prettier/cli is available and its required files are generated before lint:typecheck runs. Check the workspace dependency/link configuration and build order, or update the imports to point to valid package paths.\",\"suggestion\":null,\"confidence\":0.91}",
+    "model": "gpt-6-luna",
+    "input_tokens": 2096,
+    "output_tokens": 335,
+    "latency_ms": 3392
+  }
+}

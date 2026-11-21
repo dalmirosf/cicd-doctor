@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\n  \"category\": \"dependency\",\n  \"probable_cause\": \"Terraform validation failed because the rds_security_group module uses optional object attributes with default values, which the Terraform 1.0.0 job cannot parse without an unsupported experimental feature.\",\n  \"evidence\": [\n    {\n      \"line\": 424,\n      \"text\": \"Terraform validate.......................................................Failed\"\n    },\n    {\n      \"line\": 442,\n      \"text\": \"\u2502 Error: Optional object type attributes are experimental\"\n    },\n    {\n      \"line\": 458,\n      \"text\": \"\u2502   78:     ip_protocol                  = optional(string, \\\"tcp\\\")\"\n    },\n    {\n      \"line\": 460,\n      \"text\": \"\u2502 Optional attribute modifier expects only one argument: the attribute type.\"\n    }\n  ],\n  \"suggested_fix\": \"Use Terraform 1.3 or newer for this validation job, where optional object attributes with defaults are supported, or pin the rds_security_group module to a version compatible with Terraform 1.0.\",\n  \"suggestion\": null,\n  \"confidence\": 0.96\n}",
+    "model": "gpt-6-luna",
+    "input_tokens": 4079,
+    "output_tokens": 537,
+    "latency_ms": 4893
+  }
+}

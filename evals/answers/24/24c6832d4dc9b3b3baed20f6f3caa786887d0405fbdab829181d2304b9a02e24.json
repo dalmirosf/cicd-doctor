@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"broken_test\",\"probable_cause\":\"The `test_add` assertion failed because the result was 3 while the test expected 4. This indicates a mismatch between the addition implementation and the test\u2019s expected value.\",\"evidence\":[{\"line\":14,\"text\":\"FAILED tests/test_math.py::test_add - assert 3 == 4\"}],\"suggested_fix\":\"Review `test_add` and the addition implementation to determine the intended result. Correct the implementation if it returns the wrong sum, or update the test expectation if 4 is incorrect.\",\"suggestion\":null,\"confidence\":0.97}",
+    "model": "gpt-6-luna",
+    "input_tokens": 1472,
+    "output_tokens": 191,
+    "latency_ms": 2112
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"timeout\",\"probable_cause\":\"The job exceeded its time limit while the step was running `sleep 300`, so GitHub Actions canceled the operation.\",\"evidence\":[{\"line\":119,\"text\":\"Run sleep 300\"},{\"line\":123,\"text\":\"##[error]The operation was canceled.\"},{\"line\":157,\"text\":\"Terminate orphan process: pid (2547) (sleep)\"}],\"suggested_fix\":\"Remove or shorten the 300-second sleep if it is not required. If it is intentional, increase the job's `timeout-minutes` enough to cover the sleep and other steps.\",\"suggestion\":null,\"confidence\":0.98}",
+    "model": "gpt-6-luna",
+    "input_tokens": 2222,
+    "output_tokens": 212,
+    "latency_ms": 2427
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\n  \"category\": \"broken_test\",\n  \"probable_cause\": \"The unit-test command failed because Vitest detected an unhandled rejection, \u201cFailed to get bundle state,\u201d associated with the SSR server-runtime test run. The individual tests passed, but the unhandled error made the command exit with code 1.\",\n  \"evidence\": [\n    {\n      \"line\": 528,\n      \"text\": \"Vitest caught 1 unhandled error during the test run.\"\n    },\n    {\n      \"line\": 533,\n      \"text\": \"Error: Failed to get bundle state\"\n    },\n    {\n      \"line\": 535,\n      \"text\": \"Serialized Error: { code: 'GenericFailure' }\"\n    },\n    {\n      \"line\": 536,\n      \"text\": \"This error originated in \\\"packages/vite/src/node/ssr/runtime/__tests__/server-runtime.spec.ts\\\" test file.\"\n    },\n    {\n      \"line\": 537,\n      \"text\": \"The last test to run before this error was \\\"cyclic /fixtures/cyclic2/test4/index.js\\\".\"\n    },\n    {\n      \"line\": 546,\n      \"text\": \"[ELIFECYCLE] Command failed with exit code 1.\"\n    }\n  ],\n  \"suggested_fix\": \"Investigate the bundle-state operation and asynchronous cleanup exercised by the SSR runtime test, especially the cyclic fixture named in the log. Ensure any rejected promise is awaited or handled, then rerun the unit tests on Node 26/macOS to confirm the unhandled rejection is resolved.\",\n  \"suggestion\": null,\n  \"confidence\": 0.76\n}",
+    "model": "gpt-6-luna",
+    "input_tokens": 5101,
+    "output_tokens": 729,
+    "latency_ms": 5785
+  }
+}

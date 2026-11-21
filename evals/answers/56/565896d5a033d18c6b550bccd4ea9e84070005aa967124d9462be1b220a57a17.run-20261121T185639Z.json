@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"broken_test\",\"probable_cause\":\"The validation step failed because rebuilding the action produced different files from the checked-in dist artifacts: dist/index.cjs, dist/index.cjs.map, and dist/licenses.txt were modified.\",\"evidence\":[{\"line\":441,\"text\":\"ERROR: Build result differs. Please build first with \\\"docker buildx bake build\\\"\"},{\"line\":442,\"text\":\" M dist/index.cjs\"},{\"line\":443,\"text\":\" M dist/index.cjs.map\"},{\"line\":444,\"text\":\" M dist/licenses.txt\"}],\"suggested_fix\":\"Run `docker buildx bake build` in the repository, review the generated changes to the dist files, and commit them so the checked-in build output matches the source.\",\"suggestion\":null,\"confidence\":0.99}",
+    "model": "gpt-6-luna",
+    "input_tokens": 6269,
+    "output_tokens": 262,
+    "latency_ms": 3021
+  }
+}

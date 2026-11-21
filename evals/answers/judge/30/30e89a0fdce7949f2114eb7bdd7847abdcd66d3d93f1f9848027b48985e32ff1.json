@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6.2-sol",
+  "prompt_version": "judge-v1",
+  "fingerprint": "2f17884a565b74b3773bdebe53faf1947b05394bba03055bf728ee003329c5a9",
+  "result": {
+    "raw_json": "{\"score\":0,\"reason\":\"The answer names no cause and misses that a Vitest worker exited with code 1 on Windows while running css-lightningcss-proxy.\"}",
+    "model": "gpt-6.2-sol",
+    "input_tokens": 907,
+    "output_tokens": 44,
+    "latency_ms": 1600
+  }
+}

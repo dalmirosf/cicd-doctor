@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"unknown\",\"probable_cause\":\"Vitest reported that a worker process exited unexpectedly while running the css-lightningcss-proxy test file. The log does not show why the worker exited, so the underlying cause cannot be determined from this excerpt.\",\"evidence\":[{\"line\":586,\"text\":\"Error: [vitest-pool]: Worker forks emitted error.\"},{\"line\":593,\"text\":\"Caused by: Error: Worker exited unexpectedly with exit code 1 during started state while running test file D:/a/vite/vite/playground/css-lightningcss-proxy/__tests__/css-lightningcss-proxy.spec.ts\"},{\"line\":603,\"text\":\"      Errors  1 error\"}],\"suggested_fix\":\"Run the named test file by itself on Windows with worker diagnostics or a single worker to expose the child process's underlying error. Fix the reported test or worker startup issue, then rerun the bundled serve test suite.\",\"suggestion\":null,\"confidence\":0.48}",
+    "model": "gpt-6-luna",
+    "input_tokens": 3820,
+    "output_tokens": 373,
+    "latency_ms": 3842
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\n  \"category\": \"config_or_secrets\",\n  \"probable_cause\": \"The AWS CLI command failed because no AWS credentials were available in the job environment.\",\n  \"evidence\": [\n    {\n      \"line\": 124,\n      \"text\": \"aws: [ERROR]: An error occurred (NoCredentials): Unable to locate credentials.\"\n    },\n    {\n      \"line\": 125,\n      \"text\": \"##[error]Process completed with exit code 253.\"\n    }\n  ],\n  \"suggested_fix\": \"Configure AWS credentials before running the STS command. For example, add an AWS credentials setup step using the required access-key secrets, or configure GitHub Actions OIDC with the appropriate permissions and an AWS role. Verify the role or credentials are available to this job.\",\n  \"suggestion\": null,\n  \"confidence\": 0.98\n}",
+    "model": "gpt-6-luna",
+    "input_tokens": 2014,
+    "output_tokens": 233,
+    "latency_ms": 2640
+  }
+}
