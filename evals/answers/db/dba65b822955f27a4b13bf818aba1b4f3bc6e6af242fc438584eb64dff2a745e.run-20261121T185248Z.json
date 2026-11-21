@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"network\",\"probable_cause\":\"The wheel build failed while installing libatomic because the container could not resolve the CentOS repository host, so yum could not fetch repository metadata.\",\"evidence\":[{\"line\":355,\"text\":\"https://vault.centos.org/altarch/7/os/i386/repodata/repomd.xml: [Errno 14] curl#6 - \\\"Could not resolve host: vault.centos.org; Name or service not known\\\"\"},{\"line\":389,\"text\":\"failure: repodata/repomd.xml from base: [Errno 256] No more mirrors to try.\"},{\"line\":390,\"text\":\"https://vault.centos.org/altarch/7/os/i386/repodata/repomd.xml: [Errno 14] curl#6 - \\\"Could not resolve host: vault.centos.org; Name or service not known\\\"\"}],\"suggested_fix\":\"Retry the job in case this was a transient DNS or network issue. If it persists, verify network access from the build container and update the manylinux image's CentOS repository configuration to use a reachable mirror.\",\"suggestion\":null,\"confidence\":0.98}",
+    "model": "gpt-6-luna",
+    "input_tokens": 4173,
+    "output_tokens": 287,
+    "latency_ms": 3095
+  }
+}

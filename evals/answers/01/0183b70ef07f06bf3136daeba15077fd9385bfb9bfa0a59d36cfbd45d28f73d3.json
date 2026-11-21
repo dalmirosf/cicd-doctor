@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"broken_test\",\"probable_cause\":\"The concurrent TypedDict schema-generation test failed because Pydantic iterates a class namespace while it is being modified, raising RuntimeError on free-threaded Python 3.15.\",\"evidence\":[{\"line\":840,\"text\":\"if any(not name.startswith('__') or not name.endswith('__') for name in namespace):\"},{\"line\":848,\"text\":\"E   RuntimeError: dictionary changed size during iteration\"},{\"line\":790,\"text\":\"def test_typed_dict_concurrent_type_adapter() -> None:\"}],\"suggested_fix\":\"Make the TypedDict namespace check safe during concurrent mutation, for example by iterating over a stable snapshot of its keys or by synchronizing namespace access. Then rerun the free-threaded test.\",\"suggestion\":null,\"confidence\":0.96}",
+    "model": "gpt-6-luna",
+    "input_tokens": 4718,
+    "output_tokens": 357,
+    "latency_ms": 3449
+  }
+}

@@ -1,0 +1,157 @@
+{
+  "judge_model": "gpt-6.2-sol",
+  "prompt_version": "judge-v1",
+  "fingerprint": "2f17884a565b74b3773bdebe53faf1947b05394bba03055bf728ee003329c5a9",
+  "pairs": [
+    {
+      "pair_id": "p01",
+      "group": "main",
+      "human": 2,
+      "judge": 2
+    },
+    {
+      "pair_id": "p02",
+      "group": "main",
+      "human": 0,
+      "judge": 0
+    },
+    {
+      "pair_id": "p03",
+      "group": "main",
+      "human": 0,
+      "judge": 0
+    },
+    {
+      "pair_id": "p04",
+      "group": "main",
+      "human": 2,
+      "judge": 2
+    },
+    {
+      "pair_id": "p05",
+      "group": "main",
+      "human": 2,
+      "judge": 1
+    },
+    {
+      "pair_id": "p06",
+      "group": "main",
+      "human": 2,
+      "judge": 2
+    },
+    {
+      "pair_id": "p07",
+      "group": "main",
+      "human": 2,
+      "judge": 2
+    },
+    {
+      "pair_id": "p08",
+      "group": "main",
+      "human": 2,
+      "judge": 2
+    },
+    {
+      "pair_id": "p09",
+      "group": "main",
+      "human": 0,
+      "judge": 0
+    },
+    {
+      "pair_id": "p10",
+      "group": "main",
+      "human": 2,
+      "judge": 2
+    },
+    {
+      "pair_id": "p11",
+      "group": "main",
+      "human": 2,
+      "judge": 1
+    },
+    {
+      "pair_id": "p12",
+      "group": "main",
+      "human": 1,
+      "judge": 1
+    },
+    {
+      "pair_id": "p13",
+      "group": "main",
+      "human": 2,
+      "judge": 2
+    },
+    {
+      "pair_id": "p14",
+      "group": "main",
+      "human": 2,
+      "judge": 2
+    },
+    {
+      "pair_id": "p15",
+      "group": "main",
+      "human": 2,
+      "judge": 2
+    },
+    {
+      "pair_id": "p16",
+      "group": "main",
+      "human": 2,
+      "judge": 2
+    },
+    {
+      "pair_id": "p17",
+      "group": "main",
+      "human": 2,
+      "judge": 2
+    },
+    {
+      "pair_id": "p18",
+      "group": "main",
+      "human": 2,
+      "judge": 2
+    },
+    {
+      "pair_id": "p19",
+      "group": "main",
+      "human": 1,
+      "judge": 1
+    },
+    {
+      "pair_id": "p20",
+      "group": "main",
+      "human": 2,
+      "judge": 2
+    },
+    {
+      "pair_id": "p21",
+      "group": "reserve",
+      "human": 2,
+      "judge": 2
+    },
+    {
+      "pair_id": "p22",
+      "group": "reserve",
+      "human": 2,
+      "judge": 2
+    },
+    {
+      "pair_id": "p23",
+      "group": "reserve",
+      "human": 2,
+      "judge": 2
+    },
+    {
+      "pair_id": "p24",
+      "group": "reserve",
+      "human": 1,
+      "judge": 1
+    },
+    {
+      "pair_id": "p25",
+      "group": "reserve",
+      "human": 1,
+      "judge": 2
+    }
+  ]
+}

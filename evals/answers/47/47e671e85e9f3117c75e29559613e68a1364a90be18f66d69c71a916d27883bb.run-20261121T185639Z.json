@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"broken_test\",\"probable_cause\":\"The production lint check failed because the built legacy CLI contains four `String.raw` expressions that violate the `no-restricted-syntax` rule.\",\"evidence\":[{\"line\":210,\"text\":\"Run yarn test:production-lint\"},{\"line\":216,\"text\":\"##[error]  5977:14  error  `String.raw` should be transformed  no-restricted-syntax\"},{\"line\":217,\"text\":\"##[error]  5978:15  error  `String.raw` should be transformed  no-restricted-syntax\"},{\"line\":218,\"text\":\"##[error]  5979:15  error  `String.raw` should be transformed  no-restricted-syntax\"},{\"line\":219,\"text\":\"##[error]  5980:22  error  `String.raw` should be transformed  no-restricted-syntax\"}],\"suggested_fix\":\"Inspect the source that produces `dist/prettier/internal/legacy-cli.mjs` and update the code or build transform so these `String.raw` expressions are transformed before production lint runs. Avoid suppressing the rule unless those expressions are intentionally permitted.\",\"suggestion\":null,\"confidence\":0.98}",
+    "model": "gpt-6-luna",
+    "input_tokens": 2423,
+    "output_tokens": 342,
+    "latency_ms": 3537
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"dependency\",\"probable_cause\":\"The test step failed before running tests because Puppeteer could not install Firefox. On the Windows runner, the installer executable was locked when Puppeteer tried to remove it.\",\"evidence\":[{\"line\":279,\"text\":\"Error: ERROR: Failed to set up firefox vstable_159.0.1!\"},{\"line\":284,\"text\":\"[cause]: Error: All providers failed for firefox stable_159.0.1:\"},{\"line\":285,\"text\":\"- DefaultProvider: EBUSY: resource busy or locked, unlink 'D:\\\\a\\\\prettier\\\\prettier\\\\.tmp\\\\puppeteer\\\\firefox\\\\stable_159.0.1-Firefox Setup 159.0.1.exe'\"}],\"suggested_fix\":\"Retry the job after clearing Puppeteer's incomplete Firefox install/cache (for example, run `npx puppeteer browsers clear` before installing). Also check that no concurrent process is using the installer or browser cache; serialize browser installation if needed.\",\"suggestion\":null,\"confidence\":0.98}",
+    "model": "gpt-6-luna",
+    "input_tokens": 2906,
+    "output_tokens": 386,
+    "latency_ms": 4072
+  }
+}

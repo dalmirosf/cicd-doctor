@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\n  \"category\": \"broken_test\",\n  \"probable_cause\": \"The production lint check failed because the built `legacy-cli.mjs` still contains four `String.raw` expressions, which violate the `no-restricted-syntax` rule.\",\n  \"evidence\": [\n    {\n      \"line\": 215,\n      \"text\": \"/home/runner/work/prettier/prettier/dist/prettier/internal/legacy-cli.mjs\"\n    },\n    {\n      \"line\": 216,\n      \"text\": \"##[error]  5977:14  error  `String.raw` should be transformed  no-restricted-syntax\"\n    },\n    {\n      \"line\": 217,\n      \"text\": \"##[error]  5978:15  error  `String.raw` should be transformed  no-restricted-syntax\"\n    },\n    {\n      \"line\": 218,\n      \"text\": \"##[error]  5979:15  error  `String.raw` should be transformed  no-restricted-syntax\"\n    },\n    {\n      \"line\": 219,\n      \"text\": \"##[error]  5980:22  error  `String.raw` should be transformed  no-restricted-syntax\"\n    },\n    {\n      \"line\": 223,\n      \"text\": \"##[error]Process completed with exit code 1.\"\n    }\n  ],\n  \"suggested_fix\": \"Check the source and production build configuration for the four `String.raw` expressions in `legacy-cli.mjs`. Adjust the source or build transform so those expressions are transformed before production lint runs, then rerun the production lint check.\",\n  \"suggestion\": null,\n  \"confidence\": 0.98\n}",
+    "model": "gpt-6-luna",
+    "input_tokens": 2419,
+    "output_tokens": 502,
+    "latency_ms": 4137
+  }
+}

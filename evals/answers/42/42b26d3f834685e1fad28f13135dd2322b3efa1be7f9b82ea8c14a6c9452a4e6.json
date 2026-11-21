@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"unknown\",\"probable_cause\":\"The Vite bundle build failed because the generated bundle was 71.03 kB, exceeding the configured 71 kB size limit.\",\"evidence\":[{\"line\":303,\"text\":\"packages/vite build: [error] Bundle size exceeded 71 kB, current size is 71.03kb.\"},{\"line\":310,\"text\":\"packages/vite build: [ELIFECYCLE] Command failed with exit code 1.\"}],\"suggested_fix\":\"Reduce the generated Vite bundle by at least 0.03 kB so it falls below the configured limit. If the increase is intentional, review and update the bundle-size limit in the build configuration.\",\"suggestion\":null,\"confidence\":0.99}",
+    "model": "gpt-6-luna",
+    "input_tokens": 3423,
+    "output_tokens": 421,
+    "latency_ms": 3905
+  }
+}

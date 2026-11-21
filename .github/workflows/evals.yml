@@ -3,11 +3,27 @@ name: Evals
 # The regression and injection gate of the evals (SPEC §11.3, D-105, D-106). It reads the committed
 # answers in evals/answers/ and never calls OpenAI: this workflow has no secrets and cannot spend.
 #
-# For now it only runs by hand (workflow_dispatch). The `pull_request` and `push` triggers, with
-# `paths` (src/cicd_doctor/core/**, evals/**, lab/cases.yaml, pyproject.toml, uv.lock and this
-# file), are added in P4 (h), once a baseline exists: without evals/baseline.json the check exits
-# with 4 and every pull request would turn red.
+# It runs on pull requests and on pushes to main that touch what the answers depend on, and by
+# hand (workflow_dispatch). It needs evals/baseline.json, accepted by a person (D-105): without it
+# the check exits with 4.
 on:
+  pull_request:
+    paths:
+      - "src/cicd_doctor/core/**"
+      - "evals/**"
+      - "lab/cases.yaml"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/evals.yml"
+  push:
+    branches: [main]
+    paths:
+      - "src/cicd_doctor/core/**"
+      - "evals/**"
+      - "lab/cases.yaml"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/evals.yml"
   workflow_dispatch:
 
 permissions:

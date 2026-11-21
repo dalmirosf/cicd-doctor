@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"flaky\",\"probable_cause\":\"The test asserts that a random coin flip is below 0.5, so it can fail by chance. This run produced a value above the threshold.\",\"evidence\":[{\"line\":198,\"text\":\"    assert random.random() < 0.5, \\\"the coin landed on the wrong side\\\"\"},{\"line\":200,\"text\":\"E       assert 0.927971150601717 < 0.5\"},{\"line\":206,\"text\":\"FAILED tests/test_flaky_random.py::test_coin_flip - AssertionError: the coin landed on the wrong side\"}],\"suggested_fix\":\"Make the test deterministic by mocking or seeding the random-number generator and asserting the expected behavior, rather than relying on a random value being below 0.5.\",\"suggestion\":null,\"confidence\":0.99}",
+    "model": "gpt-6-luna",
+    "input_tokens": 2696,
+    "output_tokens": 282,
+    "latency_ms": 4464
+  }
+}

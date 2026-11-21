@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"broken_test\",\"probable_cause\":\"The test test_add failed because the computed value was 3 while the test expected 4.\",\"evidence\":[{\"line\":15,\"text\":\"FAILED tests/test_math.py::test_add - assert 3 == 4\"},{\"line\":16,\"text\":\"1 failed, 11 passed in 0.42s\"},{\"line\":17,\"text\":\"##[error]Process completed with exit code 1.\"}],\"suggested_fix\":\"Check the addition implementation and test_add's expected value. Correct whichever conflicts with the intended behavior, then rerun pytest tests/test_math.py.\",\"suggestion\":null,\"confidence\":0.99}",
+    "model": "gpt-6-luna",
+    "input_tokens": 1450,
+    "output_tokens": 230,
+    "latency_ms": 2671
+  }
+}

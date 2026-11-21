@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"flaky\",\"probable_cause\":\"Puppeteer could not install Firefox because Windows reported the installer file was busy or locked when it tried to remove it. The browser setup failed before the tests could run; this may be a transient file-lock issue.\",\"evidence\":[{\"line\":279,\"text\":\"Error: ERROR: Failed to set up firefox vstable_159.0.1! Set \\\"PUPPETEER_SKIP_DOWNLOAD\\\" env variable to skip download.\"},{\"line\":285,\"text\":\"    - DefaultProvider: EBUSY: resource busy or locked, unlink 'D:\\\\a\\\\prettier\\\\prettier\\\\.tmp\\\\puppeteer\\\\firefox\\\\stable_159.0.1-Firefox Setup 159.0.1.exe'\"},{\"line\":295,\"text\":\"Error: Failed to download one or more browsers. Run `npx puppeteer browsers install` to try again, or `npx puppeteer browsers clear` first if the cache holds an unfinished install.\"}],\"suggested_fix\":\"Retry the job. If the failure recurs, clear Puppeteer's browser cache before installing Firefox again, and ensure only one process or job is installing to that cache at a time.\",\"suggestion\":null,\"confidence\":0.91}",
+    "model": "gpt-6-luna",
+    "input_tokens": 2912,
+    "output_tokens": 533,
+    "latency_ms": 5355
+  }
+}

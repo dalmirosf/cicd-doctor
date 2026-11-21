@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6.2-sol",
+  "prompt_version": "judge-v1",
+  "fingerprint": "2f17884a565b74b3773bdebe53faf1947b05394bba03055bf728ee003329c5a9",
+  "result": {
+    "raw_json": "{\"score\":1,\"reason\":\"The answer identifies an index lookup failure but leaves open whether the package itself is absent from PyPI or only the pinned version is missing.\"}",
+    "model": "gpt-6.2-sol",
+    "input_tokens": 932,
+    "output_tokens": 112,
+    "latency_ms": 2679
+  }
+}

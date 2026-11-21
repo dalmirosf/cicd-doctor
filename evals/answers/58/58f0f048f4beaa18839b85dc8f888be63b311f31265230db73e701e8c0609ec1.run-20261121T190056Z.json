@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"unknown\",\"probable_cause\":\"Vitest's worker running the css-lightningcss-proxy test file exited with code 1, causing the bundled serve test command to fail. The log does not show the underlying worker error.\",\"evidence\":[{\"line\":586,\"text\":\"Error: [vitest-pool]: Worker forks emitted error.\"},{\"line\":593,\"text\":\"Caused by: Error: Worker exited unexpectedly with exit code 1 during started state while running test file D:/a/vite/vite/playground/css-lightningcss-proxy/__tests__/css-lightningcss-proxy.spec.ts\"},{\"line\":607,\"text\":\"[ELIFECYCLE] Command failed with exit code 1.\"}],\"suggested_fix\":\"Rerun the failing test file on Windows with worker output or tracing enabled to capture the underlying error. Check whether the test or its native dependencies behave differently on Node 26, then fix the specific error before rerunning the bundled serve suite.\",\"suggestion\":null,\"confidence\":0.58}",
+    "model": "gpt-6-luna",
+    "input_tokens": 3830,
+    "output_tokens": 371,
+    "latency_ms": 4812
+  }
+}

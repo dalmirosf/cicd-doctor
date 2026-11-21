@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"timeout\",\"probable_cause\":\"The step was running `sleep 300` when GitHub Actions canceled the operation because the job timed out.\",\"evidence\":[{\"line\":119,\"text\":\"Run sleep 300\"},{\"line\":123,\"text\":\"##[error]The operation was canceled.\"}],\"suggested_fix\":\"Reduce or remove the 300-second sleep, or increase the job/step timeout if the delay is intentional. Check the workflow's `timeout-minutes` setting to ensure it allows enough time for the job to complete.\",\"suggestion\":null,\"confidence\":0.96}",
+    "model": "gpt-6-luna",
+    "input_tokens": 2220,
+    "output_tokens": 197,
+    "latency_ms": 2833
+  }
+}

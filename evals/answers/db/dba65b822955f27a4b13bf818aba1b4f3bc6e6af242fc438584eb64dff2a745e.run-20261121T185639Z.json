@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"network\",\"probable_cause\":\"The wheel build failed while installing libatomic because the container could not resolve vault.centos.org to access the CentOS repository.\",\"evidence\":[{\"line\":355,\"text\":\"https://vault.centos.org/altarch/7/os/i386/repodata/repomd.xml: [Errno 14] curl#6 - \\\"Could not resolve host: vault.centos.org; Name or service not known\\\"\"},{\"line\":389,\"text\":\"failure: repodata/repomd.xml from base: [Errno 256] No more mirrors to try.\"},{\"line\":390,\"text\":\"https://vault.centos.org/altarch/7/os/i386/repodata/repomd.xml: [Errno 14] curl#6 - \\\"Could not resolve host: vault.centos.org; Name or service not known\\\"\"}],\"suggested_fix\":\"Retry the job if this was a transient DNS failure. If it persists, check network/DNS access from the runner and verify the CentOS repository URL is available; consider configuring the image to use a reachable repository mirror.\",\"suggestion\":null,\"confidence\":0.98}",
+    "model": "gpt-6-luna",
+    "input_tokens": 4173,
+    "output_tokens": 295,
+    "latency_ms": 3155
+  }
+}

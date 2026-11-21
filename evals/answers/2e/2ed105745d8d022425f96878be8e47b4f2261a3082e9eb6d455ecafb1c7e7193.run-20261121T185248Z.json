@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"network\",\"probable_cause\":\"The Python step attempted to connect to 127.0.0.1 on port 9, but no service was accepting connections there, so the connection was refused and the command exited with an error.\",\"evidence\":[{\"line\":119,\"text\":\"Run python3 -c \\\"import socket; socket.create_connection(('127.0.0.1', 9), timeout=5)\\\"\"},{\"line\":129,\"text\":\"ConnectionRefusedError: [Errno 111] Connection refused\"},{\"line\":130,\"text\":\"##[error]Process completed with exit code 1.\"}],\"suggested_fix\":\"If this connection is required, start the intended service on 127.0.0.1:9 before running the step and verify it is listening. If the refusal is expected, catch ConnectionRefusedError and treat it as the expected result instead of letting the step fail.\",\"suggestion\":null,\"confidence\":0.99}",
+    "model": "gpt-6-luna",
+    "input_tokens": 2334,
+    "output_tokens": 358,
+    "latency_ms": 3596
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"broken_test\",\"probable_cause\":\"Two unit tests fail because the generated unresolved-module stub error message does not match the expected message for escaped peer and parent module names. The dev-server case has an unexpected \u201cIs it installed?\u201d suffix, while the production case has a mismatched suffix.\",\"evidence\":[{\"line\":564,\"text\":\"FAIL  packages/vite/src/node/__tests__/plugins/resolve.spec.ts > externalized module error stubs escape module names > optional peer dep module stub is escaped (dev server)\"},{\"line\":571,\"text\":\"    \\\"message\\\": \\\"Could not resolve \\\\\\\"peer${(() => { throw new Error(\\\\\\\"interpolated\\\\\\\") })()}`\\\\\\\"'\\\\\\\\\\n\"},{\"line\":577,\"text\":\"\u2028\u2029\\\\\\\". Is it installed?\\\"\"},{\"line\":596,\"text\":\" FAIL  packages/vite/src/node/__tests__/plugins/resolve.spec.ts > externalized module error stubs escape module names > production stubs are escaped\"},{\"line\":589,\"text\":\"      Tests  2 failed | 691 passed (693)\"}],\"suggested_fix\":\"Inspect the unresolved-module stub generation and make its error message match the intended contract in both dev-server and production builds. Preserve escaping of module names so their contents are treated as text, and update the relevant tests only if the added install hint is intentional.\",\"suggestion\":null,\"confidence\":0.96}",
+    "model": "gpt-6-luna",
+    "input_tokens": 4968,
+    "output_tokens": 448,
+    "latency_ms": 4177
+  }
+}

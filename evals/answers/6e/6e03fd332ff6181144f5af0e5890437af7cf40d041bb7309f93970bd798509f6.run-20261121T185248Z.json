@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\n  \"category\": \"broken_test\",\n  \"probable_cause\": \"The legacy watch test expected a rendered CSS file containing #ffb6c1, but the value passed to the assertion was undefined. The test therefore failed before verifying the legacy JavaScript asset.\",\n  \"evidence\": [\n    {\n      \"line\": 582,\n      \"text\": \"FAIL   build  playground/legacy/__tests__/watch/legacy-styles-only-entry-watch.spec.ts > rebuilds styles only entry on change\"\n    },\n    {\n      \"line\": 583,\n      \"text\": \"AssertionError: the given combination of arguments (undefined and string) is invalid for this assertion.\"\n    },\n    {\n      \"line\": 587,\n      \"text\": \"expect(reRenderedCssLegacyFile).toContain('#ffb6c1')\"\n    },\n    {\n      \"line\": 600,\n      \"text\": \"[ELIFECYCLE] Command failed with exit code 1.\"\n    }\n  ],\n  \"suggested_fix\": \"Check how the watch test obtains reRenderedCssLegacyFile and why that lookup returns undefined. Ensure the legacy styles-only rebuild emits the CSS asset at the expected location and the test reads that asset after the change; update the test's asset lookup if the output naming or layout intentionally changed.\",\n  \"suggestion\": null,\n  \"confidence\": 0.95\n}",
+    "model": "gpt-6-luna",
+    "input_tokens": 3057,
+    "output_tokens": 394,
+    "latency_ms": 3973
+  }
+}

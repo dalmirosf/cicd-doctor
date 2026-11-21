@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"broken_test\",\"probable_cause\":\"The Validate check failed because rebuilding the project changed generated files in dist/, so the committed build output is out of sync with the source.\",\"evidence\":[{\"line\":448,\"text\":\"ERROR: Build result differs. Please build first with \\\"docker buildx bake build\\\"\"},{\"line\":449,\"text\":\" M dist/index.cjs\"},{\"line\":450,\"text\":\" M dist/index.cjs.map\"},{\"line\":451,\"text\":\" M dist/licenses.txt\"}],\"suggested_fix\":\"Run `docker buildx bake build` to regenerate the build artifacts, then commit the updated dist/index.cjs, dist/index.cjs.map, and dist/licenses.txt. Rerun validation afterward.\",\"suggestion\":null,\"confidence\":0.99}",
+    "model": "gpt-6-luna",
+    "input_tokens": 6125,
+    "output_tokens": 260,
+    "latency_ms": 3172
+  }
+}

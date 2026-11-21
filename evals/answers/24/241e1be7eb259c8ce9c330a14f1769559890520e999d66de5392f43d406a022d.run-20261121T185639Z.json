@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"broken_test\",\"probable_cause\":\"The unit-test run failed because an unhandled rejection occurred during the SSR server-runtime tests: bundle-state retrieval failed while the cyclic fixture was running or just after it completed.\",\"evidence\":[{\"line\":533,\"text\":\"Error: Failed to get bundle state\"},{\"line\":535,\"text\":\"Serialized Error: { code: 'GenericFailure' }\"},{\"line\":536,\"text\":\"This error originated in \\\"packages/vite/src/node/ssr/runtime/__tests__/server-runtime.spec.ts\\\" test file.\"},{\"line\":546,\"text\":\"[ELIFECYCLE] Command failed with exit code 1\"}],\"suggested_fix\":\"Investigate the SSR runtime handling of bundle state for the cyclic fixture, especially cleanup or asynchronous operations that can reject after a test completes. Reproduce the `server-runtime.spec.ts` test on Node 26/macOS, then fix the underlying bundle-state failure and ensure any rejected promise is handled.\",\"suggestion\":null,\"confidence\":0.81}",
+    "model": "gpt-6-luna",
+    "input_tokens": 5099,
+    "output_tokens": 475,
+    "latency_ms": 5157
+  }
+}

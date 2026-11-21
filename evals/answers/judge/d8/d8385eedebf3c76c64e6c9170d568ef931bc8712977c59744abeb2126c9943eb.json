@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6.2-sol",
+  "prompt_version": "judge-v1",
+  "fingerprint": "2f17884a565b74b3773bdebe53faf1947b05394bba03055bf728ee003329c5a9",
+  "result": {
+    "raw_json": "{\"score\":0,\"reason\":\"The answer gives no cause and misses the TS2307 error resolving '@prettier/cli'.\"}",
+    "model": "gpt-6.2-sol",
+    "input_tokens": 905,
+    "output_tokens": 37,
+    "latency_ms": 1656
+  }
+}

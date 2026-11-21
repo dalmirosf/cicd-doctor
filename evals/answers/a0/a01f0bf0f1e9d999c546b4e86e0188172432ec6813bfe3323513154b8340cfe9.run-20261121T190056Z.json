@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\n  \"category\": \"broken_test\",\n  \"probable_cause\": \"The HMR SSR serve tests failed because dependency updates were not observed as expected: one test timed out waiting for an update event, and others received stale or unexpected dependency values.\",\n  \"evidence\": [\n    {\n      \"line\": 563,\n      \"text\": \"Error: Timeout waiting for console logs. Waiting for: >>> vite:beforeUpdate -- update\"\n    },\n    {\n      \"line\": 577,\n      \"text\": \"AssertionError: expected '(dep) foo was: 2' to match '(dep) foo was: 3'\"\n    },\n    {\n      \"line\": 598,\n      \"text\": \"AssertionError: expected '(dep) foo from dispose: 2' to match '>>> vite:beforeUpdate -- update'\"\n    },\n    {\n      \"line\": 620,\n      \"text\": \"[ELIFECYCLE] Command failed with exit code 1.\"\n    }\n  ],\n  \"suggested_fix\": \"Investigate the HMR SSR update and invalidation flow exercised by playground/hmr-ssr/__tests__/hmr-ssr.spec.ts. Ensure dependency changes trigger the expected beforeUpdate event and that the updated module value reaches the test. Re-run the serve tests on Windows after the fix.\",\n  \"suggestion\": null,\n  \"confidence\": 0.84\n}",
+    "model": "gpt-6-luna",
+    "input_tokens": 5206,
+    "output_tokens": 416,
+    "latency_ms": 4434
+  }
+}

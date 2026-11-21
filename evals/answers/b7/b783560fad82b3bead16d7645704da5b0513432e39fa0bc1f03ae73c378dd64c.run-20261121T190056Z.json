@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"config_or_secrets\",\"probable_cause\":\"Terraform validation failed because the configuration uses the nullable argument on input variables, which the Terraform version in this job does not support.\",\"evidence\":[{\"line\":442,\"text\":\"\u2502 An argument named \\\"nullable\\\" is not expected here.\"},{\"line\":451,\"text\":\"\u2502 An argument named \\\"nullable\\\" is not expected here.\"},{\"line\":460,\"text\":\"\u2502 An argument named \\\"nullable\\\" is not expected here.\"}],\"suggested_fix\":\"Use a Terraform version that supports the nullable argument, or remove the nullable settings from these variable blocks if the module must remain compatible with Terraform 1.0.\",\"suggestion\":null,\"confidence\":0.97}",
+    "model": "gpt-6-luna",
+    "input_tokens": 4144,
+    "output_tokens": 299,
+    "latency_ms": 3640
+  }
+}

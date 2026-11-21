@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6.2-sol",
+  "prompt_version": "judge-v1",
+  "fingerprint": "2f17884a565b74b3773bdebe53faf1947b05394bba03055bf728ee003329c5a9",
+  "result": {
+    "raw_json": "{\"score\":2,\"reason\":\"Both identify the same cause: the expected file-only module was undefined, causing a TypeError in the HMR test.\"}",
+    "model": "gpt-6.2-sol",
+    "input_tokens": 964,
+    "output_tokens": 40,
+    "latency_ms": 1586
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"dependency\",\"probable_cause\":\"The workflow tries to install a nonexistent package and pinned version, so pip cannot find a matching distribution.\",\"evidence\":[{\"line\":121,\"text\":\".venv/bin/pip install cicd-doctor-lab-does-not-exist==9.9.9\"},{\"line\":125,\"text\":\"ERROR: No matching distribution found for cicd-doctor-lab-does-not-exist==9.9.9\"}],\"suggested_fix\":\"Replace the package name and version in the workflow with a package that exists on the configured package index, or remove this install command if the dependency is not needed.\",\"suggestion\":null,\"confidence\":0.99}",
+    "model": "gpt-6-luna",
+    "input_tokens": 2061,
+    "output_tokens": 206,
+    "latency_ms": 2436
+  }
+}

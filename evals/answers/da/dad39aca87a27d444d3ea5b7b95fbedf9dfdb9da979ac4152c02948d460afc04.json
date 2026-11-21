@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"broken_test\",\"probable_cause\":\"The Spellcheck lint failed because CSpell does not recognize \u201cjscript\u201d and \u201clivescript\u201d in src/language-html/utilities/index.js.\",\"evidence\":[{\"line\":226,\"text\":\"src/language-html/utilities/index.js:31:9 - Unknown word (jscript)\"},{\"line\":227,\"text\":\"src/language-html/utilities/index.js:32:9 - Unknown word (livescript)\"},{\"line\":228,\"text\":\"CSpell: Files checked: 2875, Issues found: 2 in 1 file.\"},{\"line\":229,\"text\":\"##[error]Process completed with exit code 1.\"}],\"suggested_fix\":\"If these are intentional language names, add \u201cjscript\u201d and \u201clivescript\u201d to the repository's CSpell word list. Otherwise, adjust the wording so the spellchecker recognizes it, then rerun the Spellcheck step.\",\"suggestion\":null,\"confidence\":0.99}",
+    "model": "gpt-6-luna",
+    "input_tokens": 1996,
+    "output_tokens": 277,
+    "latency_ms": 2901
+  }
+}

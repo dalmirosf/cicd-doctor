@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"broken_test\",\"probable_cause\":\"The type check failed in src/config/prettier-config/loaders.js because line 28 passes a number to a function parameter typed as string.\",\"evidence\":[{\"line\":212,\"text\":\"src/config/prettier-config/loaders.js(28,29): error TS2345: Argument of type 'number' is not assignable to parameter of type 'string'.\"}],\"suggested_fix\":\"Inspect the argument at src/config/prettier-config/loaders.js:28 and pass a string if that is the intended value. If the function should accept a number, update its parameter type and any related declarations accordingly.\",\"suggestion\":null,\"confidence\":0.97}",
+    "model": "gpt-6-luna",
+    "input_tokens": 1987,
+    "output_tokens": 234,
+    "latency_ms": 2565
+  }
+}

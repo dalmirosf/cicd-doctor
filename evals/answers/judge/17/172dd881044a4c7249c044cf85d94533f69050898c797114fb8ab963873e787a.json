@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6.2-sol",
+  "prompt_version": "judge-v1",
+  "fingerprint": "2f17884a565b74b3773bdebe53faf1947b05394bba03055bf728ee003329c5a9",
+  "result": {
+    "raw_json": "{\"score\":2,\"reason\":\"Both identify the nonexistent base image tag python:3.99-slim as the root cause.\"}",
+    "model": "gpt-6.2-sol",
+    "input_tokens": 932,
+    "output_tokens": 35,
+    "latency_ms": 1507
+  }
+}

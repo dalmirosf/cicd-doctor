@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"flaky\",\"probable_cause\":\"The bundled HMR test timed out waiting for the browser to log a hot update. The excerpt shows no underlying error, so this may be an intermittent missed or delayed browser event.\",\"evidence\":[{\"line\":564,\"text\":\"FAIL   serve-bundled  playground/hmr/__tests__/hmr.spec.ts > acceptExports > indiscriminate imports: import * > dynamic import(...) > accepts itself if all its exports are accepted\"},{\"line\":566,\"text\":\"Error: Timeout waiting for browser logs. Waiting for: /hot updated/\"}],\"suggested_fix\":\"Rerun the test to check whether the failure is intermittent. If it reproduces, inspect the HMR update path and browser-log synchronization for this test; ensure the expected update is emitted and wait for it using a reliable event-based condition rather than a timing-sensitive timeout.\",\"suggestion\":null,\"confidence\":0.54}",
+    "model": "gpt-6-luna",
+    "input_tokens": 3310,
+    "output_tokens": 556,
+    "latency_ms": 6028
+  }
+}

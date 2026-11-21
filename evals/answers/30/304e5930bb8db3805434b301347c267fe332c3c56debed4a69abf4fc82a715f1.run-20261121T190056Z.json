@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"dependency\",\"probable_cause\":\"Dependabot could not resolve the project\u2019s development dependencies: the resolver treats pytest-xdist\u2019s dependency on pytest as a dependency on this project itself, making the requirements unsatisfiable.\",\"evidence\":[{\"line\":278,\"text\":\"error: No solution found when resolving dependencies for split (markers: python_full_version >= '3.11')\"},{\"line\":278,\"text\":\"pytest[dev] depends on pytest-xdist>=3.5 and your project requires pytest[dev], we can conclude that your project's requirements are unsatisfiable.\"},{\"line\":278,\"text\":\"The package `pytest-xdist` depends on the package `pytest` but the name is shadowed by your project. Consider changing the name of the project.\"}],\"suggested_fix\":\"Adjust the dependency metadata or Dependabot resolution setup so the project\u2019s development extra is not resolved as a self-dependency through pytest-xdist. Review the pytest-xdist development requirement and, if the resolver cannot disambiguate this project\u2019s name, configure Dependabot to resolve the update using an appropriate manifest or supported Python-version range.\",\"suggestion\":null,\"confidence\":0.94}",
+    "model": "gpt-6-luna",
+    "input_tokens": 7308,
+    "output_tokens": 693,
+    "latency_ms": 6872
+  }
+}

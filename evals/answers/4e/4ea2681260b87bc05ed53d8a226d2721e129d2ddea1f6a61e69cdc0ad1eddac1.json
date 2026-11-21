@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"infra_or_deploy\",\"probable_cause\":\"The container exceeded its 64 MiB memory limit while allocating 512 MiB, so the process was killed and exited with code 137.\",\"evidence\":[{\"line\":119,\"text\":\"Run docker run --rm --memory=64m --memory-swap=64m python:3.13-slim python -c \\\"data = b'x' * (512 * 1024 * 1024)\\\"\"},{\"line\":144,\"text\":\"##[error]Process completed with exit code 137.\"}],\"suggested_fix\":\"Raise the Docker memory limit above the allocation size (with enough extra for Python's overhead), or reduce the allocation to fit within the 64 MiB limit.\",\"suggestion\":null,\"confidence\":0.99}",
+    "model": "gpt-6-luna",
+    "input_tokens": 2381,
+    "output_tokens": 363,
+    "latency_ms": 3806
+  }
+}

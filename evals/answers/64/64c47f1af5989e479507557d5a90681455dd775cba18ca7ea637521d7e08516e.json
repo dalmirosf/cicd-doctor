@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\n  \"category\": \"broken_test\",\n  \"probable_cause\": \"The Validate step failed because rebuilding the project changed the committed dist artifacts, so the generated files do not match the repository contents.\",\n  \"evidence\": [\n    {\n      \"line\": 448,\n      \"text\": \"ERROR: Build result differs. Please build first with \\\"docker buildx bake build\\\"\"\n    },\n    {\n      \"line\": 449,\n      \"text\": \" M dist/index.cjs\"\n    },\n    {\n      \"line\": 450,\n      \"text\": \" M dist/index.cjs.map\"\n    },\n    {\n      \"line\": 451,\n      \"text\": \" M dist/licenses.txt\"\n    }\n  ],\n  \"suggested_fix\": \"Run `docker buildx bake build` with the intended dependencies and toolchain, then commit the regenerated dist/index.cjs, dist/index.cjs.map, and dist/licenses.txt files. Rerun validation and ensure the generated artifacts are clean in git.\",\n  \"suggestion\": null,\n  \"confidence\": 0.99\n}",
+    "model": "gpt-6-luna",
+    "input_tokens": 6099,
+    "output_tokens": 321,
+    "latency_ms": 3563
+  }
+}

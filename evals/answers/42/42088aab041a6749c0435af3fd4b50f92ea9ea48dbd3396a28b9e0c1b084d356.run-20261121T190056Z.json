@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"broken_test\",\"probable_cause\":\"The spellcheck lint check failed because it treats \u201cCBOR\u201d in a test file as an unknown word.\",\"evidence\":[{\"line\":226,\"text\":\"tests/format/js/binary-expression/long-chain/format.test.js:14:67 - Unknown word (CBOR)\"},{\"line\":227,\"text\":\"CSpell: Files checked: 2930, Issues found: 1 in 1 file.\"},{\"line\":228,\"text\":\"##[error]Process completed with exit code 1.\"}],\"suggested_fix\":\"If CBOR is correct terminology, add it to the repository's CSpell dictionary. Otherwise, correct or rephrase the text in the test file so it uses a recognized spelling.\",\"suggestion\":null,\"confidence\":0.99}",
+    "model": "gpt-6-luna",
+    "input_tokens": 1809,
+    "output_tokens": 248,
+    "latency_ms": 2844
+  }
+}

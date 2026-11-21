@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\n  \"category\": \"config_or_secrets\",\n  \"probable_cause\": \"The deploy step failed because the TOKEN environment variable was empty or unset, so the required deploy token was unavailable.\",\n  \"evidence\": [\n    {\n      \"line\": 119,\n      \"text\": \"Run : \\\"${TOKEN:?Error: the deploy token is empty or not set}\\\"\"\n    },\n    {\n      \"line\": 124,\n      \"text\": \"  TOKEN:\"\n    },\n    {\n      \"line\": 126,\n      \"text\": \"TOKEN: Error: the deploy token is empty or not set\"\n    }\n  ],\n  \"suggested_fix\": \"Check that the deploy token secret exists in the repository or environment and that the workflow references its exact name when setting TOKEN. Ensure the job has access to that secret, then rerun the workflow.\",\n  \"suggestion\": null,\n  \"confidence\": 0.98\n}",
+    "model": "gpt-6-luna",
+    "input_tokens": 2258,
+    "output_tokens": 248,
+    "latency_ms": 3523
+  }
+}

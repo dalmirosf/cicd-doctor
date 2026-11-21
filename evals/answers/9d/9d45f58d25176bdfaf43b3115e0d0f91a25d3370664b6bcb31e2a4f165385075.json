@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\n  \"category\": \"flaky\",\n  \"probable_cause\": \"Firefox setup failed on the Windows runner because the installer could not unlink its temporary setup file; the file was busy or locked. This may be an intermittent file-locking issue.\",\n  \"evidence\": [\n    {\n      \"line\": 279,\n      \"text\": \"Error: ERROR: Failed to set up firefox vstable_159.0.1!\"\n    },\n    {\n      \"line\": 285,\n      \"text\": \"- DefaultProvider: EBUSY: resource busy or locked, unlink 'D:\\\\a\\\\prettier\\\\prettier\\\\.tmp\\\\puppeteer\\\\firefox\\\\stable_159.0.1-Firefox Setup 159.0.1.exe'\"\n    },\n    {\n      \"line\": 295,\n      \"text\": \"Error: Failed to download one or more browsers. Run `npx puppeteer browsers install` to try again, or `npx puppeteer browsers clear` first if the cache holds an unfinished install.\"\n    }\n  ],\n  \"suggested_fix\": \"Retry the job. If the issue recurs, clear Puppeteer's browser cache before installation and check that no concurrent process is using the Firefox installer file; consider adding a bounded retry around browser setup on Windows.\",\n  \"suggestion\": null,\n  \"confidence\": 0.91\n}",
+    "model": "gpt-6-luna",
+    "input_tokens": 2912,
+    "output_tokens": 440,
+    "latency_ms": 3874
+  }
+}

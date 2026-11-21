@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"broken_test\",\"probable_cause\":\"The spellcheck step failed because CSpell flagged \u201cCBOR\u201d as an unknown word in a test file.\",\"evidence\":[{\"line\":226,\"text\":\"tests/format/js/binary-expression/long-chain/format.test.js:14:67 - Unknown word (CBOR)\"},{\"line\":227,\"text\":\"CSpell: Files checked: 2930, Issues found: 1 in 1 file.\"},{\"line\":228,\"text\":\"##[error]Process completed with exit code 1.\"}],\"suggested_fix\":\"Add \u201cCBOR\u201d to the repository\u2019s CSpell dictionary if it is a valid term, or revise the test text to use a recognized spelling.\",\"suggestion\":null,\"confidence\":0.99}",
+    "model": "gpt-6-luna",
+    "input_tokens": 1811,
+    "output_tokens": 212,
+    "latency_ms": 2566
+  }
+}

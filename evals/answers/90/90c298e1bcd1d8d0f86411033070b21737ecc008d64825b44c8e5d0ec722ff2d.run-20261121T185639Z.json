@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"network\",\"probable_cause\":\"The curl request failed because the host could not be resolved. The URL uses the .invalid domain, which is not publicly resolvable.\",\"evidence\":[{\"line\":123,\"text\":\"curl: (6) Could not resolve host: cicd-doctor-lab.invalid\"},{\"line\":124,\"text\":\"##[error]Process completed with exit code 6.\"}],\"suggested_fix\":\"Use the correct resolvable health-check URL, or configure a DNS record and network access for the intended host. If this is deliberately testing an invalid hostname, update the workflow to expect curl to fail rather than treating this step as a successful health check.\",\"suggestion\":null,\"confidence\":0.99}",
+    "model": "gpt-6-luna",
+    "input_tokens": 2026,
+    "output_tokens": 241,
+    "latency_ms": 2990
+  }
+}

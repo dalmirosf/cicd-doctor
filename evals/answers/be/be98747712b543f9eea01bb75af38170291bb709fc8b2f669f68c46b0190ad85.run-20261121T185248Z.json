@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\n  \"category\": \"config_or_secrets\",\n  \"probable_cause\": \"The Docker build fails because the Dockerfile tries to copy requirements-missing.txt, but that file is not present in the build context.\",\n  \"evidence\": [\n    {\n      \"line\": 147,\n      \"text\": \"\\\"/requirements-missing.txt\\\": not found\"\n    },\n    {\n      \"line\": 162,\n      \"text\": \"4 | >>> COPY requirements-missing.txt /app/\"\n    },\n    {\n      \"line\": 166,\n      \"text\": \"ERROR: failed to build: failed to solve: failed to compute cache key: failed to calculate checksum of ref 0fef2a29-aadb-43ca-98b5-edbc7a28f18a::bfy0929yeyg1bma15utkwb18q: \\\"/requirements-missing.txt\\\": not found\"\n    }\n  ],\n  \"suggested_fix\": \"Add requirements-missing.txt to the docker/copy-missing build context, or update the Dockerfile's COPY and pip install commands to use the requirements file that actually exists there.\",\n  \"suggestion\": null,\n  \"confidence\": 0.98\n}",
+    "model": "gpt-6-luna",
+    "input_tokens": 3030,
+    "output_tokens": 399,
+    "latency_ms": 3780
+  }
+}

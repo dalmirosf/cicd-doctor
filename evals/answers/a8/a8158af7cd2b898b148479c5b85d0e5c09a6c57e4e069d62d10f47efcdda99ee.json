@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\n  \"category\": \"dependency\",\n  \"probable_cause\": \"Dependabot could not resolve the project\u2019s development dependencies for Python 3.11+. The resolver treats pytest-xdist\u2019s dependency on pytest as a dependency on this repository\u2019s own project, making the requirements unsatisfiable.\",\n  \"evidence\": [\n    {\n      \"line\": 278,\n      \"text\": \"error: No solution found when resolving dependencies for split (markers: python_full_version >= '3.11')\"\n    },\n    {\n      \"line\": 278,\n      \"text\": \"The package `pytest-xdist` depends on the package `pytest` but the name is shadowed by your project.\"\n    },\n    {\n      \"line\": 292,\n      \"text\":",
+    "model": "gpt-6-luna",
+    "input_tokens": 7351,
+    "output_tokens": 800,
+    "latency_ms": 7505
+  }
+}

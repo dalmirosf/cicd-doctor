@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"network\",\"probable_cause\":\"The curl step failed because DNS could not resolve cicd-doctor-lab.invalid, so it could not reach the health endpoint.\",\"evidence\":[{\"line\":123,\"text\":\"curl: (6) Could not resolve host: cicd-doctor-lab.invalid\"},{\"line\":124,\"text\":\"##[error]Process completed with exit code 6.\"}],\"suggested_fix\":\"Point the health check at a valid, resolvable hostname for the service. If this endpoint is meant to be local or provided by another job or container, configure the appropriate service address and ensure it is available before running curl.\",\"suggestion\":null,\"confidence\":0.99}",
+    "model": "gpt-6-luna",
+    "input_tokens": 2008,
+    "output_tokens": 225,
+    "latency_ms": 2560
+  }
+}

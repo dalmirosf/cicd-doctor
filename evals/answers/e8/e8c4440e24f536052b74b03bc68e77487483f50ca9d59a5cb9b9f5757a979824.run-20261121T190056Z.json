@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"broken_test\",\"probable_cause\":\"Two resolve-plugin tests fail because the generated externalized-module stubs throw error messages that differ from the expected messages. The dev-server stub unexpectedly adds \u201cIs it installed?\u201d, while the production stub omits it.\",\"evidence\":[{\"line\":521,\"text\":\"\u276f packages/vite/src/node/__tests__/plugins/resolve.spec.ts (3 tests | 2 failed) 47ms\"},{\"line\":565,\"text\":\"AssertionError: expected a thrown error to be Error: Could not resolve \\\"peer${(() => { \u2026\"},{\"line\":577,\"text\":\"\\\". Is it installed?\\\"\"},{\"line\":597,\"text\":\"AssertionError: expected a thrown error to be Error: Could not resolve \\\"peer${(() => { \u2026\"},{\"line\":629,\"text\":\"      78|     expect(() => evaluateStub(code)).toThrow(\"}],\"suggested_fix\":\"Inspect externalized-module stub generation and its escaping for peer and parent module names. Make sure the generated dev-server and production stubs both throw the intended full error message, including the optional \u201cIs it installed?\u201d suffix only where expected, then rerun the resolve-plugin tests.\",\"suggestion\":null,\"confidence\":0.96}",
+    "model": "gpt-6-luna",
+    "input_tokens": 4966,
+    "output_tokens": 473,
+    "latency_ms": 5164
+  }
+}

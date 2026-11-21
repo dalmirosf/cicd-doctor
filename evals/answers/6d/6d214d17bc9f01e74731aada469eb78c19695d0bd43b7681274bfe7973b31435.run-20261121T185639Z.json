@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"flaky\",\"probable_cause\":\"The test sleeps for a random duration between 0 and 0.1 seconds but requires elapsed time to stay below 0.05 seconds. This run exceeded the threshold, so the test is inherently intermittent.\",\"evidence\":[{\"line\":199,\"text\":\"        time.sleep(random.uniform(0.0, 0.1))\"},{\"line\":201,\"text\":\"        assert elapsed < 0.05, f\\\"took {elapsed:.3f}s, budget 0.050s\\\"\"},{\"line\":202,\"text\":\"E       AssertionError: took 0.062s, budget 0.050s\"}],\"suggested_fix\":\"Avoid testing a random sleep against a strict wall-clock threshold. Test the intended behavior deterministically instead, or inject and control the delay in the test. If elapsed-time behavior is essential, use a threshold that accounts for scheduler variability and keep the measured operation independent of randomly chosen delays.\",\"suggestion\":null,\"confidence\":0.99}",
+    "model": "gpt-6-luna",
+    "input_tokens": 2562,
+    "output_tokens": 317,
+    "latency_ms": 3487
+  }
+}

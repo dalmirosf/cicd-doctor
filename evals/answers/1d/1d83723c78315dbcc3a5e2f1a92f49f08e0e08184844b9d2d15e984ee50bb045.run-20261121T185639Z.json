@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"broken_test\",\"probable_cause\":\"The type check failed because an @ts-expect-error directive in src/language-js/print/class-body.js is no longer suppressing a TypeScript error, so TypeScript reports it as unused.\",\"evidence\":[{\"line\":208,\"text\":\"##[error]src/language-js/print/class-body.js(269,5): error TS2578: Unused '@ts-expect-error' directive.\"},{\"line\":209,\"text\":\"##[error]Process completed with exit code 2.\"}],\"suggested_fix\":\"Inspect the code around line 269. Remove the @ts-expect-error directive if the following code now type-checks; otherwise update the code or directive so it suppresses the intended TypeScript error.\",\"suggestion\":null,\"confidence\":0.99}",
+    "model": "gpt-6-luna",
+    "input_tokens": 2126,
+    "output_tokens": 245,
+    "latency_ms": 3208
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\n  \"category\": \"network\",\n  \"probable_cause\": \"The wheel build failed while installing libatomic because yum could not resolve vault.centos.org to reach the CentOS repository.\",\n  \"evidence\": [\n    {\n      \"line\": 355,\n      \"text\": \"https://vault.centos.org/altarch/7/os/i386/repodata/repomd.xml: [Errno 14] curl#6 - \\\"Could not resolve host: vault.centos.org; Name or service not known\\\"\"\n    },\n    {\n      \"line\": 391,\n      \"text\": \"Error: The process '/usr/bin/docker' failed with exit code 1\"\n    }\n  ],\n  \"suggested_fix\": \"Check DNS and network access to vault.centos.org from the build container, then rerun the workflow. If the repository endpoint is unavailable persistently, configure the manylinux image to use a reachable CentOS mirror.\",\n  \"suggestion\": null,\n  \"confidence\": 0.98\n}",
+    "model": "gpt-6-luna",
+    "input_tokens": 4175,
+    "output_tokens": 284,
+    "latency_ms": 3354
+  }
+}

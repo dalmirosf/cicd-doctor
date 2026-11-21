@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"dependency\",\"probable_cause\":\"The Docker build failed because the base image tag `python:3.99-slim` does not exist in Docker Hub, so Docker could not resolve its metadata.\",\"evidence\":[{\"line\":136,\"text\":\"#2 ERROR: docker.io/library/python:3.99-slim: not found\"},{\"line\":143,\"text\":\"2 | >>> FROM python:3.99-slim\"},{\"line\":147,\"text\":\"ERROR: failed to build: failed to solve: python:3.99-slim: failed to resolve source metadata for docker.io/library/python:3.99-slim: docker.io/library/python:3.99-slim: not found\"}],\"suggested_fix\":\"Update the Dockerfile base image to an existing, supported Python slim tag, such as `python:3.12-slim`, then rerun the build.\",\"suggestion\":null,\"confidence\":0.99}",
+    "model": "gpt-6-luna",
+    "input_tokens": 2328,
+    "output_tokens": 236,
+    "latency_ms": 2435
+  }
+}

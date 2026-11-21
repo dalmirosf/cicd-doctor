@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\n  \"category\": \"dependency\",\n  \"probable_cause\": \"uv could not resolve the project dependencies because the urllib3<1.21 constraint conflicts with requests==2.32.3, which requires urllib3>=1.21.1,<3.\",\n  \"evidence\": [\n    {\n      \"line\": 181,\n      \"text\": \"error: No solution found when resolving dependencies\"\n    },\n    {\n      \"line\": 182,\n      \"text\": \"requests==2.32.3 depends on urllib3>=1.21.1,<3\"\n    },\n    {\n      \"line\": 183,\n      \"text\": \"your project depends on urllib3<1.21, we can conclude that your project's requirements are unsatisfiable.\"\n    }\n  ],\n  \"suggested_fix\": \"Update the project's urllib3 constraint so it allows a version compatible with requests==2.32.3 (for example, change urllib3<1.21 to urllib3>=1.21.1,<3), then rerun uv lock.\",\n  \"suggestion\": null,\n  \"confidence\": 0.99\n}",
+    "model": "gpt-6-luna",
+    "input_tokens": 3463,
+    "output_tokens": 292,
+    "latency_ms": 2909
+  }
+}

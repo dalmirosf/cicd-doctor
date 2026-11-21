@@ -1,0 +1,355 @@
+{
+  "seed": 7,
+  "pairs": [
+    {
+      "id": "p01",
+      "case_id": "vite-42557157506-1",
+      "variant": "llm [gpt-6-luna]",
+      "group": "main",
+      "stratum": "right",
+      "likely_partial": true,
+      "input": {
+        "expected_cause": "Timeout esperando logs del navegador en un test de HMR (mismo test que c02).",
+        "fix_summary": "1 commit(s), 6 file(s), +19/-19",
+        "answer_cause": "The bundled HMR test expected a browser log matching `/hot updated/`, but no matching log arrived before the test's wait timed out.",
+        "answer_fix": "Check the HMR behavior for the failing dynamic-import/export-acceptance case and verify that it emits the expected `hot updated` browser log. If the update is occurring but the test misses it, fix the test's browser-log synchronization rather than relying on a longer timeout."
+      }
+    },
+    {
+      "id": "p02",
+      "case_id": "prettier-44501225538-1",
+      "variant": "rules",
+      "group": "main",
+      "stratum": "rules",
+      "likely_partial": false,
+      "input": {
+        "expected_cause": "La verificaci\u00f3n de tipos falla: un argumento number donde se espera string (TS2345).",
+        "fix_summary": "3 commit(s), 2 file(s), +5/-2",
+        "answer_cause": "No known failure pattern matched the log of the failed step.",
+        "answer_fix": "Read the error lines of the failed step; the rule baseline has no match for this failure."
+      }
+    },
+    {
+      "id": "p03",
+      "case_id": "lab-opaque-exit-01",
+      "variant": "rules",
+      "group": "main",
+      "stratum": "rules",
+      "likely_partial": true,
+      "input": {
+        "expected_cause": "scripts/opaque.sh exits with code 3 without saying why.",
+        "fix_summary": "Make the script report what failed.",
+        "answer_cause": "No known failure pattern matched the log of the failed step.",
+        "answer_fix": "Read the error lines of the failed step; the rule baseline has no match for this failure."
+      }
+    },
+    {
+      "id": "p04",
+      "case_id": "build-push-action-34332850910-1",
+      "variant": "llm [gpt-6-luna]",
+      "group": "main",
+      "stratum": "right",
+      "likely_partial": true,
+      "input": {
+        "expected_cause": "La validaci\u00f3n falla porque el dist/ commiteado difiere del resultado del build (no se regener\u00f3).",
+        "fix_summary": "1 commit(s), 3 file(s), +173/-162",
+        "answer_cause": "The Validate step failed because rebuilding the project produced dist files that differ from the versions committed in the repository.",
+        "answer_fix": "Run `docker buildx bake build` using the expected build environment, review the generated changes to `dist/index.cjs`, `dist/index.cjs.map`, and `dist/licenses.txt`, and commit the updated artifacts. Then rerun validation."
+      }
+    },
+    {
+      "id": "p05",
+      "case_id": "vite-44761782135-1",
+      "variant": "llm [gpt-6-luna]",
+      "group": "main",
+      "stratum": "wrong",
+      "likely_partial": false,
+      "input": {
+        "expected_cause": "Falla un test de build y el reporter se rompe con 'Map.groupBy'; pas\u00f3 al reintentar el mismo commit.",
+        "fix_summary": "the same commit passed when the run was repeated",
+        "answer_cause": "The job runs on Node 20, where Map.groupBy is unavailable. Vitest 5 calls it while reporting the build-test run, causing an unhandled error and exit code 1.",
+        "answer_fix": "Run this job with a Node version that supports Map.groupBy (for example, Node 22), or pin Vitest to a version compatible with Node 20. If Node 20 must remain, add a suitable polyfill before Vitest starts."
+      }
+    },
+    {
+      "id": "p06",
+      "case_id": "lab-docker-base-01",
+      "variant": "llm+hints [gpt-6-luna]",
+      "group": "main",
+      "stratum": "right",
+      "likely_partial": false,
+      "input": {
+        "expected_cause": "The base image python:3.99-slim does not exist.",
+        "fix_summary": "Use an existing tag in FROM, for example python:3.13-slim.",
+        "answer_cause": "The Docker build cannot resolve its base image because the Dockerfile specifies the nonexistent tag python:3.99-slim.",
+        "answer_fix": "Change the Dockerfile's FROM tag to an existing Python image tag that matches the intended version, such as python:3.9-slim, then rerun the build."
+      }
+    },
+    {
+      "id": "p07",
+      "case_id": "lab-conn-refused-01",
+      "variant": "llm+hints [gpt-6-luna]",
+      "group": "main",
+      "stratum": "right",
+      "likely_partial": true,
+      "input": {
+        "expected_cause": "Nothing listens on 127.0.0.1:9, so the connection is refused.",
+        "fix_summary": "Start the service before connecting (a service container or a background step).",
+        "answer_cause": "The Python step tried to connect to 127.0.0.1:9, but the connection was refused because no service was listening on that port.",
+        "answer_fix": "If the step is meant to check a service, start that service before connecting and use its actual listening port. Otherwise, change the test to target a service that is available on the runner."
+      }
+    },
+    {
+      "id": "p08",
+      "case_id": "lab-oom-137-01",
+      "variant": "llm+hints [gpt-6-luna]",
+      "group": "main",
+      "stratum": "right",
+      "likely_partial": true,
+      "input": {
+        "expected_cause": "The container is limited to 64 MB and the process allocates 512 MB: it is killed.",
+        "fix_summary": "Raise the container's memory limit, or allocate less.",
+        "answer_cause": "The Docker container exceeded its 64 MB memory limit while Python tried to allocate 512 MB, so the process was killed with exit code 137.",
+        "answer_fix": "If the allocation should succeed, increase the container memory limit enough to accommodate Python and the 512 MB allocation, or reduce the allocation. If this step is intentionally testing out-of-memory behavior, make the workflow treat the expected exit 137 as a successful test."
+      }
+    },
+    {
+      "id": "p09",
+      "case_id": "prettier-43476758833-1",
+      "variant": "rules",
+      "group": "main",
+      "stratum": "rules",
+      "likely_partial": false,
+      "input": {
+        "expected_cause": "El spellcheck rechaza la palabra 'combinators' en el printer de CSS.",
+        "fix_summary": "1 commit(s), 1 file(s), +1/-1",
+        "answer_cause": "No known failure pattern matched the log of the failed step.",
+        "answer_fix": "Read the error lines of the failed step; the rule baseline has no match for this failure."
+      }
+    },
+    {
+      "id": "p10",
+      "case_id": "terraform-aws-vpc-33259857456-1",
+      "variant": "llm [gpt-6-luna]",
+      "group": "main",
+      "stratum": "wrong",
+      "likely_partial": false,
+      "input": {
+        "expected_cause": "terraform validate con Terraform 1.0.0 rechaza el argumento 'nullable' en las variables del m\u00f3dulo.",
+        "fix_summary": "1 commit(s), 2 file(s), +2/-4",
+        "answer_cause": "Terraform validation failed because the configuration uses the `nullable` variable argument, which is unsupported by the Terraform 1.0.0 version used in this minimum-version check.",
+        "answer_fix": "If Terraform 1.0.0 must remain supported, remove these `nullable = false` arguments and use a compatible way to validate inputs. Otherwise, raise the declared minimum Terraform version to 1.1 or later and update the minimum-version check accordingly."
+      }
+    },
+    {
+      "id": "p11",
+      "case_id": "vite-44758547903-1",
+      "variant": "llm [gpt-6-luna]",
+      "group": "main",
+      "stratum": "wrong",
+      "likely_partial": false,
+      "input": {
+        "expected_cause": "Un test de HMR espera el color 'orange' y recibe 'black'; pas\u00f3 al reintentar el mismo commit.",
+        "fix_summary": "the same commit passed when the run was repeated",
+        "answer_cause": "The serve end-to-end test for deduplicating server-rendered stylesheet links failed: the page kept the color black instead of reaching the expected orange state before the assertion timed out.",
+        "answer_fix": "Investigate the stylesheet-link deduplication and HMR update path used by this test; ensure the linked stylesheet is loaded and its orange rule is applied before the assertion. If the update is intentionally asynchronous, verify the test waits for the intended state without masking a real regression."
+      }
+    },
+    {
+      "id": "p12",
+      "case_id": "lab-disk-full-01",
+      "variant": "rules",
+      "group": "main",
+      "stratum": "rules",
+      "likely_partial": true,
+      "input": {
+        "expected_cause": "The 8 MB tmpfs fills up while dd writes 64 MB.",
+        "fix_summary": "Write less, or give the step more disk.",
+        "answer_cause": "The runner failed: it was shut down, lost its connection or ran out of disk.",
+        "answer_fix": "Re-run the job. If the disk filled up, free space before the heavy step (remove unused toolchains, prune Docker images) or write less to the runner's disk."
+      }
+    },
+    {
+      "id": "p13",
+      "case_id": "vite-42996511749-1",
+      "variant": "llm [gpt-6-luna]",
+      "group": "main",
+      "stratum": "wrong",
+      "likely_partial": true,
+      "input": {
+        "expected_cause": "Un worker de vitest sale con c\u00f3digo 1 en Windows al correr el test css-lightningcss-proxy.",
+        "fix_summary": "1 commit(s), 6 file(s), +117/-20",
+        "answer_cause": "Vitest failed because a worker process exited unexpectedly while running the css-lightningcss-proxy test file. The excerpt does not show why the worker exited.",
+        "answer_fix": "Run the css-lightningcss-proxy test file by itself and capture the worker's stderr or enable additional Vitest diagnostics to identify the underlying failure. The log does not establish a specific code change."
+      }
+    },
+    {
+      "id": "p14",
+      "case_id": "vite-44445588794-1",
+      "variant": "llm [gpt-6-luna]",
+      "group": "main",
+      "stratum": "wrong",
+      "likely_partial": false,
+      "input": {
+        "expected_cause": "El build falla porque el bundle (71.03 kB) supera el tope de 71 kB.",
+        "fix_summary": "1 commit(s), 1 file(s), +1/-1",
+        "answer_cause": "The Vite bundle build failed because the generated bundle was 71.03 kB, exceeding the configured 71 kB size limit.",
+        "answer_fix": "Reduce the generated Vite bundle by at least 0.03 kB so it falls below the configured limit. If the increase is intentional, review and update the bundle-size limit in the build configuration."
+      }
+    },
+    {
+      "id": "p15",
+      "case_id": "vite-44672066698-1",
+      "variant": "llm [gpt-6-luna]",
+      "group": "main",
+      "stratum": "wrong",
+      "likely_partial": false,
+      "input": {
+        "expected_cause": "Timeout esperando logs del navegador en un test de HMR; pas\u00f3 al reintentar el mismo commit.",
+        "fix_summary": "the same commit passed when the run was repeated",
+        "answer_cause": "The bundled-dev HMR test failed because the browser did not emit the expected hot-update log before the test's wait expired. The excerpt does not show why the update was missing.",
+        "answer_fix": "Investigate why the HMR update is not reaching the browser in this test, including the bundled dev server's update handling and the test's triggering sequence. If the update is produced but the log is missed, adjust the test synchronization to wait for the update event reliably rather than relying on timing."
+      }
+    },
+    {
+      "id": "p16",
+      "case_id": "lab-py-assert-02",
+      "variant": "llm [gpt-6-luna]",
+      "group": "main",
+      "stratum": "right",
+      "likely_partial": false,
+      "input": {
+        "expected_cause": "The test test_add expects add(1, 2) to be 4; it is 3.",
+        "fix_summary": "Fix the expected value in tests/test_math.py (add(1, 2) == 3).",
+        "answer_cause": "The test_add assertion fails because it expects add(1, 2) to return 4, but the function returns 3.",
+        "answer_fix": "Check the intended behavior of add. If it should perform ordinary addition, change the test expectation to 3. If the intended result is 4, fix the implementation accordingly."
+      }
+    },
+    {
+      "id": "p17",
+      "case_id": "vite-44487704537-1",
+      "variant": "llm [gpt-6-luna]",
+      "group": "main",
+      "stratum": "wrong",
+      "likely_partial": false,
+      "input": {
+        "expected_cause": "Un test de HMR SSR ('invalidate') recibe los mensajes de log en otro orden del esperado.",
+        "fix_summary": "1 commit(s), 2 file(s), +182/-80",
+        "answer_cause": "The HMR SSR serve tests received stale or out-of-order update messages: one timed out waiting for an update and two observed old values or unexpected log messages. This suggests a timing or synchronization race in the test run.",
+        "answer_fix": "Check the HMR SSR test's update sequencing and synchronization. Wait for the expected update and resulting state rather than relying on message timing; if the failures reproduce consistently, investigate why SSR dependency updates are not propagating the latest value."
+      }
+    },
+    {
+      "id": "p18",
+      "case_id": "terraform-aws-vpc-33118753094-1",
+      "variant": "llm [gpt-6-luna]",
+      "group": "main",
+      "stratum": "right",
+      "likely_partial": true,
+      "input": {
+        "expected_cause": "terraform validate con Terraform 1.0.0 falla en el m\u00f3dulo rds_security_group: optional() con valor por defecto no soportado.",
+        "fix_summary": "1 commit(s), 2 file(s), +2/-2",
+        "answer_cause": "Terraform validation failed because the rds_security_group module uses optional object attributes with default values, which the Terraform 1.0.0 job cannot parse without an unsupported experimental feature.",
+        "answer_fix": "Use Terraform 1.3 or newer for this validation job, where optional object attributes with defaults are supported, or pin the rds_security_group module to a version compatible with Terraform 1.0."
+      }
+    },
+    {
+      "id": "p19",
+      "case_id": "lab-flaky-random-01",
+      "variant": "rules",
+      "group": "main",
+      "stratum": "rules",
+      "likely_partial": false,
+      "input": {
+        "expected_cause": "test_coin_flip depends on a random number and fails about half of the time.",
+        "fix_summary": "Seed the random generator or remove the randomness from the test.",
+        "answer_cause": "The test `tests/test_flaky_random.py::test_coin_flip` failed.",
+        "answer_fix": "Run the failing test locally, then fix the code or the test's expectation."
+      }
+    },
+    {
+      "id": "p20",
+      "case_id": "lab-flaky-timing-01",
+      "variant": "llm [gpt-6-luna]",
+      "group": "main",
+      "stratum": "right",
+      "likely_partial": true,
+      "input": {
+        "expected_cause": "test_fast_enough asserts a 50 ms budget around a random sleep of up to 100 ms.",
+        "fix_summary": "Remove the timing assertion or make the budget independent of the sleep.",
+        "answer_cause": "The test failed because its randomly chosen sleep duration and runtime exceeded the strict 0.050-second budget; it slept for approximately 0.062 seconds on this run.",
+        "answer_fix": "Avoid asserting a tight wall-clock threshold around a random sleep. Make the test deterministic, or test the intended timing behavior with a less fragile approach and a suitably generous threshold."
+      }
+    },
+    {
+      "id": "p21",
+      "case_id": "lab-docker-copy-01",
+      "variant": "llm [gpt-6-luna]",
+      "group": "reserve",
+      "stratum": "right",
+      "likely_partial": false,
+      "input": {
+        "expected_cause": "The Dockerfile copies requirements-missing.txt, which is not in the build context.",
+        "fix_summary": "Add the file to docker/copy-missing/, or fix the path in the COPY instruction.",
+        "answer_cause": "The Docker build fails because the Dockerfile tries to copy requirements-missing.txt, but that file is not present in the build context.",
+        "answer_fix": "Add requirements-missing.txt to docker/copy-missing (the build context), or update the Dockerfile's COPY and pip install commands to use the requirements file that actually exists. Then rerun the Docker build."
+      }
+    },
+    {
+      "id": "p22",
+      "case_id": "build-push-action-38607052120-1",
+      "variant": "llm [gpt-6-luna]",
+      "group": "reserve",
+      "stratum": "right",
+      "likely_partial": true,
+      "input": {
+        "expected_cause": "La validaci\u00f3n falla porque el dist/ commiteado difiere del resultado del build (no se regener\u00f3).",
+        "fix_summary": "1 commit(s), 3 file(s), +251/-260",
+        "answer_cause": "The Validate step failed because rebuilding the project changed the committed dist artifacts, so the generated files do not match the repository contents.",
+        "answer_fix": "Run `docker buildx bake build` with the intended dependencies and toolchain, then commit the regenerated dist/index.cjs, dist/index.cjs.map, and dist/licenses.txt files. Rerun validation and ensure the generated artifacts are clean in git."
+      }
+    },
+    {
+      "id": "p23",
+      "case_id": "vite-43179524933-1",
+      "variant": "llm [gpt-6-luna]",
+      "group": "reserve",
+      "stratum": "wrong",
+      "likely_partial": false,
+      "input": {
+        "expected_cause": "Fallan 3 tests de build y el reporter se rompe con 'Map.groupBy is not a function'.",
+        "fix_summary": "1 commit(s), 2 file(s), +80/-17",
+        "answer_cause": "The test runner crashed because the installed Vitest code calls Map.groupBy, which is unavailable in the Node 20 runtime used by this job. This appears to be a Node/Vitest compatibility mismatch.",
+        "answer_fix": "Use a Node version that supports Map.groupBy for this Vitest version, or pin Vitest to a release compatible with Node 20. Then rerun the build tests to check whether the three reported test failures have separate underlying causes."
+      }
+    },
+    {
+      "id": "p24",
+      "case_id": "lab-obscure-tool-01",
+      "variant": "llm [gpt-6-luna]",
+      "group": "reserve",
+      "stratum": "wrong",
+      "likely_partial": false,
+      "input": {
+        "expected_cause": "An in-house tool fails with its own error code E9921.",
+        "fix_summary": "Look up E9921 in the tool's documentation.",
+        "answer_cause": "The frobnicate tool rejected manifest.lab with state QX. The log does not explain what that state means, but the failure points to the manifest being invalid or incompatible with the tool.",
+        "answer_fix": "Check manifest.lab against the format and constraints expected by frobnicate 1.4.2. Look up the meaning of state QX, correct the manifest accordingly, and rerun the step."
+      }
+    },
+    {
+      "id": "p25",
+      "case_id": "lab-py-modnf-01",
+      "variant": "rules",
+      "group": "reserve",
+      "stratum": "rules",
+      "likely_partial": true,
+      "input": {
+        "expected_cause": "labpkg.cli imports requests, which is not declared in pyproject.toml.",
+        "fix_summary": "Add requests to [project].dependencies in python/pyproject.toml.",
+        "answer_cause": "The module `requests` is imported but not installed in the environment.",
+        "answer_fix": "Declare the package that provides `requests` in the project's dependencies (for example `pyproject.toml`) and reinstall; check the module name for typos."
+      }
+    }
+  ]
+}

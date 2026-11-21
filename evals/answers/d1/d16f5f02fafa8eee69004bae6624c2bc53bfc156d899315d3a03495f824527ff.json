@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"broken_test\",\"probable_cause\":\"The serve end-to-end test for deduplicating server-rendered stylesheet links failed: the page kept the color black instead of reaching the expected orange state before the assertion timed out.\",\"evidence\":[{\"line\":582,\"text\":\"FAIL   serve  playground/hmr/__tests__/hmr.spec.ts > deduplicate server rendered link stylesheet\"},{\"line\":584,\"text\":\"AssertionError: expected 'black' to be 'orange' // Object.is equality\"},{\"line\":590,\"text\":\"Received: \\\"black\\\"\"},{\"line\":600,\"text\":\"Caused by: Error: Matcher did not succeed in time.\"}],\"suggested_fix\":\"Investigate the stylesheet-link deduplication and HMR update path used by this test; ensure the linked stylesheet is loaded and its orange rule is applied before the assertion. If the update is intentionally asynchronous, verify the test waits for the intended state without masking a real regression.\",\"suggestion\":null,\"confidence\":0.87}",
+    "model": "gpt-6-luna",
+    "input_tokens": 4726,
+    "output_tokens": 396,
+    "latency_ms": 3930
+  }
+}

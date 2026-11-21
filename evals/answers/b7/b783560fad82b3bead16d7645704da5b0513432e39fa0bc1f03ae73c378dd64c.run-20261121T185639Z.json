@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"broken_test\",\"probable_cause\":\"Terraform validation failed because the configuration uses the nullable argument in variable blocks, which Terraform 1.0 does not support.\",\"evidence\":[{\"line\":424,\"text\":\"Terraform validate.......................................................Failed\"},{\"line\":440,\"text\":\"\u2502 1214:   nullable = false\"},{\"line\":442,\"text\":\"\u2502 An argument named \\\"nullable\\\" is not expected here.\"},{\"line\":458,\"text\":\"\u2502 1221:   nullable    = false\"}],\"suggested_fix\":\"For Terraform 1.0 compatibility, remove the nullable arguments from the affected variable blocks. Alternatively, if those arguments are required, raise the module's minimum Terraform version and update the minimum-version validation job accordingly.\",\"suggestion\":null,\"confidence\":0.99}",
+    "model": "gpt-6-luna",
+    "input_tokens": 4144,
+    "output_tokens": 428,
+    "latency_ms": 4676
+  }
+}

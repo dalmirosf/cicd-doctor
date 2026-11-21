@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\"category\":\"config_or_secrets\",\"probable_cause\":\"The Terraform 1.0.0 validation step cannot parse features used in the subnet module: optional object attributes require an experiment, and this version does not accept the nullable argument. Initialization fails before validation can run.\",\"evidence\":[{\"line\":428,\"text\":\"'terraform init' failed, '/usr/bin/terraform validate' skipped: examples/network-firewall\"},{\"line\":442,\"text\":\"\u2502 Error: Optional object type attributes are experimental\"},{\"line\":499,\"text\":\"\u2502 An argument named \\\"nullable\\\" is not expected here.\"},{\"line\":561,\"text\":\"\u2502 Optional attribute modifier expects only one argument: the attribute type.\"}],\"suggested_fix\":\"Align the minimum Terraform version with the syntax used by the module and its examples. If Terraform 1.0.0 must remain supported, remove or adapt unsupported variable features and use the compatible optional-attribute experiment where applicable; otherwise raise the configured minimum and run this job with a version that supports these features.\",\"suggestion\":null,\"confidence\":0.97}",
+    "model": "gpt-6-luna",
+    "input_tokens": 4403,
+    "output_tokens": 472,
+    "latency_ms": 5417
+  }
+}

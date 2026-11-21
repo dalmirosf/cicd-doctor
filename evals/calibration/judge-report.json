@@ -1,0 +1,121 @@
+{
+  "judge_model": "gpt-6.2-sol",
+  "prompt_version": "judge-v1",
+  "fingerprint": "2f17884a565b74b3773bdebe53faf1947b05394bba03055bf728ee003329c5a9",
+  "thresholds": {
+    "exact": 0.75,
+    "kappa": 0.6,
+    "gross": 0
+  },
+  "groups": {
+    "main": {
+      "agreement": {
+        "n": 20,
+        "judged": 20,
+        "unjudged": 0,
+        "exact": 0.9,
+        "exact_ci95": [
+          0.699,
+          0.9721
+        ],
+        "kappa": 0.9091,
+        "confusion": {
+          "0": {
+            "0": 3,
+            "1": 0,
+            "2": 0
+          },
+          "1": {
+            "0": 0,
+            "1": 2,
+            "2": 0
+          },
+          "2": {
+            "0": 0,
+            "1": 2,
+            "2": 13
+          }
+        },
+        "gross": []
+      },
+      "acceptance": {
+        "accepted": true,
+        "failures": []
+      }
+    },
+    "reserve": {
+      "agreement": {
+        "n": 5,
+        "judged": 5,
+        "unjudged": 0,
+        "exact": 0.8,
+        "exact_ci95": [
+          0.3755,
+          0.9638
+        ],
+        "kappa": 0.5455,
+        "confusion": {
+          "0": {
+            "0": 0,
+            "1": 0,
+            "2": 0
+          },
+          "1": {
+            "0": 0,
+            "1": 1,
+            "2": 1
+          },
+          "2": {
+            "0": 0,
+            "1": 0,
+            "2": 3
+          }
+        },
+        "gross": []
+      },
+      "acceptance": {
+        "accepted": false,
+        "failures": [
+          "only 5 of 20 pairs are labelled",
+          "weighted kappa below 0.6"
+        ]
+      }
+    },
+    "all": {
+      "agreement": {
+        "n": 25,
+        "judged": 25,
+        "unjudged": 0,
+        "exact": 0.88,
+        "exact_ci95": [
+          0.7004,
+          0.9583
+        ],
+        "kappa": 0.876,
+        "confusion": {
+          "0": {
+            "0": 3,
+            "1": 0,
+            "2": 0
+          },
+          "1": {
+            "0": 0,
+            "1": 3,
+            "2": 1
+          },
+          "2": {
+            "0": 0,
+            "1": 2,
+            "2": 16
+          }
+        },
+        "gross": []
+      },
+      "acceptance": {
+        "accepted": true,
+        "failures": []
+      }
+    }
+  },
+  "accepted": true
+}

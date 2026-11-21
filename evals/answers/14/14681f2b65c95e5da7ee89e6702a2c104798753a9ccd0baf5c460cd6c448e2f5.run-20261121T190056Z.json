@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
+  "result": {
+    "raw_json": "{\n  \"category\": \"broken_test\",\n  \"probable_cause\": \"The ESLint step failed because three source locations violate lint rules: two use optional positional parameters where an options object is preferred, and one uses an unnecessary nested ternary.\",\n  \"evidence\": [\n    {\n      \"line\": 218,\n      \"text\": \"22:33  error  Prefer an options object over optional positional parameters  unicorn/prefer-options-parameter\"\n    },\n    {\n      \"line\": 221,\n      \"text\": \"668:13  error  Do not use unnecessary nested ternary expressions  unicorn/no-unnecessary-nested-ternary\"\n    },\n    {\n      \"line\": 224,\n      \"text\": \"153:22  error  Prefer an options object over optional positional parameters  unicorn/prefer-options-parameter\"\n    },\n    {\n      \"line\": 226,\n      \"text\": \"\u2716 3 problems (3 errors, 0 warnings)\"\n    }\n  ],\n  \"suggested_fix\": \"Update the indicated code in src/document/builders/if-break.js and tests/integration/run-cli.js to pass optional arguments through an options object, and simplify the nested ternary in src/language-js/print/jsx.js. Rerun the ESLint step.\",\n  \"suggestion\": null,\n  \"confidence\": 0.99\n}",
+    "model": "gpt-6-luna",
+    "input_tokens": 1955,
+    "output_tokens": 336,
+    "latency_ms": 3240
+  }
+}
