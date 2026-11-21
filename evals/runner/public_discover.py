@@ -9,10 +9,15 @@ Two pairings, and nothing is a case until the owner labels it (D-102):
   candidate); cancelled and skipped runs in between are ignored.
 - **H2**, a re-run fixed it (a flaky candidate): the same commit has a later green attempt.
 
+- **H1-pr**, the same as H1 for a pull request from a fork, paired by pull request instead of by
+  branch: the PR of the failed head commit (`commits/{sha}/pulls`), its commits
+  (`pulls/{n}/commits`), and the runs of the same workflow on the next head commits of that PR
+  (at most `MAX_COMMITS`). The same filters apply. A PR whose history no longer has the failed
+  commit (a force-push) is discarded.
+
 A matrix is accepted when every failed job fails at the same step, taking the lowest job id;
 different steps, a job that never started and workflows on the exclusion list are discarded, each
-with its reason. A pull request from a fork is discarded too: it cannot be paired by branch.
-"""
+with its reason."""
 
 import re
 from collections.abc import Callable, Sequence
@@ -31,6 +36,7 @@ from evals.runner.public_common import (
     DEFAULT_WORKFLOW_EXCLUSIONS,
     BudgetExhaustedError,
     clean_label,
+    is_gone,
     license_problem,
     read_json,
     repo_license,
@@ -152,6 +158,7 @@ def _h1(result: Discovery, gh: Gh, since: str, terms: Sequence[str], limit: int 
                 break
     failed.sort(key=_created, reverse=True)
     branch_runs: dict[tuple[object, str], list[dict[str, Any]]] = {}
+    pulls = _PullCache()
     for run in failed:
         if _full(result, limit):
             return
@@ -160,7 +167,7 @@ def _h1(result: Discovery, gh: Gh, since: str, terms: Sequence[str], limit: int 
             continue
         head_repo = run.get("head_repository")
         if isinstance(head_repo, dict) and head_repo.get("full_name") != result.repo:
-            result.discard(run, "pull request from a fork: cannot be paired by branch")
+            _pair_fork(result, gh, run, pulls)
             continue
         branch = run.get("head_branch")
         if not isinstance(branch, str) or not branch:
@@ -177,7 +184,93 @@ def _h1(result: Discovery, gh: Gh, since: str, terms: Sequence[str], limit: int 
         _pair(result, gh, run, branch_runs[key])
 
 
-def _pair(result: Discovery, gh: Gh, run: dict[str, Any], siblings: list[dict[str, Any]]) -> None:
+@dataclass
+class _PullCache:
+    """What was already read about pull requests, so that two failures of one PR cost it once."""
+
+    by_sha: dict[str, int | None] = field(default_factory=dict)
+    commits: dict[int, list[str] | None] = field(default_factory=dict)
+    runs: dict[tuple[object, str], list[dict[str, Any]]] = field(default_factory=dict)
+
+
+def _pull_of(result: Discovery, gh: Gh, sha: str, cache: _PullCache) -> int | None:
+    if sha not in cache.by_sha:
+        try:
+            data = read_json(gh, f"repos/{result.repo}/commits/{sha}/pulls?per_page=30")
+        except CaptureError as error:
+            if not is_gone(error):
+                raise
+            data = []
+        found = [
+            p
+            for p in (data if isinstance(data, list) else [])
+            if isinstance(p, dict)
+            and isinstance(p.get("number"), int)
+            and ((p.get("base") or {}).get("repo") or {}).get("full_name") == result.repo
+        ]
+        found.sort(key=lambda p: (p.get("head") or {}).get("sha") != sha)  # same head first
+        cache.by_sha[sha] = found[0]["number"] if found else None
+    return cache.by_sha[sha]
+
+
+def _pull_commits(result: Discovery, gh: Gh, number: int, cache: _PullCache) -> list[str] | None:
+    if number not in cache.commits:
+        try:
+            data = read_json(gh, f"repos/{result.repo}/pulls/{number}/commits?per_page=100")
+        except CaptureError as error:
+            if not is_gone(error):
+                raise
+            data = None
+        shas = (
+            [str(c.get("sha")) for c in data if isinstance(c, dict)]
+            if isinstance(data, list)
+            else []
+        )
+        cache.commits[number] = shas or None
+    return cache.commits[number]
+
+
+def _pair_fork(result: Discovery, gh: Gh, run: dict[str, Any], cache: _PullCache) -> None:
+    """H1-pr: pair a failed run of a fork PR by pull request, not by branch."""
+    sha = str(run.get("head_sha") or "")
+    if not sha:
+        result.discard(run, "no head commit")
+        return
+    number = _pull_of(result, gh, sha, cache)
+    if number is None:
+        result.discard(run, "fork run: no pull request for the commit")
+        return
+    shas = _pull_commits(result, gh, number, cache)
+    if shas is None or sha not in shas:
+        result.discard(run, "fork run: the commit is no longer in the pull request")
+        return
+    later = shas[shas.index(sha) + 1 :][:MAX_COMMITS]
+    if not later:
+        result.discard(run, "fork run: no later commit in the pull request")
+        return
+    siblings = [run]
+    for later_sha in later:
+        key = (run.get("workflow_id"), later_sha)
+        if key not in cache.runs:
+            cache.runs[key] = _runs(
+                gh,
+                f"repos/{result.repo}/actions/workflows/{run.get('workflow_id')}/runs"
+                f"?head_sha={later_sha}&per_page=100",
+            )
+        siblings += cache.runs[key]
+    siblings.sort(key=lambda r: (_created(r), r.get("id") or 0))
+    _pair(result, gh, run, siblings, pairing="H1-pr", pr=number)
+
+
+def _pair(
+    result: Discovery,
+    gh: Gh,
+    run: dict[str, Any],
+    siblings: list[dict[str, Any]],
+    *,
+    pairing: str = "H1",
+    pr: int | None = None,
+) -> None:
     later = [
         r for r in siblings if (_created(r), r.get("id") or 0) > (_created(run), run.get("id") or 0)
     ]
@@ -225,7 +318,8 @@ def _pair(result: Discovery, gh: Gh, run: dict[str, Any], siblings: list[dict[st
             run,
             job,
             attempt=int(run.get("run_attempt") or 1),
-            pairing="H1",
+            pairing=pairing,
+            pr=pr,
             fix_sha=str(green.get("head_sha")),
             fix_run_id=green.get("id"),
             fix_attempt=None,
@@ -320,6 +414,7 @@ def _record(
     *,
     attempt: int,
     pairing: str,
+    pr: int | None = None,
     fix_sha: str,
     fix_run_id: object,
     fix_attempt: int | None,
@@ -332,6 +427,7 @@ def _record(
     return {
         "id": _candidate_id(repo, run.get("id"), attempt),
         "pairing": pairing,
+        "pr": pr,
         "run_id": run.get("id"),
         "attempt": attempt,
         "workflow": clean_label(run.get("name")),
