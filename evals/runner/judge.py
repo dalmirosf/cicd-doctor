@@ -233,6 +233,7 @@ class LLMJudge:
         self._nonce = nonce_factory
         self.hits = 0
         self.misses = 0
+        self.used: set[Path] = set()  # every entry looked up (hit or miss): what prune keeps
 
     @property
     def model(self) -> str:
@@ -250,6 +251,7 @@ class LLMJudge:
 
     async def judge(self, item: JudgeInput) -> Judgement:
         path = self._dir / f"{self.key(item)[:2]}" / f"{self.key(item)}.json"
+        self.used.add(path)
         cached = self._read(path)
         if cached is not None:
             self.hits += 1

@@ -38,7 +38,7 @@ uv run python scripts/load_webhooks.py --cleanup # webhook load test against the
 uv run pytest -m live                    # real OpenAI calls (smoke + injection); skipped without OPENAI_API_KEY and OPENAI_MODEL in .env, costs money, on demand only
 uv run python -m evals run --variant rules        # eval report on evals/cases/lab (25 cases captured from real lab runs)
 uv run python -m evals run --variant llm+hints --model <id> [--live --price <id>=IN,OUT]   # LLM variants: cache only, or --live calls OpenAI (D-65)
-uv run python -m evals prune [--apply] [--model <id>]   # delete answers in evals/answers/ that no current case x variant x model uses (dry run by default, D-100)
+uv run python -m evals prune [--apply] [--model <id>] [--judge-model <id>]   # delete answers in evals/answers/ that no current case x variant x model uses (dry run by default, D-100); the judge's cache is touched only with --judge-model (D-115)
 uv run python -m evals run --variant llm+hints --model <id> --judge --judge-model <id> [--judge-price <id>=IN,OUT --live]   # cause match (D-103); off without --judge
 uv run python -m evals calibrate sheet   # then label evals/calibration/judge-labels.yaml, then `calibrate score [--live]` and `calibrate report` (D-104)
 uv run python -m evals readme-table [--check]   # regenerate the README comparison table from evals/baseline.json (D-111)

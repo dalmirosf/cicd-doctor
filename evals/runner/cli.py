@@ -11,6 +11,7 @@ from pathlib import Path
 
 from cicd_doctor.adapters.llm.tiktoken_counter import TiktokenCounter
 from evals.runner.baseline import DEFAULT_BASELINE, load_baseline
+from evals.runner.calibration import DEFAULT_CALIBRATION_DIR, KEY_FILE, load_key
 from evals.runner.capture import (
     DEFAULT_MANIFEST,
     CaptureError,
@@ -18,7 +19,7 @@ from evals.runner.capture import (
     capture_all,
     load_manifest,
 )
-from evals.runner.cases import DEFAULT_CASES_DIR, SOURCES
+from evals.runner.cases import DEFAULT_CASES_DIR, SOURCES, load_cases
 from evals.runner.estimate import (
     DEFAULT_ASSUMED_OUTPUT_TOKENS,
     build_estimating_setups,
@@ -29,6 +30,7 @@ from evals.runner.estimate import (
 )
 from evals.runner.gate_cli import PIPELINE_LOGGER, accept, add_gate_commands, check
 from evals.runner.injection import write_cases
+from evals.runner.judge import DEFAULT_JUDGE_DIR, build_judge
 from evals.runner.judge_cli import add_calibrate_command, add_run_arguments, apply_judge, calibrate
 from evals.runner.live import (
     DEFAULT_CACHE_DIR,
@@ -39,13 +41,13 @@ from evals.runner.live import (
     build_setups,
     parse_prices,
 )
-from evals.runner.prune import prune, used_entries
+from evals.runner.prune import JUDGE_FOLDER, judge_used_entries, prune, used_entries
 from evals.runner.public_cli import PUBLIC_COMMANDS, add_public_commands, run_public
 from evals.runner.readme_table import DEFAULT_README, check_readme, write_readme
 from evals.runner.recording import BudgetExceeded, SpendGuard
 from evals.runner.report import DEFAULT_REPORTS_DIR, write_report
 from evals.runner.run import EvalError, run_evals
-from evals.runner.variants import ALL_VARIANTS, LLM_VARIANTS, SIMILAR_VARIANT
+from evals.runner.variants import ALL_VARIANTS, LLM_VARIANTS, SIMILAR_VARIANT, CaseResult
 
 EXIT_BUDGET = 5  # a live run stopped at --max-cost-usd or --max-calls (D-108)
 
@@ -162,6 +164,14 @@ def build_parser() -> argparse.ArgumentParser:
     prune_cmd.add_argument("--model", help="comma-separated model ids (default: OPENAI_MODEL)")
     prune_cmd.add_argument("--answers-dir", type=Path, default=DEFAULT_CACHE_DIR)
     prune_cmd.add_argument("--apply", action="store_true", help="delete (default: dry run)")
+    prune_cmd.add_argument(
+        "--judge-model",
+        help="also prune the judge's cache (evals/answers/judge, D-115): keep what this judge "
+        "model would look up for the current answers and the calibration pairs; without it the "
+        "judge's cache is not touched",
+    )
+    prune_cmd.add_argument("--judge-cache-dir", type=Path, default=DEFAULT_JUDGE_DIR)
+    prune_cmd.add_argument("--calibration-dir", type=Path, default=DEFAULT_CALIBRATION_DIR)
     add_run_arguments(run)
     add_calibrate_command(commands)
 
@@ -360,10 +370,29 @@ def _prune(args: argparse.Namespace) -> int:
         raise EvalError("prune needs a model (--model or OPENAI_MODEL)")
     sources = [s.strip() for s in args.sources.split(",") if s.strip()]
     setups = build_setups(models, live=False, cache_dir=args.answers_dir, settings=settings)
+    results: list[CaseResult] = []
     used = asyncio.run(
-        used_entries(setups, sources, args.cases_dir, TiktokenCounter(), build_embedder(settings))
+        used_entries(
+            setups,
+            sources,
+            args.cases_dir,
+            TiktokenCounter(),
+            build_embedder(settings),
+            results_out=results,
+        )
     )
-    result = prune(args.answers_dir, used, apply=args.apply)
+    judge_used = None
+    if args.judge_model:
+        judge_dir = args.judge_cache_dir
+        if judge_dir.resolve() != (args.answers_dir / JUDGE_FOLDER).resolve():
+            raise EvalError("--judge-cache-dir must be the judge folder inside --answers-dir")
+        judge = build_judge(args.judge_model, live=False, cache_dir=judge_dir)
+        key = args.calibration_dir / KEY_FILE
+        pairs = load_key(key) if key.is_file() else []
+        judge_used = asyncio.run(
+            judge_used_entries(judge, results, load_cases(args.cases_dir, sources), pairs)
+        )
+    result = prune(args.answers_dir, used, apply=args.apply, judge_used=judge_used)
     verb = "deleted" if result.deleted else "would delete"
     for path in result.orphans:
         print(f"{verb}: {path.relative_to(args.answers_dir)}")
