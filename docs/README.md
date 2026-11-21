@@ -35,6 +35,7 @@ plan says something different from the sources above, the phase `README.md` list
    2. [`phases/p1c/`](phases/p1c/README.md): the real GitHub (check runs, sticky comment, logs, authentication).
    3. [`phases/p2/`](phases/p2/README.md): memory (embeddings, cache, similar failures, flaky and fix detection, purge).
    4. [`phases/p3/`](phases/p3/README.md): the `explain` command, suggested changes, per-repository configuration.
+   5. [`phases/p4/`](phases/p4/README.md): evals at scale (public cases, the cause judge, the CI gate) and its live check on GitHub.
 4. `DECISIONS.md` from D-47 on, in the order of the phases (the phase READMEs list which `D-NN` each one produced).
 
 ## What each phase folder contains
@@ -44,8 +45,8 @@ plan says something different from the sources above, the phase `README.md` list
 | `README.md` | The story, written for this repository after the phase was verified: goal, pull requests, decisions, what the spike measured, what was verified live, what stayed open, what the method taught. |
 | `plan.md` | The reviewed plan as it was approved (Spanish, untouched apart from a one-line header). |
 | `spike.md` | The report of the read-only spike that preceded the code (Spanish, untouched apart from the header). |
-| `brief.md` | (P2 and P3) The assignment given to the planning session, with the owner's local paths replaced by `<repo>`. |
-| `fixtures/` | The sanitized responses and data the spike recorded, only the ones that passed a scan (no tokens, keys, emails, JWTs, signed URLs or personal ids; the only real logins are the public `dalmirosf`, `dalmirosff` and `cicd-doctor-dev`). Each phase README says what was left out. |
+| `brief.md` | (P2, P3 and P4) The assignment given to the planning session, with the owner's local paths replaced by `<repo>`. |
+| `fixtures/` | The sanitized responses and data the spike recorded, only the ones that passed a scan (no tokens, keys, emails, JWTs, signed URLs or personal ids; the only real logins are the public `dalmirosf`, `dalmirosff` and `cicd-doctor-dev`). Each phase README says what was left out (P4 has none: its spike metadata names workflows of third-party repositories). |
 
 The numbers in the plans (`D-NN`) were provisional when the plans were written and were assigned in merge
 order, so they can differ from `DECISIONS.md`. P3 is the clearest case; its README has the mapping.

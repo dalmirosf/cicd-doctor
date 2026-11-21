@@ -35,6 +35,7 @@ plata lo hacés vos, con tu consentimiento explícito.
    - `docs/phases/p1c/`: el GitHub de verdad.
    - `docs/phases/p2/`: la memoria.
    - `docs/phases/p3/`: comandos, sugerencias y configuración.
+   - `docs/phases/p4/`: las evaluaciones a escala y el gate de CI.
 5. `DECISIONS.md` de a tramos, siguiendo las fases (cada `README.md` de fase lista qué `D-NN` produjo).
 6. `SPEC.md` §13 con las casillas tildadas y su evidencia; y `lab/README.md`, que tiene los runbooks de cada
    verificación en vivo.
@@ -104,9 +105,33 @@ evento `issue_comment` (hacía falta el permiso Issues) y que los runs de un PR 
 En vivo: 👀 en 3 segundos y diagnóstico editado en 11. **Sigue abierto** el fork (otra vez), y la ruta "fuera del
 diff" con una respuesta nueva del modelo (esa vez contestó la caché).
 
+### P4: evaluaciones a escala (20 y 21 de noviembre)
+
+Hasta P3 la app se probaba con 25 fallas del lab y 16 ataques. P4 la mide en serio: 25 casos del lab, **37 casos de
+repos públicos** (vite, prettier, pydantic, pytest, terraform-aws-vpc y build-push-action; solo licencias
+permisivas, y de cada uno se guarda el sha del arreglo y los nombres de archivo, nunca el diff ajeno) y 30 de
+inyección. Un reporte único da todas las métricas (exactitud, F1, costo por diagnóstico, latencia, evidencia
+válida, calibración) y un **juez** puntúa si la *causa* explicada coincide con la real, no solo la categoría. El
+juez se calibró contra 20 pares etiquetados (90 % de acuerdo, kappa 0,909); las etiquetas las escribió Claude y
+las revisaste vos, y eso queda anotado como el punto flojo.
+
+La pieza central es el **gate de CI** (`evals.yml`): lee las respuestas del modelo que están guardadas en el
+repositorio (`evals/answers/`), así que no usa red ni claves ni gasta plata, y falla con un código por causa: 1 el
+F1 cayó más de 5 puntos, 2 una inyección ganó, 3 faltan respuestas, 4 el baseline quedó viejo, 5 error del runner.
+La clave de cada respuesta incluye la huella del prompt: si alguien cambia el prompt sin volver a llenar las
+respuestas, el CI no da verde. Solo una persona acepta un baseline nuevo (`evals baseline --accept`).
+
+En vivo se probó el gate con cinco PRs de prueba que nunca se mergearon: un prompt malo sin respuestas dio 3; el
+mismo prompt con sus respuestas llenadas en vivo (USD 0,06) bajó el F1 74 puntos pero dio 3 y no 1, porque un
+prompt cambiado siempre deja el baseline viejo y esa causa pesa más; una respuesta falsificada que obedece un
+ataque dio 2; un cambio de documentación dio verde en 27 segundos; y 19 respuestas degradadas a mano dieron 1
+(-9,4 puntos). Los que se forzaron con datos editados están declarados como simulados. **Sigue abierto:** en el
+runner de GitHub faltaron respuestas de la variante "con parecidas" para 3 casos que en tu máquina no faltaban
+(D-114), y hacer el gate un check obligatorio de `main` es una decisión tuya.
+
 ### Lo que viene
 
-P4 (evaluaciones a escala con casos públicos), P5 (despliegue en AWS con Terraform y observabilidad) y P6 (extras:
+P5 (despliegue en AWS con Terraform y observabilidad) y P6 (extras:
 una app "Fixer" que abre PRs y Kubernetes local). Están en `SPEC.md` §13 con sus casillas vacías.
 
 ## 4. Glosario
@@ -159,6 +184,10 @@ una app "Fixer" que abre PRs y Kubernetes local). Están en `SPEC.md` §13 con s
 - **Review comment / bloque `suggestion`:** un comentario sobre líneas del diff; con el bloque, GitHub muestra un
   botón "Commit suggestion". Solo se publica si cae dentro de un tramo (hunk) del diff.
 - **Diff / hunk:** el diff son los cambios del PR; un hunk es cada tramo continuo de líneas cambiadas.
+- **Gate de evals:** el workflow `evals.yml`, que compara las respuestas guardadas del modelo con un *baseline* aceptado por una persona y falla con un código por causa; no usa red ni claves.
+- **Baseline:** el archivo `evals/baseline.json` con las métricas aceptadas; solo una persona lo cambia.
+- **Huella del prompt (fingerprint):** el hash del prompt y del esquema; va en la clave de cada respuesta guardada, así un prompt cambiado no reutiliza respuestas viejas.
+- **Juez:** un segundo modelo que puntúa de 0 a 2 si la causa explicada coincide con la real; se calibró contra etiquetas humanas.
 - **Spike:** una exploración corta y de solo lectura, antes de programar, para medir lo que no se puede deducir
   leyendo.
 - **Fixture:** dato de prueba guardado en el repositorio; los de GitHub se *sanitizan* (se reemplazan nombres, ids
@@ -204,5 +233,6 @@ fase, y se escribe un `README.md` corto de la fase. Eso es lo que hizo el PR `do
 - Lo que el plan esperaba y la realidad contradijo (por ejemplo, GitHub no reabre un check completado, el HNSW pierde
   resultados con repos grandes, la app no recibía `issue_comment`) está en la sección "Where the plan and the final
   code differ" de cada fase: es la parte más instructiva de leer.
-- Pendientes abiertos a la fecha (20 de noviembre de 2026): el PR desde un fork (P1c y P3), la ruta "fuera del diff"
-  con una respuesta fresca del modelo, y todo P4 a P6.
+- Pendientes abiertos a la fecha (21 de noviembre de 2026): el PR desde un fork (P1c y P3), la ruta "fuera del diff"
+  con una respuesta fresca del modelo, la variante "con parecidas" que en el runner de GitHub pidió respuestas de
+  más (D-114), y todo P5 y P6.
