@@ -92,6 +92,13 @@ class GuardedLLM:
 
     async def diagnose(self, request: DiagnosisRequest) -> LLMResult:
         self._guard.check()
-        result = await self._inner.diagnose(request)
+        try:
+            result = await self._inner.diagnose(request)
+        except LLMError:
+            # The provider may have answered and been billed (a refusal, an incomplete or invalid
+            # response). An LLMError carries no usage, so the cost is unknown: the call is counted
+            # (--max-calls stays an upper bound) and the cost is not (D-115).
+            self._guard.add(Decimal(0))
+            raise
         self._guard.add(self._cost.cost(result.input_tokens, result.output_tokens))
         return result
