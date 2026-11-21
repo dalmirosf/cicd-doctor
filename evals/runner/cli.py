@@ -18,6 +18,7 @@ from evals.runner.capture import (
     load_manifest,
 )
 from evals.runner.cases import DEFAULT_CASES_DIR, SOURCES
+from evals.runner.gate_cli import accept, add_gate_commands, check
 from evals.runner.injection import write_cases
 from evals.runner.judge_cli import add_calibrate_command, add_run_arguments, apply_judge, calibrate
 from evals.runner.live import (
@@ -162,6 +163,7 @@ def build_parser() -> argparse.ArgumentParser:
     cap.add_argument("--out-dir", type=Path, default=DEFAULT_CASES_DIR / "lab")
 
     add_public_commands(commands)
+    add_gate_commands(commands)
     return parser
 
 
@@ -174,6 +176,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             return _prune(args)
         if args.command == "calibrate":
             return calibrate(args)
+        if args.command == "check":
+            return check(args)
+        if args.command == "baseline":
+            return accept(args)
         if args.command == "readme-table":
             return _readme_table(args)
         if args.command == "write-injection":

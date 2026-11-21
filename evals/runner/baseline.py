@@ -1,13 +1,19 @@
 """Reader of ``evals/baseline.json``, the last accepted metrics (SPEC §11.3, D-105).
 
-This module only READS the file. The writer (``evals baseline --accept``) and the CI rule are PR
-(g); the reports (verdict changes) and the README table (``readme_table.py``) depend on the shape
-below, so it is documented here and checked by ``load_baseline``.
+This module only READS the file. The writer is ``evals/runner/gate.py`` (``evals baseline
+--accept``, a person only) and so is the CI rule (``evals check``), both P4 (g). The reports
+(verdict changes) and the README table (``readme_table.py``) depend on the shape below, so it
+is documented here and checked by ``load_baseline``.
 
 Minimal schema (extra keys, at any level, are accepted and ignored)::
 
     {
       "schema_version": 1,
+      # Written by ``evals baseline --accept`` (D-105); optional for this reader, required by
+      # ``evals check``, which exits 4 without them:
+      "created_at": "...", "git_sha": "...", "prompt_version": "...", "prompt_fingerprint": "...",
+      "judge_model": "..." | null, "cases_hash": "<sha256>",
+      "threshold": {"macro_f1_drop": 0.05},
       "variants": {
         "<variant name as in the report, e.g. rules or llm+hints [gpt-6-luna]>": {
           "model": "<model id>" | null,            # null for rules
@@ -19,8 +25,11 @@ Minimal schema (extra keys, at any level, are accepted and ignored)::
           "latency_ms_p50": 900 | null,            # model call, null = no model call
           "latency_ms_p95": 2100 | null,
           "prices": {"input_per_mtok": 0.1, "output_per_mtok": 0.4} | null,
-          "verdicts": {"<case id>": "<predicted category>"}   # optional, feeds the report's
-        }                                                     # "Verdict changes" section
+          "verdicts": {"<case id>": "<predicted category>"},  # optional, feeds the report's
+                                                             # "Verdict changes" section
+          "f1": {"<category>": 0.9},        # optional, per category with support (lab + public)
+          "attacks_won": 0                  # optional, injection cases the attacker won
+        }
       }
     }
 """
@@ -57,11 +66,23 @@ class BaselineVariant:
     latency_ms_p95: float | None
     prices: Prices | None
     verdicts: dict[str, str] | None  # None: the baseline has no per-case verdicts
+    f1: dict[str, float] | None = None  # per category with support, None: not recorded
+    attacks_won: int | None = None
+
+
+DEFAULT_MACRO_F1_DROP = 0.05  # SPEC §11.3, D-105
 
 
 @dataclass(frozen=True)
 class Baseline:
     variants: dict[str, BaselineVariant]
+    cases_hash: str | None = None
+    prompt_fingerprint: str | None = None
+    prompt_version: str | None = None
+    git_sha: str | None = None
+    created_at: str | None = None
+    judge_model: str | None = None
+    macro_f1_drop: float = DEFAULT_MACRO_F1_DROP
 
 
 def load_baseline(path: Path = DEFAULT_BASELINE) -> Baseline | None:
@@ -83,7 +104,33 @@ def parse_baseline(data: object) -> Baseline:
     raw = data.get("variants")
     if not isinstance(raw, dict) or not raw:
         raise BaselineError("the baseline needs a non-empty 'variants' object")
-    return Baseline({name: _variant(name, body) for name, body in raw.items()})
+    threshold = data.get("threshold", {})
+    drop: Any = (
+        threshold.get("macro_f1_drop", DEFAULT_MACRO_F1_DROP)
+        if isinstance(threshold, dict)
+        else None
+    )
+    if not (isinstance(drop, int | float) and not isinstance(drop, bool) and 0 < drop <= 1):
+        raise BaselineError("'threshold.macro_f1_drop' must be a number in (0, 1]")
+    return Baseline(
+        {name: _variant(name, body) for name, body in raw.items()},
+        cases_hash=_top(data, "cases_hash"),
+        prompt_fingerprint=_top(data, "prompt_fingerprint"),
+        prompt_version=_top(data, "prompt_version"),
+        git_sha=_top(data, "git_sha"),
+        created_at=_top(data, "created_at"),
+        judge_model=_top(data, "judge_model"),
+        macro_f1_drop=float(drop),
+    )
+
+
+def _top(data: dict[str, Any], key: str) -> str | None:
+    value = data.get(key)
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise BaselineError(f"{key!r} must be a string or null")
+    return value
 
 
 def _variant(name: str, body: Any) -> BaselineVariant:
@@ -96,6 +143,16 @@ def _variant(name: str, body: Any) -> BaselineVariant:
         and all(isinstance(k, str) and isinstance(v, str) for k, v in verdicts.items())
     ):
         raise BaselineError(f"variant {name!r}: 'verdicts' must map case ids to categories")
+    f1 = body.get("f1")
+    if f1 is not None and not (
+        isinstance(f1, dict) and all(isinstance(k, str) and _number(v) for k, v in f1.items())
+    ):
+        raise BaselineError(f"variant {name!r}: 'f1' must map categories to numbers")
+    attacks = body.get("attacks_won")
+    if attacks is not None and (
+        not isinstance(attacks, int) or isinstance(attacks, bool) or attacks < 0
+    ):
+        raise BaselineError(f"variant {name!r}: 'attacks_won' must be a non-negative integer")
     return BaselineVariant(
         name=name,
         model=_optional(name, body, "model", str),
@@ -108,6 +165,8 @@ def _variant(name: str, body: Any) -> BaselineVariant:
         latency_ms_p95=_optional(name, body, "latency_ms_p95", float),
         prices=_prices(name, prices),
         verdicts=verdicts,
+        f1={k: float(v) for k, v in f1.items()} if f1 is not None else None,
+        attacks_won=attacks,
     )
 
 
