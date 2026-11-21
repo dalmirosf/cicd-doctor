@@ -7,14 +7,15 @@ expected:
   category: flaky
   cause: Falla un test de build y el reporter se rompe con 'Map.groupBy'; pasó al
     reintentar el mismo commit.
-  evidence_lines: []
+  evidence_lines:
+  - 680
 fix:
   commit: dca06bed15b1ae4af1c385be14caec08f999a5bd
   summary: the same commit passed when the run was repeated
 flaky: true
 tags:
 - node
-captured_at: '2026-11-21T16:57:08Z'
+captured_at: '2026-11-21T18:04:44Z'
 provenance:
   repo: vitejs/vite
   license: MIT

@@ -7,14 +7,15 @@ expected:
   category: broken_test
   cause: Un test de HMR SSR ('invalidate') recibe los mensajes de log en otro orden
     del esperado.
-  evidence_lines: []
+  evidence_lines:
+  - 598
 fix:
   commit: c7326770e1121733435e0527af972f387d64d344
   summary: 1 commit(s), 2 file(s), +182/-80
 flaky: false
 tags:
 - node
-captured_at: '2026-11-21T16:56:36Z'
+captured_at: '2026-11-21T18:04:11Z'
 provenance:
   repo: vitejs/vite
   license: MIT

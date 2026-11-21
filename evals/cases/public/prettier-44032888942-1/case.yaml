@@ -6,14 +6,15 @@ job_id: 133868783960
 expected:
   category: broken_test
   cause: ESLint falla con tres errores de reglas unicorn en tres archivos.
-  evidence_lines: []
+  evidence_lines:
+  - 218
 fix:
   commit: 30ff8510a1565384e375b74a72bd91224b75f3ed
   summary: 2 commit(s), 3 file(s), +5/-6
 flaky: false
 tags:
 - node
-captured_at: '2026-11-21T16:58:11Z'
+captured_at: '2026-11-21T18:05:46Z'
 provenance:
   repo: prettier/prettier
   license: MIT

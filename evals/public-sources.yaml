@@ -18,6 +18,8 @@ repos:
     labeled_by: owner (draft by Claude)
     label_basis: log
     fix_run_id: 43390341114
+    evidence:
+    - expected 'parent:not-child' to match 'parent:child'
   - id: vite-44672066698-1
     run_id: 44672066698
     attempt: 1
@@ -33,6 +35,8 @@ repos:
     labeled_by: owner (draft by Claude)
     label_basis: log
     fix_attempt: 2
+    evidence:
+    - Timeout waiting for browser logs
   - id: vite-44464244661-1
     run_id: 44464244661
     attempt: 1
@@ -48,6 +52,8 @@ repos:
     labeled_by: owner (draft by Claude)
     label_basis: log
     fix_run_id: 44492493069
+    evidence:
+    - reading 'importers'
   - id: vite-44487704537-1
     run_id: 44487704537
     attempt: 1
@@ -63,6 +69,8 @@ repos:
     labeled_by: owner (draft by Claude)
     label_basis: log
     fix_run_id: 44503385595
+    evidence:
+    - to match '>>> vite:beforeUpdate -- update'
   - id: vite-44758547903-1
     run_id: 44758547903
     attempt: 1
@@ -78,6 +86,8 @@ repos:
     labeled_by: owner (draft by Claude)
     label_basis: log
     fix_attempt: 2
+    evidence:
+    - expected 'black' to be 'orange'
   - id: vite-44445588794-1
     run_id: 44445588794
     attempt: 1
@@ -93,6 +103,8 @@ repos:
     labeled_by: owner (draft by Claude)
     label_basis: log
     fix_run_id: 44446046478
+    evidence:
+    - Bundle size exceeded 71 kB
   - id: vite-42600232139-1
     run_id: 42600232139
     attempt: 1
@@ -108,6 +120,8 @@ repos:
     labeled_by: owner (draft by Claude)
     label_basis: log
     fix_run_id: 42607174230
+    evidence:
+    - legacy-styles-only-entry-watch
   - id: vite-44520081596-1
     run_id: 44520081596
     attempt: 1
@@ -123,6 +137,8 @@ repos:
     labeled_by: owner (draft by Claude)
     label_basis: log
     fix_run_id: 44715400897
+    evidence:
+    - Failed to get bundle state
   - id: vite-43179524933-1
     run_id: 43179524933
     attempt: 1
@@ -138,6 +154,8 @@ repos:
     labeled_by: owner (draft by Claude)
     label_basis: log
     fix_run_id: 43179968001
+    evidence:
+    - Map\.groupBy is not a function
   - id: vite-42996511749-1
     run_id: 42996511749
     attempt: 1
@@ -153,6 +171,8 @@ repos:
     labeled_by: owner (draft by Claude)
     label_basis: log
     fix_run_id: 42998216526
+    evidence:
+    - Worker exited unexpectedly
   - id: vite-44761782135-1
     run_id: 44761782135
     attempt: 1
@@ -168,6 +188,8 @@ repos:
     labeled_by: owner (draft by Claude)
     label_basis: log
     fix_attempt: 2
+    evidence:
+    - Map\.groupBy is not a function
   - id: vite-42557157506-1
     run_id: 42557157506
     attempt: 1
@@ -183,6 +205,8 @@ repos:
     labeled_by: owner (draft by Claude)
     label_basis: log
     fix_run_id: 42557973079
+    evidence:
+    - Timeout waiting for browser logs
   - id: vite-42601223848-1
     run_id: 42601223848
     attempt: 1
@@ -198,6 +222,8 @@ repos:
     labeled_by: owner (draft by Claude)
     label_basis: log
     fix_run_id: 42602922859
+    evidence:
+    - Could not resolve \"peer
 - repo: prettier/prettier
   license: MIT
   cases:
@@ -216,6 +242,8 @@ repos:
     labeled_by: owner (draft by Claude)
     label_basis: log
     fix_run_id: 42173412124
+    evidence:
+    - Dependency review detected vulnerable packages
   - id: prettier-42216042285-1
     run_id: 42216042285
     attempt: 1
@@ -231,6 +259,8 @@ repos:
     labeled_by: owner (draft by Claude)
     label_basis: log
     fix_run_id: 42216627763
+    evidence:
+    - Unknown word \(CBOR\)
   - id: prettier-44722794030-1
     run_id: 44722794030
     attempt: 1
@@ -246,6 +276,8 @@ repos:
     labeled_by: owner (draft by Claude)
     label_basis: log
     fix_run_id: 44742244909
+    evidence:
+    - Unknown word \(jscript\)
   - id: prettier-43589153542-1
     run_id: 43589153542
     attempt: 1
@@ -261,6 +293,8 @@ repos:
     labeled_by: owner (draft by Claude)
     label_basis: log
     fix_run_id: 43589861738
+    evidence:
+    - Couldn't resolve parser \"oxc-ts\"
   - id: prettier-43476758833-1
     run_id: 43476758833
     attempt: 1
@@ -276,6 +310,8 @@ repos:
     labeled_by: owner (draft by Claude)
     label_basis: log
     fix_run_id: 43477709922
+    evidence:
+    - Unknown word \(combinators\)
   - id: prettier-44836931174-1
     run_id: 44836931174
     attempt: 1
@@ -291,6 +327,8 @@ repos:
     labeled_by: owner (draft by Claude)
     label_basis: log
     fix_run_id: 44842959033
+    evidence:
+    - TS2578
   - id: prettier-44496808791-1
     run_id: 44496808791
     attempt: 1
@@ -306,6 +344,8 @@ repos:
     labeled_by: owner (draft by Claude)
     label_basis: log
     fix_run_id: 44497061713
+    evidence:
+    - Code style issues found in the above file
   - id: prettier-44493285782-1
     run_id: 44493285782
     attempt: 1
@@ -321,6 +361,8 @@ repos:
     labeled_by: owner (draft by Claude)
     label_basis: log
     fix_run_id: 44493498312
+    evidence:
+    - Code style issues found in the above file
   - id: prettier-44501225538-1
     run_id: 44501225538
     attempt: 1
@@ -336,6 +378,8 @@ repos:
     labeled_by: owner (draft by Claude)
     label_basis: log
     fix_run_id: 44501928007
+    evidence:
+    - TS2345
   - id: prettier-41532036986-1
     run_id: 41532036986
     attempt: 1
@@ -351,6 +395,8 @@ repos:
     labeled_by: owner (draft by Claude)
     label_basis: log
     fix_run_id: 41532754871
+    evidence:
+    - 6 snapshots failed
   - id: prettier-43168081867-1
     run_id: 43168081867
     attempt: 1
@@ -366,6 +412,8 @@ repos:
     labeled_by: owner (draft by Claude)
     label_basis: log
     fix_run_id: 43168331759
+    evidence:
+    - '''hardline'' is defined but never used'
   - id: prettier-42175774637-1
     run_id: 42175774637
     attempt: 1
@@ -381,6 +429,8 @@ repos:
     labeled_by: owner (draft by Claude)
     label_basis: log
     fix_run_id: 42178055215
+    evidence:
+    - 'TS2307: Cannot find module ''@prettier/cli'
   - id: prettier-44032888942-1
     run_id: 44032888942
     attempt: 1
@@ -396,6 +446,8 @@ repos:
     labeled_by: owner (draft by Claude)
     label_basis: log
     fix_run_id: 44472324365
+    evidence:
+    - unicorn/prefer-options-parameter
   - id: prettier-42175774599-1
     run_id: 42175774599
     attempt: 1
@@ -411,6 +463,8 @@ repos:
     labeled_by: owner (draft by Claude)
     label_basis: log
     fix_run_id: 42178055509
+    evidence:
+    - Worker exited unexpectedly
   - id: prettier-44836931248-1
     run_id: 44836931248
     attempt: 1
@@ -426,6 +480,8 @@ repos:
     labeled_by: owner (draft by Claude)
     label_basis: log
     fix_attempt: 2
+    evidence:
+    - 'EBUSY: resource busy or locked'
   - id: prettier-44470623640-1
     run_id: 44470623640
     attempt: 1
@@ -441,6 +497,8 @@ repos:
     labeled_by: owner (draft by Claude)
     label_basis: log
     fix_run_id: 44473359242
+    evidence:
+    - Bindings cannot contain assignments
   - id: prettier-42990482705-1
     run_id: 42990482705
     attempt: 1
@@ -456,6 +514,8 @@ repos:
     labeled_by: owner (draft by Claude)
     label_basis: log
     fix_run_id: 42990913040
+    evidence:
+    - Code style issues found in the above file
   - id: prettier-42169831062-1
     run_id: 42169831062
     attempt: 1
@@ -471,3 +531,5 @@ repos:
     labeled_by: owner (draft by Claude)
     label_basis: log
     fix_run_id: 42173412232
+    evidence:
+    - String\.raw. should be transformed

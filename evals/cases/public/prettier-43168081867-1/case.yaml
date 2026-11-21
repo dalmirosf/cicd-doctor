@@ -6,14 +6,15 @@ job_id: 131014550274
 expected:
   category: broken_test
   cause: 'ESLint falla: ''hardline'' se define y no se usa (no-unused-vars).'
-  evidence_lines: []
+  evidence_lines:
+  - 218
 fix:
   commit: bfc113ff94be0bc13f92d7724ab81fe3f926cd27
   summary: 1 commit(s), 1 file(s), +0/-1
 flaky: false
 tags:
 - node
-captured_at: '2026-11-21T16:58:03Z'
+captured_at: '2026-11-21T18:05:38Z'
 provenance:
   repo: prettier/prettier
   license: MIT

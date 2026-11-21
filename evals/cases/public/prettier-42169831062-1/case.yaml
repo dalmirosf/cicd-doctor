@@ -7,14 +7,15 @@ expected:
   category: broken_test
   cause: 'El lint de producción falla: ''String.raw'' debería estar transformado en
     el bundle (no-restricted-syntax).'
-  evidence_lines: []
+  evidence_lines:
+  - 216
 fix:
   commit: 72e29bec8e30361e71092c5d9e771c86ff28c347
   summary: 2 commit(s), 3 file(s), +26/-6
 flaky: false
 tags:
 - node
-captured_at: '2026-11-21T16:58:32Z'
+captured_at: '2026-11-21T18:06:06Z'
 provenance:
   repo: prettier/prettier
   license: MIT

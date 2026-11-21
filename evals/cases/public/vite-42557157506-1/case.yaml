@@ -6,14 +6,15 @@ job_id: 128965409630
 expected:
   category: broken_test
   cause: Timeout esperando logs del navegador en un test de HMR (mismo test que c02).
-  evidence_lines: []
+  evidence_lines:
+  - 566
 fix:
   commit: ad04aa78aa07191779de96bab85670ddce6cc20f
   summary: 1 commit(s), 6 file(s), +19/-19
 flaky: false
 tags:
 - node
-captured_at: '2026-11-21T16:57:12Z'
+captured_at: '2026-11-21T18:04:49Z'
 provenance:
   repo: vitejs/vite
   license: MIT

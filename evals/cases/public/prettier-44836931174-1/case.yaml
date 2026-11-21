@@ -7,14 +7,15 @@ expected:
   category: broken_test
   cause: 'La verificación de tipos falla: una directiva @ts-expect-error ya no se
     usa (TS2578).'
-  evidence_lines: []
+  evidence_lines:
+  - 208
 fix:
   commit: 93aa5e735728d32de3c6e7340da42158ad83637e
   summary: 1 commit(s), 1 file(s), +0/-1
 flaky: false
 tags:
 - node
-captured_at: '2026-11-21T16:57:43Z'
+captured_at: '2026-11-21T18:05:19Z'
 provenance:
   repo: prettier/prettier
   license: MIT

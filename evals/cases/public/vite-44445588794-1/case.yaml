@@ -6,14 +6,15 @@ job_id: 135296810385
 expected:
   category: broken_test
   cause: El build falla porque el bundle (71.03 kB) supera el tope de 71 kB.
-  evidence_lines: []
+  evidence_lines:
+  - 303
 fix:
   commit: bae0d9f49be9d7216d4e9fc7efe164ed2a143f41
   summary: 1 commit(s), 1 file(s), +1/-1
 flaky: false
 tags:
 - node
-captured_at: '2026-11-21T16:56:45Z'
+captured_at: '2026-11-21T18:04:21Z'
 provenance:
   repo: vitejs/vite
   license: MIT

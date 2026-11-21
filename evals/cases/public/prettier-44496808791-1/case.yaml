@@ -6,14 +6,15 @@ job_id: 135466025499
 expected:
   category: broken_test
   cause: El chequeo de formato de Prettier marca un archivo sin formatear.
-  evidence_lines: []
+  evidence_lines:
+  - 223
 fix:
   commit: f031262bbf875f49734fa5bc2d757667c3a106c0
   summary: 1 commit(s), 1 file(s), +3/-9
 flaky: false
 tags:
 - node
-captured_at: '2026-11-21T16:57:47Z'
+captured_at: '2026-11-21T18:05:23Z'
 provenance:
   repo: prettier/prettier
   license: MIT

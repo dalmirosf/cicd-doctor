@@ -6,14 +6,15 @@ job_id: 127753767103
 expected:
   category: dependency
   cause: La verificación de tipos no encuentra el módulo '@prettier/cli' (TS2307).
-  evidence_lines: []
+  evidence_lines:
+  - 208
 fix:
   commit: b66e814838d0d5f7b4fe33d3457985fecb0ec59b
   summary: 1 commit(s), 2 file(s), +23/-40
 flaky: false
 tags:
 - node
-captured_at: '2026-11-21T16:58:07Z'
+captured_at: '2026-11-21T18:05:42Z'
 provenance:
   repo: prettier/prettier
   license: MIT

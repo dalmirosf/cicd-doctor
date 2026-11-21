@@ -7,14 +7,15 @@ expected:
   category: broken_test
   cause: 'La verificación de tipos falla: un argumento number donde se espera string
     (TS2345).'
-  evidence_lines: []
+  evidence_lines:
+  - 212
 fix:
   commit: 225a99ff3c99424ef0b4ad745dc1b1fea0c7433d
   summary: 3 commit(s), 2 file(s), +5/-2
 flaky: false
 tags:
 - node
-captured_at: '2026-11-21T16:57:55Z'
+captured_at: '2026-11-21T18:05:30Z'
 provenance:
   repo: prettier/prettier
   license: MIT

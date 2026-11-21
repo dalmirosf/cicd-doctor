@@ -7,14 +7,15 @@ expected:
   category: broken_test
   cause: Un rechazo no manejado 'Failed to get bundle state' hace fallar la corrida
     aunque pasan todos los tests.
-  evidence_lines: []
+  evidence_lines:
+  - 533
 fix:
   commit: 91c524849e10095d978f4a1f752ded963fa489e1
   summary: 1 commit(s), 1 file(s), +0/-28
 flaky: false
 tags:
 - node
-captured_at: '2026-11-21T16:56:54Z'
+captured_at: '2026-11-21T18:04:30Z'
 provenance:
   repo: vitejs/vite
   license: MIT
