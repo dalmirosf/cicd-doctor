@@ -35,6 +35,7 @@ plata lo hacés vos, con tu consentimiento explícito.
    - `docs/phases/p1c/`: el GitHub de verdad.
    - `docs/phases/p2/`: la memoria.
    - `docs/phases/p3/`: comandos, sugerencias y configuración.
+   - `docs/phases/p4/`: las evaluaciones a escala y el gate de CI.
 5. `DECISIONS.md` de a tramos, siguiendo las fases (cada `README.md` de fase lista qué `D-NN` produjo).
 6. `SPEC.md` §13 con las casillas tildadas y su evidencia; y `lab/README.md`, que tiene los runbooks de cada
    verificación en vivo.
@@ -104,9 +105,63 @@ evento `issue_comment` (hacía falta el permiso Issues) y que los runs de un PR 
 En vivo: 👀 en 3 segundos y diagnóstico editado en 11. **Sigue abierto** el fork (otra vez), y la ruta "fuera del
 diff" con una respuesta nueva del modelo (esa vez contestó la caché).
 
+### P4: evaluaciones a escala (20 y 21 de noviembre)
+
+**Para qué.** Hasta P3 la app se probaba con 25 fallas del lab y 16 ataques. Con eso no se puede saber qué tan bien
+diagnostica de verdad ni enterarse de que un cambio la empeoró. P4 arma un banco de pruebas grande, una forma de
+medir y un guardia automático en el CI. La carpeta de la fase es `docs/phases/p4/` (su `README.md` tiene la tabla de
+PRs #47 a #66 y las decisiones D-100 a D-114).
+
+**Los casos.** 25 del lab, **37 de repos públicos** (vite, prettier, pydantic, pytest, terraform-aws-vpc y
+build-push-action) y 30 de inyección (14 de ellos con un diff de PR). Para elegir los repos públicos se hizo primero
+un spike de solo lectura (unas 270 llamadas a la API sobre 6 repos) que cambió el plan: muchos runs "fallados" son
+workflows de bots o de compuerta (hizo falta una lista de exclusión), emparejar la falla con su arreglo por rama no
+sirve en PRs de forks (se empareja por pull request), solo un tercio de los candidatos tiene un único job fallado
+(regla de matriz), y las reglas no saben nada fuera de Python, Docker y Terraform, que es justo donde se ve la
+diferencia con el modelo. Reglas de seguridad de los casos públicos (D-101): solo licencias permisivas, nunca se
+guarda el diff ajeno (solo el sha del arreglo, nombres de archivo y conteos), el log pasa por el redactor y por un
+escáner independiente, nada es un caso hasta que lo etiquetás vos, y en consola nunca se imprimen nombres de
+workflows o ramas de repos ajenos.
+
+**Respuestas guardadas en el repo.** Las respuestas del modelo se commitean en `evals/answers/`. La clave de cada una
+incluye la **huella del prompt** (un hash del prompt y del esquema de salida): si alguien cambia el prompt, las
+respuestas viejas dejan de servir y el CI no puede dar verde por error. Por eso un PR que toca el prompt tiene que
+traer las respuestas nuevas, que llena el dueño con `--live` (con `--estimate` antes y topes de gasto).
+
+**Qué se mide.** Un solo reporte (`evals run --variant all`) con exactitud, macro-F1, matriz de confusión,
+calibración de la confianza, costo por diagnóstico, latencia, validez de la evidencia, intervalos, resistencia a
+inyección y el efecto de la memoria, para las cuatro variantes (`rules`, `llm`, `llm+hints` que es la de producción,
+y `llm+hints+similar`). La tabla del README se genera sola del baseline. Además hay un **juez**: un segundo modelo
+que puntúa de 0 a 2 si la *causa* explicada coincide con la real, sin ver nunca el log, el diff ni la categoría. Se
+calibró contra 20 pares etiquetados (90 % de acuerdo, kappa 0,909); las etiquetas las escribió Claude y las revisaste
+vos, y eso queda anotado como el punto flojo.
+
+**La corrida en vivo (21 de noviembre, unos USD 0,55).** Con `gpt-6-luna` el macro-F1 sobre lab + público es 0,583
+para `rules` y 0,840 para `llm+hints`. El costo es USD 0,0005 por diagnóstico, 20 veces menos que el límite de
+NFR-03. Hubo 0 ataques ganados. Tres corridas vivas del mismo modelo dieron 0,757, 0,808 y 0,831 (sigma 0,038): el
+modelo se mueve unos 8 puntos solo por azar cuando se vuelve a llenar, y por eso al llenar de nuevo conviene mirar
+qué casos cambiaron antes de aceptar un baseline.
+
+**El gate de CI (`evals.yml`).** Lee las respuestas guardadas, compara contra `evals/baseline.json` y no usa red,
+claves ni plata. Falla con un código por causa: 1 el macro-F1 de `rules` o `llm+hints` bajó más de 5 puntos, 2 una
+inyección ganó, 3 faltan respuestas, 4 el baseline quedó viejo, 5 error del runner; si hay varias causas gana la más
+grave (2, 3, 4, 1). **Solo una persona acepta un baseline** (`evals baseline --accept`); el CI nunca lo escribe.
+
+**Cómo se probó en GitHub (D-114).** Cinco PRs de prueba que nunca se mergearon: un prompt malo sin respuestas dio 3;
+el mismo prompt con sus respuestas llenadas en vivo (USD 0,06) bajó el F1 74 puntos pero dio 3 y no 1, porque un
+prompt cambiado deja el baseline viejo y esa causa pesa más (es lo buscado: una persona tiene que leer la caída antes
+de aceptar un baseline nuevo); una respuesta falsificada que obedece un ataque dio 2; un cambio de documentación dio
+verde; y 19 respuestas degradadas a mano dieron 1 (-9,4 puntos). Los jobs duraron unos 30 segundos. Los casos
+forzados con datos editados están declarados como simulados. De paso se vio que `ci.yml` (lint, tipos, tests) sigue
+verde con un prompt malo: solo el gate de evals lo detecta.
+
+**Sigue abierto.** En el runner de GitHub faltaron respuestas de la variante "con parecidas" para 3 casos de prettier
+que en tu máquina no faltaban (D-114: puede ser que la búsqueda de parecidas dé un orden distinto según la máquina,
+no se midió). Y hacer que el gate sea un check obligatorio de `main` es un ajuste del repositorio que decidís vos.
+
 ### Lo que viene
 
-P4 (evaluaciones a escala con casos públicos), P5 (despliegue en AWS con Terraform y observabilidad) y P6 (extras:
+P5 (despliegue en AWS con Terraform y observabilidad) y P6 (extras:
 una app "Fixer" que abre PRs y Kubernetes local). Están en `SPEC.md` §13 con sus casillas vacías.
 
 ## 4. Glosario
@@ -159,6 +214,10 @@ una app "Fixer" que abre PRs y Kubernetes local). Están en `SPEC.md` §13 con s
 - **Review comment / bloque `suggestion`:** un comentario sobre líneas del diff; con el bloque, GitHub muestra un
   botón "Commit suggestion". Solo se publica si cae dentro de un tramo (hunk) del diff.
 - **Diff / hunk:** el diff son los cambios del PR; un hunk es cada tramo continuo de líneas cambiadas.
+- **Gate de evals:** el workflow `evals.yml`, que compara las respuestas guardadas del modelo con un *baseline* aceptado por una persona y falla con un código por causa; no usa red ni claves.
+- **Baseline:** el archivo `evals/baseline.json` con las métricas aceptadas; solo una persona lo cambia.
+- **Huella del prompt (fingerprint):** el hash del prompt y del esquema; va en la clave de cada respuesta guardada, así un prompt cambiado no reutiliza respuestas viejas.
+- **Juez:** un segundo modelo que puntúa de 0 a 2 si la causa explicada coincide con la real; se calibró contra etiquetas humanas.
 - **Spike:** una exploración corta y de solo lectura, antes de programar, para medir lo que no se puede deducir
   leyendo.
 - **Fixture:** dato de prueba guardado en el repositorio; los de GitHub se *sanitizan* (se reemplazan nombres, ids
@@ -204,5 +263,6 @@ fase, y se escribe un `README.md` corto de la fase. Eso es lo que hizo el PR `do
 - Lo que el plan esperaba y la realidad contradijo (por ejemplo, GitHub no reabre un check completado, el HNSW pierde
   resultados con repos grandes, la app no recibía `issue_comment`) está en la sección "Where the plan and the final
   code differ" de cada fase: es la parte más instructiva de leer.
-- Pendientes abiertos a la fecha (20 de noviembre de 2026): el PR desde un fork (P1c y P3), la ruta "fuera del diff"
-  con una respuesta fresca del modelo, y todo P4 a P6.
+- Pendientes abiertos a la fecha (21 de noviembre de 2026): el PR desde un fork (P1c y P3), la ruta "fuera del diff"
+  con una respuesta fresca del modelo, la variante "con parecidas" que en el runner de GitHub pidió respuestas de
+  más (D-114), y todo P5 y P6.

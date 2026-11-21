@@ -1,9 +1,12 @@
 # Evals
 
 The eval harness (SPEC §11, FR-22). It has the `rules`, `llm`, `llm+hints` and
-`llm+hints+similar` variants, the P1b subset of the metrics (no cause-match judge yet), JSON and Markdown reports, the
-lab capture command and the prompt-injection suite. `evals/cases/lab` holds 25 cases captured from
-real runs of the lab, and `evals/cases/injection` 30 synthetic ones (16 log payloads and 14 with a pull request diff). The CI gate arrives in P4.
+`llm+hints+similar` variants, every metric of §11.2 (including the cause-match judge, off unless asked), JSON and
+Markdown reports, the capture commands (lab and public) and the prompt-injection suite. `evals/cases/lab` holds 25
+cases captured from real runs of the lab, `evals/cases/public` 37 from permissively licensed public repositories
+(D-101) and `evals/cases/injection` 30 synthetic ones (16 log payloads and 14 with a pull request diff). The LLM
+answers are committed in `evals/answers/`, and the offline CI gate (`python -m evals check`, `evals.yml`, D-105)
+compares them with `evals/baseline.json`, which only a person accepts.
 
 ```
 evals/
