@@ -1,0 +1,27 @@
+id: vite-44487704537-1
+source: public
+repo: vitejs/vite
+run_url: https://github.com/vitejs/vite/actions/runs/44487704537/attempts/1
+job_id: 135435306874
+expected:
+  category: broken_test
+  cause: Un test de HMR SSR ('invalidate') recibe los mensajes de log en otro orden
+    del esperado.
+  evidence_lines: []
+fix:
+  commit: c7326770e1121733435e0527af972f387d64d344
+  summary: 1 commit(s), 2 file(s), +182/-80
+flaky: false
+tags:
+- node
+captured_at: '2026-11-21T16:56:36Z'
+provenance:
+  repo: vitejs/vite
+  license: MIT
+  run_url: https://github.com/vitejs/vite/actions/runs/44487704537/attempts/1
+  fix_sha: c7326770e1121733435e0527af972f387d64d344
+  fix_run_url: https://github.com/vitejs/vite/actions/runs/44503385595
+  occurred_at: '2026-11-19T08:29:30Z'
+  pairing: H1
+  labeled_by: owner (draft by Claude)
+  label_basis: log

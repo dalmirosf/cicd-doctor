@@ -1,0 +1,14 @@
+{
+  "sha": "53f093fac913996327cd58a6696c87f82ce5890b",
+  "pairing": "H1",
+  "commits": 1,
+  "files_total": 1,
+  "files": [
+    {
+      "path": "docs/guide/features.md",
+      "additions": 2,
+      "deletions": 1
+    }
+  ],
+  "summary": "1 commit(s), 1 file(s), +2/-1"
+}

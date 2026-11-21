@@ -1,0 +1,27 @@
+id: prettier-42172690980-1
+source: public
+repo: prettier/prettier
+run_url: https://github.com/prettier/prettier/actions/runs/42172690980/attempts/1
+job_id: 127743959726
+expected:
+  category: dependency
+  cause: Dependency Review detecta glob@13.0.7 con una vulnerabilidad moderada en
+    yarn.lock.
+  evidence_lines: []
+fix:
+  commit: 72e29bec8e30361e71092c5d9e771c86ff28c347
+  summary: 1 commit(s), 2 file(s), +22/-5
+flaky: false
+tags:
+- node
+captured_at: '2026-11-21T16:57:22Z'
+provenance:
+  repo: prettier/prettier
+  license: MIT
+  run_url: https://github.com/prettier/prettier/actions/runs/42172690980/attempts/1
+  fix_sha: 72e29bec8e30361e71092c5d9e771c86ff28c347
+  fix_run_url: https://github.com/prettier/prettier/actions/runs/42173412124
+  occurred_at: '2026-11-06T06:11:15Z'
+  pairing: H1
+  labeled_by: owner (draft by Claude)
+  label_basis: log

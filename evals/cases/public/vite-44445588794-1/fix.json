@@ -1,0 +1,14 @@
+{
+  "sha": "bae0d9f49be9d7216d4e9fc7efe164ed2a143f41",
+  "pairing": "H1-pr",
+  "commits": 1,
+  "files_total": 1,
+  "files": [
+    {
+      "path": "packages/vite/rolldown.config.ts",
+      "additions": 1,
+      "deletions": 1
+    }
+  ],
+  "summary": "1 commit(s), 1 file(s), +1/-1"
+}

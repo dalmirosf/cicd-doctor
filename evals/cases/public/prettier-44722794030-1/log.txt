@@ -1,0 +1,262 @@
+﻿2026-11-20T10:51:57.0593569Z Current runner version: '2.338.2'
+2026-11-20T10:51:57.0616487Z ##[group]Runner Image Provisioner
+2026-11-20T10:51:57.0617223Z Hosted Compute Agent
+2026-11-20T10:51:57.0617693Z Version: 20261111.635
+2026-11-20T10:51:57.0618332Z Commit: b8a594ea514ff44cadb5342986c68b1eac6e22ed
+2026-11-20T10:51:57.0618923Z Build Date: 2026-11-11T01:49:01Z
+2026-11-20T10:51:57.0619601Z Worker ID: {1ac8e52e-bedf-4cad-913c-cabed25edc35}
+2026-11-20T10:51:57.0620229Z Region: centralus
+2026-11-20T10:51:57.0620701Z Cloud: Azure
+2026-11-20T10:51:57.0621218Z ##[endgroup]
+2026-11-20T10:51:57.0623130Z ##[group]Operating System
+2026-11-20T10:51:57.0623758Z Ubuntu
+2026-11-20T10:51:57.0624261Z 26.04.1
+2026-11-20T10:51:57.0624685Z LTS
+2026-11-20T10:51:57.0625319Z ##[endgroup]
+2026-11-20T10:51:57.0625813Z ##[group]Runner Image
+2026-11-20T10:51:57.0626450Z Image: ubuntu-26.04
+2026-11-20T10:51:57.0626973Z Version: 20261116.202.1
+2026-11-20T10:51:57.0628046Z Included Software: https://github.com/actions/runner-images/blob/ubuntu26/20261116.202/images/ubuntu/Ubuntu2604-Readme.md
+2026-11-20T10:51:57.0629299Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu26%2F20261116.202
+2026-11-20T10:51:57.0630149Z ##[endgroup]
+2026-11-20T10:51:57.0631089Z ##[group]GITHUB_TOKEN Permissions
+2026-11-20T10:51:57.0633223Z Contents: read
+2026-11-20T10:51:57.0633753Z Metadata: read
+2026-11-20T10:51:57.0634230Z ##[endgroup]
+2026-11-20T10:51:57.0636148Z Secret source: None
+2026-11-20T10:51:57.0636906Z Cache mode: write
+2026-11-20T10:51:57.0637853Z Prepare workflow directory
+2026-11-20T10:51:57.0911683Z Prepare all required actions
+2026-11-20T10:51:57.0951443Z Getting action download info
+2026-11-20T10:51:57.3139066Z Download action repository 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+2026-11-20T10:51:57.4158878Z Download action repository 'actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1' (SHA:949feb2413d6458794dcd2491c4babbbce0c15c1)
+2026-11-20T10:51:57.5891536Z Complete job name: Lint
+2026-11-20T10:51:57.6637653Z ##[group]Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+2026-11-20T10:51:57.6638473Z with:
+2026-11-20T10:51:57.6638837Z   repository: prettier/prettier
+2026-11-20T10:51:57.6642001Z   token: ***
+2026-11-20T10:51:57.6642354Z   ssh-strict: true
+2026-11-20T10:51:57.6642857Z   ssh-user: git
+2026-11-20T10:51:57.6643219Z   persist-credentials: true
+2026-11-20T10:51:57.6643605Z   clean: true
+2026-11-20T10:51:57.6643968Z   sparse-checkout-cone-mode: true
+2026-11-20T10:51:57.6644378Z   fetch-depth: 1
+2026-11-20T10:51:57.6644723Z   fetch-tags: false
+2026-11-20T10:51:57.6645074Z   show-progress: true
+2026-11-20T10:51:57.6645429Z   lfs: false
+2026-11-20T10:51:57.6645757Z   submodules: false
+2026-11-20T10:51:57.6646117Z   set-safe-directory: true
+2026-11-20T10:51:57.6646517Z   allow-unsafe-pr-checkout: false
+2026-11-20T10:51:57.6647069Z ##[endgroup]
+2026-11-20T10:51:57.8610846Z Syncing repository: prettier/prettier
+2026-11-20T10:51:57.8612344Z ##[group]Getting Git version info
+2026-11-20T10:51:57.8613207Z Working directory is '/home/runner/work/prettier/prettier'
+2026-11-20T10:51:57.8614087Z [command]/usr/bin/git version
+2026-11-20T10:51:57.8622258Z git version 2.56.1
+2026-11-20T10:51:57.8638149Z ##[endgroup]
+2026-11-20T10:51:57.8646314Z Temporarily overriding HOME='/home/runner/work/_temp/33108e3b-9462-43ab-9d69-8ffebd8b345e' before making global git config changes
+2026-11-20T10:51:57.8647474Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-20T10:51:57.8650103Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/prettier/prettier
+2026-11-20T10:51:57.8700404Z Deleting the contents of '/home/runner/work/prettier/prettier'
+2026-11-20T10:51:57.8703013Z ##[group]Determining repository object format
+2026-11-20T10:51:57.8704405Z ##[endgroup]
+2026-11-20T10:51:57.8704981Z ##[group]Initializing the repository
+2026-11-20T10:51:57.8708140Z [command]/usr/bin/git init /home/runner/work/prettier/prettier
+2026-11-20T10:51:57.8781234Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-11-20T10:51:57.8782190Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-11-20T10:51:57.8783164Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-11-20T10:51:57.8783863Z hint: call:
+2026-11-20T10:51:57.8784315Z hint:
+2026-11-20T10:51:57.8784836Z hint: 	git config --global init.defaultBranch <name>
+2026-11-20T10:51:57.8785440Z hint:
+2026-11-20T10:51:57.8785994Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-11-20T10:51:57.8787038Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-11-20T10:51:57.8788069Z hint:
+2026-11-20T10:51:57.8788724Z hint: 	git branch -m <name>
+2026-11-20T10:51:57.8789415Z hint:
+2026-11-20T10:51:57.8790274Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-11-20T10:51:57.8791663Z Initialized empty Git repository in /home/runner/work/prettier/prettier/.git/
+2026-11-20T10:51:57.8797996Z [command]/usr/bin/git remote add origin https://github.com/prettier/prettier
+2026-11-20T10:51:57.8841131Z ##[endgroup]
+2026-11-20T10:51:57.8841757Z ##[group]Disabling automatic garbage collection
+2026-11-20T10:51:57.8844017Z [command]/usr/bin/git config --local gc.auto 0
+2026-11-20T10:51:57.8873010Z ##[endgroup]
+2026-11-20T10:51:57.8874080Z ##[group]Setting up auth
+2026-11-20T10:51:57.8874572Z Removing SSH command configuration
+2026-11-20T10:51:57.8877856Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-20T10:51:57.8906833Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-20T10:51:57.9235369Z Removing HTTP extra header
+2026-11-20T10:51:57.9240673Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-20T10:51:57.9271263Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-20T10:51:57.9515057Z Removing includeIf entries pointing to credentials config files
+2026-11-20T10:51:57.9519537Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-20T10:51:57.9549968Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-20T10:51:57.9788527Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-a6301817-1d40-435f-bfee-2b47df9b088c.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-11-20T10:51:57.9822118Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/prettier/prettier/.git.path /home/runner/work/_temp/git-credentials-a6301817-1d40-435f-bfee-2b47df9b088c.config
+2026-11-20T10:51:57.9852468Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/prettier/prettier/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-a6301817-1d40-435f-bfee-2b47df9b088c.config
+2026-11-20T10:51:57.9884509Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-a6301817-1d40-435f-bfee-2b47df9b088c.config
+2026-11-20T10:51:57.9979010Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-a6301817-1d40-435f-bfee-2b47df9b088c.config
+2026-11-20T10:51:57.9981267Z ##[endgroup]
+2026-11-20T10:51:57.9982117Z ##[group]Fetching the repository
+2026-11-20T10:51:57.9983634Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +611d45b9b14d0bc577f4a17a70afb8ff095e7401:refs/remotes/pull/20361/merge
+2026-11-20T10:51:59.3062254Z From https://github.com/prettier/prettier
+2026-11-20T10:51:59.3064405Z  * [new ref]         611d45b9b14d0bc577f4a17a70afb8ff095e7401 -> pull/20361/merge
+2026-11-20T10:51:59.3067551Z ##[endgroup]
+2026-11-20T10:51:59.3068667Z ##[group]Determining the checkout info
+2026-11-20T10:51:59.3070063Z ##[endgroup]
+2026-11-20T10:51:59.3070935Z [command]/usr/bin/git sparse-checkout disable
+2026-11-20T10:51:59.3118283Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-11-20T10:51:59.3147775Z ##[group]Checking out the ref
+2026-11-20T10:51:59.3150738Z [command]/usr/bin/git checkout --progress --force refs/remotes/pull/20361/merge
+2026-11-20T10:51:59.7074937Z Note: switching to 'refs/remotes/pull/20361/merge'.
+2026-11-20T10:51:59.7075908Z 
+2026-11-20T10:51:59.7076435Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-11-20T10:51:59.7077296Z changes and commit them, and you can discard any commits you make in this
+2026-11-20T10:51:59.7079512Z state without impacting any branches by switching back to a branch.
+2026-11-20T10:51:59.7080121Z 
+2026-11-20T10:51:59.7080459Z If you want to create a new branch to retain commits you create, you may
+2026-11-20T10:51:59.7081148Z do so (now or later) by using -c with the switch command. Example:
+2026-11-20T10:51:59.7081552Z 
+2026-11-20T10:51:59.7081743Z   git switch -c <new-branch-name>
+2026-11-20T10:51:59.7082052Z 
+2026-11-20T10:51:59.7082240Z Or undo this operation with:
+2026-11-20T10:51:59.7082493Z 
+2026-11-20T10:51:59.7082661Z   git switch -
+2026-11-20T10:51:59.7083053Z 
+2026-11-20T10:51:59.7083443Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-11-20T10:51:59.7083938Z 
+2026-11-20T10:51:59.7084432Z HEAD is now at 611d45b Merge 26800d6c3c5875103f566656328e53fb39b71833 into ed0887e1b7dc9be28195e792c51a4be3f8bc9cd9
+2026-11-20T10:51:59.7088305Z ##[endgroup]
+2026-11-20T10:51:59.7134418Z [command]/usr/bin/git log -1 --format=%H
+2026-11-20T10:51:59.7159566Z 611d45b9b14d0bc577f4a17a70afb8ff095e7401
+2026-11-20T10:51:59.7423669Z ##[group]Run actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+2026-11-20T10:51:59.7424091Z with:
+2026-11-20T10:51:59.7424310Z   node-version: 24
+2026-11-20T10:51:59.7424524Z   cache: yarn
+2026-11-20T10:51:59.7424746Z   check-latest: false
+2026-11-20T10:51:59.7427053Z   token: ***
+2026-11-20T10:51:59.7427279Z   package-manager-cache: true
+2026-11-20T10:51:59.7427550Z ##[endgroup]
+2026-11-20T10:51:59.8487155Z Found in cache @ /opt/hostedtoolcache/node/24.22.3/x64
+2026-11-20T10:51:59.8990719Z ##[group]Environment details
+2026-11-20T10:52:00.3972682Z node: v24.22.3
+2026-11-20T10:52:00.3973280Z npm: 11.19.1
+2026-11-20T10:52:00.3973465Z yarn: 4.18.1
+2026-11-20T10:52:00.3974319Z ##[endgroup]
+2026-11-20T10:52:00.3988720Z [command]/usr/local/bin/yarn --version
+2026-11-20T10:52:00.7170739Z 4.18.1
+2026-11-20T10:52:00.7353710Z [command]/usr/local/bin/yarn config get cacheFolder
+2026-11-20T10:52:01.0607599Z /home/runner/.yarn/berry/cache
+2026-11-20T10:52:01.0894300Z [command]/usr/local/bin/yarn config get enableGlobalCache
+2026-11-20T10:52:01.4072923Z true
+2026-11-20T10:52:01.5638489Z Cache hit for: node-cache-Linux-x64-yarn-22fef051df38568c255fac3a2edb435f901351710bfdb6ebdd6c4ef93c3b6b80
+2026-11-20T10:52:02.5149587Z Received 66503935 of 66503935 (100.0%), 78.4 MBs/sec
+2026-11-20T10:52:02.5183848Z Cache Size: ~63 MB (66503935 B)
+2026-11-20T10:52:02.5244443Z [command]/usr/bin/tar -xf /home/runner/work/_temp/5a57a84e-8b98-4a26-bfe9-e8d5f47c10bf/cache.tzst -P -C /home/runner/work/prettier/prettier --use-compress-program unzstd
+2026-11-20T10:52:02.6315562Z Cache restored successfully
+2026-11-20T10:52:02.6353809Z Cache restored from key: node-cache-Linux-x64-yarn-22fef051df38568c255fac3a2edb435f901351710bfdb6ebdd6c4ef93c3b6b80
+2026-11-20T10:52:02.6540936Z ##[group]Run yarn --immutable
+2026-11-20T10:52:02.6541244Z yarn --immutable
+2026-11-20T10:52:02.6579791Z shell: /usr/bin/bash -e {0}
+2026-11-20T10:52:02.6580046Z ##[endgroup]
+2026-11-20T10:52:03.0568707Z ➤ YN0000: Yarn detected that the current workflow is executed from a public pull request. For safety the hardened mode has been enabled.
+2026-11-20T10:52:03.0571491Z ➤ YN0000: It will prevent malicious lockfile manipulations, in exchange for a slower install time. You can opt-out if necessary; check our documentation for more details.
+2026-11-20T10:52:03.0572374Z 
+2026-11-20T10:52:03.0572883Z ➤ YN0000: · Yarn 4.18.1
+2026-11-20T10:52:03.0712887Z ➤ YN0000: ┌ Resolution step
+2026-11-20T10:52:03.0713711Z ##[group]Resolution step
+2026-11-20T10:52:07.4936882Z ##[endgroup]
+2026-11-20T10:52:07.4940566Z ➤ YN0000: └ Completed in 4s 422ms
+2026-11-20T10:52:07.4949037Z ➤ YN0000: ┌ Post-resolution validation
+2026-11-20T10:52:07.4949752Z ##[group]Post-resolution validation
+2026-11-20T10:52:07.4950724Z ➤ YN0002: │ prettier@workspace:. doesn't provide rollup (pd38a67), requested by rollup-plugin-license.
+2026-11-20T10:52:07.4952067Z ➤ YN0086: │ Some peer dependencies are incorrectly met by your project; run yarn explain peer-requirements <hash> for details, where <hash> is the six-letter p-prefixed code.
+2026-11-20T10:52:07.4953459Z ➤ YN0086: │ Some peer dependencies are incorrectly met by dependencies; run yarn explain peer-requirements for details.
+2026-11-20T10:52:07.5214411Z ##[endgroup]
+2026-11-20T10:52:07.5215191Z ➤ YN0000: └ Completed
+2026-11-20T10:52:07.5215812Z ➤ YN0000: ┌ Fetch step
+2026-11-20T10:52:07.5216337Z ##[group]Fetch step
+2026-11-20T10:52:07.7014331Z ##[endgroup]
+2026-11-20T10:52:07.7015221Z ➤ YN0000: └ Completed
+2026-11-20T10:52:07.7343463Z ➤ YN0000: ┌ Link step
+2026-11-20T10:52:07.7344240Z ##[group]Link step
+2026-11-20T10:52:13.4089110Z ➤ YN0004: │ @parcel/watcher@npm:2.6.0 lists build scripts, but all build scripts have been disabled.
+2026-11-20T10:52:13.4090639Z ➤ YN0004: │ esbuild@npm:0.28.2 lists build scripts, but all build scripts have been disabled.
+2026-11-20T10:52:13.4105069Z ➤ YN0004: │ puppeteer@npm:25.17.0 lists build scripts, but all build scripts have been disabled.
+2026-11-20T10:52:13.4106087Z ##[endgroup]
+2026-11-20T10:52:13.4106532Z ➤ YN0000: └ Completed in 5s 674ms
+2026-11-20T10:52:13.4609702Z Yarn plugin "prepare" running in "/home/runner/work/prettier/prettier".
+2026-11-20T10:52:14.8595649Z ➤ YN0000: · Done with warnings in 11s 803ms
+2026-11-20T10:52:14.9558423Z ##[group]Run yarn lint:deps
+2026-11-20T10:52:14.9558683Z yarn lint:deps
+2026-11-20T10:52:14.9589313Z shell: /usr/bin/bash -e {0}
+2026-11-20T10:52:14.9589546Z ##[endgroup]
+2026-11-20T10:52:15.4237953Z Checking '/package.json'...
+2026-11-20T10:52:15.4258281Z ✅ All dependency versions are pinned.
+2026-11-20T10:52:15.4258619Z 
+2026-11-20T10:52:15.4258956Z Checking '/website/package.json'...
+2026-11-20T10:52:15.4261660Z ✅ All dependency versions are pinned.
+2026-11-20T10:52:15.4261985Z 
+2026-11-20T10:52:15.4262327Z Checking '/scripts/release/package.json'...
+2026-11-20T10:52:15.4266398Z ✅ All dependency versions are pinned.
+2026-11-20T10:52:15.4266626Z 
+2026-11-20T10:52:15.4267677Z Checking '/scripts/tools/bundle-test/package.json'...
+2026-11-20T10:52:15.4269602Z ✅ All dependency versions are pinned.
+2026-11-20T10:52:15.4269879Z 
+2026-11-20T10:52:15.4270557Z Checking '/scripts/tools/eslint-plugin-prettier-internal-rules/package.json'...
+2026-11-20T10:52:15.4272573Z ✅ All dependency versions are pinned.
+2026-11-20T10:52:15.4577489Z ##[group]Run yarn lint:typecheck
+2026-11-20T10:52:15.4577756Z yarn lint:typecheck
+2026-11-20T10:52:15.4606906Z shell: /usr/bin/bash -e {0}
+2026-11-20T10:52:15.4607144Z ##[endgroup]
+2026-11-20T10:52:36.8215178Z ##[group]Run yarn lint:eslint
+2026-11-20T10:52:36.8215610Z yarn lint:eslint
+2026-11-20T10:52:36.8244711Z shell: /usr/bin/bash -e {0}
+2026-11-20T10:52:36.8244935Z ##[endgroup]
+2026-11-20T10:52:53.9173968Z ##[group]Run yarn lint:prettier
+2026-11-20T10:52:53.9174261Z yarn lint:prettier
+2026-11-20T10:52:53.9202960Z shell: /usr/bin/bash -e {0}
+2026-11-20T10:52:53.9203179Z ##[endgroup]
+2026-11-20T10:52:54.4063756Z Checking formatting...
+2026-11-20T10:53:04.7165711Z All matched files use Prettier code style!
+2026-11-20T10:53:04.8569687Z ##[group]Run yarn lint:spellcheck
+2026-11-20T10:53:04.8570103Z yarn lint:spellcheck
+2026-11-20T10:53:04.8613319Z shell: /usr/bin/bash -e {0}
+2026-11-20T10:53:04.8613672Z ##[endgroup]
+2026-11-20T10:53:08.0010296Z src/language-html/utilities/index.js:31:9 - Unknown word (jscript)
+2026-11-20T10:53:08.0011163Z src/language-html/utilities/index.js:32:9 - Unknown word (livescript)
+2026-11-20T10:53:12.0315238Z CSpell: Files checked: 2875, Issues found: 2 in 1 file.
+2026-11-20T10:53:12.1128378Z ##[error]Process completed with exit code 1.
+2026-11-20T10:53:12.1281893Z Post job cleanup.
+2026-11-20T10:53:12.1981395Z [command]/usr/bin/git version
+2026-11-20T10:53:12.2015829Z git version 2.56.1
+2026-11-20T10:53:12.2043557Z Temporarily overriding HOME='/home/runner/work/_temp/c2a58f74-8f24-411f-9c53-3c3e15da827b' before making global git config changes
+2026-11-20T10:53:12.2044708Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-20T10:53:12.2047786Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/prettier/prettier
+2026-11-20T10:53:12.2076459Z Removing SSH command configuration
+2026-11-20T10:53:12.2081121Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-20T10:53:12.2137898Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-20T10:53:12.3266147Z Removing HTTP extra header
+2026-11-20T10:53:12.3270841Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-20T10:53:12.3305535Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-20T10:53:12.3556374Z Removing includeIf entries pointing to credentials config files
+2026-11-20T10:53:12.3561669Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-20T10:53:12.3586363Z includeif.gitdir:/home/runner/work/prettier/prettier/.git.path
+2026-11-20T10:53:12.3587061Z includeif.gitdir:/home/runner/work/prettier/prettier/.git/worktrees/*.path
+2026-11-20T10:53:12.3587476Z includeif.gitdir:/github/workspace/.git.path
+2026-11-20T10:53:12.3587832Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-11-20T10:53:12.3593371Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/prettier/prettier/.git.path
+2026-11-20T10:53:12.3613938Z /home/runner/work/_temp/git-credentials-a6301817-1d40-435f-bfee-2b47df9b088c.config
+2026-11-20T10:53:12.3622274Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/prettier/prettier/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-a6301817\-1d40\-435f\-bfee\-2b47df9b088c\.config
+2026-11-20T10:53:12.3654992Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/prettier/prettier/.git/worktrees/*.path
+2026-11-20T10:53:12.3676255Z /home/runner/work/_temp/git-credentials-a6301817-1d40-435f-bfee-2b47df9b088c.config
+2026-11-20T10:53:12.3684574Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/prettier/prettier/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-a6301817\-1d40\-435f\-bfee\-2b47df9b088c\.config
+2026-11-20T10:53:12.3712947Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-11-20T10:53:12.3731579Z /github/runner_temp/git-credentials-a6301817-1d40-435f-bfee-2b47df9b088c.config
+2026-11-20T10:53:12.3738909Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-a6301817\-1d40\-435f\-bfee\-2b47df9b088c\.config
+2026-11-20T10:53:12.3767478Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-11-20T10:53:12.3788423Z /github/runner_temp/git-credentials-a6301817-1d40-435f-bfee-2b47df9b088c.config
+2026-11-20T10:53:12.3794664Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-a6301817\-1d40\-435f\-bfee\-2b47df9b088c\.config
+2026-11-20T10:53:12.3822591Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-20T10:53:12.4067381Z Removing credentials config '/home/runner/work/_temp/git-credentials-a6301817-1d40-435f-bfee-2b47df9b088c.config'
+2026-11-20T10:53:12.4207590Z Cleaning up orphan processes

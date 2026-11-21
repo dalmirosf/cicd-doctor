@@ -1,0 +1,27 @@
+id: prettier-42169831062-1
+source: public
+repo: prettier/prettier
+run_url: https://github.com/prettier/prettier/actions/runs/42169831062/attempts/1
+job_id: 127735049926
+expected:
+  category: broken_test
+  cause: 'El lint de producción falla: ''String.raw'' debería estar transformado en
+    el bundle (no-restricted-syntax).'
+  evidence_lines: []
+fix:
+  commit: 72e29bec8e30361e71092c5d9e771c86ff28c347
+  summary: 2 commit(s), 3 file(s), +26/-6
+flaky: false
+tags:
+- node
+captured_at: '2026-11-21T16:58:32Z'
+provenance:
+  repo: prettier/prettier
+  license: MIT
+  run_url: https://github.com/prettier/prettier/actions/runs/42169831062/attempts/1
+  fix_sha: 72e29bec8e30361e71092c5d9e771c86ff28c347
+  fix_run_url: https://github.com/prettier/prettier/actions/runs/42173412232
+  occurred_at: '2026-11-06T05:42:08Z'
+  pairing: H1
+  labeled_by: owner (draft by Claude)
+  label_basis: log

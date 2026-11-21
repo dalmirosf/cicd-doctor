@@ -1,0 +1,26 @@
+id: vite-42996511749-1
+source: public
+repo: vitejs/vite
+run_url: https://github.com/vitejs/vite/actions/runs/42996511749/attempts/1
+job_id: 130442029792
+expected:
+  category: broken_test
+  cause: Un worker de vitest sale con código 1 en Windows al correr el test css-lightningcss-proxy.
+  evidence_lines: []
+fix:
+  commit: 76cb51bba1a8988b00a5becae5829c3e7a49d9ab
+  summary: 1 commit(s), 6 file(s), +117/-20
+flaky: false
+tags:
+- node
+captured_at: '2026-11-21T16:57:04Z'
+provenance:
+  repo: vitejs/vite
+  license: MIT
+  run_url: https://github.com/vitejs/vite/actions/runs/42996511749/attempts/1
+  fix_sha: 76cb51bba1a8988b00a5becae5829c3e7a49d9ab
+  fix_run_url: https://github.com/vitejs/vite/actions/runs/42998216526
+  occurred_at: '2026-11-11T09:38:41Z'
+  pairing: H1
+  labeled_by: owner (draft by Claude)
+  label_basis: log

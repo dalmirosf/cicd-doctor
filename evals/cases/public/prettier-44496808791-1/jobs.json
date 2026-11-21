@@ -1,0 +1,213 @@
+{
+  "total_count": 1,
+  "jobs": [
+    {
+      "id": 135466025499,
+      "run_id": 44496808791,
+      "run_attempt": 1,
+      "workflow_name": "Lint",
+      "name": "Lint",
+      "status": "completed",
+      "conclusion": "failure",
+      "started_at": "2026-11-19T09:29:05Z",
+      "completed_at": "2026-11-19T09:30:17Z",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-19T09:29:06Z",
+          "completed_at": "2026-11-19T09:29:06Z"
+        },
+        {
+          "name": "Checkout",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-19T09:29:06Z",
+          "completed_at": "2026-11-19T09:29:09Z"
+        },
+        {
+          "name": "Setup Node.js",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-11-19T09:29:09Z",
+          "completed_at": "2026-11-19T09:29:13Z"
+        },
+        {
+          "name": "Install Dependencies",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-11-19T09:29:13Z",
+          "completed_at": "2026-11-19T09:29:25Z"
+        },
+        {
+          "name": "Check Dependencies",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-11-19T09:29:25Z",
+          "completed_at": "2026-11-19T09:29:25Z"
+        },
+        {
+          "name": "Check JSDoc Types",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-11-19T09:29:25Z",
+          "completed_at": "2026-11-19T09:29:47Z"
+        },
+        {
+          "name": "Lint ESLint",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-11-19T09:29:47Z",
+          "completed_at": "2026-11-19T09:30:04Z"
+        },
+        {
+          "name": "Lint Prettier",
+          "status": "completed",
+          "conclusion": "failure",
+          "number": 8,
+          "started_at": "2026-11-19T09:30:04Z",
+          "completed_at": "2026-11-19T09:30:15Z"
+        },
+        {
+          "name": "Spellcheck",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 9,
+          "started_at": "2026-11-19T09:30:15Z",
+          "completed_at": "2026-11-19T09:30:15Z"
+        },
+        {
+          "name": "Lint Changelog",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 10,
+          "started_at": "2026-11-19T09:30:15Z",
+          "completed_at": "2026-11-19T09:30:15Z"
+        },
+        {
+          "name": "Lint \"format test\"",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 11,
+          "started_at": "2026-11-19T09:30:15Z",
+          "completed_at": "2026-11-19T09:30:15Z"
+        },
+        {
+          "name": "Lint docs code block",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 12,
+          "started_at": "2026-11-19T09:30:15Z",
+          "completed_at": "2026-11-19T09:30:15Z"
+        },
+        {
+          "name": "Lint workflow files",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 13,
+          "started_at": "2026-11-19T09:30:15Z",
+          "completed_at": "2026-11-19T09:30:15Z"
+        },
+        {
+          "name": "Validate renovate config",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 14,
+          "started_at": "2026-11-19T09:30:15Z",
+          "completed_at": "2026-11-19T09:30:15Z"
+        },
+        {
+          "name": "Run yarn (/)",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 15,
+          "started_at": "2026-11-19T09:30:15Z",
+          "completed_at": "2026-11-19T09:30:15Z"
+        },
+        {
+          "name": "Run yarn (/website)",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 16,
+          "started_at": "2026-11-19T09:30:15Z",
+          "completed_at": "2026-11-19T09:30:15Z"
+        },
+        {
+          "name": "Run yarn (/scripts/release)",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 17,
+          "started_at": "2026-11-19T09:30:15Z",
+          "completed_at": "2026-11-19T09:30:15Z"
+        },
+        {
+          "name": "Run yarn (/scripts/tools/bundle-test)",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 18,
+          "started_at": "2026-11-19T09:30:15Z",
+          "completed_at": "2026-11-19T09:30:15Z"
+        },
+        {
+          "name": "Run yarn (/scripts/tools/eslint-plugin-prettier-internal-rules)",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 19,
+          "started_at": "2026-11-19T09:30:15Z",
+          "completed_at": "2026-11-19T09:30:15Z"
+        },
+        {
+          "name": "Knip",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 20,
+          "started_at": "2026-11-19T09:30:15Z",
+          "completed_at": "2026-11-19T09:30:15Z"
+        },
+        {
+          "name": "Ensure no files changed",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 21,
+          "started_at": "2026-11-19T09:30:15Z",
+          "completed_at": "2026-11-19T09:30:15Z"
+        },
+        {
+          "name": "Post Setup Node.js",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 41,
+          "started_at": "2026-11-19T09:30:15Z",
+          "completed_at": "2026-11-19T09:30:15Z"
+        },
+        {
+          "name": "Post Checkout",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 42,
+          "started_at": "2026-11-19T09:30:15Z",
+          "completed_at": "2026-11-19T09:30:15Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 43,
+          "started_at": "2026-11-19T09:30:15Z",
+          "completed_at": "2026-11-19T09:30:15Z"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,109 @@
+{
+  "total_count": 1,
+  "jobs": [
+    {
+      "id": 135296810385,
+      "run_id": 44445588794,
+      "run_attempt": 1,
+      "workflow_name": "CI",
+      "name": "Lint: node-26, ubuntu-latest",
+      "status": "completed",
+      "conclusion": "failure",
+      "started_at": "2026-11-19T02:36:51Z",
+      "completed_at": "2026-11-19T02:37:22Z",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-19T02:36:52Z",
+          "completed_at": "2026-11-19T02:36:55Z"
+        },
+        {
+          "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-19T02:36:55Z",
+          "completed_at": "2026-11-19T02:37:01Z"
+        },
+        {
+          "name": "Install pnpm and node 26",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-11-19T02:37:01Z",
+          "completed_at": "2026-11-19T02:37:13Z"
+        },
+        {
+          "name": "Build",
+          "status": "completed",
+          "conclusion": "failure",
+          "number": 4,
+          "started_at": "2026-11-19T02:37:13Z",
+          "completed_at": "2026-11-19T02:37:14Z"
+        },
+        {
+          "name": "Lint",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 5,
+          "started_at": "2026-11-19T02:37:14Z",
+          "completed_at": "2026-11-19T02:37:14Z"
+        },
+        {
+          "name": "Check formatting",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 6,
+          "started_at": "2026-11-19T02:37:14Z",
+          "completed_at": "2026-11-19T02:37:14Z"
+        },
+        {
+          "name": "Typecheck",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 7,
+          "started_at": "2026-11-19T02:37:14Z",
+          "completed_at": "2026-11-19T02:37:14Z"
+        },
+        {
+          "name": "Test docs",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 8,
+          "started_at": "2026-11-19T02:37:14Z",
+          "completed_at": "2026-11-19T02:37:14Z"
+        },
+        {
+          "name": "Post Install pnpm and node 26",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 15,
+          "started_at": "2026-11-19T02:37:14Z",
+          "completed_at": "2026-11-19T02:37:20Z"
+        },
+        {
+          "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 16,
+          "started_at": "2026-11-19T02:37:20Z",
+          "completed_at": "2026-11-19T02:37:20Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 17,
+          "started_at": "2026-11-19T02:37:20Z",
+          "completed_at": "2026-11-19T02:37:20Z"
+        }
+      ]
+    }
+  ]
+}

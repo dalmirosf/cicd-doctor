@@ -1,0 +1,14 @@
+{
+  "sha": "33f16c1ac905ad05cb552e2ac6bbd4dc63051d02",
+  "pairing": "H1",
+  "commits": 1,
+  "files_total": 1,
+  "files": [
+    {
+      "path": "packages/vite/src/node/__tests__/plugins/resolve.spec.ts",
+      "additions": 4,
+      "deletions": 4
+    }
+  ],
+  "summary": "1 commit(s), 1 file(s), +4/-4"
+}

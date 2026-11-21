@@ -1,0 +1,26 @@
+id: vite-42600232139-1
+source: public
+repo: vitejs/vite
+run_url: https://github.com/vitejs/vite/actions/runs/42600232139/attempts/1
+job_id: 129102672866
+expected:
+  category: broken_test
+  cause: Un test del watch de plugin-legacy lee un archivo CSS que no existe (undefined).
+  evidence_lines: []
+fix:
+  commit: 53f093fac913996327cd58a6696c87f82ce5890b
+  summary: 1 commit(s), 1 file(s), +2/-1
+flaky: false
+tags:
+- node
+captured_at: '2026-11-21T16:56:49Z'
+provenance:
+  repo: vitejs/vite
+  license: MIT
+  run_url: https://github.com/vitejs/vite/actions/runs/42600232139/attempts/1
+  fix_sha: 53f093fac913996327cd58a6696c87f82ce5890b
+  fix_run_url: https://github.com/vitejs/vite/actions/runs/42607174230
+  occurred_at: '2026-11-09T10:24:04Z'
+  pairing: H1
+  labeled_by: owner (draft by Claude)
+  label_basis: log

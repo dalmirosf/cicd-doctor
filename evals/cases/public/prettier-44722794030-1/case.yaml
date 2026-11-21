@@ -1,0 +1,27 @@
+id: prettier-44722794030-1
+source: public
+repo: prettier/prettier
+run_url: https://github.com/prettier/prettier/actions/runs/44722794030/attempts/1
+job_id: 136242533887
+expected:
+  category: broken_test
+  cause: El spellcheck rechaza las palabras 'jscript' y 'livescript' en un archivo
+    de src.
+  evidence_lines: []
+fix:
+  commit: 45ea86577f0967fcdcc6514e135fd6c6a82d0786
+  summary: 1 commit(s), 1 file(s), +1/-0
+flaky: false
+tags:
+- node
+captured_at: '2026-11-21T16:57:30Z'
+provenance:
+  repo: prettier/prettier
+  license: MIT
+  run_url: https://github.com/prettier/prettier/actions/runs/44722794030/attempts/1
+  fix_sha: 45ea86577f0967fcdcc6514e135fd6c6a82d0786
+  fix_run_url: https://github.com/prettier/prettier/actions/runs/44742244909
+  occurred_at: '2026-11-20T10:53:13Z'
+  pairing: H1-pr
+  labeled_by: owner (draft by Claude)
+  label_basis: log

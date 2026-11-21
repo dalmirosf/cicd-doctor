@@ -1,0 +1,966 @@
+﻿2026-11-06T06:09:49.2926358Z Current runner version: '2.338.2'
+2026-11-06T06:09:49.2949625Z ##[group]Runner Image Provisioner
+2026-11-06T06:09:49.2950371Z Hosted Compute Agent
+2026-11-06T06:09:49.2950879Z Version: 20261028.624
+2026-11-06T06:09:49.2951422Z Commit: 54898b74c23fde5556c9b3c3a2290865feef0dfe
+2026-11-06T06:09:49.2952062Z Build Date: 2026-10-28T21:51:42Z
+2026-11-06T06:09:49.2952596Z Worker ID: {958d0c22-5f8b-4629-a949-40856c773270}
+2026-11-06T06:09:49.2953211Z Region: eastus
+2026-11-06T06:09:49.2953691Z Cloud: Azure
+2026-11-06T06:09:49.2954156Z ##[endgroup]
+2026-11-06T06:09:49.2955478Z ##[group]Operating System
+2026-11-06T06:09:49.2955979Z Ubuntu
+2026-11-06T06:09:49.2956464Z 26.04.1
+2026-11-06T06:09:49.2957056Z LTS
+2026-11-06T06:09:49.2957467Z ##[endgroup]
+2026-11-06T06:09:49.2958154Z ##[group]Runner Image
+2026-11-06T06:09:49.2958658Z Image: ubuntu-26.04
+2026-11-06T06:09:49.2959202Z Version: 20261101.186.1
+2026-11-06T06:09:49.2960229Z Included Software: https://github.com/actions/runner-images/blob/ubuntu26/20261101.186/images/ubuntu/Ubuntu2604-Readme.md
+2026-11-06T06:09:49.2961479Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu26%2F20261101.186
+2026-11-06T06:09:49.2962229Z ##[endgroup]
+2026-11-06T06:09:49.2963168Z ##[group]GITHUB_TOKEN Permissions
+2026-11-06T06:09:49.2964943Z Contents: read
+2026-11-06T06:09:49.2965495Z Metadata: read
+2026-11-06T06:09:49.2965952Z ##[endgroup]
+2026-11-06T06:09:49.2967966Z Secret source: Actions
+2026-11-06T06:09:49.2968877Z Cache mode: write
+2026-11-06T06:09:49.2969610Z Prepare workflow directory
+2026-11-06T06:09:49.3238716Z Prepare all required actions
+2026-11-06T06:09:49.3277652Z Getting action download info
+2026-11-06T06:09:49.4645042Z Download action repository 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+2026-11-06T06:09:49.5738443Z Download action repository 'actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1' (SHA:949feb2413d6458794dcd2491c4babbbce0c15c1)
+2026-11-06T06:09:49.6624875Z Download action repository 'actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294' (SHA:a1d282b36b6f3519aa1f3fc636f609c47dddb294)
+2026-11-06T06:09:49.9703478Z Complete job name: Lint
+2026-11-06T06:09:50.0452210Z ##[group]Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+2026-11-06T06:09:50.0453029Z with:
+2026-11-06T06:09:50.0453392Z   repository: prettier/prettier
+2026-11-06T06:09:50.0456539Z   token: ***
+2026-11-06T06:09:50.0457033Z   ssh-strict: true
+2026-11-06T06:09:50.0457386Z   ssh-user: git
+2026-11-06T06:09:50.0457742Z   persist-credentials: true
+2026-11-06T06:09:50.0458129Z   clean: true
+2026-11-06T06:09:50.0458484Z   sparse-checkout-cone-mode: true
+2026-11-06T06:09:50.0458895Z   fetch-depth: 1
+2026-11-06T06:09:50.0459236Z   fetch-tags: false
+2026-11-06T06:09:50.0459586Z   show-progress: true
+2026-11-06T06:09:50.0459944Z   lfs: false
+2026-11-06T06:09:50.0460275Z   submodules: false
+2026-11-06T06:09:50.0460632Z   set-safe-directory: true
+2026-11-06T06:09:50.0461033Z   allow-unsafe-pr-checkout: false
+2026-11-06T06:09:50.0461620Z ##[endgroup]
+2026-11-06T06:09:50.2671037Z Syncing repository: prettier/prettier
+2026-11-06T06:09:50.2672597Z ##[group]Getting Git version info
+2026-11-06T06:09:50.2673279Z Working directory is '/home/runner/work/prettier/prettier'
+2026-11-06T06:09:50.2674164Z [command]/usr/bin/git version
+2026-11-06T06:09:50.2679804Z git version 2.56.0
+2026-11-06T06:09:50.2697662Z ##[endgroup]
+2026-11-06T06:09:50.2707336Z Temporarily overriding HOME='/home/runner/work/_temp/e12ee420-3368-478f-980c-6874ec7fdd97' before making global git config changes
+2026-11-06T06:09:50.2709387Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-06T06:09:50.2711374Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/prettier/prettier
+2026-11-06T06:09:50.2761249Z Deleting the contents of '/home/runner/work/prettier/prettier'
+2026-11-06T06:09:50.2763699Z ##[group]Determining repository object format
+2026-11-06T06:09:50.2764784Z ##[endgroup]
+2026-11-06T06:09:50.2765775Z ##[group]Initializing the repository
+2026-11-06T06:09:50.2768165Z [command]/usr/bin/git init /home/runner/work/prettier/prettier
+2026-11-06T06:09:50.2878771Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-11-06T06:09:50.2880029Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-11-06T06:09:50.2880851Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-11-06T06:09:50.2881602Z hint: call:
+2026-11-06T06:09:50.2882028Z hint:
+2026-11-06T06:09:50.2882493Z hint: 	git config --global init.defaultBranch <name>
+2026-11-06T06:09:50.2883020Z hint:
+2026-11-06T06:09:50.2883525Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-11-06T06:09:50.2884327Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-11-06T06:09:50.2884953Z hint:
+2026-11-06T06:09:50.2885322Z hint: 	git branch -m <name>
+2026-11-06T06:09:50.2885737Z hint:
+2026-11-06T06:09:50.2886302Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-11-06T06:09:50.3000942Z Initialized empty Git repository in /home/runner/work/prettier/prettier/.git/
+2026-11-06T06:09:50.3013864Z [command]/usr/bin/git remote add origin https://github.com/prettier/prettier
+2026-11-06T06:09:50.3062431Z ##[endgroup]
+2026-11-06T06:09:50.3063160Z ##[group]Disabling automatic garbage collection
+2026-11-06T06:09:50.3065787Z [command]/usr/bin/git config --local gc.auto 0
+2026-11-06T06:09:50.3098247Z ##[endgroup]
+2026-11-06T06:09:50.3098991Z ##[group]Setting up auth
+2026-11-06T06:09:50.3105169Z Removing SSH command configuration
+2026-11-06T06:09:50.3114170Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-06T06:09:50.3138031Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-06T06:09:50.3514080Z Removing HTTP extra header
+2026-11-06T06:09:50.3518988Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-06T06:09:50.3548220Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-06T06:09:50.3797697Z Removing includeIf entries pointing to credentials config files
+2026-11-06T06:09:50.3802977Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-06T06:09:50.3831270Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-06T06:09:50.4065366Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-aa4c9e5e-93ba-4549-b5fc-13cff8cc161a.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-11-06T06:09:50.4097987Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/prettier/prettier/.git.path /home/runner/work/_temp/git-credentials-aa4c9e5e-93ba-4549-b5fc-13cff8cc161a.config
+2026-11-06T06:09:50.4124099Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/prettier/prettier/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-aa4c9e5e-93ba-4549-b5fc-13cff8cc161a.config
+2026-11-06T06:09:50.4153558Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-aa4c9e5e-93ba-4549-b5fc-13cff8cc161a.config
+2026-11-06T06:09:50.4180011Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-aa4c9e5e-93ba-4549-b5fc-13cff8cc161a.config
+2026-11-06T06:09:50.4205531Z ##[endgroup]
+2026-11-06T06:09:50.4206543Z ##[group]Fetching the repository
+2026-11-06T06:09:50.4210430Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +f5fe94717dd0284a02d908f50d895819606f688a:refs/remotes/pull/20448/merge
+2026-11-06T06:09:51.5327163Z From https://github.com/prettier/prettier
+2026-11-06T06:09:51.5335343Z  * [new ref]         f5fe94717dd0284a02d908f50d895819606f688a -> pull/20448/merge
+2026-11-06T06:09:51.5338188Z ##[endgroup]
+2026-11-06T06:09:51.5339110Z ##[group]Determining the checkout info
+2026-11-06T06:09:51.5340073Z ##[endgroup]
+2026-11-06T06:09:51.5340686Z [command]/usr/bin/git sparse-checkout disable
+2026-11-06T06:09:51.5400291Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-11-06T06:09:51.5427663Z ##[group]Checking out the ref
+2026-11-06T06:09:51.5429990Z [command]/usr/bin/git checkout --progress --force refs/remotes/pull/20448/merge
+2026-11-06T06:09:51.9606101Z Note: switching to 'refs/remotes/pull/20448/merge'.
+2026-11-06T06:09:51.9606443Z 
+2026-11-06T06:09:51.9606648Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-11-06T06:09:51.9607360Z changes and commit them, and you can discard any commits you make in this
+2026-11-06T06:09:51.9608432Z state without impacting any branches by switching back to a branch.
+2026-11-06T06:09:51.9608746Z 
+2026-11-06T06:09:51.9608966Z If you want to create a new branch to retain commits you create, you may
+2026-11-06T06:09:51.9609396Z do so (now or later) by using -c with the switch command. Example:
+2026-11-06T06:09:51.9609613Z 
+2026-11-06T06:09:51.9609729Z   git switch -c <new-branch-name>
+2026-11-06T06:09:51.9609883Z 
+2026-11-06T06:09:51.9610000Z Or undo this operation with:
+2026-11-06T06:09:51.9610153Z 
+2026-11-06T06:09:51.9610261Z   git switch -
+2026-11-06T06:09:51.9610449Z 
+2026-11-06T06:09:51.9611079Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-11-06T06:09:51.9611589Z 
+2026-11-06T06:09:51.9612043Z HEAD is now at f5fe947 Merge e8e1dd6d839d546919cd6367860ff9d60918c82d into e7ebcc3ac33b6c10c11210a7fe46ed817d79d4e2
+2026-11-06T06:09:51.9621286Z ##[endgroup]
+2026-11-06T06:09:51.9664017Z [command]/usr/bin/git log -1 --format=%H
+2026-11-06T06:09:51.9689159Z f5fe94717dd0284a02d908f50d895819606f688a
+2026-11-06T06:09:51.9936546Z ##[group]Run actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+2026-11-06T06:09:51.9937088Z with:
+2026-11-06T06:09:51.9937281Z   node-version: 24
+2026-11-06T06:09:51.9937461Z   cache: yarn
+2026-11-06T06:09:51.9937632Z   check-latest: false
+2026-11-06T06:09:51.9939542Z   token: ***
+2026-11-06T06:09:51.9939721Z   package-manager-cache: true
+2026-11-06T06:09:51.9939950Z ##[endgroup]
+2026-11-06T06:09:52.1027899Z Found in cache @ /opt/hostedtoolcache/node/24.22.2/x64
+2026-11-06T06:09:52.1520599Z ##[group]Environment details
+2026-11-06T06:09:52.6345252Z node: v24.22.2
+2026-11-06T06:09:52.6345564Z npm: 11.19.1
+2026-11-06T06:09:52.6345762Z yarn: 4.18.1
+2026-11-06T06:09:52.6346285Z ##[endgroup]
+2026-11-06T06:09:52.6360606Z [command]/usr/local/bin/yarn --version
+2026-11-06T06:09:52.9477779Z 4.18.1
+2026-11-06T06:09:52.9743171Z [command]/usr/local/bin/yarn config get cacheFolder
+2026-11-06T06:09:53.2759968Z /home/runner/.yarn/berry/cache
+2026-11-06T06:09:53.3033130Z [command]/usr/local/bin/yarn config get enableGlobalCache
+2026-11-06T06:09:53.6158731Z true
+2026-11-06T06:09:53.7102947Z Cache hit for: node-cache-Linux-x64-yarn-6abd36d25cf37f5e67f84157a9d1bd0e7565bb6b21b53b8f109094d7abe5b1e8
+2026-11-06T06:09:54.3880955Z Received 65513408 of 65513408 (100.0%), 153.9 MBs/sec
+2026-11-06T06:09:54.3882173Z Cache Size: ~62 MB (65513408 B)
+2026-11-06T06:09:54.3967663Z [command]/usr/bin/tar -xf /home/runner/work/_temp/60a6470c-5fe4-4256-bbd7-185e71ca25a0/cache.tzst -P -C /home/runner/work/prettier/prettier --use-compress-program unzstd
+2026-11-06T06:09:54.5035712Z Cache restored successfully
+2026-11-06T06:09:54.5068849Z Cache restored from key: node-cache-Linux-x64-yarn-6abd36d25cf37f5e67f84157a9d1bd0e7565bb6b21b53b8f109094d7abe5b1e8
+2026-11-06T06:09:54.5231308Z ##[group]Run yarn --immutable
+2026-11-06T06:09:54.5231584Z yarn --immutable
+2026-11-06T06:09:54.5284602Z shell: /usr/bin/bash -e {0}
+2026-11-06T06:09:54.5285074Z ##[endgroup]
+2026-11-06T06:09:54.9181317Z ➤ YN0000: Yarn detected that the current workflow is executed from a public pull request. For safety the hardened mode has been enabled.
+2026-11-06T06:09:54.9182598Z ➤ YN0000: It will prevent malicious lockfile manipulations, in exchange for a slower install time. You can opt-out if necessary; check our documentation for more details.
+2026-11-06T06:09:54.9183138Z 
+2026-11-06T06:09:54.9183320Z ➤ YN0000: · Yarn 4.18.1
+2026-11-06T06:09:54.9255825Z ➤ YN0000: ┌ Resolution step
+2026-11-06T06:09:54.9256376Z ##[group]Resolution step
+2026-11-06T06:09:58.7794092Z ##[endgroup]
+2026-11-06T06:09:58.7808311Z ➤ YN0000: └ Completed in 3s 853ms
+2026-11-06T06:09:58.7809004Z ➤ YN0000: ┌ Post-resolution validation
+2026-11-06T06:09:58.7809560Z ##[group]Post-resolution validation
+2026-11-06T06:09:58.7810856Z ➤ YN0002: │ prettier@workspace:. doesn't provide rollup (pd38a67), requested by rollup-plugin-license.
+2026-11-06T06:09:58.7812873Z ➤ YN0086: │ Some peer dependencies are incorrectly met by your project; run yarn explain peer-requirements <hash> for details, where <hash> is the six-letter p-prefixed code.
+2026-11-06T06:09:58.7814509Z ➤ YN0086: │ Some peer dependencies are incorrectly met by dependencies; run yarn explain peer-requirements for details.
+2026-11-06T06:09:58.8139318Z ##[endgroup]
+2026-11-06T06:09:58.8140238Z ➤ YN0000: └ Completed
+2026-11-06T06:09:58.8140855Z ➤ YN0000: ┌ Fetch step
+2026-11-06T06:09:58.8141305Z ##[group]Fetch step
+2026-11-06T06:09:58.9838161Z ##[endgroup]
+2026-11-06T06:09:58.9848277Z ➤ YN0000: └ Completed
+2026-11-06T06:09:59.0138080Z ➤ YN0000: ┌ Link step
+2026-11-06T06:09:59.0139194Z ##[group]Link step
+2026-11-06T06:10:04.3101100Z ➤ YN0004: │ @parcel/watcher@npm:2.6.0 lists build scripts, but all build scripts have been disabled.
+2026-11-06T06:10:04.3102518Z ➤ YN0004: │ esbuild@npm:0.28.2 lists build scripts, but all build scripts have been disabled.
+2026-11-06T06:10:04.3103769Z ➤ YN0004: │ puppeteer@npm:25.16.0 lists build scripts, but all build scripts have been disabled.
+2026-11-06T06:10:04.3104675Z ##[endgroup]
+2026-11-06T06:10:04.3105099Z ➤ YN0000: └ Completed in 5s 297ms
+2026-11-06T06:10:04.3604042Z Yarn plugin "prepare" running in "/home/runner/work/prettier/prettier".
+2026-11-06T06:10:05.7005254Z ➤ YN0000: · Done with warnings in 10s 783ms
+2026-11-06T06:10:05.7994461Z ##[group]Run yarn lint:deps
+2026-11-06T06:10:05.7994711Z yarn lint:deps
+2026-11-06T06:10:05.8040758Z shell: /usr/bin/bash -e {0}
+2026-11-06T06:10:05.8040998Z ##[endgroup]
+2026-11-06T06:10:06.2905501Z Checking '/package.json'...
+2026-11-06T06:10:06.2925617Z ✅ All dependency versions are pinned.
+2026-11-06T06:10:06.2925951Z 
+2026-11-06T06:10:06.2926328Z Checking '/website/package.json'...
+2026-11-06T06:10:06.2936103Z ✅ All dependency versions are pinned.
+2026-11-06T06:10:06.2936402Z 
+2026-11-06T06:10:06.2936640Z Checking '/scripts/release/package.json'...
+2026-11-06T06:10:06.2938438Z ✅ All dependency versions are pinned.
+2026-11-06T06:10:06.2938696Z 
+2026-11-06T06:10:06.2938969Z Checking '/scripts/tools/bundle-test/package.json'...
+2026-11-06T06:10:06.2939783Z ✅ All dependency versions are pinned.
+2026-11-06T06:10:06.2940018Z 
+2026-11-06T06:10:06.2940408Z Checking '/scripts/tools/eslint-plugin-prettier-internal-rules/package.json'...
+2026-11-06T06:10:06.2941141Z ✅ All dependency versions are pinned.
+2026-11-06T06:10:06.3292801Z ##[group]Run yarn lint:typecheck
+2026-11-06T06:10:06.3293224Z yarn lint:typecheck
+2026-11-06T06:10:06.3337257Z shell: /usr/bin/bash -e {0}
+2026-11-06T06:10:06.3337480Z ##[endgroup]
+2026-11-06T06:10:28.7719176Z ##[group]Run yarn lint:eslint
+2026-11-06T06:10:28.7719429Z yarn lint:eslint
+2026-11-06T06:10:28.7763393Z shell: /usr/bin/bash -e {0}
+2026-11-06T06:10:28.7763621Z ##[endgroup]
+2026-11-06T06:10:44.7431065Z ##[group]Run yarn lint:prettier
+2026-11-06T06:10:44.7431346Z yarn lint:prettier
+2026-11-06T06:10:44.7474490Z shell: /usr/bin/bash -e {0}
+2026-11-06T06:10:44.7474719Z ##[endgroup]
+2026-11-06T06:10:45.2554135Z Checking formatting...
+2026-11-06T06:10:59.9773658Z All matched files use Prettier code style!
+2026-11-06T06:11:00.0641187Z ##[group]Run yarn lint:spellcheck
+2026-11-06T06:11:00.0641465Z yarn lint:spellcheck
+2026-11-06T06:11:00.0685079Z shell: /usr/bin/bash -e {0}
+2026-11-06T06:11:00.0685303Z ##[endgroup]
+2026-11-06T06:11:07.1665857Z CSpell: Files checked: 2927, Issues found: 0 in 0 files.
+2026-11-06T06:11:07.2501108Z ##[group]Run yarn lint:changelog
+2026-11-06T06:11:07.2501511Z yarn lint:changelog
+2026-11-06T06:11:07.2554229Z shell: /usr/bin/bash -e {0}
+2026-11-06T06:11:07.2554461Z ##[endgroup]
+2026-11-06T06:11:07.7868963Z ##[group]Run yarn lint:format-test
+2026-11-06T06:11:07.7869395Z yarn lint:format-test
+2026-11-06T06:11:07.7917781Z shell: /usr/bin/bash -e {0}
+2026-11-06T06:11:07.7918091Z ##[endgroup]
+2026-11-06T06:11:08.3093509Z Pass.
+2026-11-06T06:11:08.3466075Z ##[group]Run yarn prettier "{docs,website/versioned_docs/version-stable}/**/*.md" --check
+2026-11-06T06:11:08.3466576Z yarn prettier "{docs,website/versioned_docs/version-stable}/**/*.md" --check
+2026-11-06T06:11:08.3509526Z shell: /usr/bin/bash -e {0}
+2026-11-06T06:11:08.3509732Z env:
+2026-11-06T06:11:08.3509900Z   PRETTIER_DEBUG: true
+2026-11-06T06:11:08.3510082Z ##[endgroup]
+2026-11-06T06:11:08.8291612Z Checking formatting...
+2026-11-06T06:11:10.0704187Z All matched files use Prettier code style!
+2026-11-06T06:11:10.1214813Z ##[group]Run bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
+2026-11-06T06:11:10.1215462Z bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
+2026-11-06T06:11:10.1215862Z ./actionlint -color
+2026-11-06T06:11:10.1262426Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-06T06:11:10.1262723Z ##[endgroup]
+2026-11-06T06:11:10.2024577Z   % Total    % Received % Xferd  Average Speed  Time    Time    Time   Current
+2026-11-06T06:11:10.2025288Z                                  Dload  Upload  Total   Spent   Left   Speed
+2026-11-06T06:11:10.2029623Z 
+2026-11-06T06:11:10.2630855Z   0      0   0      0   0      0      0      0                              0
+2026-11-06T06:11:10.2631543Z 100   4059 100   4059   0      0  66534      0                              0
+2026-11-06T06:11:10.2632249Z 100   4059 100   4059   0      0  66467      0                              0
+2026-11-06T06:11:10.2632875Z 100   4059 100   4059   0      0  66403      0                              0
+2026-11-06T06:11:10.2650828Z Start downloading actionlint v1.7.12 to /home/runner/work/prettier/prettier
+2026-11-06T06:11:10.2683186Z Detected OS=linux ext=tar.gz arch=amd64
+2026-11-06T06:11:10.2684766Z Downloading https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz with curl
+2026-11-06T06:11:10.2734556Z   % Total    % Received % Xferd  Average Speed  Time    Time    Time   Current
+2026-11-06T06:11:10.2735323Z                                  Dload  Upload  Total   Spent   Left   Speed
+2026-11-06T06:11:10.2735668Z 
+2026-11-06T06:11:10.2905777Z   0      0   0      0   0      0      0      0                              0
+2026-11-06T06:11:10.2906359Z   0      0   0      0   0      0      0      0                              0
+2026-11-06T06:11:10.2906956Z   0      0   0      0   0      0      0      0                              0
+2026-11-06T06:11:10.2907278Z 
+2026-11-06T06:11:10.3095167Z actionlint
+2026-11-06T06:11:10.3340236Z   0      0   0      0   0      0      0      0                              0
+2026-11-06T06:11:10.3341135Z 100  2.24M 100  2.24M   0      0 37.02M      0                              0
+2026-11-06T06:11:10.3341960Z 100  2.24M 100  2.24M   0      0 36.98M      0                              0
+2026-11-06T06:11:10.3342556Z 100  2.24M 100  2.24M   0      0 36.95M      0                              0
+2026-11-06T06:11:10.3399999Z Downloaded and unarchived executable: /home/runner/work/prettier/prettier/actionlint
+2026-11-06T06:11:10.3428793Z Done: 1.7.12
+2026-11-06T06:11:10.3429100Z installed by downloading from release page
+2026-11-06T06:11:10.3429404Z built with go1.26.1 compiler for linux/amd64
+2026-11-06T06:11:10.7046131Z ##[group]Run actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294
+2026-11-06T06:11:10.7046683Z with:
+2026-11-06T06:11:10.7048838Z   repo-token: ***
+2026-11-06T06:11:10.7049141Z ##[endgroup]
+2026-11-06T06:11:13.6220436Z ##[group]Vulnerabilities
+2026-11-06T06:11:13.6222361Z yarn.lock » glob@13.0.7 – Glob: AbortSignal cancellation bypass allows post-timeout filesystem traversal (moderate severity)
+2026-11-06T06:11:13.6222998Z   ↪ https://github.com/advisories/GHSA-3g3m-2fjr-6pw4
+2026-11-06T06:11:13.6243698Z ##[error]Dependency review detected vulnerable packages.
+2026-11-06T06:11:13.6251057Z ##[endgroup]
+2026-11-06T06:11:13.6310660Z ##[group]Scorecard
+2026-11-06T06:11:13.6311026Z npm/@types/estree: OpenSSF Scorecard Score: 6.6
+2026-11-06T06:11:13.6311368Z npm/@types/node: OpenSSF Scorecard Score: 6.6
+2026-11-06T06:11:13.6311740Z npm/baseline-browser-mapping: OpenSSF Scorecard Score: undefined
+2026-11-06T06:11:13.6312276Z npm/browserslist: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6312587Z npm/caniuse-lite: OpenSSF Scorecard Score: 4.4
+2026-11-06T06:11:13.6312926Z npm/electron-to-chromium: OpenSSF Scorecard Score: undefined
+2026-11-06T06:11:13.6313264Z npm/enhanced-resolve: OpenSSF Scorecard Score: 5.5
+2026-11-06T06:11:13.6313584Z npm/fast-uri: OpenSSF Scorecard Score: 8.1
+2026-11-06T06:11:13.6313928Z npm/minimizer-webpack-plugin: OpenSSF Scorecard Score: undefined
+2026-11-06T06:11:13.6314267Z npm/node-releases: OpenSSF Scorecard Score: 4
+2026-11-06T06:11:13.6314571Z npm/schema-utils: OpenSSF Scorecard Score: 5.3
+2026-11-06T06:11:13.6314871Z npm/webpack-sources: OpenSSF Scorecard Score: 5.5
+2026-11-06T06:11:13.6315171Z npm/@algolia/abtesting: OpenSSF Scorecard Score: 5
+2026-11-06T06:11:13.6315507Z npm/@algolia/client-abtesting: OpenSSF Scorecard Score: 5
+2026-11-06T06:11:13.6315852Z npm/@algolia/client-analytics: OpenSSF Scorecard Score: 5
+2026-11-06T06:11:13.6316183Z npm/@algolia/client-common: OpenSSF Scorecard Score: 5
+2026-11-06T06:11:13.6316529Z npm/@algolia/client-insights: OpenSSF Scorecard Score: 5
+2026-11-06T06:11:13.6317120Z npm/@algolia/client-personalization: OpenSSF Scorecard Score: 5
+2026-11-06T06:11:13.6317523Z npm/@algolia/client-query-suggestions: OpenSSF Scorecard Score: 5
+2026-11-06T06:11:13.6318126Z npm/@algolia/client-search: OpenSSF Scorecard Score: 5
+2026-11-06T06:11:13.6318498Z npm/@algolia/ingestion: OpenSSF Scorecard Score: 5
+2026-11-06T06:11:13.6318808Z npm/@algolia/monitoring: OpenSSF Scorecard Score: 5
+2026-11-06T06:11:13.6319116Z npm/@algolia/recommend: OpenSSF Scorecard Score: 5
+2026-11-06T06:11:13.6319470Z npm/@algolia/requester-browser-xhr: OpenSSF Scorecard Score: 5
+2026-11-06T06:11:13.6319828Z npm/@algolia/requester-fetch: OpenSSF Scorecard Score: 5
+2026-11-06T06:11:13.6320175Z npm/@algolia/requester-node-http: OpenSSF Scorecard Score: 5
+2026-11-06T06:11:13.6320503Z npm/@babel/core: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6320800Z npm/@babel/generator: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6321168Z npm/@babel/helper-compilation-targets: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6321624Z npm/@babel/helper-create-class-features-plugin: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6322054Z npm/@babel/helper-module-transforms: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6322728Z npm/@babel/helper-skip-transparent-expression-wrappers: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6323299Z npm/@babel/helpers: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6323758Z npm/@babel/plugin-bugfix-safari-rest-destructuring-rhs-array: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6324264Z npm/@babel/plugin-transform-block-scoping: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6324687Z npm/@babel/plugin-transform-classes: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6325097Z npm/@babel/plugin-transform-destructuring: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6325774Z npm/@babel/plugin-transform-for-of: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6326569Z npm/@babel/plugin-transform-spread: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6327118Z npm/@babel/runtime: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6327427Z npm/@babel/traverse: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6327756Z npm/@lezer/common: OpenSSF Scorecard Score: undefined
+2026-11-06T06:11:13.6328069Z npm/@lezer/lr: OpenSSF Scorecard Score: undefined
+2026-11-06T06:11:13.6328391Z npm/@lezer/markdown: OpenSSF Scorecard Score: undefined
+2026-11-06T06:11:13.6328723Z npm/@peculiar/asn1-cms: OpenSSF Scorecard Score: 4.8
+2026-11-06T06:11:13.6329034Z npm/@peculiar/asn1-csr: OpenSSF Scorecard Score: 4.8
+2026-11-06T06:11:13.6329341Z npm/@peculiar/asn1-ecc: OpenSSF Scorecard Score: 4.8
+2026-11-06T06:11:13.6329644Z npm/@peculiar/asn1-pfx: OpenSSF Scorecard Score: 4.8
+2026-11-06T06:11:13.6329967Z npm/@peculiar/asn1-pkcs8: OpenSSF Scorecard Score: 4.8
+2026-11-06T06:11:13.6330284Z npm/@peculiar/asn1-pkcs9: OpenSSF Scorecard Score: 4.8
+2026-11-06T06:11:13.6330598Z npm/@peculiar/asn1-rsa: OpenSSF Scorecard Score: 4.8
+2026-11-06T06:11:13.6330936Z npm/@peculiar/asn1-schema: OpenSSF Scorecard Score: 4.8
+2026-11-06T06:11:13.6331257Z npm/@peculiar/asn1-x509: OpenSSF Scorecard Score: 4.8
+2026-11-06T06:11:13.6331594Z npm/@peculiar/asn1-x509-attr: OpenSSF Scorecard Score: 4.8
+2026-11-06T06:11:13.6331916Z npm/@swc/core: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6332235Z npm/@swc/core-darwin-arm64: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6332557Z npm/@swc/core-darwin-x64: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6332915Z npm/@swc/core-linux-arm-gnueabihf: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6333284Z npm/@swc/core-linux-arm64-gnu: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6333777Z npm/@swc/core-linux-arm64-musl: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6334207Z npm/@swc/core-linux-ppc64-gnu: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6334583Z npm/@swc/core-linux-s390x-gnu: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6334943Z npm/@swc/core-linux-x64-gnu: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6335289Z npm/@swc/core-linux-x64-musl: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6335668Z npm/@swc/core-win32-arm64-msvc: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6336038Z npm/@swc/core-win32-ia32-msvc: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6336379Z npm/@swc/core-win32-x64-msvc: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6336710Z npm/@swc/helpers: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6338635Z npm/@swc/html: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6339033Z npm/@swc/html-darwin-arm64: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6339400Z npm/@swc/html-darwin-x64: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6339807Z npm/@swc/html-linux-arm-gnueabihf: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6355788Z npm/@swc/html-linux-arm64-gnu: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6356629Z npm/@swc/html-linux-arm64-musl: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6357440Z npm/@swc/html-linux-ppc64-gnu: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6357931Z npm/@swc/html-linux-s390x-gnu: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6358329Z npm/@swc/html-linux-x64-gnu: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6358744Z npm/@swc/html-linux-x64-musl: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6359346Z npm/@swc/html-win32-arm64-msvc: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6359732Z npm/@swc/html-win32-ia32-msvc: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6360094Z npm/@swc/html-win32-x64-msvc: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6360438Z npm/@types/estree: OpenSSF Scorecard Score: 6.6
+2026-11-06T06:11:13.6360749Z npm/@types/node: OpenSSF Scorecard Score: 6.6
+2026-11-06T06:11:13.6361051Z npm/algoliasearch: OpenSSF Scorecard Score: 5
+2026-11-06T06:11:13.6361431Z npm/algoliasearch-helper: OpenSSF Scorecard Score: undefined
+2026-11-06T06:11:13.6361801Z npm/ansi-regex: OpenSSF Scorecard Score: 4.2
+2026-11-06T06:11:13.6362230Z npm/asn1js: OpenSSF Scorecard Score: undefined
+2026-11-06T06:11:13.6362564Z npm/autoprefixer: OpenSSF Scorecard Score: 5.7
+2026-11-06T06:11:13.6362931Z npm/baseline-browser-mapping: OpenSSF Scorecard Score: undefined
+2026-11-06T06:11:13.6363285Z npm/body-parser: OpenSSF Scorecard Score: 8
+2026-11-06T06:11:13.6363600Z npm/browserslist: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6363913Z npm/caniuse-lite: OpenSSF Scorecard Score: 4.4
+2026-11-06T06:11:13.6364215Z npm/core-js: OpenSSF Scorecard Score: 5.3
+2026-11-06T06:11:13.6364607Z npm/core-js-compat: OpenSSF Scorecard Score: 5.3
+2026-11-06T06:11:13.6364974Z npm/cssdb: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6365388Z npm/electron-to-chromium: OpenSSF Scorecard Score: undefined
+2026-11-06T06:11:13.6365813Z npm/encodeurl: OpenSSF Scorecard Score: 6.3
+2026-11-06T06:11:13.6366188Z npm/enhanced-resolve: OpenSSF Scorecard Score: 5.5
+2026-11-06T06:11:13.6366541Z npm/fast-uri: OpenSSF Scorecard Score: 8.1
+2026-11-06T06:11:13.6367169Z npm/follow-redirects: OpenSSF Scorecard Score: 5.1
+2026-11-06T06:11:13.6367545Z npm/graphql-language-service: OpenSSF Scorecard Score: 5
+2026-11-06T06:11:13.6367906Z npm/hast-util-from-parse5: OpenSSF Scorecard Score: 3.4
+2026-11-06T06:11:13.6368282Z npm/hast-util-to-jsx-runtime: OpenSSF Scorecard Score: undefined
+2026-11-06T06:11:13.6368658Z npm/hastscript: OpenSSF Scorecard Score: 3.4
+2026-11-06T06:11:13.6368985Z npm/http-proxy-middleware: OpenSSF Scorecard Score: 6.2
+2026-11-06T06:11:13.6369554Z npm/http2-wrapper: OpenSSF Scorecard Score: 2.8
+2026-11-06T06:11:13.6369908Z npm/http2-wrapper: OpenSSF Scorecard Score: 2.8
+2026-11-06T06:11:13.6370258Z npm/inline-style-parser: OpenSSF Scorecard Score: 8.2
+2026-11-06T06:11:13.6370584Z npm/is-core-module: OpenSSF Scorecard Score: 4.9
+2026-11-06T06:11:13.6370882Z npm/joi: OpenSSF Scorecard Score: 6.2
+2026-11-06T06:11:13.6371164Z npm/lilconfig: OpenSSF Scorecard Score: 3.6
+2026-11-06T06:11:13.6371474Z npm/markdown-table: OpenSSF Scorecard Score: 3.2
+2026-11-06T06:11:13.6371823Z npm/mdast-util-directive: OpenSSF Scorecard Score: 4
+2026-11-06T06:11:13.6372189Z npm/mdast-util-find-and-replace: OpenSSF Scorecard Score: 3.9
+2026-11-06T06:11:13.6372559Z npm/mdast-util-gfm-table: OpenSSF Scorecard Score: 4.5
+2026-11-06T06:11:13.6372891Z npm/mdast-util-mdx-jsx: OpenSSF Scorecard Score: 4.5
+2026-11-06T06:11:13.6373265Z npm/mdast-util-to-markdown: OpenSSF Scorecard Score: 4.5
+2026-11-06T06:11:13.6373652Z npm/minimizer-webpack-plugin: OpenSSF Scorecard Score: undefined
+2026-11-06T06:11:13.6374008Z npm/node-releases: OpenSSF Scorecard Score: 4
+2026-11-06T06:11:13.6374323Z npm/on-finished: OpenSSF Scorecard Score: 7.3
+2026-11-06T06:11:13.6374611Z npm/pkijs: OpenSSF Scorecard Score: 5.1
+2026-11-06T06:11:13.6374935Z npm/postcss-selector-parser: OpenSSF Scorecard Score: 5
+2026-11-06T06:11:13.6375308Z npm/postcss-selector-parser: OpenSSF Scorecard Score: 5
+2026-11-06T06:11:13.6375610Z npm/qs: OpenSSF Scorecard Score: 5.8
+2026-11-06T06:11:13.6375900Z npm/regexpu-core: OpenSSF Scorecard Score: 4.8
+2026-11-06T06:11:13.6376220Z npm/regjsparser: OpenSSF Scorecard Score: 5.6
+2026-11-06T06:11:13.6376515Z npm/resolve: OpenSSF Scorecard Score: 5.8
+2026-11-06T06:11:13.6376957Z npm/schema-utils: OpenSSF Scorecard Score: 5.3
+2026-11-06T06:11:13.6377303Z npm/semver: OpenSSF Scorecard Score: 5.5
+2026-11-06T06:11:13.6377746Z npm/semver: OpenSSF Scorecard Score: 5.5
+2026-11-06T06:11:13.6378050Z npm/style-to-object: OpenSSF Scorecard Score: 8.2
+2026-11-06T06:11:13.6378349Z npm/tslib: OpenSSF Scorecard Score: 5.5
+2026-11-06T06:11:13.6378629Z npm/undici: OpenSSF Scorecard Score: 7.5
+2026-11-06T06:11:13.6378931Z npm/unist-util-visit: OpenSSF Scorecard Score: 3.4
+2026-11-06T06:11:13.6379287Z npm/unist-util-visit-parents: OpenSSF Scorecard Score: 4.5
+2026-11-06T06:11:13.6379697Z npm/vscode-languageserver-types: OpenSSF Scorecard Score: 8.7
+2026-11-06T06:11:13.6380036Z npm/watchpack: OpenSSF Scorecard Score: 5.8
+2026-11-06T06:11:13.6380322Z npm/webpack: OpenSSF Scorecard Score: 5.6
+2026-11-06T06:11:13.6380649Z npm/webpack-dev-server: OpenSSF Scorecard Score: 5.8
+2026-11-06T06:11:13.6381084Z npm/webpack-sources: OpenSSF Scorecard Score: 5.5
+2026-11-06T06:11:13.6381374Z npm/ws: OpenSSF Scorecard Score: 5.5
+2026-11-06T06:11:13.6381647Z npm/glob: OpenSSF Scorecard Score: 5
+2026-11-06T06:11:13.6381931Z npm/@babel/core: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6382260Z npm/@babel/generator: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6382647Z npm/@babel/helper-compilation-targets: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6383078Z npm/@babel/helper-module-transforms: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6383472Z npm/@babel/helper-string-parser: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6383809Z npm/@babel/helpers: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6384125Z npm/@babel/parser: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6384450Z npm/@babel/traverse: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6384753Z npm/@babel/types: OpenSSF Scorecard Score: 6.8
+2026-11-06T06:11:13.6385089Z npm/@cspell/dict-companies: OpenSSF Scorecard Score: 6
+2026-11-06T06:11:13.6385442Z npm/@cspell/dict-data-science: OpenSSF Scorecard Score: 6
+2026-11-06T06:11:13.6385849Z npm/@cspell/dict-en-common-misspellings: OpenSSF Scorecard Score: 6
+2026-11-06T06:11:13.6386222Z npm/@cspell/dict-npm: OpenSSF Scorecard Score: 6
+2026-11-06T06:11:13.6386548Z npm/@cspell/dict-python: OpenSSF Scorecard Score: 6
+2026-11-06T06:11:13.6387071Z npm/@cspell/dict-software-terms: OpenSSF Scorecard Score: 6
+2026-11-06T06:11:13.6387441Z npm/@eslint/css-tree: OpenSSF Scorecard Score: undefined
+2026-11-06T06:11:13.6387784Z npm/@napi-rs/wasm-runtime: OpenSSF Scorecard Score: 5.2
+2026-11-06T06:11:13.6388104Z npm/@types/estree: OpenSSF Scorecard Score: 6.6
+2026-11-06T06:11:13.6388413Z npm/@types/node: OpenSSF Scorecard Score: 6.6
+2026-11-06T06:11:13.6388839Z npm/@unrs/resolver-binding-android-arm-eabi: OpenSSF Scorecard Score: undefined
+2026-11-06T06:11:13.6389345Z npm/@unrs/resolver-binding-android-arm64: OpenSSF Scorecard Score: undefined
+2026-11-06T06:11:13.6389849Z npm/@unrs/resolver-binding-darwin-arm64: OpenSSF Scorecard Score: undefined
+2026-11-06T06:11:13.6390329Z npm/@unrs/resolver-binding-darwin-x64: OpenSSF Scorecard Score: undefined
+2026-11-06T06:11:13.6390783Z npm/@unrs/resolver-binding-freebsd-x64: OpenSSF Scorecard Score: undefined
+2026-11-06T06:11:13.6391306Z npm/@unrs/resolver-binding-linux-arm-gnueabihf: OpenSSF Scorecard Score: undefined
+2026-11-06T06:11:13.6391841Z npm/@unrs/resolver-binding-linux-arm-musleabihf: OpenSSF Scorecard Score: undefined
+2026-11-06T06:11:13.6392385Z npm/@unrs/resolver-binding-linux-arm64-gnu: OpenSSF Scorecard Score: undefined
+2026-11-06T06:11:13.6392940Z npm/@unrs/resolver-binding-linux-arm64-musl: OpenSSF Scorecard Score: undefined
+2026-11-06T06:11:13.6393433Z npm/@unrs/resolver-binding-linux-loong64-gnu: OpenSSF Scorecard Score: undefined
+2026-11-06T06:11:13.6393921Z npm/@unrs/resolver-binding-linux-loong64-musl: OpenSSF Scorecard Score: undefined
+2026-11-06T06:11:13.6394422Z npm/@unrs/resolver-binding-linux-ppc64-gnu: OpenSSF Scorecard Score: undefined
+2026-11-06T06:11:13.6394882Z npm/@unrs/resolver-binding-linux-riscv64-gnu: OpenSSF Scorecard Score: undefined
+2026-11-06T06:11:13.6395367Z npm/@unrs/resolver-binding-linux-riscv64-musl: OpenSSF Scorecard Score: undefined
+2026-11-06T06:11:13.6396207Z npm/@unrs/resolver-binding-linux-s390x-gnu: OpenSSF Scorecard Score: undefined
+2026-11-06T06:11:13.6397232Z npm/@unrs/resolver-binding-linux-x64-gnu: OpenSSF Scorecard Score: undefined
+2026-11-06T06:11:13.6397935Z npm/@unrs/resolver-binding-linux-x64-musl: OpenSSF Scorecard Score: undefined
+2026-11-06T06:11:13.6398420Z npm/@unrs/resolver-binding-openharmony-arm64: OpenSSF Scorecard Score: undefined
+2026-11-06T06:11:13.6398899Z npm/@unrs/resolver-binding-win32-arm64-msvc: OpenSSF Scorecard Score: undefined
+2026-11-06T06:11:13.6399352Z npm/@unrs/resolver-binding-win32-ia32-msvc: OpenSSF Scorecard Score: undefined
+2026-11-06T06:11:13.6399804Z npm/@unrs/resolver-binding-win32-x64-msvc: OpenSSF Scorecard Score: undefined
+2026-11-06T06:11:13.6400302Z npm/ansi-regex: OpenSSF Scorecard Score: 4.2
+2026-11-06T06:11:13.6400575Z npm/argparse: OpenSSF Scorecard Score: 4.9
+2026-11-06T06:11:13.6400915Z npm/baseline-browser-mapping: OpenSSF Scorecard Score: undefined
+2026-11-06T06:11:13.6401285Z npm/builtin-modules: OpenSSF Scorecard Score: 4
+2026-11-06T06:11:13.6401581Z npm/caniuse-lite: OpenSSF Scorecard Score: 4.4
+2026-11-06T06:11:13.6401897Z npm/core-js-compat: OpenSSF Scorecard Score: 5.3
+2026-11-06T06:11:13.6402231Z npm/electron-to-chromium: OpenSSF Scorecard Score: undefined
+2026-11-06T06:11:13.6402564Z npm/enhanced-resolve: OpenSSF Scorecard Score: 5.5
+2026-11-06T06:11:13.6402848Z npm/entities: OpenSSF Scorecard Score: 6.9
+2026-11-06T06:11:13.6403121Z npm/fast-equals: OpenSSF Scorecard Score: 4.5
+2026-11-06T06:11:13.6403398Z npm/js-yaml: OpenSSF Scorecard Score: 6.7
+2026-11-06T06:11:13.6403731Z npm/jsdoc-type-pratt-parser: OpenSSF Scorecard Score: undefined
+2026-11-06T06:11:13.6404052Z npm/lilconfig: OpenSSF Scorecard Score: 3.6
+2026-11-06T06:11:13.6404352Z npm/markdown-table: OpenSSF Scorecard Score: 3.2
+2026-11-06T06:11:13.6404687Z npm/mdast-util-find-and-replace: OpenSSF Scorecard Score: 3.9
+2026-11-06T06:11:13.6405140Z npm/mdast-util-gfm-table: OpenSSF Scorecard Score: 4.5
+2026-11-06T06:11:13.6405662Z npm/mdast-util-to-markdown: OpenSSF Scorecard Score: 4.5
+2026-11-06T06:11:13.6406066Z npm/mdn-data: OpenSSF Scorecard Score: 7.2
+2026-11-06T06:11:13.6406410Z npm/napi-postinstall: OpenSSF Scorecard Score: undefined
+2026-11-06T06:11:13.6407093Z npm/node-releases: OpenSSF Scorecard Score: 4
+2026-11-06T06:11:13.6407537Z npm/parse5: OpenSSF Scorecard Score: 7.1
+2026-11-06T06:11:13.6407902Z npm/react-is: OpenSSF Scorecard Score: undefined
+2026-11-06T06:11:13.6408174Z npm/semver: OpenSSF Scorecard Score: 5.5
+2026-11-06T06:11:13.6408432Z npm/semver: OpenSSF Scorecard Score: 5.5
+2026-11-06T06:11:13.6408682Z npm/tslib: OpenSSF Scorecard Score: 5.5
+2026-11-06T06:11:13.6408950Z npm/unbash: OpenSSF Scorecard Score: undefined
+2026-11-06T06:11:13.6409237Z npm/undici: OpenSSF Scorecard Score: 7.5
+2026-11-06T06:11:13.6409514Z npm/unist-util-visit: OpenSSF Scorecard Score: 3.4
+2026-11-06T06:11:13.6409851Z npm/unist-util-visit-parents: OpenSSF Scorecard Score: 4.5
+2026-11-06T06:11:13.6410187Z npm/unrs-resolver: OpenSSF Scorecard Score: undefined
+2026-11-06T06:11:13.6410474Z npm/ws: OpenSSF Scorecard Score: 5.5
+2026-11-06T06:11:13.6410723Z npm/zod: OpenSSF Scorecard Score: 5.5
+2026-11-06T06:11:13.6413407Z ##[warning]npm/http2-wrapper has an OpenSSF Scorecard of 2.8, which is less than this repository's threshold of 3.
+2026-11-06T06:11:13.6414509Z ##[group]Dependency Changes
+2026-11-06T06:11:13.6414903Z File: scripts/tools/bundle-test/yarn.lock
+2026-11-06T06:11:13.6415192Z - fast-uri@3.1.8
+2026-11-06T06:11:13.6415449Z + @types/estree@1.0.10
+2026-11-06T06:11:13.6415701Z + @types/node@26.6.6
+2026-11-06T06:11:13.6415991Z + baseline-browser-mapping@2.11.35
+2026-11-06T06:11:13.6416270Z + browserslist@4.29.5
+2026-11-06T06:11:13.6416540Z + caniuse-lite@1.0.30001822
+2026-11-06T06:11:13.6417095Z + electron-to-chromium@1.5.478
+2026-11-06T06:11:13.6417404Z + enhanced-resolve@5.26.1
+2026-11-06T06:11:13.6417645Z + fast-uri@3.1.9
+2026-11-06T06:11:13.6418103Z + minimizer-webpack-plugin@5.14.0
+2026-11-06T06:11:13.6418383Z + node-releases@2.0.63
+2026-11-06T06:11:13.6418636Z + schema-utils@4.8.2
+2026-11-06T06:11:13.6418888Z + webpack-sources@3.7.0
+2026-11-06T06:11:13.6419148Z - @types/estree@1.0.9
+2026-11-06T06:11:13.6419390Z - @types/node@26.6.5
+2026-11-06T06:11:13.6419655Z - baseline-browser-mapping@2.11.28
+2026-11-06T06:11:13.6419934Z - browserslist@4.29.3
+2026-11-06T06:11:13.6420195Z - caniuse-lite@1.0.30001815
+2026-11-06T06:11:13.6420472Z - electron-to-chromium@1.5.452
+2026-11-06T06:11:13.6420875Z - enhanced-resolve@5.26.0
+2026-11-06T06:11:13.6421409Z - minimizer-webpack-plugin@5.13.1
+2026-11-06T06:11:13.6421694Z - node-releases@2.0.58
+2026-11-06T06:11:13.6421946Z - schema-utils@4.8.1
+2026-11-06T06:11:13.6422201Z - webpack-sources@3.6.0
+2026-11-06T06:11:13.6422460Z File: website/yarn.lock
+2026-11-06T06:11:13.6422712Z - body-parser@1.20.8
+2026-11-06T06:11:13.6422965Z - follow-redirects@1.16.1
+2026-11-06T06:11:13.6423195Z - joi@17.13.8
+2026-11-06T06:11:13.6423435Z - undici@8.11.2
+2026-11-06T06:11:13.6423662Z - fast-uri@3.1.8
+2026-11-06T06:11:13.6423923Z - postcss-selector-parser@6.1.4
+2026-11-06T06:11:13.6424172Z - qs@6.16.0
+2026-11-06T06:11:13.6424414Z + @algolia/abtesting@1.27.0
+2026-11-06T06:11:13.6424700Z + @algolia/client-abtesting@5.61.0
+2026-11-06T06:11:13.6424994Z + @algolia/client-analytics@5.61.0
+2026-11-06T06:11:13.6425282Z + @algolia/client-common@5.61.0
+2026-11-06T06:11:13.6425574Z + @algolia/client-insights@5.61.0
+2026-11-06T06:11:13.6425900Z + @algolia/client-personalization@5.61.0
+2026-11-06T06:11:13.6426245Z + @algolia/client-query-suggestions@5.61.0
+2026-11-06T06:11:13.6426556Z + @algolia/client-search@5.61.0
+2026-11-06T06:11:13.6426996Z + @algolia/ingestion@1.61.0
+2026-11-06T06:11:13.6427281Z + @algolia/monitoring@1.61.0
+2026-11-06T06:11:13.6427556Z + @algolia/recommend@5.61.0
+2026-11-06T06:11:13.6427859Z + @algolia/requester-browser-xhr@5.61.0
+2026-11-06T06:11:13.6428167Z + @algolia/requester-fetch@5.61.0
+2026-11-06T06:11:13.6428479Z + @algolia/requester-node-http@5.61.0
+2026-11-06T06:11:13.6428757Z + @babel/core@7.29.13
+2026-11-06T06:11:13.6429013Z + @babel/generator@7.29.13
+2026-11-06T06:11:13.6429330Z + @babel/helper-compilation-targets@7.29.13
+2026-11-06T06:11:13.6429716Z + @babel/helper-create-class-features-plugin@7.29.13
+2026-11-06T06:11:13.6430090Z + @babel/helper-module-transforms@7.29.13
+2026-11-06T06:11:13.6430506Z + @babel/helper-skip-transparent-expression-wrappers@7.29.13
+2026-11-06T06:11:13.6430870Z + @babel/helpers@7.29.13
+2026-11-06T06:11:13.6431275Z + @babel/plugin-bugfix-safari-rest-destructuring-rhs-array@7.29.13
+2026-11-06T06:11:13.6431717Z + @babel/plugin-transform-block-scoping@7.29.13
+2026-11-06T06:11:13.6432069Z + @babel/plugin-transform-classes@7.29.11
+2026-11-06T06:11:13.6432420Z + @babel/plugin-transform-destructuring@7.29.13
+2026-11-06T06:11:13.6432753Z + @babel/plugin-transform-for-of@7.29.13
+2026-11-06T06:11:13.6433086Z + @babel/plugin-transform-spread@7.29.11
+2026-11-06T06:11:13.6433373Z + @babel/runtime@7.29.13
+2026-11-06T06:11:13.6433634Z + @babel/traverse@7.29.13
+2026-11-06T06:11:13.6433897Z + @lezer/common@1.5.5
+2026-11-06T06:11:13.6434135Z + @lezer/lr@1.4.12
+2026-11-06T06:11:13.6434409Z + @lezer/markdown@1.8.1
+2026-11-06T06:11:13.6434688Z + @peculiar/asn1-cms@2.11.1
+2026-11-06T06:11:13.6434958Z + @peculiar/asn1-csr@2.11.1
+2026-11-06T06:11:13.6435218Z + @peculiar/asn1-ecc@2.11.1
+2026-11-06T06:11:13.6435476Z + @peculiar/asn1-pfx@2.11.1
+2026-11-06T06:11:13.6435933Z + @peculiar/asn1-pkcs8@2.11.1
+2026-11-06T06:11:13.6436208Z + @peculiar/asn1-pkcs9@2.11.1
+2026-11-06T06:11:13.6436476Z + @peculiar/asn1-rsa@2.11.1
+2026-11-06T06:11:13.6436753Z + @peculiar/asn1-schema@2.11.1
+2026-11-06T06:11:13.6437248Z + @peculiar/asn1-x509@2.11.1
+2026-11-06T06:11:13.6437543Z + @peculiar/asn1-x509-attr@2.11.1
+2026-11-06T06:11:13.6437804Z + @swc/core@1.16.22
+2026-11-06T06:11:13.6438086Z + @swc/core-darwin-arm64@1.16.22
+2026-11-06T06:11:13.6438369Z + @swc/core-darwin-x64@1.16.22
+2026-11-06T06:11:13.6438672Z + @swc/core-linux-arm-gnueabihf@1.16.22
+2026-11-06T06:11:13.6439129Z + @swc/core-linux-arm64-gnu@1.16.22
+2026-11-06T06:11:13.6439436Z + @swc/core-linux-arm64-musl@1.16.22
+2026-11-06T06:11:13.6439731Z + @swc/core-linux-ppc64-gnu@1.16.22
+2026-11-06T06:11:13.6440032Z + @swc/core-linux-s390x-gnu@1.16.22
+2026-11-06T06:11:13.6440324Z + @swc/core-linux-x64-gnu@1.16.22
+2026-11-06T06:11:13.6440614Z + @swc/core-linux-x64-musl@1.16.22
+2026-11-06T06:11:13.6440918Z + @swc/core-win32-arm64-msvc@1.16.22
+2026-11-06T06:11:13.6441211Z + @swc/core-win32-ia32-msvc@1.16.22
+2026-11-06T06:11:13.6441494Z + @swc/core-win32-x64-msvc@1.16.22
+2026-11-06T06:11:13.6441764Z + @swc/helpers@0.5.24
+2026-11-06T06:11:13.6442004Z + @swc/html@1.16.22
+2026-11-06T06:11:13.6442274Z + @swc/html-darwin-arm64@1.16.22
+2026-11-06T06:11:13.6442560Z + @swc/html-darwin-x64@1.16.22
+2026-11-06T06:11:13.6442873Z + @swc/html-linux-arm-gnueabihf@1.16.22
+2026-11-06T06:11:13.6443186Z + @swc/html-linux-arm64-gnu@1.16.22
+2026-11-06T06:11:13.6443489Z + @swc/html-linux-arm64-musl@1.16.22
+2026-11-06T06:11:13.6443794Z + @swc/html-linux-ppc64-gnu@1.16.22
+2026-11-06T06:11:13.6444089Z + @swc/html-linux-s390x-gnu@1.16.22
+2026-11-06T06:11:13.6444376Z + @swc/html-linux-x64-gnu@1.16.22
+2026-11-06T06:11:13.6444685Z + @swc/html-linux-x64-musl@1.16.22
+2026-11-06T06:11:13.6444985Z + @swc/html-win32-arm64-msvc@1.16.22
+2026-11-06T06:11:13.6445283Z + @swc/html-win32-ia32-msvc@1.16.22
+2026-11-06T06:11:13.6445570Z + @swc/html-win32-x64-msvc@1.16.22
+2026-11-06T06:11:13.6445848Z + @types/estree@1.0.10
+2026-11-06T06:11:13.6446100Z + @types/node@26.6.6
+2026-11-06T06:11:13.6446351Z + algoliasearch@5.61.0
+2026-11-06T06:11:13.6446625Z + algoliasearch-helper@3.30.1
+2026-11-06T06:11:13.6447057Z + ansi-regex@6.5.0
+2026-11-06T06:11:13.6447285Z + asn1js@3.1.0
+2026-11-06T06:11:13.6447531Z + autoprefixer@10.6.2
+2026-11-06T06:11:13.6447819Z + baseline-browser-mapping@2.11.35
+2026-11-06T06:11:13.6448090Z + body-parser@1.20.9
+2026-11-06T06:11:13.6448342Z + browserslist@4.29.5
+2026-11-06T06:11:13.6448599Z + caniuse-lite@1.0.30001822
+2026-11-06T06:11:13.6448850Z + core-js@3.51.0
+2026-11-06T06:11:13.6449099Z + core-js-compat@3.51.0
+2026-11-06T06:11:13.6449364Z + cssdb@8.12.1
+2026-11-06T06:11:13.6449625Z + electron-to-chromium@1.5.478
+2026-11-06T06:11:13.6449882Z + encodeurl@2.0.1
+2026-11-06T06:11:13.6450133Z + enhanced-resolve@5.26.1
+2026-11-06T06:11:13.6450371Z + fast-uri@3.1.9
+2026-11-06T06:11:13.6450606Z + follow-redirects@1.16.2
+2026-11-06T06:11:13.6450899Z + graphql-language-service@6.0.1
+2026-11-06T06:11:13.6451191Z + hast-util-from-parse5@8.0.4
+2026-11-06T06:11:13.6451477Z + hast-util-to-jsx-runtime@2.3.7
+2026-11-06T06:11:13.6451741Z + hastscript@9.0.3
+2026-11-06T06:11:13.6452008Z + http-proxy-middleware@2.0.11
+2026-11-06T06:11:13.6452288Z + http2-wrapper@2.2.4
+2026-11-06T06:11:13.6452556Z + inline-style-parser@0.2.9
+2026-11-06T06:11:13.6452822Z + is-core-module@2.18.0
+2026-11-06T06:11:13.6453180Z + joi@17.13.9
+2026-11-06T06:11:13.6453492Z + lilconfig@3.1.4
+2026-11-06T06:11:13.6453744Z + markdown-table@3.1.0
+2026-11-06T06:11:13.6454007Z + mdast-util-directive@3.2.0
+2026-11-06T06:11:13.6454303Z + mdast-util-find-and-replace@3.0.4
+2026-11-06T06:11:13.6454600Z + mdast-util-gfm-table@2.0.1
+2026-11-06T06:11:13.6454867Z + mdast-util-mdx-jsx@3.2.1
+2026-11-06T06:11:13.6455142Z + mdast-util-to-markdown@2.2.2
+2026-11-06T06:11:13.6455433Z + minimizer-webpack-plugin@5.14.0
+2026-11-06T06:11:13.6455716Z + node-releases@2.0.63
+2026-11-06T06:11:13.6455949Z + on-finished@2.4.2
+2026-11-06T06:11:13.6456171Z + pkijs@3.4.3
+2026-11-06T06:11:13.6456533Z + postcss-selector-parser@6.1.5
+2026-11-06T06:11:13.6457027Z + postcss-selector-parser@7.1.7
+2026-11-06T06:11:13.6457283Z + qs@6.16.2
+2026-11-06T06:11:13.6457517Z + regexpu-core@6.5.4
+2026-11-06T06:11:13.6457768Z + regjsparser@0.14.1
+2026-11-06T06:11:13.6457992Z + resolve@1.22.14
+2026-11-06T06:11:13.6458226Z + schema-utils@4.8.2
+2026-11-06T06:11:13.6458448Z + semver@6.3.2
+2026-11-06T06:11:13.6458655Z + semver@7.8.6
+2026-11-06T06:11:13.6458887Z + style-to-object@2.0.2
+2026-11-06T06:11:13.6459123Z + tslib@2.9.1
+2026-11-06T06:11:13.6459327Z + undici@8.12.4
+2026-11-06T06:11:13.6459568Z + unist-util-visit@5.2.0
+2026-11-06T06:11:13.6459859Z + unist-util-visit-parents@6.1.0
+2026-11-06T06:11:13.6460171Z + vscode-languageserver-types@3.18.5
+2026-11-06T06:11:13.6460443Z + watchpack@2.6.3
+2026-11-06T06:11:13.6460664Z + webpack@5.112.2
+2026-11-06T06:11:13.6460918Z + webpack-dev-server@5.2.7
+2026-11-06T06:11:13.6461183Z + webpack-sources@3.7.0
+2026-11-06T06:11:13.6461410Z + ws@8.22.1
+2026-11-06T06:11:13.6461649Z - @algolia/abtesting@1.25.0
+2026-11-06T06:11:13.6461942Z - @algolia/client-abtesting@5.59.0
+2026-11-06T06:11:13.6462233Z - @algolia/client-analytics@5.59.0
+2026-11-06T06:11:13.6462522Z - @algolia/client-common@5.59.0
+2026-11-06T06:11:13.6462835Z - @algolia/client-insights@5.59.0
+2026-11-06T06:11:13.6463166Z - @algolia/client-personalization@5.59.0
+2026-11-06T06:11:13.6463524Z - @algolia/client-query-suggestions@5.59.0
+2026-11-06T06:11:13.6463844Z - @algolia/client-search@5.59.0
+2026-11-06T06:11:13.6464124Z - @algolia/ingestion@1.59.0
+2026-11-06T06:11:13.6464467Z - @algolia/monitoring@1.59.0
+2026-11-06T06:11:13.6464950Z - @algolia/recommend@5.59.0
+2026-11-06T06:11:13.6465386Z - @algolia/requester-browser-xhr@5.59.0
+2026-11-06T06:11:13.6465777Z - @algolia/requester-fetch@5.59.0
+2026-11-06T06:11:13.6466084Z - @algolia/requester-node-http@5.59.0
+2026-11-06T06:11:13.6466384Z - @babel/core@7.29.7
+2026-11-06T06:11:13.6466650Z - @babel/generator@7.29.8
+2026-11-06T06:11:13.6467183Z - @babel/helper-compilation-targets@7.29.7
+2026-11-06T06:11:13.6467569Z - @babel/helper-create-class-features-plugin@7.29.7
+2026-11-06T06:11:13.6467944Z - @babel/helper-module-transforms@7.29.7
+2026-11-06T06:11:13.6468348Z - @babel/helper-skip-transparent-expression-wrappers@7.29.7
+2026-11-06T06:11:13.6468700Z - @babel/helpers@7.29.10
+2026-11-06T06:11:13.6469098Z - @babel/plugin-bugfix-safari-rest-destructuring-rhs-array@7.29.7
+2026-11-06T06:11:13.6469526Z - @babel/plugin-transform-block-scoping@7.29.7
+2026-11-06T06:11:13.6469869Z - @babel/plugin-transform-classes@7.29.7
+2026-11-06T06:11:13.6470225Z - @babel/plugin-transform-destructuring@7.29.7
+2026-11-06T06:11:13.6470559Z - @babel/plugin-transform-for-of@7.29.7
+2026-11-06T06:11:13.6470885Z - @babel/plugin-transform-spread@7.29.8
+2026-11-06T06:11:13.6471167Z - @babel/runtime@7.29.10
+2026-11-06T06:11:13.6471628Z - @babel/traverse@7.29.10
+2026-11-06T06:11:13.6471885Z - @lezer/common@1.5.3
+2026-11-06T06:11:13.6472121Z - @lezer/lr@1.4.11
+2026-11-06T06:11:13.6472371Z - @lezer/markdown@1.8.0
+2026-11-06T06:11:13.6472638Z - @peculiar/asn1-cms@2.10.0
+2026-11-06T06:11:13.6472904Z - @peculiar/asn1-csr@2.10.0
+2026-11-06T06:11:13.6473173Z - @peculiar/asn1-ecc@2.10.0
+2026-11-06T06:11:13.6473434Z - @peculiar/asn1-pfx@2.10.0
+2026-11-06T06:11:13.6473701Z - @peculiar/asn1-pkcs8@2.10.0
+2026-11-06T06:11:13.6473980Z - @peculiar/asn1-pkcs9@2.10.0
+2026-11-06T06:11:13.6474259Z - @peculiar/asn1-rsa@2.10.0
+2026-11-06T06:11:13.6474649Z - @peculiar/asn1-schema@2.10.0
+2026-11-06T06:11:13.6474927Z - @peculiar/asn1-x509@2.10.0
+2026-11-06T06:11:13.6475220Z - @peculiar/asn1-x509-attr@2.10.0
+2026-11-06T06:11:13.6475475Z - @swc/core@1.16.13
+2026-11-06T06:11:13.6475746Z - @swc/core-darwin-arm64@1.16.13
+2026-11-06T06:11:13.6476032Z - @swc/core-darwin-x64@1.16.13
+2026-11-06T06:11:13.6476337Z - @swc/core-linux-arm-gnueabihf@1.16.13
+2026-11-06T06:11:13.6476643Z - @swc/core-linux-arm64-gnu@1.16.13
+2026-11-06T06:11:13.6477160Z - @swc/core-linux-arm64-musl@1.16.13
+2026-11-06T06:11:13.6477465Z - @swc/core-linux-ppc64-gnu@1.16.13
+2026-11-06T06:11:13.6477762Z - @swc/core-linux-s390x-gnu@1.16.13
+2026-11-06T06:11:13.6478049Z - @swc/core-linux-x64-gnu@1.16.13
+2026-11-06T06:11:13.6478347Z - @swc/core-linux-x64-musl@1.16.13
+2026-11-06T06:11:13.6478645Z - @swc/core-win32-arm64-msvc@1.16.13
+2026-11-06T06:11:13.6478940Z - @swc/core-win32-ia32-msvc@1.16.13
+2026-11-06T06:11:13.6479233Z - @swc/core-win32-x64-msvc@1.16.13
+2026-11-06T06:11:13.6479496Z - @swc/helpers@0.5.23
+2026-11-06T06:11:13.6479724Z - @swc/html@1.16.13
+2026-11-06T06:11:13.6480000Z - @swc/html-darwin-arm64@1.16.13
+2026-11-06T06:11:13.6480283Z - @swc/html-darwin-x64@1.16.13
+2026-11-06T06:11:13.6480587Z - @swc/html-linux-arm-gnueabihf@1.16.13
+2026-11-06T06:11:13.6480896Z - @swc/html-linux-arm64-gnu@1.16.13
+2026-11-06T06:11:13.6481196Z - @swc/html-linux-arm64-musl@1.16.13
+2026-11-06T06:11:13.6481491Z - @swc/html-linux-ppc64-gnu@1.16.13
+2026-11-06T06:11:13.6481781Z - @swc/html-linux-s390x-gnu@1.16.13
+2026-11-06T06:11:13.6482074Z - @swc/html-linux-x64-gnu@1.16.13
+2026-11-06T06:11:13.6482364Z - @swc/html-linux-x64-musl@1.16.13
+2026-11-06T06:11:13.6482689Z - @swc/html-win32-arm64-msvc@1.16.13
+2026-11-06T06:11:13.6482992Z - @swc/html-win32-ia32-msvc@1.16.13
+2026-11-06T06:11:13.6483279Z - @swc/html-win32-x64-msvc@1.16.13
+2026-11-06T06:11:13.6483544Z - @types/estree@1.0.9
+2026-11-06T06:11:13.6483794Z - @types/node@26.6.5
+2026-11-06T06:11:13.6484052Z - algoliasearch@5.59.0
+2026-11-06T06:11:13.6484324Z - algoliasearch-helper@3.30.0
+2026-11-06T06:11:13.6484585Z - ansi-regex@6.4.0
+2026-11-06T06:11:13.6484813Z - asn1js@3.0.10
+2026-11-06T06:11:13.6485049Z - autoprefixer@10.6.1
+2026-11-06T06:11:13.6485325Z - baseline-browser-mapping@2.11.28
+2026-11-06T06:11:13.6485608Z - browserslist@4.29.3
+2026-11-06T06:11:13.6485865Z - caniuse-lite@1.0.30001815
+2026-11-06T06:11:13.6486108Z - core-js@3.50.0
+2026-11-06T06:11:13.6486361Z - core-js-compat@3.50.0
+2026-11-06T06:11:13.6486593Z - cssdb@8.12.0
+2026-11-06T06:11:13.6487007Z - electron-to-chromium@1.5.452
+2026-11-06T06:11:13.6487274Z - encodeurl@2.0.0
+2026-11-06T06:11:13.6487531Z - enhanced-resolve@5.26.0
+2026-11-06T06:11:13.6487815Z - graphql-language-service@6.0.0
+2026-11-06T06:11:13.6488101Z - hast-util-from-parse5@8.0.3
+2026-11-06T06:11:13.6488389Z - hast-util-to-jsx-runtime@2.3.6
+2026-11-06T06:11:13.6488763Z - hastscript@9.0.1
+2026-11-06T06:11:13.6489025Z - http-proxy-middleware@2.0.10
+2026-11-06T06:11:13.6489296Z - http2-wrapper@2.2.1
+2026-11-06T06:11:13.6489546Z - is-core-module@2.17.0
+2026-11-06T06:11:13.6489778Z - lilconfig@3.1.3
+2026-11-06T06:11:13.6490021Z - markdown-table@3.0.4
+2026-11-06T06:11:13.6490287Z - mdast-util-directive@3.1.1
+2026-11-06T06:11:13.6490582Z - mdast-util-find-and-replace@3.0.3
+2026-11-06T06:11:13.6490879Z - mdast-util-gfm-table@2.0.0
+2026-11-06T06:11:13.6491146Z - mdast-util-mdx-jsx@3.2.0
+2026-11-06T06:11:13.6491424Z - mdast-util-to-markdown@2.2.0
+2026-11-06T06:11:13.6491808Z - minimizer-webpack-plugin@5.13.0
+2026-11-06T06:11:13.6492087Z - node-releases@2.0.58
+2026-11-06T06:11:13.6492322Z - on-finished@2.4.1
+2026-11-06T06:11:13.6492552Z - pkijs@3.4.1
+2026-11-06T06:11:13.6492812Z - postcss-selector-parser@7.1.6
+2026-11-06T06:11:13.6493088Z - regexpu-core@6.5.3
+2026-11-06T06:11:13.6493327Z - regjsparser@0.13.4
+2026-11-06T06:11:13.6493550Z - resolve@1.22.13
+2026-11-06T06:11:13.6493781Z - schema-utils@4.5.0
+2026-11-06T06:11:13.6494000Z - semver@6.3.1
+2026-11-06T06:11:13.6494212Z - semver@7.8.5
+2026-11-06T06:11:13.6494421Z - tslib@2.8.1
+2026-11-06T06:11:13.6494662Z - unist-util-visit@5.1.0
+2026-11-06T06:11:13.6494938Z - unist-util-visit-parents@6.0.2
+2026-11-06T06:11:13.6495255Z - vscode-languageserver-types@3.18.4
+2026-11-06T06:11:13.6495516Z - watchpack@2.5.2
+2026-11-06T06:11:13.6495735Z - webpack@5.111.1
+2026-11-06T06:11:13.6495991Z - webpack-dev-server@5.2.6
+2026-11-06T06:11:13.6496257Z - webpack-sources@3.6.0
+2026-11-06T06:11:13.6496484Z - ws@8.22.0
+2026-11-06T06:11:13.6496705Z File: yarn.lock
+2026-11-06T06:11:13.6497148Z - undici@8.11.2
+2026-11-06T06:11:13.6497355Z - zod@4.6.5
+2026-11-06T06:11:13.6497560Z + glob@13.0.7
+2026-11-06T06:11:13.6497764Z - glob@13.0.6
+2026-11-06T06:11:13.6497986Z + @babel/core@7.29.13
+2026-11-06T06:11:13.6498234Z + @babel/generator@7.29.13
+2026-11-06T06:11:13.6498557Z + @babel/helper-compilation-targets@7.29.13
+2026-11-06T06:11:13.6498894Z + @babel/helper-module-transforms@7.29.13
+2026-11-06T06:11:13.6499213Z + @babel/helper-string-parser@7.29.13
+2026-11-06T06:11:13.6499496Z + @babel/helpers@7.29.13
+2026-11-06T06:11:13.6499756Z + @babel/parser@7.29.13
+2026-11-06T06:11:13.6500010Z + @babel/traverse@7.29.13
+2026-11-06T06:11:13.6500269Z + @babel/types@7.29.11
+2026-11-06T06:11:13.6500533Z + @cspell/dict-companies@3.2.14
+2026-11-06T06:11:13.6500829Z + @cspell/dict-data-science@2.0.17
+2026-11-06T06:11:13.6501150Z + @cspell/dict-en-common-misspellings@2.2.6
+2026-11-06T06:11:13.6501459Z + @cspell/dict-npm@5.2.56
+2026-11-06T06:11:13.6501728Z + @cspell/dict-python@4.5.3
+2026-11-06T06:11:13.6502019Z + @cspell/dict-software-terms@5.4.9
+2026-11-06T06:11:13.6502296Z + @eslint/css-tree@4.1.2
+2026-11-06T06:11:13.6502569Z + @napi-rs/wasm-runtime@1.2.7
+2026-11-06T06:11:13.6502834Z + @types/estree@1.0.10
+2026-11-06T06:11:13.6503083Z + @types/node@26.6.6
+2026-11-06T06:11:13.6503415Z + @unrs/resolver-binding-android-arm-eabi@1.13.0
+2026-11-06T06:11:13.6503778Z + @unrs/resolver-binding-android-arm64@1.13.0
+2026-11-06T06:11:13.6504128Z + @unrs/resolver-binding-darwin-arm64@1.13.0
+2026-11-06T06:11:13.6504482Z + @unrs/resolver-binding-darwin-x64@1.13.0
+2026-11-06T06:11:13.6504815Z + @unrs/resolver-binding-freebsd-x64@1.13.0
+2026-11-06T06:11:13.6505184Z + @unrs/resolver-binding-linux-arm-gnueabihf@1.13.0
+2026-11-06T06:11:13.6505585Z + @unrs/resolver-binding-linux-arm-musleabihf@1.13.0
+2026-11-06T06:11:13.6506101Z + @unrs/resolver-binding-linux-arm64-gnu@1.13.0
+2026-11-06T06:11:13.6506473Z + @unrs/resolver-binding-linux-arm64-musl@1.13.0
+2026-11-06T06:11:13.6507008Z + @unrs/resolver-binding-linux-loong64-gnu@1.13.0
+2026-11-06T06:11:13.6507412Z + @unrs/resolver-binding-linux-loong64-musl@1.13.0
+2026-11-06T06:11:13.6507784Z + @unrs/resolver-binding-linux-ppc64-gnu@1.13.0
+2026-11-06T06:11:13.6508155Z + @unrs/resolver-binding-linux-riscv64-gnu@1.13.0
+2026-11-06T06:11:13.6508521Z + @unrs/resolver-binding-linux-riscv64-musl@1.13.0
+2026-11-06T06:11:13.6508880Z + @unrs/resolver-binding-linux-s390x-gnu@1.13.0
+2026-11-06T06:11:13.6509329Z + @unrs/resolver-binding-linux-x64-gnu@1.13.0
+2026-11-06T06:11:13.6509691Z + @unrs/resolver-binding-linux-x64-musl@1.13.0
+2026-11-06T06:11:13.6510054Z + @unrs/resolver-binding-openharmony-arm64@1.13.0
+2026-11-06T06:11:13.6510421Z + @unrs/resolver-binding-win32-arm64-msvc@1.13.0
+2026-11-06T06:11:13.6510785Z + @unrs/resolver-binding-win32-ia32-msvc@1.13.0
+2026-11-06T06:11:13.6511134Z + @unrs/resolver-binding-win32-x64-msvc@1.13.0
+2026-11-06T06:11:13.6511413Z + ansi-regex@6.5.0
+2026-11-06T06:11:13.6511639Z + argparse@3.0.4
+2026-11-06T06:11:13.6511903Z + baseline-browser-mapping@2.11.35
+2026-11-06T06:11:13.6512183Z + builtin-modules@5.5.0
+2026-11-06T06:11:13.6512454Z + caniuse-lite@1.0.30001822
+2026-11-06T06:11:13.6512717Z + core-js-compat@3.51.0
+2026-11-06T06:11:13.6512985Z + electron-to-chromium@1.5.478
+2026-11-06T06:11:13.6513266Z + enhanced-resolve@5.26.1
+2026-11-06T06:11:13.6513507Z + entities@9.0.0
+2026-11-06T06:11:13.6513727Z + fast-equals@6.2.2
+2026-11-06T06:11:13.6513953Z + js-yaml@5.5.0
+2026-11-06T06:11:13.6514215Z + jsdoc-type-pratt-parser@9.5.0
+2026-11-06T06:11:13.6514474Z + lilconfig@3.1.4
+2026-11-06T06:11:13.6514709Z + markdown-table@3.1.0
+2026-11-06T06:11:13.6514997Z + mdast-util-find-and-replace@3.0.4
+2026-11-06T06:11:13.6515290Z + mdast-util-gfm-table@2.0.1
+2026-11-06T06:11:13.6515570Z + mdast-util-to-markdown@2.2.2
+2026-11-06T06:11:13.6515823Z + mdn-data@2.37.2
+2026-11-06T06:11:13.6516065Z + napi-postinstall@0.3.8
+2026-11-06T06:11:13.6516321Z + node-releases@2.0.63
+2026-11-06T06:11:13.6516548Z + parse5@8.1.0
+2026-11-06T06:11:13.6516939Z + react-is@19.3.1
+2026-11-06T06:11:13.6517197Z + semver@6.3.2
+2026-11-06T06:11:13.6517402Z + semver@7.8.6
+2026-11-06T06:11:13.6517617Z + tslib@2.9.1
+2026-11-06T06:11:13.6517821Z + unbash@6.0.3
+2026-11-06T06:11:13.6518024Z + undici@8.12.4
+2026-11-06T06:11:13.6518258Z + unist-util-visit@5.2.0
+2026-11-06T06:11:13.6518546Z + unist-util-visit-parents@6.1.0
+2026-11-06T06:11:13.6518821Z + unrs-resolver@1.13.0
+2026-11-06T06:11:13.6519039Z + ws@8.22.1
+2026-11-06T06:11:13.6519241Z + zod@4.6.7
+2026-11-06T06:11:13.6519462Z - @babel/core@7.29.7
+2026-11-06T06:11:13.6519710Z - @babel/generator@7.29.8
+2026-11-06T06:11:13.6520056Z - @babel/helper-compilation-targets@7.29.7
+2026-11-06T06:11:13.6520394Z - @babel/helper-module-transforms@7.29.7
+2026-11-06T06:11:13.6520716Z - @babel/helper-string-parser@7.29.7
+2026-11-06T06:11:13.6521010Z - @babel/helpers@7.29.10
+2026-11-06T06:11:13.6521264Z - @babel/parser@7.29.9
+2026-11-06T06:11:13.6521516Z - @babel/traverse@7.29.10
+2026-11-06T06:11:13.6521773Z - @babel/types@7.29.8
+2026-11-06T06:11:13.6522046Z - @cspell/dict-companies@3.2.13
+2026-11-06T06:11:13.6522338Z - @cspell/dict-data-science@2.0.16
+2026-11-06T06:11:13.6522656Z - @cspell/dict-en-common-misspellings@2.2.5
+2026-11-06T06:11:13.6523074Z - @cspell/dict-npm@5.2.55
+2026-11-06T06:11:13.6523340Z - @cspell/dict-python@4.5.2
+2026-11-06T06:11:13.6523630Z - @cspell/dict-software-terms@5.4.8
+2026-11-06T06:11:13.6523910Z - @emnapi/core@1.10.0
+2026-11-06T06:11:13.6524169Z - @emnapi/runtime@1.10.0
+2026-11-06T06:11:13.6524430Z - @emnapi/wasi-threads@1.2.1
+2026-11-06T06:11:13.6524696Z - @eslint/css-tree@4.1.1
+2026-11-06T06:11:13.6524967Z - @napi-rs/wasm-runtime@1.2.6
+2026-11-06T06:11:13.6525228Z - @types/estree@1.0.9
+2026-11-06T06:11:13.6525470Z - @types/node@26.6.5
+2026-11-06T06:11:13.6525790Z - @unrs/resolver-binding-android-arm-eabi@1.12.2
+2026-11-06T06:11:13.6526250Z - @unrs/resolver-binding-android-arm64@1.12.2
+2026-11-06T06:11:13.6526599Z - @unrs/resolver-binding-darwin-arm64@1.12.2
+2026-11-06T06:11:13.6527108Z - @unrs/resolver-binding-darwin-x64@1.12.2
+2026-11-06T06:11:13.6527448Z - @unrs/resolver-binding-freebsd-x64@1.12.2
+2026-11-06T06:11:13.6527831Z - @unrs/resolver-binding-linux-arm-gnueabihf@1.12.2
+2026-11-06T06:11:13.6528234Z - @unrs/resolver-binding-linux-arm-musleabihf@1.12.2
+2026-11-06T06:11:13.6528616Z - @unrs/resolver-binding-linux-arm64-gnu@1.12.2
+2026-11-06T06:11:13.6528974Z - @unrs/resolver-binding-linux-arm64-musl@1.12.2
+2026-11-06T06:11:13.6529348Z - @unrs/resolver-binding-linux-loong64-gnu@1.12.2
+2026-11-06T06:11:13.6529728Z - @unrs/resolver-binding-linux-loong64-musl@1.12.2
+2026-11-06T06:11:13.6530098Z - @unrs/resolver-binding-linux-ppc64-gnu@1.12.2
+2026-11-06T06:11:13.6530465Z - @unrs/resolver-binding-linux-riscv64-gnu@1.12.2
+2026-11-06T06:11:13.6530839Z - @unrs/resolver-binding-linux-riscv64-musl@1.12.2
+2026-11-06T06:11:13.6531199Z - @unrs/resolver-binding-linux-s390x-gnu@1.12.2
+2026-11-06T06:11:13.6531545Z - @unrs/resolver-binding-linux-x64-gnu@1.12.2
+2026-11-06T06:11:13.6531901Z - @unrs/resolver-binding-linux-x64-musl@1.12.2
+2026-11-06T06:11:13.6532265Z - @unrs/resolver-binding-openharmony-arm64@1.12.2
+2026-11-06T06:11:13.6532614Z - @unrs/resolver-binding-wasm32-wasi@1.12.2
+2026-11-06T06:11:13.6532972Z - @unrs/resolver-binding-win32-arm64-msvc@1.12.2
+2026-11-06T06:11:13.6533329Z - @unrs/resolver-binding-win32-ia32-msvc@1.12.2
+2026-11-06T06:11:13.6533682Z - @unrs/resolver-binding-win32-x64-msvc@1.12.2
+2026-11-06T06:11:13.6533959Z - ansi-regex@6.4.0
+2026-11-06T06:11:13.6534181Z - argparse@2.0.1
+2026-11-06T06:11:13.6534448Z - baseline-browser-mapping@2.11.34
+2026-11-06T06:11:13.6534737Z - builtin-modules@5.4.0
+2026-11-06T06:11:13.6535001Z - caniuse-lite@1.0.30001819
+2026-11-06T06:11:13.6535259Z - core-js-compat@3.50.0
+2026-11-06T06:11:13.6535538Z - electron-to-chromium@1.5.467
+2026-11-06T06:11:13.6535811Z - enhanced-resolve@5.26.0
+2026-11-06T06:11:13.6536055Z - fast-equals@6.2.1
+2026-11-06T06:11:13.6536276Z - js-yaml@5.4.3
+2026-11-06T06:11:13.6536537Z - jsdoc-type-pratt-parser@9.2.2
+2026-11-06T06:11:13.6536959Z - lilconfig@3.1.3
+2026-11-06T06:11:13.6537201Z - markdown-table@3.0.4
+2026-11-06T06:11:13.6537490Z - mdast-util-find-and-replace@3.0.3
+2026-11-06T06:11:13.6537778Z - mdast-util-gfm-table@2.0.0
+2026-11-06T06:11:13.6538058Z - mdast-util-to-markdown@2.2.0
+2026-11-06T06:11:13.6538311Z - mdn-data@2.35.0
+2026-11-06T06:11:13.6538555Z - napi-postinstall@0.3.4
+2026-11-06T06:11:13.6538813Z - node-releases@2.0.60
+2026-11-06T06:11:13.6539041Z - parse5@8.0.1
+2026-11-06T06:11:13.6539268Z - react-is@19.3.0
+2026-11-06T06:11:13.6539478Z - semver@6.3.1
+2026-11-06T06:11:13.6539685Z - semver@7.8.5
+2026-11-06T06:11:13.6539899Z - tslib@2.8.1
+2026-11-06T06:11:13.6540106Z - unbash@6.0.1
+2026-11-06T06:11:13.6540451Z - unist-util-visit@5.1.0
+2026-11-06T06:11:13.6540733Z - unist-util-visit-parents@6.0.2
+2026-11-06T06:11:13.6541004Z - unrs-resolver@1.12.2
+2026-11-06T06:11:13.6541222Z - ws@8.22.0
+2026-11-06T06:11:13.6541602Z ##[endgroup]
+2026-11-06T06:11:13.6541864Z ##[endgroup]
+2026-11-06T06:11:13.7433095Z Post job cleanup.
+2026-11-06T06:11:13.8108507Z [command]/usr/bin/git version
+2026-11-06T06:11:13.8174877Z git version 2.56.0
+2026-11-06T06:11:13.8202519Z Temporarily overriding HOME='/home/runner/work/_temp/4c52cbcd-50f9-49cb-9db8-699c870b6349' before making global git config changes
+2026-11-06T06:11:13.8203621Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-06T06:11:13.8206981Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/prettier/prettier
+2026-11-06T06:11:13.8237617Z Removing SSH command configuration
+2026-11-06T06:11:13.8242148Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-06T06:11:13.8272261Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-06T06:11:13.8527890Z Removing HTTP extra header
+2026-11-06T06:11:13.8532122Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-06T06:11:13.8562826Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-06T06:11:13.8816392Z Removing includeIf entries pointing to credentials config files
+2026-11-06T06:11:13.8821764Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-06T06:11:13.8846065Z includeif.gitdir:/home/runner/work/prettier/prettier/.git.path
+2026-11-06T06:11:13.8846678Z includeif.gitdir:/home/runner/work/prettier/prettier/.git/worktrees/*.path
+2026-11-06T06:11:13.8847387Z includeif.gitdir:/github/workspace/.git.path
+2026-11-06T06:11:13.8847731Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-11-06T06:11:13.8853162Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/prettier/prettier/.git.path
+2026-11-06T06:11:13.8874198Z /home/runner/work/_temp/git-credentials-aa4c9e5e-93ba-4549-b5fc-13cff8cc161a.config
+2026-11-06T06:11:13.8882340Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/prettier/prettier/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-aa4c9e5e\-93ba\-4549\-b5fc\-13cff8cc161a\.config
+2026-11-06T06:11:13.8916681Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/prettier/prettier/.git/worktrees/*.path
+2026-11-06T06:11:13.8938422Z /home/runner/work/_temp/git-credentials-aa4c9e5e-93ba-4549-b5fc-13cff8cc161a.config
+2026-11-06T06:11:13.8945362Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/prettier/prettier/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-aa4c9e5e\-93ba\-4549\-b5fc\-13cff8cc161a\.config
+2026-11-06T06:11:13.8974099Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-11-06T06:11:13.8993533Z /github/runner_temp/git-credentials-aa4c9e5e-93ba-4549-b5fc-13cff8cc161a.config
+2026-11-06T06:11:13.9000014Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-aa4c9e5e\-93ba\-4549\-b5fc\-13cff8cc161a\.config
+2026-11-06T06:11:13.9028041Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-11-06T06:11:13.9047323Z /github/runner_temp/git-credentials-aa4c9e5e-93ba-4549-b5fc-13cff8cc161a.config
+2026-11-06T06:11:13.9053923Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-aa4c9e5e\-93ba\-4549\-b5fc\-13cff8cc161a\.config
+2026-11-06T06:11:13.9083618Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-06T06:11:13.9333776Z Removing credentials config '/home/runner/work/_temp/git-credentials-aa4c9e5e-93ba-4549-b5fc-13cff8cc161a.config'
+2026-11-06T06:11:13.9465659Z Cleaning up orphan processes

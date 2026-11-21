@@ -1,0 +1,19 @@
+{
+  "sha": "c7326770e1121733435e0527af972f387d64d344",
+  "pairing": "H1",
+  "commits": 1,
+  "files_total": 2,
+  "files": [
+    {
+      "path": "packages/vite/src/node/__tests__/plugins/hooks.spec.ts",
+      "additions": 61,
+      "deletions": 0
+    },
+    {
+      "path": "packages/vite/src/node/server/index.ts",
+      "additions": 121,
+      "deletions": 80
+    }
+  ],
+  "summary": "1 commit(s), 2 file(s), +182/-80"
+}

@@ -1,0 +1,26 @@
+id: prettier-44032888942-1
+source: public
+repo: prettier/prettier
+run_url: https://github.com/prettier/prettier/actions/runs/44032888942/attempts/1
+job_id: 133868783960
+expected:
+  category: broken_test
+  cause: ESLint falla con tres errores de reglas unicorn en tres archivos.
+  evidence_lines: []
+fix:
+  commit: 30ff8510a1565384e375b74a72bd91224b75f3ed
+  summary: 2 commit(s), 3 file(s), +5/-6
+flaky: false
+tags:
+- node
+captured_at: '2026-11-21T16:58:11Z'
+provenance:
+  repo: prettier/prettier
+  license: MIT
+  run_url: https://github.com/prettier/prettier/actions/runs/44032888942/attempts/1
+  fix_sha: 30ff8510a1565384e375b74a72bd91224b75f3ed
+  fix_run_url: https://github.com/prettier/prettier/actions/runs/44472324365
+  occurred_at: '2026-11-17T06:41:27Z'
+  pairing: H1
+  labeled_by: owner (draft by Claude)
+  label_basis: log

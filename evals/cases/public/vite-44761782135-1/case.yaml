@@ -1,0 +1,27 @@
+id: vite-44761782135-1
+source: public
+repo: vitejs/vite
+run_url: https://github.com/vitejs/vite/actions/runs/44761782135/attempts/1
+job_id: 136376051449
+expected:
+  category: flaky
+  cause: Falla un test de build y el reporter se rompe con 'Map.groupBy'; pasó al
+    reintentar el mismo commit.
+  evidence_lines: []
+fix:
+  commit: dca06bed15b1ae4af1c385be14caec08f999a5bd
+  summary: the same commit passed when the run was repeated
+flaky: true
+tags:
+- node
+captured_at: '2026-11-21T16:57:08Z'
+provenance:
+  repo: vitejs/vite
+  license: MIT
+  run_url: https://github.com/vitejs/vite/actions/runs/44761782135/attempts/1
+  fix_sha: dca06bed15b1ae4af1c385be14caec08f999a5bd
+  fix_run_url: https://github.com/vitejs/vite/actions/runs/44761782135/attempts/2
+  occurred_at: '2026-11-20T15:20:32Z'
+  pairing: H2
+  labeled_by: owner (draft by Claude)
+  label_basis: log

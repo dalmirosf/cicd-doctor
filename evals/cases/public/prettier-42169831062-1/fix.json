@@ -1,0 +1,24 @@
+{
+  "sha": "72e29bec8e30361e71092c5d9e771c86ff28c347",
+  "pairing": "H1",
+  "commits": 2,
+  "files_total": 3,
+  "files": [
+    {
+      "path": ".github/workflows/dependency-review.yml",
+      "additions": 22,
+      "deletions": 0
+    },
+    {
+      "path": ".github/workflows/lint.yml",
+      "additions": 0,
+      "deletions": 5
+    },
+    {
+      "path": "scripts/build/transform/index.js",
+      "additions": 4,
+      "deletions": 1
+    }
+  ],
+  "summary": "2 commit(s), 3 file(s), +26/-6"
+}

@@ -1,0 +1,26 @@
+id: vite-44445588794-1
+source: public
+repo: vitejs/vite
+run_url: https://github.com/vitejs/vite/actions/runs/44445588794/attempts/1
+job_id: 135296810385
+expected:
+  category: broken_test
+  cause: El build falla porque el bundle (71.03 kB) supera el tope de 71 kB.
+  evidence_lines: []
+fix:
+  commit: bae0d9f49be9d7216d4e9fc7efe164ed2a143f41
+  summary: 1 commit(s), 1 file(s), +1/-1
+flaky: false
+tags:
+- node
+captured_at: '2026-11-21T16:56:45Z'
+provenance:
+  repo: vitejs/vite
+  license: MIT
+  run_url: https://github.com/vitejs/vite/actions/runs/44445588794/attempts/1
+  fix_sha: bae0d9f49be9d7216d4e9fc7efe164ed2a143f41
+  fix_run_url: https://github.com/vitejs/vite/actions/runs/44446046478
+  occurred_at: '2026-11-19T02:37:22Z'
+  pairing: H1-pr
+  labeled_by: owner (draft by Claude)
+  label_basis: log

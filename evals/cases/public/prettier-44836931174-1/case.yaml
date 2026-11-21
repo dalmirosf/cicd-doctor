@@ -1,0 +1,27 @@
+id: prettier-44836931174-1
+source: public
+repo: prettier/prettier
+run_url: https://github.com/prettier/prettier/actions/runs/44836931174/attempts/1
+job_id: 136635587500
+expected:
+  category: broken_test
+  cause: 'La verificación de tipos falla: una directiva @ts-expect-error ya no se
+    usa (TS2578).'
+  evidence_lines: []
+fix:
+  commit: 93aa5e735728d32de3c6e7340da42158ad83637e
+  summary: 1 commit(s), 1 file(s), +0/-1
+flaky: false
+tags:
+- node
+captured_at: '2026-11-21T16:57:43Z'
+provenance:
+  repo: prettier/prettier
+  license: MIT
+  run_url: https://github.com/prettier/prettier/actions/runs/44836931174/attempts/1
+  fix_sha: 93aa5e735728d32de3c6e7340da42158ad83637e
+  fix_run_url: https://github.com/prettier/prettier/actions/runs/44842959033
+  occurred_at: '2026-11-20T23:28:15Z'
+  pairing: H1
+  labeled_by: owner (draft by Claude)
+  label_basis: log

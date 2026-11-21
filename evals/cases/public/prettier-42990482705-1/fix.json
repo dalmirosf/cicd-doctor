@@ -1,0 +1,14 @@
+{
+  "sha": "d89e19a95de6f7a33f870c90921ae7f941e9a73a",
+  "pairing": "H1-pr",
+  "commits": 1,
+  "files_total": 1,
+  "files": [
+    {
+      "path": "changelog_unreleased/graphql/20469.md",
+      "additions": 1,
+      "deletions": 1
+    }
+  ],
+  "summary": "1 commit(s), 1 file(s), +1/-1"
+}

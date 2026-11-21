@@ -1,0 +1,26 @@
+id: prettier-43476758833-1
+source: public
+repo: prettier/prettier
+run_url: https://github.com/prettier/prettier/actions/runs/43476758833/attempts/1
+job_id: 132062464405
+expected:
+  category: broken_test
+  cause: El spellcheck rechaza la palabra 'combinators' en el printer de CSS.
+  evidence_lines: []
+fix:
+  commit: 4b1dd05152ee652d639efc22a2e25d0e2527c4fa
+  summary: 1 commit(s), 1 file(s), +1/-1
+flaky: false
+tags:
+- node
+captured_at: '2026-11-21T16:57:39Z'
+provenance:
+  repo: prettier/prettier
+  license: MIT
+  run_url: https://github.com/prettier/prettier/actions/runs/43476758833/attempts/1
+  fix_sha: 4b1dd05152ee652d639efc22a2e25d0e2527c4fa
+  fix_run_url: https://github.com/prettier/prettier/actions/runs/43477709922
+  occurred_at: '2026-11-13T17:52:16Z'
+  pairing: H1-pr
+  labeled_by: owner (draft by Claude)
+  label_basis: log

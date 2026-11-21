@@ -1,0 +1,24 @@
+{
+  "sha": "30ff8510a1565384e375b74a72bd91224b75f3ed",
+  "pairing": "H1",
+  "commits": 2,
+  "files_total": 3,
+  "files": [
+    {
+      "path": "eslint.config.js",
+      "additions": 1,
+      "deletions": 0
+    },
+    {
+      "path": "src/language-js/print/jsx.js",
+      "additions": 2,
+      "deletions": 4
+    },
+    {
+      "path": "src/utilities/get-indent-size.js",
+      "additions": 2,
+      "deletions": 2
+    }
+  ],
+  "summary": "2 commit(s), 3 file(s), +5/-6"
+}

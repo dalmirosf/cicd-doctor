@@ -1,0 +1,7 @@
+The files under this directory contain excerpts of public GitHub Actions logs from the
+repositories below, each under the licence it declares. The excerpts are redacted and
+trimmed; copyright and trademarks remain with their owners. A maintainer who wants a case
+removed can ask and it will be deleted.
+
+- prettier/prettier: MIT
+- vitejs/vite: MIT

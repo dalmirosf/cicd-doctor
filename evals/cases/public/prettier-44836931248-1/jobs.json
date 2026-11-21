@@ -1,0 +1,125 @@
+{
+  "total_count": 1,
+  "jobs": [
+    {
+      "id": 136635879463,
+      "run_id": 44836931248,
+      "run_attempt": 1,
+      "workflow_name": "Prod",
+      "name": "Browser(firefox) on Windows",
+      "status": "completed",
+      "conclusion": "failure",
+      "started_at": "2026-11-20T23:28:18Z",
+      "completed_at": "2026-11-20T23:29:34Z",
+      "labels": [
+        "windows-latest"
+      ],
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-20T23:28:18Z",
+          "completed_at": "2026-11-20T23:28:20Z"
+        },
+        {
+          "name": "Checkout",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-20T23:28:20Z",
+          "completed_at": "2026-11-20T23:28:27Z"
+        },
+        {
+          "name": "Setup Node.js",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-11-20T23:28:27Z",
+          "completed_at": "2026-11-20T23:28:37Z"
+        },
+        {
+          "name": "Puppeteer cache",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-11-20T23:28:37Z",
+          "completed_at": "2026-11-20T23:28:41Z"
+        },
+        {
+          "name": "Run echo 0 | sudo tee /proc/sys/kernel/apparmor_restrict_unprivileged_userns",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 5,
+          "started_at": "2026-11-20T23:28:41Z",
+          "completed_at": "2026-11-20T23:28:41Z"
+        },
+        {
+          "name": "Install Dependencies",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-11-20T23:28:41Z",
+          "completed_at": "2026-11-20T23:29:19Z"
+        },
+        {
+          "name": "Download Artifact",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-11-20T23:29:19Z",
+          "completed_at": "2026-11-20T23:29:19Z"
+        },
+        {
+          "name": "Run Tests (ESM)",
+          "status": "completed",
+          "conclusion": "failure",
+          "number": 8,
+          "started_at": "2026-11-20T23:29:19Z",
+          "completed_at": "2026-11-20T23:29:31Z"
+        },
+        {
+          "name": "Run Tests (UMD)",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 9,
+          "started_at": "2026-11-20T23:29:31Z",
+          "completed_at": "2026-11-20T23:29:31Z"
+        },
+        {
+          "name": "Post Puppeteer cache",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 16,
+          "started_at": "2026-11-20T23:29:31Z",
+          "completed_at": "2026-11-20T23:29:31Z"
+        },
+        {
+          "name": "Post Setup Node.js",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 17,
+          "started_at": "2026-11-20T23:29:31Z",
+          "completed_at": "2026-11-20T23:29:31Z"
+        },
+        {
+          "name": "Post Checkout",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 18,
+          "started_at": "2026-11-20T23:29:31Z",
+          "completed_at": "2026-11-20T23:29:34Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 19,
+          "started_at": "2026-11-20T23:29:34Z",
+          "completed_at": "2026-11-20T23:29:34Z"
+        }
+      ]
+    }
+  ]
+}

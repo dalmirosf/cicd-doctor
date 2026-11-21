@@ -1,0 +1,27 @@
+id: prettier-44501225538-1
+source: public
+repo: prettier/prettier
+run_url: https://github.com/prettier/prettier/actions/runs/44501225538/attempts/1
+job_id: 135481224075
+expected:
+  category: broken_test
+  cause: 'La verificación de tipos falla: un argumento number donde se espera string
+    (TS2345).'
+  evidence_lines: []
+fix:
+  commit: 225a99ff3c99424ef0b4ad745dc1b1fea0c7433d
+  summary: 3 commit(s), 2 file(s), +5/-2
+flaky: false
+tags:
+- node
+captured_at: '2026-11-21T16:57:55Z'
+provenance:
+  repo: prettier/prettier
+  license: MIT
+  run_url: https://github.com/prettier/prettier/actions/runs/44501225538/attempts/1
+  fix_sha: 225a99ff3c99424ef0b4ad745dc1b1fea0c7433d
+  fix_run_url: https://github.com/prettier/prettier/actions/runs/44501928007
+  occurred_at: '2026-11-19T09:58:48Z'
+  pairing: H1-pr
+  labeled_by: owner (draft by Claude)
+  label_basis: log
