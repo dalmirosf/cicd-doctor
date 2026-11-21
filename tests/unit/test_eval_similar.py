@@ -87,7 +87,7 @@ async def test_a_different_failure_of_the_same_category_lists_the_earlier_one_as
     first, second = by_id(report)["lab-a"], by_id(report)["lab-b"]
     assert (first.similar_found, second.diagnosis_source) == (0, "llm")
     assert second.similar_found == 1
-    assert second.similar_top_score == pytest.approx(0.964, abs=1e-3)
+    assert second.similar_top_score == pytest.approx(0.96, abs=1e-3)
     [similar] = fake.calls[1].similar
     assert (similar.run_id, similar.score) == (1, second.similar_top_score)
     [run_] = report.runs

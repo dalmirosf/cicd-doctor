@@ -103,8 +103,8 @@ def _similar(**changes: object) -> SimilarFailure:
     return SimilarFailure.model_validate(fields | changes)
 
 
-def test_a_similar_failure_rounds_its_score_to_three_decimals() -> None:
-    assert _similar(score=0.912_345_678).score == 0.912
+def test_a_similar_failure_rounds_its_score_to_two_decimals() -> None:
+    assert _similar(score=0.912_345_678).score == 0.91
     assert _similar(score=1.000_000_000_000_000_2).score == 1.0
 
 
@@ -150,3 +150,12 @@ def test_an_upgrade_checks_the_same_invariants_as_a_stored_failure() -> None:
     with pytest.raises(ValidationError, match="made no LLM call"):
         PublishedUpgrade(failure_id=uuid4(), published=cached, usage=make_usage(model="gpt-a"))
     assert PublishedUpgrade(failure_id=uuid4(), published=cached, cached_from=uuid4())
+
+
+@pytest.mark.parametrize("edge", [0.8555, 0.9425, 0.8915])
+def test_float_noise_around_a_rounding_edge_does_not_change_the_score(edge: float) -> None:
+    """H1: an embedder on another CPU differs by ~1e-5; with three decimals that flipped the
+    request (and the answer key) of a score 4e-6 from an edge. Two decimals are 40 times
+    farther from every score of the committed cases."""
+    below, above = edge - 4e-6, edge + 4e-6
+    assert _similar(score=below).score == _similar(score=above).score
