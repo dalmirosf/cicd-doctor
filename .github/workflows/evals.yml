@@ -1,0 +1,64 @@
+name: Evals
+
+# The regression and injection gate of the evals (SPEC §11.3, D-105, D-106). It reads the committed
+# answers in evals/answers/ and never calls OpenAI: this workflow has no secrets and cannot spend.
+#
+# For now it only runs by hand (workflow_dispatch). The `pull_request` and `push` triggers, with
+# `paths` (src/cicd_doctor/core/**, evals/**, lab/cases.yaml, pyproject.toml, uv.lock and this
+# file), are added in P4 (h), once a baseline exists: without evals/baseline.json the check exits
+# with 4 and every pull request would turn red.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Evals gate (offline)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    env:
+      TIKTOKEN_CACHE_DIR: .cache/tiktoken
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          enable-cache: true
+      - run: uv sync --locked
+      # The BPE file of o200k_base (tiktoken downloads it once, D-57).
+      - name: Cache the tokenizer
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/tiktoken
+          key: tiktoken-o200k_base-v1
+      # Same model and key as ci.yml (D-78): only the llm+hints+similar variant needs it.
+      - name: Cache the embedding model
+        id: model-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/fastembed
+          key: fastembed-bge-small-en-v1.5-onnx-Q-51f1bd0addd6e859e42c2c8021a5e5461385bb676a649f4b269aa445449f2431
+      - name: Download the embedding model (cache miss only)
+        if: steps.model-cache.outputs.cache-hit != 'true'
+        run: >-
+          uv run python -c "from pathlib import Path;
+          from cicd_doctor.adapters.embeddings.fastembed_embedder import FastEmbedEmbedder;
+          raise SystemExit(0 if FastEmbedEmbedder(Path('.cache/fastembed')).warm() else 1)"
+      # Exit codes: 1 regression, 2 injection success, 3 incomplete answers, 4 stale or missing
+      # baseline, 5 runner error. The summary has ids and numbers only, never log text.
+      - name: Check against the baseline
+        run: uv run python -m evals check --summary evals-summary.md --out-dir evals-report
+      - name: Job summary
+        if: always()
+        run: |
+          if [ -f evals-summary.md ]; then cat evals-summary.md >> "$GITHUB_STEP_SUMMARY"; fi
+      - name: Upload the report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: evals-report
+          path: |
+            evals-report/
+            evals-summary.md
+          if-no-files-found: ignore
