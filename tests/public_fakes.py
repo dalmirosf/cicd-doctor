@@ -125,6 +125,18 @@ def run_json(
     }
 
 
+def pull_json(
+    number: int, head_sha: str, *, state: str = "open", merged: bool = False
+) -> dict[str, Any]:
+    return {
+        "number": number,
+        "state": state,
+        "merged_at": "2026-11-15T00:00:00Z" if merged else None,
+        "base": {"repo": {"full_name": REPO}},
+        "head": {"sha": head_sha},
+    }
+
+
 def compare_json(files: int = 2, commits: int = 1) -> dict[str, Any]:
     return {
         "total_commits": commits,
@@ -156,7 +168,9 @@ class FakePublicGh:
         self.failed: list[dict[str, Any]] = []  # answer of status=failure
         self.timed_out: list[dict[str, Any]] = []
         self.green: list[dict[str, Any]] = []  # answer of status=success
-        self.branch_runs: list[dict[str, Any]] = []  # every run, filtered by ?branch=
+        self.branch_runs: list[dict[str, Any]] = []  # every run, filtered by ?branch= or ?head_sha=
+        self.commit_pulls: dict[str, list[dict[str, Any]] | CaptureError] = {}  # sha -> PRs
+        self.pull_commits: dict[int, list[str] | CaptureError] = {}  # PR number -> shas
 
     def __call__(self, args: Sequence[str]) -> bytes:
         self.calls.append(list(args))
@@ -193,10 +207,29 @@ class FakePublicGh:
                 status
             ]
             return {"workflow_runs": runs if page == "page=1" else []}
+        if rest[0] == "commits" and rest[2:] == ["pulls"]:
+            item = self.commit_pulls.get(rest[1], [])
+            if isinstance(item, CaptureError):
+                raise item
+            return item
+        if rest[0] == "pulls" and rest[2:] == ["commits"]:
+            shas = self.pull_commits.get(int(rest[1]))
+            if shas is None:
+                raise CaptureError("gh api failed: gh: Not Found (HTTP 404)")
+            if isinstance(shas, CaptureError):
+                raise shas
+            return [{"sha": sha} for sha in shas]
         if rest[:2] == ["actions", "workflows"]:
-            branch = unquote(
-                next(p.split("=", 1)[1] for p in query.split("&") if p.startswith("branch="))
-            )
+            args = dict(p.split("=", 1) for p in query.split("&"))
+            if "head_sha" in args:
+                return {
+                    "workflow_runs": [
+                        r
+                        for r in self.branch_runs
+                        if r["head_sha"] == args["head_sha"] and str(r["workflow_id"]) == rest[2]
+                    ]
+                }
+            branch = unquote(args["branch"])
             return {"workflow_runs": [r for r in self.branch_runs if r["head_branch"] == branch]}
         if rest[:2] == ["actions", "runs"]:
             tail = rest[2:]

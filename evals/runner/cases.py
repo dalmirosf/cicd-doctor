@@ -58,7 +58,9 @@ class Provenance(BaseModel):
     fix_sha: str
     fix_run_url: str | None = None  # the green run that proves the fix
     occurred_at: AwareDatetime  # when the failure happened: it orders the similar-failure history
-    pairing: Literal["H1", "H2"]  # H1: a later commit went green; H2: a re-run of the same commit
+    pairing: Literal[
+        "H1", "H1-pr", "H2"
+    ]  # H1: a later commit went green; H2: a re-run of the same commit
     labeled_by: str
     label_basis: Literal["fix", "log"]  # what the label rests on: the fixing commit or only the log
 

@@ -80,7 +80,7 @@ class PublicCase(BaseModel):
     run_id: int
     attempt: int = 1
     job_id: int | None = None  # default: the lowest id among the failed jobs (matrix rule)
-    pairing: Literal["H1", "H2"]
+    pairing: Literal["H1", "H1-pr", "H2"]
     fix_sha: str
     fix_run_id: int | None = None  # H1: the green run of the fixing commit
     fix_attempt: int | None = None  # H2: the later green attempt of the same run
@@ -99,8 +99,8 @@ class PublicCase(BaseModel):
             raise ValueError(f"case id {self.id!r} is not a safe directory name")
         if not _SHA.match(self.fix_sha):
             raise ValueError(f"{self.id}: fix_sha must be a full 40-character sha")
-        if self.pairing == "H1" and self.fix_run_id is None:
-            raise ValueError(f"{self.id}: an H1 case needs fix_run_id")
+        if self.pairing != "H2" and self.fix_run_id is None:
+            raise ValueError(f"{self.id}: an H1 or H1-pr case needs fix_run_id")
         if self.pairing == "H2" and (self.fix_attempt is None or self.fix_attempt <= self.attempt):
             raise ValueError(f"{self.id}: an H2 case needs fix_attempt greater than attempt")
         return self

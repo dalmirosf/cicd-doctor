@@ -12,6 +12,7 @@ import pytest
 import yaml
 
 from evals.runner import cli, public_cli
+from evals.runner.capture import CaptureError
 from evals.runner.public_common import BudgetedGh
 from evals.runner.public_discover import discover, render_candidates
 from tests.public_fakes import (
@@ -22,6 +23,7 @@ from tests.public_fakes import (
     compare_json,
     job,
     jobs_payload,
+    pull_json,
     run_json,
 )
 
@@ -145,11 +147,155 @@ def test_the_pair_must_be_small(kwargs: dict[str, int], reason: str) -> None:
     assert reasons(found) == {1: reason}
 
 
-def test_a_pull_request_from_a_fork_cannot_be_paired() -> None:
-    gh = gh_with(run(1, 1, "failure", 10, fork=True))
+# --- H1-pr: a fork PR, paired by pull request ------------------------------
 
-    assert reasons(find(gh)) == {1: "pull request from a fork: cannot be paired by branch"}
-    assert not any("workflows" in endpoint for endpoint in gh.endpoints())
+
+def fork_gh(*runs: dict[str, Any], commits: list[int] | None = None, **pull: Any) -> FakePublicGh:
+    """Fork runs on branch names that match nothing; PR 5 has the commits ``commits``."""
+    gh = gh_with(*runs)
+    shas = commits or [1, 2]
+    for item in runs:
+        gh.commit_pulls[str(item["head_sha"])] = [pull_json(5, SHA[shas[-1]], **pull)]
+    gh.pull_commits[5] = [SHA[n] for n in shas]
+    return gh
+
+
+def fork_run(run_id: int, sha_no: int, conclusion: str, day: int, **kw: Any) -> dict[str, Any]:
+    kw.setdefault("branch", f"main-{run_id}")  # a fork's branch name: never matches by branch
+    return run(run_id, sha_no, conclusion, day, fork=True, **kw)
+
+
+def test_a_fork_pr_with_a_later_green_commit_is_paired_by_pull_request() -> None:
+    gh = fork_gh(fork_run(1, 1, "failure", 10), fork_run(2, 2, "success", 11))
+    with_compare(gh, 1, 2)
+
+    found = find(gh)
+
+    [candidate] = found.candidates
+    assert (candidate["pairing"], candidate["pr"], candidate["fix_run_id"]) == ("H1-pr", 5, 2)
+    assert (candidate["failed_sha"], candidate["fix_sha"]) == (SHA[1], SHA[2])
+    assert found.discarded == []
+    # extra calls of one fork candidate: PRs of the commit, commits of the PR, and the runs of the
+    # one later commit (on top of the compare and the jobs that H1 also makes)
+    endpoints = gh.endpoints()
+    assert sum("/pulls" in e for e in endpoints) == 2
+    assert sum("head_sha=" in e for e in endpoints) == 1
+    assert not any("branch=" in e for e in endpoints)
+
+
+def test_a_fork_pr_never_fixed_is_discarded() -> None:
+    gh = fork_gh(fork_run(1, 1, "failure", 10), commits=[1])
+
+    found = find(gh)
+
+    assert found.candidates == []
+    assert reasons(found) == {1: "fork run: no later commit in the pull request"}
+    assert not any("head_sha=" in e for e in gh.endpoints())  # stopped after two calls
+
+
+def test_a_fork_pr_whose_later_commit_has_no_green_run_is_discarded() -> None:
+    gh = fork_gh(fork_run(1, 1, "failure", 10))
+
+    assert reasons(find(gh)) == {1: "no green run after it"}
+
+
+def test_a_force_push_that_drops_the_failed_commit_is_discarded() -> None:
+    gone = "fork run: the commit is no longer in the pull request"
+    gh = fork_gh(fork_run(1, 1, "failure", 10), commits=[3, 4])
+    assert reasons(find(gh)) == {1: gone}
+
+    gh.pull_commits[5] = CaptureError("gh api failed: gh: Not Found (HTTP 404)")
+    assert reasons(find(gh)) == {1: gone}
+
+    gh.pull_commits[5] = []
+    assert reasons(find(gh)) == {1: gone}
+
+
+def test_a_fork_commit_without_a_pull_request_is_discarded() -> None:
+    gh = fork_gh(fork_run(1, 1, "failure", 10))
+    gh.commit_pulls.clear()
+    assert reasons(find(gh)) == {1: "fork run: no pull request for the commit"}
+
+    gh.commit_pulls[SHA[1]] = CaptureError("gh api failed: gh: Not Found (HTTP 404)")
+    assert reasons(find(gh)) == {1: "fork run: no pull request for the commit"}
+
+
+def test_a_merged_and_a_closed_unmerged_pr_are_paired_alike() -> None:
+    pulls: list[dict[str, Any]] = [
+        {"state": "closed", "merged": True},
+        {"state": "closed", "merged": False},
+    ]
+    for pull in pulls:
+        gh = fork_gh(fork_run(1, 1, "failure", 10), fork_run(2, 2, "success", 11), **pull)
+        with_compare(gh, 1, 2)
+
+        [candidate] = find(gh).candidates
+
+        assert (candidate["pairing"], candidate["pr"]) == ("H1-pr", 5)
+
+
+def test_a_later_run_of_another_workflow_is_no_answer() -> None:
+    gh = fork_gh(fork_run(1, 1, "failure", 10), fork_run(2, 2, "success", 11, workflow_id=8))
+    with_compare(gh, 1, 2)
+
+    found = find(gh)
+
+    assert found.candidates == []
+    assert reasons(found) == {1: "no green run after it"}
+
+
+def test_a_fork_failure_followed_by_another_failure_is_superseded() -> None:
+    gh = fork_gh(
+        fork_run(1, 1, "failure", 10),
+        fork_run(2, 2, "failure", 11),
+        fork_run(3, 3, "success", 12),
+        commits=[1, 2, 3],
+    )
+    with_compare(gh, 2, 3)
+
+    found = find(gh)
+
+    assert [c["run_id"] for c in found.candidates] == [2]
+    assert reasons(found) == {1: "superseded by a later failure"}
+
+
+def test_fork_pairing_applies_the_same_filters() -> None:
+    gh = fork_gh(fork_run(1, 1, "failure", 10), fork_run(2, 2, "success", 11))
+    with_compare(gh, 1, 2, files=11)
+    assert reasons(find(gh)) == {1: "11 files changed"}
+
+    gh = fork_gh(fork_run(1, 1, "failure", 10), fork_run(2, 2, "success", 25))
+    assert reasons(find(gh)) == {1: "the green run is 15 days later"}
+
+    gh = fork_gh(
+        fork_run(1, 1, "failure", 10), fork_run(2, 5, "success", 11), commits=[1, 2, 3, 4, 5]
+    )
+    assert reasons(find(gh)) == {1: "no green run after it"}  # only the next 3 commits count
+
+
+def test_fork_pairing_reads_the_pull_request_once_for_two_failures() -> None:
+    gh = fork_gh(
+        fork_run(1, 1, "failure", 10),
+        fork_run(4, 1, "failure", 10, workflow_id=8),
+        fork_run(2, 2, "success", 11),
+    )
+    gh.jobs["4/1"] = gh.jobs["1/1"]
+    with_compare(gh, 1, 2)
+    find(gh)
+
+    assert sum(e.endswith("/pulls/5/commits?per_page=100") for e in gh.endpoints()) == 1
+    assert sum("/commits/" in e and e.endswith("/pulls?per_page=30") for e in gh.endpoints()) == 1
+
+
+def test_fork_pairing_respects_the_call_budget() -> None:
+    gh = fork_gh(fork_run(1, 1, "failure", 10), fork_run(2, 2, "success", 11))
+    with_compare(gh, 1, 2)
+    budget = BudgetedGh(gh, max_calls=3)  # licence, one failed listing, one more
+
+    found = discover(REPO, gh=budget, now=lambda: NOW, calls=lambda: budget.calls)
+
+    assert found.stopped == "reached --max-api-calls (3)"
+    assert found.api_calls == 3
 
 
 def test_workflows_on_the_exclusion_list_are_discarded() -> None:
