@@ -1,0 +1,39 @@
+{
+  "sha": "76cb51bba1a8988b00a5becae5829c3e7a49d9ab",
+  "pairing": "H1",
+  "commits": 1,
+  "files_total": 6,
+  "files": [
+    {
+      "path": "docs/config/shared-options.md",
+      "additions": 6,
+      "deletions": 4
+    },
+    {
+      "path": "packages/vite/src/node/__tests__/config.spec.ts",
+      "additions": 62,
+      "deletions": 0
+    },
+    {
+      "path": "packages/vite/src/node/config.ts",
+      "additions": 33,
+      "deletions": 2
+    },
+    {
+      "path": "packages/vite/src/node/plugins/css.ts",
+      "additions": 11,
+      "deletions": 11
+    },
+    {
+      "path": "playground/css-sourcemap/vite.config.js",
+      "additions": 3,
+      "deletions": 1
+    },
+    {
+      "path": "playground/tailwind-sourcemap/vite.config.js",
+      "additions": 2,
+      "deletions": 2
+    }
+  ],
+  "summary": "1 commit(s), 6 file(s), +117/-20"
+}

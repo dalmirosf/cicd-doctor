@@ -1,0 +1,473 @@
+version: 1
+repos:
+- repo: vitejs/vite
+  license: MIT
+  cases:
+  - id: vite-43389567460-1
+    run_id: 43389567460
+    attempt: 1
+    job_id: 131766063425
+    pairing: H1-pr
+    fix_sha: 9d2f6ed57cd282b9f736bf26c2a4faabfcd9823a
+    category: broken_test
+    cause: El test de HMR 'file deleted and restored' recibe 'parent:not-child' en vez de 'parent:child'.
+    fix_summary: 1 commit(s), 1 file(s), +2/-1
+    flaky: false
+    tags:
+    - node
+    labeled_by: owner (draft by Claude)
+    label_basis: log
+    fix_run_id: 43390341114
+  - id: vite-44672066698-1
+    run_id: 44672066698
+    attempt: 1
+    job_id: 136075993767
+    pairing: H2
+    fix_sha: 8e9bbf2d4959653bd054c8cb7ad98f52c1c892cd
+    category: flaky
+    cause: Timeout esperando logs del navegador en un test de HMR; pasó al reintentar el mismo commit.
+    fix_summary: the same commit passed when the run was repeated
+    flaky: true
+    tags:
+    - node
+    labeled_by: owner (draft by Claude)
+    label_basis: log
+    fix_attempt: 2
+  - id: vite-44464244661-1
+    run_id: 44464244661
+    attempt: 1
+    job_id: 135358285742
+    pairing: H1-pr
+    fix_sha: cecc5451f84166c96ed54695542a5a124a449e88
+    category: broken_test
+    cause: 'El test de HMR falla con TypeError: el módulo ''file-only'' esperado es undefined.'
+    fix_summary: 1 commit(s), 1 file(s), +4/-3
+    flaky: false
+    tags:
+    - node
+    labeled_by: owner (draft by Claude)
+    label_basis: log
+    fix_run_id: 44492493069
+  - id: vite-44487704537-1
+    run_id: 44487704537
+    attempt: 1
+    job_id: 135435306874
+    pairing: H1
+    fix_sha: c7326770e1121733435e0527af972f387d64d344
+    category: broken_test
+    cause: Un test de HMR SSR ('invalidate') recibe los mensajes de log en otro orden del esperado.
+    fix_summary: 1 commit(s), 2 file(s), +182/-80
+    flaky: false
+    tags:
+    - node
+    labeled_by: owner (draft by Claude)
+    label_basis: log
+    fix_run_id: 44503385595
+  - id: vite-44758547903-1
+    run_id: 44758547903
+    attempt: 1
+    job_id: 136364793896
+    pairing: H2
+    fix_sha: 2db20b84fad687cebfaa0b37bf232ef5ae8f57d4
+    category: flaky
+    cause: Un test de HMR espera el color 'orange' y recibe 'black'; pasó al reintentar el mismo commit.
+    fix_summary: the same commit passed when the run was repeated
+    flaky: true
+    tags:
+    - node
+    labeled_by: owner (draft by Claude)
+    label_basis: log
+    fix_attempt: 2
+  - id: vite-44445588794-1
+    run_id: 44445588794
+    attempt: 1
+    job_id: 135296810385
+    pairing: H1-pr
+    fix_sha: bae0d9f49be9d7216d4e9fc7efe164ed2a143f41
+    category: broken_test
+    cause: El build falla porque el bundle (71.03 kB) supera el tope de 71 kB.
+    fix_summary: 1 commit(s), 1 file(s), +1/-1
+    flaky: false
+    tags:
+    - node
+    labeled_by: owner (draft by Claude)
+    label_basis: log
+    fix_run_id: 44446046478
+  - id: vite-42600232139-1
+    run_id: 42600232139
+    attempt: 1
+    job_id: 129102672866
+    pairing: H1
+    fix_sha: 53f093fac913996327cd58a6696c87f82ce5890b
+    category: broken_test
+    cause: Un test del watch de plugin-legacy lee un archivo CSS que no existe (undefined).
+    fix_summary: 1 commit(s), 1 file(s), +2/-1
+    flaky: false
+    tags:
+    - node
+    labeled_by: owner (draft by Claude)
+    label_basis: log
+    fix_run_id: 42607174230
+  - id: vite-44520081596-1
+    run_id: 44520081596
+    attempt: 1
+    job_id: 135546277535
+    pairing: H1-pr
+    fix_sha: 91c524849e10095d978f4a1f752ded963fa489e1
+    category: broken_test
+    cause: Un rechazo no manejado 'Failed to get bundle state' hace fallar la corrida aunque pasan todos los tests.
+    fix_summary: 1 commit(s), 1 file(s), +0/-28
+    flaky: false
+    tags:
+    - node
+    labeled_by: owner (draft by Claude)
+    label_basis: log
+    fix_run_id: 44715400897
+  - id: vite-43179524933-1
+    run_id: 43179524933
+    attempt: 1
+    job_id: 131051977102
+    pairing: H1
+    fix_sha: c5be55f571e418992fd39f34267ec4929e79d014
+    category: broken_test
+    cause: Fallan 3 tests de build y el reporter se rompe con 'Map.groupBy is not a function'.
+    fix_summary: 1 commit(s), 2 file(s), +80/-17
+    flaky: false
+    tags:
+    - node
+    labeled_by: owner (draft by Claude)
+    label_basis: log
+    fix_run_id: 43179968001
+  - id: vite-42996511749-1
+    run_id: 42996511749
+    attempt: 1
+    job_id: 130442029792
+    pairing: H1
+    fix_sha: 76cb51bba1a8988b00a5becae5829c3e7a49d9ab
+    category: broken_test
+    cause: Un worker de vitest sale con código 1 en Windows al correr el test css-lightningcss-proxy.
+    fix_summary: 1 commit(s), 6 file(s), +117/-20
+    flaky: false
+    tags:
+    - node
+    labeled_by: owner (draft by Claude)
+    label_basis: log
+    fix_run_id: 42998216526
+  - id: vite-44761782135-1
+    run_id: 44761782135
+    attempt: 1
+    job_id: 136376051449
+    pairing: H2
+    fix_sha: dca06bed15b1ae4af1c385be14caec08f999a5bd
+    category: flaky
+    cause: Falla un test de build y el reporter se rompe con 'Map.groupBy'; pasó al reintentar el mismo commit.
+    fix_summary: the same commit passed when the run was repeated
+    flaky: true
+    tags:
+    - node
+    labeled_by: owner (draft by Claude)
+    label_basis: log
+    fix_attempt: 2
+  - id: vite-42557157506-1
+    run_id: 42557157506
+    attempt: 1
+    job_id: 128965409630
+    pairing: H1
+    fix_sha: ad04aa78aa07191779de96bab85670ddce6cc20f
+    category: broken_test
+    cause: Timeout esperando logs del navegador en un test de HMR (mismo test que c02).
+    fix_summary: 1 commit(s), 6 file(s), +19/-19
+    flaky: false
+    tags:
+    - node
+    labeled_by: owner (draft by Claude)
+    label_basis: log
+    fix_run_id: 42557973079
+  - id: vite-42601223848-1
+    run_id: 42601223848
+    attempt: 1
+    job_id: 129106245930
+    pairing: H1
+    fix_sha: 33f16c1ac905ad05cb552e2ac6bbd4dc63051d02
+    category: broken_test
+    cause: Un test de resolve espera un mensaje de error distinto del recibido.
+    fix_summary: 1 commit(s), 1 file(s), +4/-4
+    flaky: false
+    tags:
+    - node
+    labeled_by: owner (draft by Claude)
+    label_basis: log
+    fix_run_id: 42602922859
+- repo: prettier/prettier
+  license: MIT
+  cases:
+  - id: prettier-42172690980-1
+    run_id: 42172690980
+    attempt: 1
+    job_id: 127743959726
+    pairing: H1
+    fix_sha: 72e29bec8e30361e71092c5d9e771c86ff28c347
+    category: dependency
+    cause: Dependency Review detecta glob@13.0.7 con una vulnerabilidad moderada en yarn.lock.
+    fix_summary: 1 commit(s), 2 file(s), +22/-5
+    flaky: false
+    tags:
+    - node
+    labeled_by: owner (draft by Claude)
+    label_basis: log
+    fix_run_id: 42173412124
+  - id: prettier-42216042285-1
+    run_id: 42216042285
+    attempt: 1
+    job_id: 127886264626
+    pairing: H1-pr
+    fix_sha: d1e2ed8d8b5f14be6045035e8fba5555f350c3ff
+    category: broken_test
+    cause: El spellcheck (CSpell) rechaza la palabra desconocida 'CBOR' en un archivo de tests.
+    fix_summary: 2 commit(s), 1 file(s), +2/-2
+    flaky: false
+    tags:
+    - node
+    labeled_by: owner (draft by Claude)
+    label_basis: log
+    fix_run_id: 42216627763
+  - id: prettier-44722794030-1
+    run_id: 44722794030
+    attempt: 1
+    job_id: 136242533887
+    pairing: H1-pr
+    fix_sha: 45ea86577f0967fcdcc6514e135fd6c6a82d0786
+    category: broken_test
+    cause: El spellcheck rechaza las palabras 'jscript' y 'livescript' en un archivo de src.
+    fix_summary: 1 commit(s), 1 file(s), +1/-0
+    flaky: false
+    tags:
+    - node
+    labeled_by: owner (draft by Claude)
+    label_basis: log
+    fix_run_id: 44742244909
+  - id: prettier-43589153542-1
+    run_id: 43589153542
+    attempt: 1
+    job_id: 132430156519
+    pairing: H1-pr
+    fix_sha: 01c83a019d4ac82949f458b40d1cd2f9c4b46c9b
+    category: broken_test
+    cause: Dos tests de integración fallan porque no se resuelven los parsers 'oxc-ts' y 'yuku-ts'.
+    fix_summary: 1 commit(s), 5 file(s), +48/-20
+    flaky: false
+    tags:
+    - node
+    labeled_by: owner (draft by Claude)
+    label_basis: log
+    fix_run_id: 43589861738
+  - id: prettier-43476758833-1
+    run_id: 43476758833
+    attempt: 1
+    job_id: 132062464405
+    pairing: H1-pr
+    fix_sha: 4b1dd05152ee652d639efc22a2e25d0e2527c4fa
+    category: broken_test
+    cause: El spellcheck rechaza la palabra 'combinators' en el printer de CSS.
+    fix_summary: 1 commit(s), 1 file(s), +1/-1
+    flaky: false
+    tags:
+    - node
+    labeled_by: owner (draft by Claude)
+    label_basis: log
+    fix_run_id: 43477709922
+  - id: prettier-44836931174-1
+    run_id: 44836931174
+    attempt: 1
+    job_id: 136635587500
+    pairing: H1
+    fix_sha: 93aa5e735728d32de3c6e7340da42158ad83637e
+    category: broken_test
+    cause: 'La verificación de tipos falla: una directiva @ts-expect-error ya no se usa (TS2578).'
+    fix_summary: 1 commit(s), 1 file(s), +0/-1
+    flaky: false
+    tags:
+    - node
+    labeled_by: owner (draft by Claude)
+    label_basis: log
+    fix_run_id: 44842959033
+  - id: prettier-44496808791-1
+    run_id: 44496808791
+    attempt: 1
+    job_id: 135466025499
+    pairing: H1-pr
+    fix_sha: f031262bbf875f49734fa5bc2d757667c3a106c0
+    category: broken_test
+    cause: El chequeo de formato de Prettier marca un archivo sin formatear.
+    fix_summary: 1 commit(s), 1 file(s), +3/-9
+    flaky: false
+    tags:
+    - node
+    labeled_by: owner (draft by Claude)
+    label_basis: log
+    fix_run_id: 44497061713
+  - id: prettier-44493285782-1
+    run_id: 44493285782
+    attempt: 1
+    job_id: 135454038796
+    pairing: H1-pr
+    fix_sha: 3c9845fc112841a75b9724c893b6857d83f52e92
+    category: broken_test
+    cause: El chequeo de formato de Prettier marca un archivo sin formatear.
+    fix_summary: 1 commit(s), 1 file(s), +2/-1
+    flaky: false
+    tags:
+    - node
+    labeled_by: owner (draft by Claude)
+    label_basis: log
+    fix_run_id: 44493498312
+  - id: prettier-44501225538-1
+    run_id: 44501225538
+    attempt: 1
+    job_id: 135481224075
+    pairing: H1-pr
+    fix_sha: 225a99ff3c99424ef0b4ad745dc1b1fea0c7433d
+    category: broken_test
+    cause: 'La verificación de tipos falla: un argumento number donde se espera string (TS2345).'
+    fix_summary: 3 commit(s), 2 file(s), +5/-2
+    flaky: false
+    tags:
+    - node
+    labeled_by: owner (draft by Claude)
+    label_basis: log
+    fix_run_id: 44501928007
+  - id: prettier-41532036986-1
+    run_id: 41532036986
+    attempt: 1
+    job_id: 125574420472
+    pairing: H1-pr
+    fix_sha: 07b1b5ab0a2397760b6fafac0c88773eec16dbf8
+    category: broken_test
+    cause: Seis snapshots fallan porque cambió el texto del mensaje de error del parser yuku-ts.
+    fix_summary: 1 commit(s), 2 file(s), +6/-6
+    flaky: false
+    tags:
+    - node
+    labeled_by: owner (draft by Claude)
+    label_basis: log
+    fix_run_id: 41532754871
+  - id: prettier-43168081867-1
+    run_id: 43168081867
+    attempt: 1
+    job_id: 131014550274
+    pairing: H1-pr
+    fix_sha: bfc113ff94be0bc13f92d7724ab81fe3f926cd27
+    category: broken_test
+    cause: 'ESLint falla: ''hardline'' se define y no se usa (no-unused-vars).'
+    fix_summary: 1 commit(s), 1 file(s), +0/-1
+    flaky: false
+    tags:
+    - node
+    labeled_by: owner (draft by Claude)
+    label_basis: log
+    fix_run_id: 43168331759
+  - id: prettier-42175774637-1
+    run_id: 42175774637
+    attempt: 1
+    job_id: 127753767103
+    pairing: H1
+    fix_sha: b66e814838d0d5f7b4fe33d3457985fecb0ec59b
+    category: dependency
+    cause: La verificación de tipos no encuentra el módulo '@prettier/cli' (TS2307).
+    fix_summary: 1 commit(s), 2 file(s), +23/-40
+    flaky: false
+    tags:
+    - node
+    labeled_by: owner (draft by Claude)
+    label_basis: log
+    fix_run_id: 42178055215
+  - id: prettier-44032888942-1
+    run_id: 44032888942
+    attempt: 1
+    job_id: 133868783960
+    pairing: H1
+    fix_sha: 30ff8510a1565384e375b74a72bd91224b75f3ed
+    category: broken_test
+    cause: ESLint falla con tres errores de reglas unicorn en tres archivos.
+    fix_summary: 2 commit(s), 3 file(s), +5/-6
+    flaky: false
+    tags:
+    - node
+    labeled_by: owner (draft by Claude)
+    label_basis: log
+    fix_run_id: 44472324365
+  - id: prettier-42175774599-1
+    run_id: 42175774599
+    attempt: 1
+    job_id: 127754205918
+    pairing: H1
+    fix_sha: b66e814838d0d5f7b4fe33d3457985fecb0ec59b
+    category: dependency
+    cause: La suite experimental-cli falla porque el worker sale de forma inesperada (mismo arreglo que c24).
+    fix_summary: 1 commit(s), 2 file(s), +23/-40
+    flaky: false
+    tags:
+    - node
+    labeled_by: owner (draft by Claude)
+    label_basis: log
+    fix_run_id: 42178055509
+  - id: prettier-44836931248-1
+    run_id: 44836931248
+    attempt: 1
+    job_id: 136635879463
+    pairing: H2
+    fix_sha: c275b253ce035ba3f47b895e5dbbef7025a51361
+    category: flaky
+    cause: La descarga de Firefox de puppeteer en Windows falla con EBUSY (archivo bloqueado); pasó al reintentar.
+    fix_summary: the same commit passed when the run was repeated
+    flaky: true
+    tags:
+    - node
+    labeled_by: owner (draft by Claude)
+    label_basis: log
+    fix_attempt: 2
+  - id: prettier-44470623640-1
+    run_id: 44470623640
+    attempt: 1
+    job_id: 135378908464
+    pairing: H1
+    fix_sha: f3772f58eedfe713ffb69ce2e715df7698e6b9d8
+    category: broken_test
+    cause: Cuatro snapshots fallan porque cambió el texto del error del parser de Angular.
+    fix_summary: 1 commit(s), 1 file(s), +15/-25
+    flaky: false
+    tags:
+    - node
+    labeled_by: owner (draft by Claude)
+    label_basis: log
+    fix_run_id: 44473359242
+  - id: prettier-42990482705-1
+    run_id: 42990482705
+    attempt: 1
+    job_id: 130421870638
+    pairing: H1-pr
+    fix_sha: d89e19a95de6f7a33f870c90921ae7f941e9a73a
+    category: broken_test
+    cause: El chequeo de formato de Prettier marca un archivo de changelog sin formatear.
+    fix_summary: 1 commit(s), 1 file(s), +1/-1
+    flaky: false
+    tags:
+    - node
+    labeled_by: owner (draft by Claude)
+    label_basis: log
+    fix_run_id: 42990913040
+  - id: prettier-42169831062-1
+    run_id: 42169831062
+    attempt: 1
+    job_id: 127735049926
+    pairing: H1
+    fix_sha: 72e29bec8e30361e71092c5d9e771c86ff28c347
+    category: broken_test
+    cause: 'El lint de producción falla: ''String.raw'' debería estar transformado en el bundle (no-restricted-syntax).'
+    fix_summary: 2 commit(s), 3 file(s), +26/-6
+    flaky: false
+    tags:
+    - node
+    labeled_by: owner (draft by Claude)
+    label_basis: log
+    fix_run_id: 42173412232

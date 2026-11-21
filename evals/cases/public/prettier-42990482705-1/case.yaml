@@ -1,0 +1,26 @@
+id: prettier-42990482705-1
+source: public
+repo: prettier/prettier
+run_url: https://github.com/prettier/prettier/actions/runs/42990482705/attempts/1
+job_id: 130421870638
+expected:
+  category: broken_test
+  cause: El chequeo de formato de Prettier marca un archivo de changelog sin formatear.
+  evidence_lines: []
+fix:
+  commit: d89e19a95de6f7a33f870c90921ae7f941e9a73a
+  summary: 1 commit(s), 1 file(s), +1/-1
+flaky: false
+tags:
+- node
+captured_at: '2026-11-21T16:58:28Z'
+provenance:
+  repo: prettier/prettier
+  license: MIT
+  run_url: https://github.com/prettier/prettier/actions/runs/42990482705/attempts/1
+  fix_sha: d89e19a95de6f7a33f870c90921ae7f941e9a73a
+  fix_run_url: https://github.com/prettier/prettier/actions/runs/42990913040
+  occurred_at: '2026-11-11T08:53:25Z'
+  pairing: H1-pr
+  labeled_by: owner (draft by Claude)
+  label_basis: log

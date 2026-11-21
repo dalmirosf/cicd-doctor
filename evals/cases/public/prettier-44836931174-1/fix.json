@@ -1,0 +1,14 @@
+{
+  "sha": "93aa5e735728d32de3c6e7340da42158ad83637e",
+  "pairing": "H1",
+  "commits": 1,
+  "files_total": 1,
+  "files": [
+    {
+      "path": "src/language-js/print/class-body.js",
+      "additions": 0,
+      "deletions": 1
+    }
+  ],
+  "summary": "1 commit(s), 1 file(s), +0/-1"
+}

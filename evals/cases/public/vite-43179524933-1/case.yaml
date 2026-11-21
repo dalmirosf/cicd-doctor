@@ -1,0 +1,27 @@
+id: vite-43179524933-1
+source: public
+repo: vitejs/vite
+run_url: https://github.com/vitejs/vite/actions/runs/43179524933/attempts/1
+job_id: 131051977102
+expected:
+  category: broken_test
+  cause: Fallan 3 tests de build y el reporter se rompe con 'Map.groupBy is not a
+    function'.
+  evidence_lines: []
+fix:
+  commit: c5be55f571e418992fd39f34267ec4929e79d014
+  summary: 1 commit(s), 2 file(s), +80/-17
+flaky: false
+tags:
+- node
+captured_at: '2026-11-21T16:56:59Z'
+provenance:
+  repo: vitejs/vite
+  license: MIT
+  run_url: https://github.com/vitejs/vite/actions/runs/43179524933/attempts/1
+  fix_sha: c5be55f571e418992fd39f34267ec4929e79d014
+  fix_run_url: https://github.com/vitejs/vite/actions/runs/43179968001
+  occurred_at: '2026-11-12T08:04:11Z'
+  pairing: H1
+  labeled_by: owner (draft by Claude)
+  label_basis: log

@@ -1,0 +1,27 @@
+id: vite-44520081596-1
+source: public
+repo: vitejs/vite
+run_url: https://github.com/vitejs/vite/actions/runs/44520081596/attempts/1
+job_id: 135546277535
+expected:
+  category: broken_test
+  cause: Un rechazo no manejado 'Failed to get bundle state' hace fallar la corrida
+    aunque pasan todos los tests.
+  evidence_lines: []
+fix:
+  commit: 91c524849e10095d978f4a1f752ded963fa489e1
+  summary: 1 commit(s), 1 file(s), +0/-28
+flaky: false
+tags:
+- node
+captured_at: '2026-11-21T16:56:54Z'
+provenance:
+  repo: vitejs/vite
+  license: MIT
+  run_url: https://github.com/vitejs/vite/actions/runs/44520081596/attempts/1
+  fix_sha: 91c524849e10095d978f4a1f752ded963fa489e1
+  fix_run_url: https://github.com/vitejs/vite/actions/runs/44715400897
+  occurred_at: '2026-11-19T12:03:27Z'
+  pairing: H1-pr
+  labeled_by: owner (draft by Claude)
+  label_basis: log

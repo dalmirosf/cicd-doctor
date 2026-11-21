@@ -1,0 +1,27 @@
+id: vite-44464244661-1
+source: public
+repo: vitejs/vite
+run_url: https://github.com/vitejs/vite/actions/runs/44464244661/attempts/1
+job_id: 135358285742
+expected:
+  category: broken_test
+  cause: 'El test de HMR falla con TypeError: el módulo ''file-only'' esperado es
+    undefined.'
+  evidence_lines: []
+fix:
+  commit: cecc5451f84166c96ed54695542a5a124a449e88
+  summary: 1 commit(s), 1 file(s), +4/-3
+flaky: false
+tags:
+- node
+captured_at: '2026-11-21T16:56:32Z'
+provenance:
+  repo: vitejs/vite
+  license: MIT
+  run_url: https://github.com/vitejs/vite/actions/runs/44464244661/attempts/1
+  fix_sha: cecc5451f84166c96ed54695542a5a124a449e88
+  fix_run_url: https://github.com/vitejs/vite/actions/runs/44492493069
+  occurred_at: '2026-11-19T05:20:12Z'
+  pairing: H1-pr
+  labeled_by: owner (draft by Claude)
+  label_basis: log

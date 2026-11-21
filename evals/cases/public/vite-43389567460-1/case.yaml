@@ -1,0 +1,27 @@
+id: vite-43389567460-1
+source: public
+repo: vitejs/vite
+run_url: https://github.com/vitejs/vite/actions/runs/43389567460/attempts/1
+job_id: 131766063425
+expected:
+  category: broken_test
+  cause: El test de HMR 'file deleted and restored' recibe 'parent:not-child' en vez
+    de 'parent:child'.
+  evidence_lines: []
+fix:
+  commit: 9d2f6ed57cd282b9f736bf26c2a4faabfcd9823a
+  summary: 1 commit(s), 1 file(s), +2/-1
+flaky: false
+tags:
+- node
+captured_at: '2026-11-21T16:56:24Z'
+provenance:
+  repo: vitejs/vite
+  license: MIT
+  run_url: https://github.com/vitejs/vite/actions/runs/43389567460/attempts/1
+  fix_sha: 9d2f6ed57cd282b9f736bf26c2a4faabfcd9823a
+  fix_run_url: https://github.com/vitejs/vite/actions/runs/43390341114
+  occurred_at: '2026-11-13T08:00:02Z'
+  pairing: H1-pr
+  labeled_by: owner (draft by Claude)
+  label_basis: log

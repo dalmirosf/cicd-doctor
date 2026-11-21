@@ -1,0 +1,14 @@
+{
+  "sha": "45ea86577f0967fcdcc6514e135fd6c6a82d0786",
+  "pairing": "H1-pr",
+  "commits": 1,
+  "files_total": 1,
+  "files": [
+    {
+      "path": "src/language-html/utilities/index.js",
+      "additions": 1,
+      "deletions": 0
+    }
+  ],
+  "summary": "1 commit(s), 1 file(s), +1/-0"
+}

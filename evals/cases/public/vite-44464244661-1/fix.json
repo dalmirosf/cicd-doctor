@@ -1,0 +1,14 @@
+{
+  "sha": "cecc5451f84166c96ed54695542a5a124a449e88",
+  "pairing": "H1-pr",
+  "commits": 1,
+  "files_total": 1,
+  "files": [
+    {
+      "path": "packages/vite/src/node/server/__tests__/hmr.spec.ts",
+      "additions": 4,
+      "deletions": 3
+    }
+  ],
+  "summary": "1 commit(s), 1 file(s), +4/-3"
+}

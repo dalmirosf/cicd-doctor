@@ -1,0 +1,14 @@
+{
+  "sha": "d1e2ed8d8b5f14be6045035e8fba5555f350c3ff",
+  "pairing": "H1-pr",
+  "commits": 2,
+  "files_total": 1,
+  "files": [
+    {
+      "path": "tests/format/js/binary-expression/long-chain/format.test.js",
+      "additions": 2,
+      "deletions": 2
+    }
+  ],
+  "summary": "2 commit(s), 1 file(s), +2/-2"
+}

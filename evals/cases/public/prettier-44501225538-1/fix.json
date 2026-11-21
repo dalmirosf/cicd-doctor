@@ -1,0 +1,19 @@
+{
+  "sha": "225a99ff3c99424ef0b4ad745dc1b1fea0c7433d",
+  "pairing": "H1-pr",
+  "commits": 3,
+  "files_total": 2,
+  "files": [
+    {
+      "path": "src/config/prettier-config/loaders.js",
+      "additions": 1,
+      "deletions": 1
+    },
+    {
+      "path": "tests/integration/__tests__/config-resolution.js",
+      "additions": 4,
+      "deletions": 1
+    }
+  ],
+  "summary": "3 commit(s), 2 file(s), +5/-2"
+}

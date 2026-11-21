@@ -1,0 +1,348 @@
+﻿2026-11-19T02:36:52.0364734Z Current runner version: '2.338.2'
+2026-11-19T02:36:52.0381656Z ##[group]Runner Image Provisioner
+2026-11-19T02:36:52.0382367Z Hosted Compute Agent
+2026-11-19T02:36:52.0382783Z Version: 20261103.629
+2026-11-19T02:36:52.0383270Z Commit: 15dbd9ccb5dbf34fae002b6ed1a2670f52df37bc
+2026-11-19T02:36:52.0383822Z Build Date: 2026-11-03T17:26:59Z
+2026-11-19T02:36:52.0384319Z Worker ID: {5f9bdcf8-2814-4ac8-89db-cbaca93a1a08}
+2026-11-19T02:36:52.0384843Z Region: us-west-2
+2026-11-19T02:36:52.0385235Z Cloud: AWS
+2026-11-19T02:36:52.0385600Z ##[endgroup]
+2026-11-19T02:36:52.0386877Z ##[group]Operating System
+2026-11-19T02:36:52.0387338Z Ubuntu
+2026-11-19T02:36:52.0387718Z 26.04.1
+2026-11-19T02:36:52.0388138Z LTS
+2026-11-19T02:36:52.0388523Z ##[endgroup]
+2026-11-19T02:36:52.0388948Z ##[group]Runner Image
+2026-11-19T02:36:52.0389360Z Image: ubuntu-26.04
+2026-11-19T02:36:52.0389758Z Version: 20261111.82.6
+2026-11-19T02:36:52.0390666Z Included Software: https://github.com/actions/runner-images/blob/ubuntu26/20261111.82/images/ubuntu/Ubuntu2604-Readme.md
+2026-11-19T02:36:52.0391775Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu26%2F20261111.82
+2026-11-19T02:36:52.0392459Z ##[endgroup]
+2026-11-19T02:36:52.0393169Z ##[group]GITHUB_TOKEN Permissions
+2026-11-19T02:36:52.0394628Z Metadata: read
+2026-11-19T02:36:52.0395040Z ##[endgroup]
+2026-11-19T02:36:52.0396798Z Secret source: None
+2026-11-19T02:36:52.0397467Z Cache mode: write
+2026-11-19T02:36:52.0397968Z Prepare workflow directory
+2026-11-19T02:36:52.0660504Z Prepare all required actions
+2026-11-19T02:36:52.0696703Z Getting action download info
+2026-11-19T02:36:52.4697814Z Download action repository 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+2026-11-19T02:36:55.2255574Z Download action repository 'pnpm/setup@731dfb6463bbd11c11fd0ee11fe00ed0e36d48a1' (SHA:731dfb6463bbd11c11fd0ee11fe00ed0e36d48a1)
+2026-11-19T02:36:55.6959348Z Complete job name: Lint: node-26, ubuntu-latest
+2026-11-19T02:36:55.7550760Z ##[group]Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+2026-11-19T02:36:55.7551382Z with:
+2026-11-19T02:36:55.7551655Z   persist-credentials: false
+2026-11-19T02:36:55.7551957Z   repository: vitejs/vite
+2026-11-19T02:36:55.7553964Z   token: ***
+2026-11-19T02:36:55.7554209Z   ssh-strict: true
+2026-11-19T02:36:55.7554505Z   ssh-user: git
+2026-11-19T02:36:55.7554759Z   clean: true
+2026-11-19T02:36:55.7555024Z   sparse-checkout-cone-mode: true
+2026-11-19T02:36:55.7555327Z   fetch-depth: 1
+2026-11-19T02:36:55.7555615Z   fetch-tags: false
+2026-11-19T02:36:55.7556235Z   show-progress: true
+2026-11-19T02:36:55.7556515Z   lfs: false
+2026-11-19T02:36:55.7556774Z   submodules: false
+2026-11-19T02:36:55.7557048Z   set-safe-directory: true
+2026-11-19T02:36:55.7557369Z   allow-unsafe-pr-checkout: false
+2026-11-19T02:36:55.7557837Z env:
+2026-11-19T02:36:55.7558126Z   NODE_OPTIONS: --max-old-space-size=6144
+2026-11-19T02:36:55.7558439Z   PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+2026-11-19T02:36:55.7558863Z   VITEST_SEGFAULT_RETRY: 3
+2026-11-19T02:36:55.7559140Z ##[endgroup]
+2026-11-19T02:36:59.7316322Z Syncing repository: vitejs/vite
+2026-11-19T02:36:59.7317773Z ##[group]Getting Git version info
+2026-11-19T02:36:59.7318146Z Working directory is '/home/runner/work/vite/vite'
+2026-11-19T02:36:59.7318633Z [command]/usr/bin/git version
+2026-11-19T02:36:59.7318950Z git version 2.56.1
+2026-11-19T02:36:59.7330050Z ##[endgroup]
+2026-11-19T02:36:59.7336212Z Temporarily overriding HOME='/home/runner/work/_temp/12cb8dc0-ce2f-4669-aca8-c9853b8fa410' before making global git config changes
+2026-11-19T02:36:59.7336945Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-19T02:36:59.7339904Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/vite/vite
+2026-11-19T02:36:59.7702249Z Deleting the contents of '/home/runner/work/vite/vite'
+2026-11-19T02:36:59.7704080Z ##[group]Determining repository object format
+2026-11-19T02:36:59.7705157Z ##[endgroup]
+2026-11-19T02:36:59.7705940Z ##[group]Initializing the repository
+2026-11-19T02:36:59.7708253Z [command]/usr/bin/git init /home/runner/work/vite/vite
+2026-11-19T02:36:59.8518149Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-11-19T02:36:59.8518900Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-11-19T02:36:59.8519349Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-11-19T02:36:59.8519731Z hint: call:
+2026-11-19T02:36:59.8519970Z hint:
+2026-11-19T02:36:59.8520373Z hint: 	git config --global init.defaultBranch <name>
+2026-11-19T02:36:59.8520735Z hint:
+2026-11-19T02:36:59.8521028Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-11-19T02:36:59.8521456Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-11-19T02:36:59.8521818Z hint:
+2026-11-19T02:36:59.8522045Z hint: 	git branch -m <name>
+2026-11-19T02:36:59.8522293Z hint:
+2026-11-19T02:36:59.8522646Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-11-19T02:36:59.8545430Z Initialized empty Git repository in /home/runner/work/vite/vite/.git/
+2026-11-19T02:36:59.8553477Z [command]/usr/bin/git remote add origin https://github.com/vitejs/vite
+2026-11-19T02:36:59.8620139Z ##[endgroup]
+2026-11-19T02:36:59.8620684Z ##[group]Disabling automatic garbage collection
+2026-11-19T02:36:59.8622168Z [command]/usr/bin/git config --local gc.auto 0
+2026-11-19T02:36:59.8644175Z ##[endgroup]
+2026-11-19T02:36:59.8644596Z ##[group]Setting up auth
+2026-11-19T02:36:59.8644897Z Removing SSH command configuration
+2026-11-19T02:36:59.8647809Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-19T02:36:59.8671877Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-19T02:37:00.2538938Z Removing HTTP extra header
+2026-11-19T02:37:00.2542849Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-19T02:37:00.2580131Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-19T02:37:00.2761624Z Removing includeIf entries pointing to credentials config files
+2026-11-19T02:37:00.2774906Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-19T02:37:00.2788406Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-19T02:37:00.2967935Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-9d2a18fd-ef9d-466a-9eca-2b4b32833fd1.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-11-19T02:37:00.2993482Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/vite/vite/.git.path /home/runner/work/_temp/git-credentials-9d2a18fd-ef9d-466a-9eca-2b4b32833fd1.config
+2026-11-19T02:37:00.3017500Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/vite/vite/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-9d2a18fd-ef9d-466a-9eca-2b4b32833fd1.config
+2026-11-19T02:37:00.3039093Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-9d2a18fd-ef9d-466a-9eca-2b4b32833fd1.config
+2026-11-19T02:37:00.3077264Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-9d2a18fd-ef9d-466a-9eca-2b4b32833fd1.config
+2026-11-19T02:37:00.3078898Z ##[endgroup]
+2026-11-19T02:37:00.3079445Z ##[group]Fetching the repository
+2026-11-19T02:37:00.3082054Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +b8dfef1cc927d6190cba0afbd8c0c3cef664b393:refs/remotes/pull/24063/merge
+2026-11-19T02:37:01.3508417Z From https://github.com/vitejs/vite
+2026-11-19T02:37:01.3509114Z  * [new ref]         b8dfef1cc927d6190cba0afbd8c0c3cef664b393 -> pull/24063/merge
+2026-11-19T02:37:01.3512065Z ##[endgroup]
+2026-11-19T02:37:01.3512476Z ##[group]Determining the checkout info
+2026-11-19T02:37:01.3513102Z ##[endgroup]
+2026-11-19T02:37:01.3518202Z [command]/usr/bin/git sparse-checkout disable
+2026-11-19T02:37:01.3583971Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-11-19T02:37:01.3607739Z ##[group]Checking out the ref
+2026-11-19T02:37:01.3610924Z [command]/usr/bin/git checkout --progress --force refs/remotes/pull/24063/merge
+2026-11-19T02:37:01.4461878Z Note: switching to 'refs/remotes/pull/24063/merge'.
+2026-11-19T02:37:01.4462209Z 
+2026-11-19T02:37:01.4462406Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-11-19T02:37:01.4463090Z changes and commit them, and you can discard any commits you make in this
+2026-11-19T02:37:01.4463510Z state without impacting any branches by switching back to a branch.
+2026-11-19T02:37:01.4463726Z 
+2026-11-19T02:37:01.4463955Z If you want to create a new branch to retain commits you create, you may
+2026-11-19T02:37:01.4464377Z do so (now or later) by using -c with the switch command. Example:
+2026-11-19T02:37:01.4464605Z 
+2026-11-19T02:37:01.4464712Z   git switch -c <new-branch-name>
+2026-11-19T02:37:01.4464924Z 
+2026-11-19T02:37:01.4465082Z Or undo this operation with:
+2026-11-19T02:37:01.4465269Z 
+2026-11-19T02:37:01.4465385Z   git switch -
+2026-11-19T02:37:01.4465538Z 
+2026-11-19T02:37:01.4465890Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-11-19T02:37:01.4466169Z 
+2026-11-19T02:37:01.4466464Z HEAD is now at b8dfef1 Merge 2ba3d1c2beaa35b3ada3e5f099a620b7b044ddf7 into ef295d54d56478437112acd7deeb9821d755b90f
+2026-11-19T02:37:01.4485387Z ##[endgroup]
+2026-11-19T02:37:01.4540750Z [command]/usr/bin/git log -1 --format=%H
+2026-11-19T02:37:01.4562650Z b8dfef1cc927d6190cba0afbd8c0c3cef664b393
+2026-11-19T02:37:01.4569885Z ##[group]Removing auth
+2026-11-19T02:37:01.4570315Z Removing SSH command configuration
+2026-11-19T02:37:01.4572871Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-19T02:37:01.4594616Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-19T02:37:01.4785418Z Removing HTTP extra header
+2026-11-19T02:37:01.4789725Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-19T02:37:01.4811378Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-19T02:37:01.4986653Z Removing includeIf entries pointing to credentials config files
+2026-11-19T02:37:01.4988821Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-19T02:37:01.5004828Z includeif.gitdir:/home/runner/work/vite/vite/.git.path
+2026-11-19T02:37:01.5006207Z includeif.gitdir:/home/runner/work/vite/vite/.git/worktrees/*.path
+2026-11-19T02:37:01.5006800Z includeif.gitdir:/github/workspace/.git.path
+2026-11-19T02:37:01.5007285Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-11-19T02:37:01.5010922Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/vite/vite/.git.path
+2026-11-19T02:37:01.5025371Z /home/runner/work/_temp/git-credentials-9d2a18fd-ef9d-466a-9eca-2b4b32833fd1.config
+2026-11-19T02:37:01.5032358Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/vite/vite/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-9d2a18fd\-ef9d\-466a\-9eca\-2b4b32833fd1\.config
+2026-11-19T02:37:01.5054125Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/vite/vite/.git/worktrees/*.path
+2026-11-19T02:37:01.5071235Z /home/runner/work/_temp/git-credentials-9d2a18fd-ef9d-466a-9eca-2b4b32833fd1.config
+2026-11-19T02:37:01.5077662Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/vite/vite/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-9d2a18fd\-ef9d\-466a\-9eca\-2b4b32833fd1\.config
+2026-11-19T02:37:01.5099323Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-11-19T02:37:01.5114460Z /github/runner_temp/git-credentials-9d2a18fd-ef9d-466a-9eca-2b4b32833fd1.config
+2026-11-19T02:37:01.5119676Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-9d2a18fd\-ef9d\-466a\-9eca\-2b4b32833fd1\.config
+2026-11-19T02:37:01.5142323Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-11-19T02:37:01.5159615Z /github/runner_temp/git-credentials-9d2a18fd-ef9d-466a-9eca-2b4b32833fd1.config
+2026-11-19T02:37:01.5164155Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-9d2a18fd\-ef9d\-466a\-9eca\-2b4b32833fd1\.config
+2026-11-19T02:37:01.5185895Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-19T02:37:01.5358688Z Removing credentials config '/home/runner/work/_temp/git-credentials-9d2a18fd-ef9d-466a-9eca-2b4b32833fd1.config'
+2026-11-19T02:37:01.5364848Z ##[endgroup]
+2026-11-19T02:37:01.5576942Z ##[group]Run pnpm/setup@731dfb6463bbd11c11fd0ee11fe00ed0e36d48a1
+2026-11-19T02:37:01.5577343Z with:
+2026-11-19T02:37:01.5577608Z   runtime: node@26
+2026-11-19T02:37:01.5577823Z   cache: true
+2026-11-19T02:37:01.5578041Z   dest: ~/setup-pnpm
+2026-11-19T02:37:01.5578274Z   save-cache: true
+2026-11-19T02:37:01.5578492Z   working-directory: .
+2026-11-19T02:37:01.5578748Z   require-lockfile: false
+2026-11-19T02:37:01.5578993Z   install: true
+2026-11-19T02:37:01.5579184Z env:
+2026-11-19T02:37:01.5579440Z   NODE_OPTIONS: --max-old-space-size=6144
+2026-11-19T02:37:01.5579797Z   PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+2026-11-19T02:37:01.5580091Z   VITEST_SEGFAULT_RETRY: 3
+2026-11-19T02:37:01.5580326Z ##[endgroup]
+2026-11-19T02:37:01.6575216Z ##[group]Installing pnpm...
+2026-11-19T02:37:02.0555931Z Cache hit for: pnpm-binary-linux-x64-12.21.0
+2026-11-19T02:37:03.4389789Z Received 0 of 26768750 (0.0%), 0.0 MBs/sec
+2026-11-19T02:37:04.4379030Z Received 22574446 of 26768750 (84.3%), 10.8 MBs/sec
+2026-11-19T02:37:04.9485099Z Received 26768750 of 26768750 (100.0%), 10.2 MBs/sec
+2026-11-19T02:37:04.9485660Z Cache Size: ~26 MB (26768750 B)
+2026-11-19T02:37:04.9504712Z [command]/usr/bin/tar -xf /home/runner/work/_temp/8d4782ee-10dc-40d9-aa45-9368087452b2/cache.tzst -P -C /home/runner/work/vite/vite --use-compress-program unzstd
+2026-11-19T02:37:05.0343495Z Cache restored successfully
+2026-11-19T02:37:05.0353059Z pnpm restored from cache key: pnpm-binary-linux-x64-12.21.0
+2026-11-19T02:37:05.2539339Z ##[endgroup]
+2026-11-19T02:37:05.2539676Z Installation Completed!
+2026-11-19T02:37:05.2540394Z ##[group]Restoring cache...
+2026-11-19T02:37:05.5768832Z Cache hit for: pnpm-lockfile-verified-Linux-x64-3ada3ab359f55ad97f86a612eac664e004bf1918bcfbe3f8af45570a9923c069
+2026-11-19T02:37:06.2273127Z Received 857 of 857 (100.0%), 0.0 MBs/sec
+2026-11-19T02:37:06.2273572Z Cache Size: ~0 MB (857 B)
+2026-11-19T02:37:06.2286413Z [command]/usr/bin/tar -xf /home/runner/work/_temp/44030a8b-99c5-42ff-89ae-28d46cf84d67/cache.tzst -P -C /home/runner/work/vite/vite --use-compress-program unzstd
+2026-11-19T02:37:06.2324765Z Cache restored successfully
+2026-11-19T02:37:06.2327122Z Lockfile verification cache restored from key: pnpm-lockfile-verified-Linux-x64-3ada3ab359f55ad97f86a612eac664e004bf1918bcfbe3f8af45570a9923c069
+2026-11-19T02:37:06.2333288Z [command]/home/runner/setup-pnpm/pnpm store path
+2026-11-19T02:37:06.2435653Z /home/runner/setup-pnpm/store/v11
+2026-11-19T02:37:06.5278036Z Cache hit for restore-key: pnpm-cache-Linux-x64-123baa0095a067166ecdebc24f943d75fd4b1560104291331fed19f26cbee0f8-3ada3ab359f55ad97f86a612eac664e004bf1918bcfbe3f8af45570a9923c069-5cd7a0aef0565f4e380daaba9f1b69a5145d90a9132e4cbe8e3bc533fa7791f1-44443928958-1-6cebff4d-fe32-423b-9f20-228b07edcaf7
+2026-11-19T02:37:07.8527747Z Received 0 of 236562242 (0.0%), 0.0 MBs/sec
+2026-11-19T02:37:08.8567590Z Received 62914560 of 236562242 (26.6%), 30.0 MBs/sec
+2026-11-19T02:37:09.8538656Z Received 167772160 of 236562242 (70.9%), 53.3 MBs/sec
+2026-11-19T02:37:10.3089062Z Received 236562242 of 236562242 (100.0%), 65.3 MBs/sec
+2026-11-19T02:37:10.3089579Z Cache Size: ~226 MB (236562242 B)
+2026-11-19T02:37:10.3151536Z [command]/usr/bin/tar -xf /home/runner/work/_temp/feb9eac0-8a5f-4b0f-a8d1-3ede6d60c090/cache.tzst -P -C /home/runner/work/vite/vite --use-compress-program unzstd
+2026-11-19T02:37:11.2876966Z Cache restored successfully
+2026-11-19T02:37:11.2949552Z Cache restored from key: pnpm-cache-Linux-x64-123baa0095a067166ecdebc24f943d75fd4b1560104291331fed19f26cbee0f8-3ada3ab359f55ad97f86a612eac664e004bf1918bcfbe3f8af45570a9923c069-5cd7a0aef0565f4e380daaba9f1b69a5145d90a9132e4cbe8e3bc533fa7791f1-44443928958-1-6cebff4d-fe32-423b-9f20-228b07edcaf7
+2026-11-19T02:37:11.2951453Z ##[endgroup]
+2026-11-19T02:37:11.2951916Z ##[group]Installing runtime node@26...
+2026-11-19T02:37:11.6592761Z .../global/v11/a0a-18e951c499270567-0    | Progress: resolved 1, reused 0, downloaded 0, added 0
+2026-11-19T02:37:11.7057810Z Downloading node@runtime:26.13.1: 0.00 B/62.90 MB
+2026-11-19T02:37:12.8266248Z Downloading node@runtime:26.13.1: 62.90 MB/62.90 MB, done
+2026-11-19T02:37:12.8406732Z Packages are hard linked from the content-addressable store to the virtual store.
+2026-11-19T02:37:12.8407476Z   Content-addressable store is at: /home/runner/setup-pnpm/store/v11
+2026-11-19T02:37:12.8407979Z   Virtual store is at:             ../../../setup-pnpm/store/v11/links
+2026-11-19T02:37:12.8414914Z .../global/v11/a0a-18e951c499270567-0    | Progress: resolved 1, reused 0, downloaded 1, added 1, done
+2026-11-19T02:37:12.8447703Z 
+2026-11-19T02:37:12.8448092Z dependencies:
+2026-11-19T02:37:12.8448440Z + node 26.13.1
+2026-11-19T02:37:12.8448612Z 
+2026-11-19T02:37:12.8466594Z Done in 1.5s using pnpm v12.21.0
+2026-11-19T02:37:12.8492307Z ##[endgroup]
+2026-11-19T02:37:12.8690266Z ##[group]Running pnpm install --no-runtime...
+2026-11-19T02:37:12.9056358Z Scope: all 300 workspace projects
+2026-11-19T02:37:12.9537516Z ✓ Lockfile passes supply-chain policies (verified 1d ago)
+2026-11-19T02:37:12.9557151Z Lockfile is up to date, resolution step is skipped
+2026-11-19T02:37:12.9986097Z Packages are hard linked from the content-addressable store to the virtual store.
+2026-11-19T02:37:12.9989565Z   Content-addressable store is at: /home/runner/setup-pnpm/store/v11
+2026-11-19T02:37:12.9990186Z   Virtual store is at:             node_modules/.pnpm
+2026-11-19T02:37:13.4513118Z Packages: +1077
+2026-11-19T02:37:13.4513608Z ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+2026-11-19T02:37:13.5476543Z Progress: resolved 1077, reused 955, downloaded 0, added 1077, done
+2026-11-19T02:37:13.5577578Z .../node_modules/@parcel/watcher install$ node scripts/build-from-source.js
+2026-11-19T02:37:13.5578788Z .../node_modules/playwright-chromium install$ node install.js
+2026-11-19T02:37:13.5587206Z .../node_modules/simple-git-hooks postinstall$ node ./postinstall.js
+2026-11-19T02:37:13.5983204Z .../node_modules/@parcel/watcher install: Done
+2026-11-19T02:37:13.6046528Z .../node_modules/simple-git-hooks postinstall: [INFO] Successfully set the pre-commit with command: pnpm exec lint-staged --concurrent false
+2026-11-19T02:37:13.6723053Z .../node_modules/simple-git-hooks postinstall: Done
+2026-11-19T02:37:13.7982794Z .../node_modules/playwright-chromium install: Skipping browsers download because `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD` env variable is set
+2026-11-19T02:37:13.8055927Z .../node_modules/playwright-chromium install: Done
+2026-11-19T02:37:13.8437251Z Agent skills awaiting approval: tsdown.
+2026-11-19T02:37:13.8437688Z Run "pnpm approve" to review them.
+2026-11-19T02:37:13.8462273Z . postinstall$ simple-git-hooks
+2026-11-19T02:37:13.9331896Z . postinstall: Done
+2026-11-19T02:37:13.9386738Z 
+2026-11-19T02:37:13.9387407Z devDependencies:
+2026-11-19T02:37:13.9387849Z + @e18e/eslint-plugin 0.8.1
+2026-11-19T02:37:13.9388168Z + @type-challenges/utils 0.1.1
+2026-11-19T02:37:13.9388467Z + @types/babel__core 7.20.5
+2026-11-19T02:37:13.9388740Z + @types/babel__preset-env 7.10.0
+2026-11-19T02:37:13.9389065Z + @types/convert-source-map 2.0.3
+2026-11-19T02:37:13.9389349Z + @types/etag 1.8.4
+2026-11-19T02:37:13.9389622Z + @types/less 3.0.8
+2026-11-19T02:37:13.9389845Z + @types/node 26.6.6
+2026-11-19T02:37:13.9390105Z + @types/picomatch 4.0.3
+2026-11-19T02:37:13.9390349Z + @types/stylus 0.48.43
+2026-11-19T02:37:13.9390640Z + @types/ws 8.18.2
+2026-11-19T02:37:13.9390868Z + @vitejs/release-scripts 1.10.0
+2026-11-19T02:37:13.9391178Z + eslint-plugin-n 18.5.0
+2026-11-19T02:37:13.9391461Z + eslint-plugin-regexp 3.3.3
+2026-11-19T02:37:13.9391777Z + lint-staged 17.6.0
+2026-11-19T02:37:13.9392051Z + oxfmt 0.78.0
+2026-11-19T02:37:13.9392286Z + oxlint 1.93.0
+2026-11-19T02:37:13.9392546Z + oxlint-tsgolint 7.0.2007
+2026-11-19T02:37:13.9392793Z + picocolors 1.1.1
+2026-11-19T02:37:13.9393085Z + playwright-chromium 1.65.1
+2026-11-19T02:37:13.9393340Z + rolldown 1.3.2
+2026-11-19T02:37:13.9393663Z + rollup 4.64.9
+2026-11-19T02:37:13.9393928Z + simple-git-hooks 2.14.0
+2026-11-19T02:37:13.9394280Z + tsx 4.23.15
+2026-11-19T02:37:13.9394831Z + typescript 7.0.2
+2026-11-19T02:37:13.9395617Z + vite <- packages/vite
+2026-11-19T02:37:13.9396178Z + vitest 5.1.0
+2026-11-19T02:37:13.9396375Z 
+2026-11-19T02:37:13.9497448Z Done in 1.1s using pnpm v12.21.0
+2026-11-19T02:37:13.9538357Z ##[endgroup]
+2026-11-19T02:37:13.9690610Z ##[group]Run pnpm run build
+2026-11-19T02:37:13.9691033Z pnpm run build
+2026-11-19T02:37:13.9715438Z shell: /usr/bin/bash -e {0}
+2026-11-19T02:37:13.9716185Z env:
+2026-11-19T02:37:13.9716511Z   NODE_OPTIONS: --max-old-space-size=6144
+2026-11-19T02:37:13.9716821Z   PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+2026-11-19T02:37:13.9717149Z   VITEST_SEGFAULT_RETRY: 3
+2026-11-19T02:37:13.9717436Z   PNPM_HOME: /home/runner/setup-pnpm
+2026-11-19T02:37:13.9717745Z   PNPM_CONFIG_GLOBAL_SHIMS: {"node":false}
+2026-11-19T02:37:13.9718064Z ##[endgroup]
+2026-11-19T02:37:13.9979753Z $ pnpm -r --filter='./packages/*' run build
+2026-11-19T02:37:14.0178176Z Scope: 3 of 300 workspace projects
+2026-11-19T02:37:14.0254101Z packages/create-vite build$ tsdown
+2026-11-19T02:37:14.0254865Z packages/vite build$ premove dist && pnpm build-bundle && pnpm build-types
+2026-11-19T02:37:14.0591751Z packages/vite build: $ rolldown --config rolldown.config.ts
+2026-11-19T02:37:14.0828147Z packages/create-vite build: ℹ tsdown v0.23.7 powered by rolldown v1.3.2
+2026-11-19T02:37:14.1805114Z packages/create-vite build: ℹ config file: /home/runner/work/vite/vite/packages/create-vite/tsdown.config.ts 
+2026-11-19T02:37:14.1858892Z packages/create-vite build: ℹ entry: src/index.ts
+2026-11-19T02:37:14.1888460Z packages/create-vite build: ℹ target: node20
+2026-11-19T02:37:14.1897883Z packages/create-vite build: ℹ tsconfig: tsconfig.json
+2026-11-19T02:37:14.1898625Z packages/create-vite build: ℹ Build start
+2026-11-19T02:37:14.2547573Z packages/vite build: shimmed: postcss-import/index.js
+2026-11-19T02:37:14.2572562Z packages/vite build: shimmed: postcss-load-config/src/req.js
+2026-11-19T02:37:14.2621813Z packages/create-vite build: ℹ dist/index.js  44.70 kB │ gzip: 16.01 kB
+2026-11-19T02:37:14.2629041Z packages/create-vite build: ℹ 1 files, total: 44.70 kB
+2026-11-19T02:37:14.2674428Z packages/vite build: shimmed: postcss-import/lib/parse-styles.js
+2026-11-19T02:37:14.2683862Z packages/create-vite build: ✔ Build complete in 74ms
+2026-11-19T02:37:14.2785328Z packages/create-vite build: Done
+2026-11-19T02:37:14.3903103Z packages/vite build: [error] Bundle size exceeded 71 kB, current size is 71.03kb.
+2026-11-19T02:37:14.3904206Z packages/vite build:   at error (/home/runner/work/vite/vite/node_modules/.pnpm/rolldown@1.3.2/node_modules/rolldown/dist/shared/logs-BphcrOCD.mjs:157:24)
+2026-11-19T02:37:14.3905160Z packages/vite build:   at PluginContextImpl.error (/home/runner/work/vite/vite/node_modules/.pnpm/rolldown@1.3.2/node_modules/rolldown/dist/shared/bindingify-input-options-Fc_YrR7y.mjs:102:10)
+2026-11-19T02:37:14.3906151Z packages/vite build:   at PluginContextImpl.closeBundle (rolldown.config.1.eb9e6c0aa7fba5f0.js:467:25)
+2026-11-19T02:37:14.3906937Z packages/vite build:   at plugin (/home/runner/work/vite/vite/node_modules/.pnpm/rolldown@1.3.2/node_modules/rolldown/dist/shared/bindingify-input-options-Fc_YrR7y.mjs:1892:17)
+2026-11-19T02:37:14.3907800Z packages/vite build:   at /home/runner/work/vite/vite/node_modules/.pnpm/rolldown@1.3.2/node_modules/rolldown/dist/shared/bindingify-input-options-Fc_YrR7y.mjs:2097:21
+2026-11-19T02:37:14.3908784Z packages/vite build:   at plugin.<computed> (/home/runner/work/vite/vite/node_modules/.pnpm/rolldown@1.3.2/node_modules/rolldown/dist/shared/bindingify-input-options-Fc_YrR7y.mjs:2294:18)
+2026-11-19T02:37:14.3966902Z packages/vite build: [ELIFECYCLE] Command failed with exit code 1.
+2026-11-19T02:37:14.3975448Z packages/vite build: Failed
+2026-11-19T02:37:14.3976404Z [ELIFECYCLE] Command failed with exit code 1.
+2026-11-19T02:37:14.3985264Z Error: ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL
+2026-11-19T02:37:14.3985526Z 
+2026-11-19T02:37:14.3986228Z   × "pnpm recursive run" failed in /home/runner/work/vite/vite/packages/vite
+2026-11-19T02:37:14.3986476Z 
+2026-11-19T02:37:14.3997183Z [ELIFECYCLE] Command failed with exit code 1.
+2026-11-19T02:37:14.4020929Z ##[error]Process completed with exit code 1.
+2026-11-19T02:37:14.4140556Z Post job cleanup.
+2026-11-19T02:37:14.5176905Z ##[group]Running pnpm store prune...
+2026-11-19T02:37:14.5194941Z [command]/home/runner/setup-pnpm/pnpm store prune
+2026-11-19T02:37:14.6044659Z Checking 2 registered project(s) for global virtual store usage
+2026-11-19T02:37:14.6341296Z Removed 1 package from global virtual store
+2026-11-19T02:37:14.6341911Z Removed all cached metadata files
+2026-11-19T02:37:14.7178811Z Removed 320 files (103559689 bytes)
+2026-11-19T02:37:14.7179291Z Removed 1 package
+2026-11-19T02:37:14.7235536Z ##[endgroup]
+2026-11-19T02:37:14.7333828Z [command]/usr/bin/tar --posix -cf cache.tzst --exclude cache.tzst -P -C /home/runner/work/vite/vite --files-from manifest.txt --use-compress-program zstdmt
+2026-11-19T02:37:18.2287541Z Sent 0 of 248446318 (0.0%), 0.0 MBs/sec
+2026-11-19T02:37:19.2297296Z Sent 47119726 of 248446318 (19.0%), 22.5 MBs/sec
+2026-11-19T02:37:19.6618632Z Sent 248446318 of 248446318 (100.0%), 97.4 MBs/sec
+2026-11-19T02:37:20.0417134Z Cache saved with the key: pnpm-cache-Linux-x64-123baa0095a067166ecdebc24f943d75fd4b1560104291331fed19f26cbee0f8-3ada3ab359f55ad97f86a612eac664e004bf1918bcfbe3f8af45570a9923c069-5cd7a0aef0565f4e380daaba9f1b69a5145d90a9132e4cbe8e3bc533fa7791f1-44445588794-1-0c944257-f0c8-4ecd-b973-5f62568564c1
+2026-11-19T02:37:20.0557772Z Post job cleanup.
+2026-11-19T02:37:20.1192794Z [command]/usr/bin/git version
+2026-11-19T02:37:20.1223459Z git version 2.56.1
+2026-11-19T02:37:20.1245369Z Temporarily overriding HOME='/home/runner/work/_temp/817b28af-0c37-45a7-ad26-433716c731b2' before making global git config changes
+2026-11-19T02:37:20.1246229Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-19T02:37:20.1249760Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/vite/vite
+2026-11-19T02:37:20.1279706Z Removing SSH command configuration
+2026-11-19T02:37:20.1283454Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-19T02:37:20.1307915Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-19T02:37:20.1501681Z Removing HTTP extra header
+2026-11-19T02:37:20.1504884Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-19T02:37:20.1529930Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-19T02:37:20.1707666Z Removing includeIf entries pointing to credentials config files
+2026-11-19T02:37:20.1711220Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-19T02:37:20.1733393Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-19T02:37:20.2026721Z Cleaning up orphan processes

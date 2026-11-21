@@ -1,0 +1,27 @@
+id: vite-44758547903-1
+source: public
+repo: vitejs/vite
+run_url: https://github.com/vitejs/vite/actions/runs/44758547903/attempts/1
+job_id: 136364793896
+expected:
+  category: flaky
+  cause: Un test de HMR espera el color 'orange' y recibe 'black'; pasó al reintentar
+    el mismo commit.
+  evidence_lines: []
+fix:
+  commit: 2db20b84fad687cebfaa0b37bf232ef5ae8f57d4
+  summary: the same commit passed when the run was repeated
+flaky: true
+tags:
+- node
+captured_at: '2026-11-21T16:56:41Z'
+provenance:
+  repo: vitejs/vite
+  license: MIT
+  run_url: https://github.com/vitejs/vite/actions/runs/44758547903/attempts/1
+  fix_sha: 2db20b84fad687cebfaa0b37bf232ef5ae8f57d4
+  fix_run_url: https://github.com/vitejs/vite/actions/runs/44758547903/attempts/2
+  occurred_at: '2026-11-20T15:01:11Z'
+  pairing: H2
+  labeled_by: owner (draft by Claude)
+  label_basis: log

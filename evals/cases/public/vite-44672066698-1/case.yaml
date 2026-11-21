@@ -1,0 +1,27 @@
+id: vite-44672066698-1
+source: public
+repo: vitejs/vite
+run_url: https://github.com/vitejs/vite/actions/runs/44672066698/attempts/1
+job_id: 136075993767
+expected:
+  category: flaky
+  cause: Timeout esperando logs del navegador en un test de HMR; pasó al reintentar
+    el mismo commit.
+  evidence_lines: []
+fix:
+  commit: 8e9bbf2d4959653bd054c8cb7ad98f52c1c892cd
+  summary: the same commit passed when the run was repeated
+flaky: true
+tags:
+- node
+captured_at: '2026-11-21T16:56:28Z'
+provenance:
+  repo: vitejs/vite
+  license: MIT
+  run_url: https://github.com/vitejs/vite/actions/runs/44672066698/attempts/1
+  fix_sha: 8e9bbf2d4959653bd054c8cb7ad98f52c1c892cd
+  fix_run_url: https://github.com/vitejs/vite/actions/runs/44672066698/attempts/2
+  occurred_at: '2026-11-20T04:12:57Z'
+  pairing: H2
+  labeled_by: owner (draft by Claude)
+  label_basis: log

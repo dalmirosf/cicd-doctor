@@ -1,0 +1,26 @@
+id: vite-42601223848-1
+source: public
+repo: vitejs/vite
+run_url: https://github.com/vitejs/vite/actions/runs/42601223848/attempts/1
+job_id: 129106245930
+expected:
+  category: broken_test
+  cause: Un test de resolve espera un mensaje de error distinto del recibido.
+  evidence_lines: []
+fix:
+  commit: 33f16c1ac905ad05cb552e2ac6bbd4dc63051d02
+  summary: 1 commit(s), 1 file(s), +4/-4
+flaky: false
+tags:
+- node
+captured_at: '2026-11-21T16:57:16Z'
+provenance:
+  repo: vitejs/vite
+  license: MIT
+  run_url: https://github.com/vitejs/vite/actions/runs/42601223848/attempts/1
+  fix_sha: 33f16c1ac905ad05cb552e2ac6bbd4dc63051d02
+  fix_run_url: https://github.com/vitejs/vite/actions/runs/42602922859
+  occurred_at: '2026-11-09T10:31:53Z'
+  pairing: H1
+  labeled_by: owner (draft by Claude)
+  label_basis: log

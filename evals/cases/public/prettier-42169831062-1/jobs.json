@@ -1,0 +1,93 @@
+{
+  "total_count": 1,
+  "jobs": [
+    {
+      "id": 127735049926,
+      "run_id": 42169831062,
+      "run_attempt": 1,
+      "workflow_name": "Prod",
+      "name": "Lint",
+      "status": "completed",
+      "conclusion": "failure",
+      "started_at": "2026-11-06T05:41:36Z",
+      "completed_at": "2026-11-06T05:42:08Z",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-06T05:41:37Z",
+          "completed_at": "2026-11-06T05:41:38Z"
+        },
+        {
+          "name": "Checkout",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-06T05:41:38Z",
+          "completed_at": "2026-11-06T05:41:40Z"
+        },
+        {
+          "name": "Setup Node.js",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-11-06T05:41:40Z",
+          "completed_at": "2026-11-06T05:41:43Z"
+        },
+        {
+          "name": "Install Dependencies",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-11-06T05:41:43Z",
+          "completed_at": "2026-11-06T05:41:55Z"
+        },
+        {
+          "name": "Download Artifact",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-11-06T05:41:55Z",
+          "completed_at": "2026-11-06T05:41:56Z"
+        },
+        {
+          "name": "Lint Code",
+          "status": "completed",
+          "conclusion": "failure",
+          "number": 6,
+          "started_at": "2026-11-06T05:41:56Z",
+          "completed_at": "2026-11-06T05:42:07Z"
+        },
+        {
+          "name": "Post Setup Node.js",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 11,
+          "started_at": "2026-11-06T05:42:07Z",
+          "completed_at": "2026-11-06T05:42:07Z"
+        },
+        {
+          "name": "Post Checkout",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 12,
+          "started_at": "2026-11-06T05:42:07Z",
+          "completed_at": "2026-11-06T05:42:07Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 13,
+          "started_at": "2026-11-06T05:42:07Z",
+          "completed_at": "2026-11-06T05:42:07Z"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "sha": "72e29bec8e30361e71092c5d9e771c86ff28c347",
+  "pairing": "H1",
+  "commits": 1,
+  "files_total": 2,
+  "files": [
+    {
+      "path": ".github/workflows/dependency-review.yml",
+      "additions": 22,
+      "deletions": 0
+    },
+    {
+      "path": ".github/workflows/lint.yml",
+      "additions": 0,
+      "deletions": 5
+    }
+  ],
+  "summary": "1 commit(s), 2 file(s), +22/-5"
+}

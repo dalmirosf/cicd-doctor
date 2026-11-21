@@ -1,0 +1,165 @@
+{
+  "total_count": 1,
+  "jobs": [
+    {
+      "id": 136376051449,
+      "run_id": 44761782135,
+      "run_attempt": 1,
+      "workflow_name": "CI",
+      "name": "Build&Test: node-20, ubuntu-latest",
+      "status": "completed",
+      "conclusion": "failure",
+      "started_at": "2026-11-20T15:17:46Z",
+      "completed_at": "2026-11-20T15:20:32Z",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-20T15:17:47Z",
+          "completed_at": "2026-11-20T15:17:48Z"
+        },
+        {
+          "name": "Checkout",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-20T15:17:48Z",
+          "completed_at": "2026-11-20T15:17:50Z"
+        },
+        {
+          "name": "Install pnpm and node 20",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 3,
+          "started_at": "2026-11-20T15:17:50Z",
+          "completed_at": "2026-11-20T15:17:50Z"
+        },
+        {
+          "name": "Install pnpm and node 26 for builds",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-11-20T15:17:50Z",
+          "completed_at": "2026-11-20T15:18:00Z"
+        },
+        {
+          "name": "(non-windows) Set Playwright path and Get playwright version",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-11-20T15:18:00Z",
+          "completed_at": "2026-11-20T15:18:00Z"
+        },
+        {
+          "name": "(windows) Set Playwright path and Get playwright version",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 6,
+          "started_at": "2026-11-20T15:18:00Z",
+          "completed_at": "2026-11-20T15:18:00Z"
+        },
+        {
+          "name": "Cache Playwright's binary",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-11-20T15:18:00Z",
+          "completed_at": "2026-11-20T15:18:04Z"
+        },
+        {
+          "name": "Install Playwright",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8,
+          "started_at": "2026-11-20T15:18:04Z",
+          "completed_at": "2026-11-20T15:18:04Z"
+        },
+        {
+          "name": "Build",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9,
+          "started_at": "2026-11-20T15:18:04Z",
+          "completed_at": "2026-11-20T15:18:10Z"
+        },
+        {
+          "name": "Set node version to 20",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 10,
+          "started_at": "2026-11-20T15:18:10Z",
+          "completed_at": "2026-11-20T15:18:10Z"
+        },
+        {
+          "name": "Test unit",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 11,
+          "started_at": "2026-11-20T15:18:10Z",
+          "completed_at": "2026-11-20T15:18:22Z"
+        },
+        {
+          "name": "Test serve",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 12,
+          "started_at": "2026-11-20T15:18:22Z",
+          "completed_at": "2026-11-20T15:19:11Z"
+        },
+        {
+          "name": "Test serve (bundled dev)",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 13,
+          "started_at": "2026-11-20T15:19:11Z",
+          "completed_at": "2026-11-20T15:19:53Z"
+        },
+        {
+          "name": "Test build",
+          "status": "completed",
+          "conclusion": "failure",
+          "number": 14,
+          "started_at": "2026-11-20T15:19:53Z",
+          "completed_at": "2026-11-20T15:20:25Z"
+        },
+        {
+          "name": "Post Cache Playwright's binary",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 26,
+          "started_at": "2026-11-20T15:20:25Z",
+          "completed_at": "2026-11-20T15:20:25Z"
+        },
+        {
+          "name": "Post Install pnpm and node 26 for builds",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 27,
+          "started_at": "2026-11-20T15:20:25Z",
+          "completed_at": "2026-11-20T15:20:30Z"
+        },
+        {
+          "name": "Post Checkout",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 28,
+          "started_at": "2026-11-20T15:20:30Z",
+          "completed_at": "2026-11-20T15:20:30Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 29,
+          "started_at": "2026-11-20T15:20:30Z",
+          "completed_at": "2026-11-20T15:20:30Z"
+        }
+      ]
+    }
+  ]
+}

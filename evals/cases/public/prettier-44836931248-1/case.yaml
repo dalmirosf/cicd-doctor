@@ -1,0 +1,27 @@
+id: prettier-44836931248-1
+source: public
+repo: prettier/prettier
+run_url: https://github.com/prettier/prettier/actions/runs/44836931248/attempts/1
+job_id: 136635879463
+expected:
+  category: flaky
+  cause: La descarga de Firefox de puppeteer en Windows falla con EBUSY (archivo bloqueado);
+    pasó al reintentar.
+  evidence_lines: []
+fix:
+  commit: c275b253ce035ba3f47b895e5dbbef7025a51361
+  summary: the same commit passed when the run was repeated
+flaky: true
+tags:
+- node
+captured_at: '2026-11-21T16:58:19Z'
+provenance:
+  repo: prettier/prettier
+  license: MIT
+  run_url: https://github.com/prettier/prettier/actions/runs/44836931248/attempts/1
+  fix_sha: c275b253ce035ba3f47b895e5dbbef7025a51361
+  fix_run_url: https://github.com/prettier/prettier/actions/runs/44836931248/attempts/2
+  occurred_at: '2026-11-20T23:29:34Z'
+  pairing: H2
+  labeled_by: owner (draft by Claude)
+  label_basis: log
