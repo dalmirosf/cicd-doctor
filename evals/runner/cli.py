@@ -2,6 +2,7 @@
 
 import argparse
 import asyncio
+import logging
 import sys
 from collections.abc import Sequence
 from datetime import UTC, datetime
@@ -18,7 +19,15 @@ from evals.runner.capture import (
     load_manifest,
 )
 from evals.runner.cases import DEFAULT_CASES_DIR, SOURCES
-from evals.runner.gate_cli import accept, add_gate_commands, check
+from evals.runner.estimate import (
+    DEFAULT_ASSUMED_OUTPUT_TOKENS,
+    build_estimating_setups,
+    estimate_of,
+    render_estimate,
+    render_variance,
+    variance,
+)
+from evals.runner.gate_cli import PIPELINE_LOGGER, accept, add_gate_commands, check
 from evals.runner.injection import write_cases
 from evals.runner.judge_cli import add_calibrate_command, add_run_arguments, apply_judge, calibrate
 from evals.runner.live import (
@@ -121,6 +130,27 @@ def build_parser() -> argparse.ArgumentParser:
         "one with a run suffix, never over it (to measure variance)",
     )
 
+    run.add_argument(
+        "--estimate",
+        action="store_true",
+        help="count what a live run would cost and call nobody (D-112); exit 5 when the caps "
+        "would stop it",
+    )
+    run.add_argument(
+        "--assumed-output-tokens",
+        type=_positive_int,
+        default=DEFAULT_ASSUMED_OUTPUT_TOKENS,
+        help="with --estimate: output tokens counted per call "
+        f"(default {DEFAULT_ASSUMED_OUTPUT_TOKENS})",
+    )
+
+    spread = commands.add_parser(
+        "variance",
+        help="mean and sigma of the macro-F1 across reports of the same cases (D-112)",
+    )
+    spread.add_argument("reports", nargs="+", type=Path, help="two report .json files at least")
+    spread.add_argument("--variant", action="append", default=[], help="only this variant")
+
     prune_cmd = commands.add_parser(
         "prune",
         help="delete the answers no current (case x variant x model) would use",
@@ -174,6 +204,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             return _run(args)
         if args.command == "prune":
             return _prune(args)
+        if args.command == "variance":
+            print(render_variance(variance(args.reports, args.variant)))
+            return 0
         if args.command == "calibrate":
             return calibrate(args)
         if args.command == "check":
@@ -217,10 +250,56 @@ def _write_injection() -> int:
     return 0
 
 
+def _estimate(args: argparse.Namespace, sources: list[str], models: list[str]) -> int:
+    settings = LiveSettings()
+    models = models or ([settings.openai_model] if settings.openai_model else [])
+    if not models:
+        raise EvalError("--estimate needs a model (--model, or OPENAI_MODEL in .env)")
+    counter = TiktokenCounter()
+    pairs = build_estimating_setups(
+        models,
+        counter,
+        cache_dir=args.cache_dir,
+        prices=parse_prices(args.price),
+        settings=settings,
+    )
+    embedder = build_embedder(settings) if args.variant in (SIMILAR_VARIANT, "all") else None
+    logger = logging.getLogger(PIPELINE_LOGGER)
+    level = logger.level
+    logger.setLevel(logging.ERROR)  # one refused call per case is the point, not news
+    try:
+        run_evals(
+            args.variant,
+            sources,
+            args.cases_dir,
+            counter,
+            llms=[setup for setup, _ in pairs],
+            embedder=embedder,
+            baseline=None,
+        )
+    finally:
+        logger.setLevel(level)
+    estimates = [estimate_of(setup, est, args.assumed_output_tokens) for setup, est in pairs]
+    text, over = render_estimate(
+        estimates,
+        max_cost_usd=args.max_cost_usd,
+        max_calls=args.max_calls,
+        assumed_output_tokens=args.assumed_output_tokens,
+    )
+    print(text)
+    return EXIT_BUDGET if over else 0
+
+
 def _run(args: argparse.Namespace) -> int:
     sources = [source.strip() for source in args.sources.split(",") if source.strip()]
     wants_llm = args.variant in (*LLM_VARIANTS, "all")
     models = [m.strip() for m in (args.model or "").split(",") if m.strip()]
+    if args.estimate:
+        if args.live:
+            raise EvalError("--estimate and --live are opposites: pick one")
+        if not wants_llm:
+            raise EvalError("--estimate needs an llm variant (or --variant all)")
+        return _estimate(args, sources, models)
     llms = []
     embedder = None
     guard = None
