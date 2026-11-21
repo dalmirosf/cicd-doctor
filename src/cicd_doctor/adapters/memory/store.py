@@ -241,7 +241,7 @@ class InMemoryFailureStore:
             )
         # The order is decided by the raw score in buckets of a thousandth, then by id, as it was
         # when the stored score had three decimals; only the score that the request carries is
-        # coarser (D-115).
+        # coarser (D-116).
         scored.sort(key=lambda item: (-round(item[0], 3), str(item[1].failure_id)))
         return [item for _, item in scored[:k]]
 

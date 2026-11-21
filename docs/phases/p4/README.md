@@ -76,7 +76,7 @@ OpenAI parts ran: the answers of 92 cases in three variants, the judge calibrati
 
 - On the runner, 3 cases of the `llm+hints+similar` variant had no stored answer for the filled bad prompt, while
   the same commit gave exit 4 on the owner's machine: the retrieval of similar failures may differ between
-  machines. Fixed afterwards (D-115, finding H1): the score of a similar failure had three decimals and three of
+  machines. Fixed afterwards (D-116, finding H1): the score of a similar failure had three decimals and three of
   the committed scores sat within 1e-5 of a rounding edge; it has two now.
 - The CI check is not a required check of `main`: it is a repository setting and stays with the owner.
 - The cause judge was calibrated with labels written by Claude and reviewed by the owner (D-113): one reading of the
