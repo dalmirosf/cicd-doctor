@@ -9,6 +9,7 @@ from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
 from cicd_doctor.adapters.llm.tiktoken_counter import TiktokenCounter
+from evals.runner.baseline import DEFAULT_BASELINE, load_baseline
 from evals.runner.capture import (
     DEFAULT_MANIFEST,
     CaptureError,
@@ -30,6 +31,7 @@ from evals.runner.live import (
 )
 from evals.runner.prune import prune, used_entries
 from evals.runner.public_cli import PUBLIC_COMMANDS, add_public_commands, run_public
+from evals.runner.readme_table import DEFAULT_README, check_readme, write_readme
 from evals.runner.recording import BudgetExceeded, SpendGuard
 from evals.runner.report import DEFAULT_REPORTS_DIR, write_report
 from evals.runner.run import EvalError, run_evals
@@ -67,6 +69,13 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--sources", default="lab", help=f"comma-separated: {', '.join(SOURCES)}")
     run.add_argument("--cases-dir", type=Path, default=DEFAULT_CASES_DIR)
     run.add_argument("--out-dir", type=Path, default=DEFAULT_REPORTS_DIR)
+    run.add_argument(
+        "--baseline",
+        type=Path,
+        default=DEFAULT_BASELINE,
+        help="accepted baseline for the 'Verdict changes' section (default: evals/baseline.json; "
+        "the report says so when it does not exist)",
+    )
     run.add_argument(
         "--model",
         help="comma-separated model ids for the llm variants (default: OPENAI_MODEL from .env)",
@@ -125,6 +134,14 @@ def build_parser() -> argparse.ArgumentParser:
     add_run_arguments(run)
     add_calibrate_command(commands)
 
+    table = commands.add_parser(
+        "readme-table",
+        help="regenerate the comparison table of README.md from evals/baseline.json",
+    )
+    table.add_argument("--baseline", type=Path, default=DEFAULT_BASELINE)
+    table.add_argument("--readme", type=Path, default=DEFAULT_README)
+    table.add_argument("--check", action="store_true", help="only check; exit 1 when it differs")
+
     commands.add_parser(
         "write-injection",
         help="regenerate evals/cases/injection from evals/runner/injection.py",
@@ -157,6 +174,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return _prune(args)
         if args.command == "calibrate":
             return calibrate(args)
+        if args.command == "readme-table":
+            return _readme_table(args)
         if args.command == "write-injection":
             return _write_injection()
         if args.command in PUBLIC_COMMANDS:
@@ -172,6 +191,18 @@ def main(argv: Sequence[str] | None = None) -> int:
     except (EvalError, CaptureError, ValueError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
+
+
+def _readme_table(args: argparse.Namespace) -> int:
+    if args.check:
+        if check_readme(args.readme, args.baseline):
+            print("README table is up to date")
+            return 0
+        print("README table differs from the baseline: run `python -m evals readme-table`")
+        return 1
+    changed = write_readme(args.readme, args.baseline)
+    print(f"{'updated' if changed else 'unchanged'}: {args.readme}")
+    return 0
 
 
 def _write_injection() -> int:
@@ -206,7 +237,13 @@ def _run(args: argparse.Namespace) -> int:
             if args.variant in (SIMILAR_VARIANT, "all"):
                 embedder = build_embedder(settings)
     report = run_evals(
-        args.variant, sources, args.cases_dir, TiktokenCounter(), llms=llms, embedder=embedder
+        args.variant,
+        sources,
+        args.cases_dir,
+        TiktokenCounter(),
+        llms=llms,
+        embedder=embedder,
+        baseline=load_baseline(args.baseline),
     )
     report = apply_judge(args, report, sources)
     json_path, md_path = write_report(report, args.out_dir)

@@ -14,6 +14,7 @@ from cicd_doctor.adapters.memory.ledger import InMemoryUsageLedger
 from cicd_doctor.core.diagnosis.cost import CostModel
 from cicd_doctor.core.diagnosis.pipeline import DiagnoseJob
 from cicd_doctor.core.ports import Embedder, LLMClient, TokenCounter
+from evals.runner.baseline import Baseline
 from evals.runner.cases import Case, load_cases
 from evals.runner.flaky import run_flaky_metric
 from evals.runner.history import SimilarHistory, history_order
@@ -71,10 +72,13 @@ def run_evals(
     git_sha: Callable[[], str] | None = None,
     llms: Sequence[LLMSetup] = (),
     embedder: Embedder | None = None,
+    baseline: Baseline | None = None,
 ) -> Report:
     """The synchronous entry point (the CLI). In a running event loop use ``run_evals_async``."""
     return asyncio.run(
-        run_evals_async(variant, sources, cases_dir, counter, now, git_sha, llms, embedder)
+        run_evals_async(
+            variant, sources, cases_dir, counter, now, git_sha, llms, embedder, baseline
+        )
     )
 
 
@@ -87,6 +91,7 @@ async def run_evals_async(
     git_sha: Callable[[], str] | None = None,
     llms: Sequence[LLMSetup] = (),
     embedder: Embedder | None = None,
+    baseline: Baseline | None = None,
 ) -> Report:
     variants, skipped = resolve_variants(variant, have_llm=bool(llms))
     if SIMILAR_VARIANT in variants and embedder is None:
@@ -120,6 +125,9 @@ async def run_evals_async(
         runs=runs,
         skipped=skipped,
         flaky=run_flaky_metric(),
+        case_tags={case.id: list(case.meta.tags) for case in cases},
+        baseline=baseline,
+        empty_sources=[s for s in sources if not any(c.meta.source == s for c in cases)],
     )
 
 

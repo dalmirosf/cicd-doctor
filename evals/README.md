@@ -8,7 +8,7 @@ real runs of the lab, and `evals/cases/injection` 30 synthetic ones (16 log payl
 ```
 evals/
 ├── cases/<source>/<case_id>/   # lab | public | injection: case.yaml, log.txt, jobs.json (fix.json for public, D-101; annotations.json when a job ended cancelled, D-73)
-├── runner/                     # cases, variants, metrics, report, capture, injection, markdown_threats, live, cli
+├── runner/                     # cases, variants, metrics, report, report_schema, baseline, readme_table, capture, injection, markdown_threats, live, cli
 ├── answers/                    # committed LLM answers, ab/ab12….json, keyed by (model, prompt version, prompt fingerprint, request); empty until a live run (D-100)
 ├── reports/                    # <date>-<git-sha>.{json,md}
 └── baseline.json               # last accepted metrics (CI gate, P4)
@@ -19,9 +19,40 @@ uv run python -m evals run --variant rules                 # lab cases by defaul
 uv run python -m evals run --variant all --sources lab,public,injection
 uv run python -m evals capture --repo <owner>/cicd-doctor-lab --all   # see lab/README.md
 uv run python -m evals write-injection                     # regenerate evals/cases/injection
+uv run python -m evals readme-table [--check]              # regenerate (or check) the README table from evals/baseline.json
 uv run python -m evals discover --repo <owner>/<name>      # public candidates (read only, D-101)
 uv run python -m evals capture-public --manifest evals/public-sources.yaml   # public cases from the manifest
 ```
+
+## The report (D-111)
+
+`run --variant all` writes `evals/reports/<date>-<sha>.{json,md}`. The Markdown starts with a short
+summary (one row per variant) and has a section for each metric of SPEC §11.2: verdict changes
+against the baseline, cause match, flaky, injection resistance, by source, by ecosystem tag
+(`rules-known` when a case has a tag of python, pytest, uv, pip, mypy, ruff, resolver, docker,
+terraform or aws), evidence and abstention, cost and latency, bootstrap intervals, and a `Detail:`
+section per variant with the per-category scores, the confusion matrix and the calibration. What
+cannot run (an LLM variant without a model, a source without cases, no judge) is listed, not hidden.
+
+The JSON (`schema_version: 2`) is declared in `evals/runner/report_schema.py` and a test validates
+it; fields are added, never renamed. The keys: `variants.<name>.metrics` and `.cases`, `by_source`,
+`by_tag_group`, `by_tag`, `injection`, `verdict_changes`, `cause_match`, `flaky_sequences`,
+`memory_effect`, `skipped_variants`, `empty_sources`.
+
+`--baseline` (default `evals/baseline.json`) feeds the "Verdict changes" section. Minimal baseline
+format, read by `evals/runner/baseline.py` (the writer is PR (g); extra keys are ignored):
+
+```json
+{"schema_version": 1,
+ "variants": {"llm+hints [model]": {"model": "model", "cases": 55, "accuracy": 0.9, "macro_f1": 0.88,
+   "cause_match_mean": 1.6, "cost_per_llm_diagnosis": 0.0004, "latency_ms_p50": 900,
+   "latency_ms_p95": 2100, "prices": {"input_per_mtok": 0.1, "output_per_mtok": 0.4},
+   "verdicts": {"<case id>": "<category>"}}}}
+```
+
+`null` is allowed for `model`, `cause_match_mean`, cost, latency and `prices`; `verdicts` is
+optional. The README table between `<!-- evals:table:start -->` and `<!-- evals:table:end -->` is
+generated from it with `python -m evals readme-table`; a test fails when it differs.
 
 `run` exits with an error when no case exists for the requested sources, or when an LLM variant
 has no model. Reports list case ids, categories and rule ids, never log text.
