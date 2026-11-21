@@ -1,0 +1,45 @@
+name: H1 measure
+on:
+  pull_request:
+    paths:
+      - "h1_measure.py"
+      - ".github/workflows/h1-measure.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  measure:
+    name: H1 measure
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    env:
+      TIKTOKEN_CACHE_DIR: .cache/tiktoken
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          enable-cache: true
+      - run: uv sync --locked
+      - name: Cache the tokenizer
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/tiktoken
+          key: tiktoken-o200k_base-v1
+      - name: Cache the embedding model
+        id: model-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/fastembed
+          key: fastembed-bge-small-en-v1.5-onnx-Q-51f1bd0addd6e859e42c2c8021a5e5461385bb676a649f4b269aa445449f2431
+      - name: Download the embedding model (cache miss only)
+        if: steps.model-cache.outputs.cache-hit != 'true'
+        run: >-
+          uv run python -c "from pathlib import Path;
+          from cicd_doctor.adapters.embeddings.fastembed_embedder import FastEmbedEmbedder;
+          raise SystemExit(0 if FastEmbedEmbedder(Path('.cache/fastembed')).warm() else 1)"
+      - name: Print ids and scores
+        run: |
+          grep -m1 "model name" /proc/cpuinfo | sed "s/^/H1 cpu /" || true
+          grep -m1 -o "avx512f" /proc/cpuinfo | sed "s/^/H1 flag /" || true
+          PYTHONPATH=. uv run python h1_measure.py > out.txt 2>&1; echo "H1 exit $?"
+          grep "^H1 " out.txt
