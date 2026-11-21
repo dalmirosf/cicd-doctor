@@ -7,14 +7,15 @@ expected:
   category: broken_test
   cause: Fallan 3 tests de build y el reporter se rompe con 'Map.groupBy is not a
     function'.
-  evidence_lines: []
+  evidence_lines:
+  - 660
 fix:
   commit: c5be55f571e418992fd39f34267ec4929e79d014
   summary: 1 commit(s), 2 file(s), +80/-17
 flaky: false
 tags:
 - node
-captured_at: '2026-11-21T16:56:59Z'
+captured_at: '2026-11-21T18:04:34Z'
 provenance:
   repo: vitejs/vite
   license: MIT

@@ -7,14 +7,15 @@ expected:
   category: broken_test
   cause: El spellcheck rechaza las palabras 'jscript' y 'livescript' en un archivo
     de src.
-  evidence_lines: []
+  evidence_lines:
+  - 226
 fix:
   commit: 45ea86577f0967fcdcc6514e135fd6c6a82d0786
   summary: 1 commit(s), 1 file(s), +1/-0
 flaky: false
 tags:
 - node
-captured_at: '2026-11-21T16:57:30Z'
+captured_at: '2026-11-21T18:05:07Z'
 provenance:
   repo: prettier/prettier
   license: MIT

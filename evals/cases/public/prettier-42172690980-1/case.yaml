@@ -7,14 +7,15 @@ expected:
   category: dependency
   cause: Dependency Review detecta glob@13.0.7 con una vulnerabilidad moderada en
     yarn.lock.
-  evidence_lines: []
+  evidence_lines:
+  - 283
 fix:
   commit: 72e29bec8e30361e71092c5d9e771c86ff28c347
   summary: 1 commit(s), 2 file(s), +22/-5
 flaky: false
 tags:
 - node
-captured_at: '2026-11-21T16:57:22Z'
+captured_at: '2026-11-21T18:04:59Z'
 provenance:
   repo: prettier/prettier
   license: MIT

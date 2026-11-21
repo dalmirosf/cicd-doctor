@@ -7,14 +7,15 @@ expected:
   category: broken_test
   cause: El spellcheck (CSpell) rechaza la palabra desconocida 'CBOR' en un archivo
     de tests.
-  evidence_lines: []
+  evidence_lines:
+  - 226
 fix:
   commit: d1e2ed8d8b5f14be6045035e8fba5555f350c3ff
   summary: 2 commit(s), 1 file(s), +2/-2
 flaky: false
 tags:
 - node
-captured_at: '2026-11-21T16:57:26Z'
+captured_at: '2026-11-21T18:05:03Z'
 provenance:
   repo: prettier/prettier
   license: MIT

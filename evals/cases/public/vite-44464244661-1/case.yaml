@@ -7,14 +7,15 @@ expected:
   category: broken_test
   cause: 'El test de HMR falla con TypeError: el módulo ''file-only'' esperado es
     undefined.'
-  evidence_lines: []
+  evidence_lines:
+  - 547
 fix:
   commit: cecc5451f84166c96ed54695542a5a124a449e88
   summary: 1 commit(s), 1 file(s), +4/-3
 flaky: false
 tags:
 - node
-captured_at: '2026-11-21T16:56:32Z'
+captured_at: '2026-11-21T18:04:07Z'
 provenance:
   repo: vitejs/vite
   license: MIT

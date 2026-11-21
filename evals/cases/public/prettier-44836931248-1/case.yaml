@@ -7,14 +7,15 @@ expected:
   category: flaky
   cause: La descarga de Firefox de puppeteer en Windows falla con EBUSY (archivo bloqueado);
     pasó al reintentar.
-  evidence_lines: []
+  evidence_lines:
+  - 285
 fix:
   commit: c275b253ce035ba3f47b895e5dbbef7025a51361
   summary: the same commit passed when the run was repeated
 flaky: true
 tags:
 - node
-captured_at: '2026-11-21T16:58:19Z'
+captured_at: '2026-11-21T18:05:53Z'
 provenance:
   repo: prettier/prettier
   license: MIT
