@@ -3,7 +3,7 @@
   "prompt_version": "diag-v3",
   "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
   "result": {
-    "raw_json": "{\"category\":\"broken_test\",\"probable_cause\":\"The validation step rebuilt the project and detected that generated files in dist differ from the committed versions, so it exited with code 1.\",\"evidence\":[{\"line\":441,\"text\":\"ERROR: Build result differs. Please build first with \\\"docker buildx bake build\\\"\"},{\"line\":442,\"text\":\" M dist/index.cjs\"},{\"line\":443,\"text\":\" M dist/index.cjs.map\"},{\"line\":444,\"text\":\" M dist/licenses.txt\"},{\"line\":445,\"text\":\"did not complete successfully: exit code: 1\"}],\"suggested_fix\":\"Run the project\u2019s build command locally, review the changes to dist/index.cjs, dist/index.cjs.map, and dist/licenses.txt, and commit the regenerated files. If the output should not change, investigate differences in the build environment or dependencies and make the build reproducible.\",\"suggestion\":null,\"confidence\":0.98}",
+    "raw_json": "{\"category\":\"unknown\",\"probable_cause\":\"The validation step rebuilt the project and detected that generated files in dist differ from the committed versions, so it exited with code 1.\",\"evidence\":[],\"suggested_fix\":\"Run the project\\u2019s build command locally, review the changes to dist/index.cjs, dist/index.cjs.map, and dist/licenses.txt, and commit the regenerated files. If the output should not change, investigate differences in the build environment or dependencies and make the build reproducible.\",\"suggestion\":null,\"confidence\":0.1}",
     "model": "gpt-6-luna",
     "input_tokens": 6271,
     "output_tokens": 260,

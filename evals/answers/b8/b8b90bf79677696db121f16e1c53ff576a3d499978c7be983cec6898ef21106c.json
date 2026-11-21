@@ -3,7 +3,7 @@
   "prompt_version": "diag-v3",
   "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
   "result": {
-    "raw_json": "{\"category\":\"broken_test\",\"probable_cause\":\"The Prettier lint check failed because src/language-html/embed.js does not match the repository's formatting rules.\",\"evidence\":[{\"line\":222,\"text\":\"[warn] src/language-html/embed.js\"},{\"line\":223,\"text\":\"[warn] Code style issues found in the above file. Run Prettier with --write to fix.\"},{\"line\":224,\"text\":\"##[error]Process completed with exit code 1.\"}],\"suggested_fix\":\"Run Prettier with --write on src/language-html/embed.js (or the repository's formatting command), then commit the resulting formatting changes and rerun the lint check.\",\"suggestion\":null,\"confidence\":0.99}",
+    "raw_json": "{\"category\":\"unknown\",\"probable_cause\":\"The Prettier lint check failed because src/language-html/embed.js does not match the repository's formatting rules.\",\"evidence\":[],\"suggested_fix\":\"Run Prettier with --write on src/language-html/embed.js (or the repository's formatting command), then commit the resulting formatting changes and rerun the lint check.\",\"suggestion\":null,\"confidence\":0.1}",
     "model": "gpt-6-luna",
     "input_tokens": 1817,
     "output_tokens": 212,

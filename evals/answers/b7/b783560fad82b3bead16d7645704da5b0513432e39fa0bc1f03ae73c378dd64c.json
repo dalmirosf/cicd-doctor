@@ -3,7 +3,7 @@
   "prompt_version": "diag-v3",
   "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
   "result": {
-    "raw_json": "{\"category\":\"config_or_secrets\",\"probable_cause\":\"Terraform validation failed because the configuration uses the `nullable` variable argument, which the Terraform 1.0.0 validator does not support.\",\"evidence\":[{\"line\":442,\"text\":\"\u2502 An argument named \\\"nullable\\\" is not expected here.\"},{\"line\":460,\"text\":\"\u2502 An argument named \\\"nullable\\\" is not expected here.\"},{\"line\":411,\"text\":\"pre-commit run terraform_validate --color=always --show-diff-on-failure --files ./examples/ipv6-only/*\"}],\"suggested_fix\":\"To keep Terraform 1.0.0 as the minimum supported version, remove or replace the `nullable = false` arguments in the affected variable declarations. If the configuration requires them, raise the minimum Terraform version and update the minimum-version validation job to match.\",\"suggestion\":null,\"confidence\":0.96}",
+    "raw_json": "{\"category\":\"unknown\",\"probable_cause\":\"Terraform validation failed because the configuration uses the `nullable` variable argument, which the Terraform 1.0.0 validator does not support.\",\"evidence\":[],\"suggested_fix\":\"To keep Terraform 1.0.0 as the minimum supported version, remove or replace the `nullable = false` arguments in the affected variable declarations. If the configuration requires them, raise the minimum Terraform version and update the minimum-version validation job to match.\",\"suggestion\":null,\"confidence\":0.1}",
     "model": "gpt-6-luna",
     "input_tokens": 4140,
     "output_tokens": 594,

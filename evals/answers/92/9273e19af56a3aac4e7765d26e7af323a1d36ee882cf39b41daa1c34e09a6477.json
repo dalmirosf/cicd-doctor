@@ -3,7 +3,7 @@
   "prompt_version": "diag-v3",
   "fingerprint": "c91b5ad6efd56a9e5837c09e659a9b2a3825965d8042b4d32a818e60c02fbc37",
   "result": {
-    "raw_json": "{\"category\":\"broken_test\",\"probable_cause\":\"The Spellcheck step failed because CSpell flagged \u201cjscript\u201d and \u201clivescript\u201d as unknown words in src/language-html/utilities/index.js.\",\"evidence\":[{\"line\":226,\"text\":\"src/language-html/utilities/index.js:31:9 - Unknown word (jscript)\"},{\"line\":227,\"text\":\"src/language-html/utilities/index.js:32:9 - Unknown word (livescript)\"},{\"line\":228,\"text\":\"CSpell: Files checked: 2875, Issues found: 2 in 1 file.\"},{\"line\":229,\"text\":\"##[error]Process completed with exit code 1.\"}],\"suggested_fix\":\"If these are intentional language names, add \u201cjscript\u201d and \u201clivescript\u201d to the project's CSpell dictionary or configure a narrowly scoped exception. Otherwise, correct the terms in the file.\",\"suggestion\":null,\"confidence\":0.99}",
+    "raw_json": "{\"category\":\"unknown\",\"probable_cause\":\"The Spellcheck step failed because CSpell flagged \\u201cjscript\\u201d and \\u201clivescript\\u201d as unknown words in src/language-html/utilities/index.js.\",\"evidence\":[],\"suggested_fix\":\"If these are intentional language names, add \\u201cjscript\\u201d and \\u201clivescript\\u201d to the project's CSpell dictionary or configure a narrowly scoped exception. Otherwise, correct the terms in the file.\",\"suggestion\":null,\"confidence\":0.1}",
     "model": "gpt-6-luna",
     "input_tokens": 1830,
     "output_tokens": 266,
