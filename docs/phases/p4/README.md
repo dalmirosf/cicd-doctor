@@ -86,9 +86,10 @@ OpenAI parts ran: the answers of 92 cases in three variants, the judge calibrati
 
 The spike's metadata (`plans/p4-spike/stage1.json`, `stage2.json`) holds names of workflows and jobs of third-party
 repositories, which the repository rules keep out of git, so it is not archived. The labels of the public cases and
-the calibration sheets (`plans/p4-labels/`) are not archived either. The plan, the spike report and the brief are
-the original working documents, untouched, and they do name some workflows of public repositories (for example in the
-spike table that explains the exclusion list).
+the calibration sheets (`plans/p4-labels/`) are not archived either. The plan, the spike report and the brief are the original
+working documents, untouched except for one thing: the names of workflows of third-party repositories in one table
+of the spike report were replaced by a description, because the repository rules keep them out of git (the table
+says so).
 
 ## What the method taught
 

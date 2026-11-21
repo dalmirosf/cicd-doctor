@@ -107,27 +107,57 @@ diff" con una respuesta nueva del modelo (esa vez contestó la caché).
 
 ### P4: evaluaciones a escala (20 y 21 de noviembre)
 
-Hasta P3 la app se probaba con 25 fallas del lab y 16 ataques. P4 la mide en serio: 25 casos del lab, **37 casos de
-repos públicos** (vite, prettier, pydantic, pytest, terraform-aws-vpc y build-push-action; solo licencias
-permisivas, y de cada uno se guarda el sha del arreglo y los nombres de archivo, nunca el diff ajeno) y 30 de
-inyección. Un reporte único da todas las métricas (exactitud, F1, costo por diagnóstico, latencia, evidencia
-válida, calibración) y un **juez** puntúa si la *causa* explicada coincide con la real, no solo la categoría. El
-juez se calibró contra 20 pares etiquetados (90 % de acuerdo, kappa 0,909); las etiquetas las escribió Claude y
-las revisaste vos, y eso queda anotado como el punto flojo.
+**Para qué.** Hasta P3 la app se probaba con 25 fallas del lab y 16 ataques. Con eso no se puede saber qué tan bien
+diagnostica de verdad ni enterarse de que un cambio la empeoró. P4 arma un banco de pruebas grande, una forma de
+medir y un guardia automático en el CI. La carpeta de la fase es `docs/phases/p4/` (su `README.md` tiene la tabla de
+PRs #47 a #66 y las decisiones D-100 a D-114).
 
-La pieza central es el **gate de CI** (`evals.yml`): lee las respuestas del modelo que están guardadas en el
-repositorio (`evals/answers/`), así que no usa red ni claves ni gasta plata, y falla con un código por causa: 1 el
-F1 cayó más de 5 puntos, 2 una inyección ganó, 3 faltan respuestas, 4 el baseline quedó viejo, 5 error del runner.
-La clave de cada respuesta incluye la huella del prompt: si alguien cambia el prompt sin volver a llenar las
-respuestas, el CI no da verde. Solo una persona acepta un baseline nuevo (`evals baseline --accept`).
+**Los casos.** 25 del lab, **37 de repos públicos** (vite, prettier, pydantic, pytest, terraform-aws-vpc y
+build-push-action) y 30 de inyección (14 de ellos con un diff de PR). Para elegir los repos públicos se hizo primero
+un spike de solo lectura (unas 270 llamadas a la API sobre 6 repos) que cambió el plan: muchos runs "fallados" son
+workflows de bots o de compuerta (hizo falta una lista de exclusión), emparejar la falla con su arreglo por rama no
+sirve en PRs de forks (se empareja por pull request), solo un tercio de los candidatos tiene un único job fallado
+(regla de matriz), y las reglas no saben nada fuera de Python, Docker y Terraform, que es justo donde se ve la
+diferencia con el modelo. Reglas de seguridad de los casos públicos (D-101): solo licencias permisivas, nunca se
+guarda el diff ajeno (solo el sha del arreglo, nombres de archivo y conteos), el log pasa por el redactor y por un
+escáner independiente, nada es un caso hasta que lo etiquetás vos, y en consola nunca se imprimen nombres de
+workflows o ramas de repos ajenos.
 
-En vivo se probó el gate con cinco PRs de prueba que nunca se mergearon: un prompt malo sin respuestas dio 3; el
-mismo prompt con sus respuestas llenadas en vivo (USD 0,06) bajó el F1 74 puntos pero dio 3 y no 1, porque un
-prompt cambiado siempre deja el baseline viejo y esa causa pesa más; una respuesta falsificada que obedece un
-ataque dio 2; un cambio de documentación dio verde en 27 segundos; y 19 respuestas degradadas a mano dieron 1
-(-9,4 puntos). Los que se forzaron con datos editados están declarados como simulados. **Sigue abierto:** en el
-runner de GitHub faltaron respuestas de la variante "con parecidas" para 3 casos que en tu máquina no faltaban
-(D-114), y hacer el gate un check obligatorio de `main` es una decisión tuya.
+**Respuestas guardadas en el repo.** Las respuestas del modelo se commitean en `evals/answers/`. La clave de cada una
+incluye la **huella del prompt** (un hash del prompt y del esquema de salida): si alguien cambia el prompt, las
+respuestas viejas dejan de servir y el CI no puede dar verde por error. Por eso un PR que toca el prompt tiene que
+traer las respuestas nuevas, que llena el dueño con `--live` (con `--estimate` antes y topes de gasto).
+
+**Qué se mide.** Un solo reporte (`evals run --variant all`) con exactitud, macro-F1, matriz de confusión,
+calibración de la confianza, costo por diagnóstico, latencia, validez de la evidencia, intervalos, resistencia a
+inyección y el efecto de la memoria, para las cuatro variantes (`rules`, `llm`, `llm+hints` que es la de producción,
+y `llm+hints+similar`). La tabla del README se genera sola del baseline. Además hay un **juez**: un segundo modelo
+que puntúa de 0 a 2 si la *causa* explicada coincide con la real, sin ver nunca el log, el diff ni la categoría. Se
+calibró contra 20 pares etiquetados (90 % de acuerdo, kappa 0,909); las etiquetas las escribió Claude y las revisaste
+vos, y eso queda anotado como el punto flojo.
+
+**La corrida en vivo (21 de noviembre, unos USD 0,55).** Con `gpt-6-luna` el macro-F1 sobre lab + público es 0,583
+para `rules` y 0,840 para `llm+hints`. El costo es USD 0,0005 por diagnóstico, 20 veces menos que el límite de
+NFR-03. Hubo 0 ataques ganados. Tres corridas vivas del mismo modelo dieron 0,757, 0,808 y 0,831 (sigma 0,038): el
+modelo se mueve unos 8 puntos solo por azar cuando se vuelve a llenar, y por eso al llenar de nuevo conviene mirar
+qué casos cambiaron antes de aceptar un baseline.
+
+**El gate de CI (`evals.yml`).** Lee las respuestas guardadas, compara contra `evals/baseline.json` y no usa red,
+claves ni plata. Falla con un código por causa: 1 el macro-F1 de `rules` o `llm+hints` bajó más de 5 puntos, 2 una
+inyección ganó, 3 faltan respuestas, 4 el baseline quedó viejo, 5 error del runner; si hay varias causas gana la más
+grave (2, 3, 4, 1). **Solo una persona acepta un baseline** (`evals baseline --accept`); el CI nunca lo escribe.
+
+**Cómo se probó en GitHub (D-114).** Cinco PRs de prueba que nunca se mergearon: un prompt malo sin respuestas dio 3;
+el mismo prompt con sus respuestas llenadas en vivo (USD 0,06) bajó el F1 74 puntos pero dio 3 y no 1, porque un
+prompt cambiado deja el baseline viejo y esa causa pesa más (es lo buscado: una persona tiene que leer la caída antes
+de aceptar un baseline nuevo); una respuesta falsificada que obedece un ataque dio 2; un cambio de documentación dio
+verde; y 19 respuestas degradadas a mano dieron 1 (-9,4 puntos). Los jobs duraron unos 30 segundos. Los casos
+forzados con datos editados están declarados como simulados. De paso se vio que `ci.yml` (lint, tipos, tests) sigue
+verde con un prompt malo: solo el gate de evals lo detecta.
+
+**Sigue abierto.** En el runner de GitHub faltaron respuestas de la variante "con parecidas" para 3 casos de prettier
+que en tu máquina no faltaban (D-114: puede ser que la búsqueda de parecidas dé un orden distinto según la máquina,
+no se midió). Y hacer que el gate sea un check obligatorio de `main` es un ajuste del repositorio que decidís vos.
 
 ### Lo que viene
 
