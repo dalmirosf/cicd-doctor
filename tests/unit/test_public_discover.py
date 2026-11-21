@@ -234,6 +234,132 @@ def test_a_merged_and_a_closed_unmerged_pr_are_paired_alike() -> None:
         assert (candidate["pairing"], candidate["pr"]) == ("H1-pr", 5)
 
 
+# --- H1-pr by owner:branch, when the commit has no pull request ------------------------------
+
+
+def branch_gh(*runs: dict[str, Any], commits: list[int] | None = None) -> FakePublicGh:
+    """Fork runs whose commits have no PR; ``someone:main-1`` has PR 5 with ``commits``."""
+    gh = fork_gh(*runs, commits=commits)
+    gh.commit_pulls.clear()
+    gh.branch_pulls["someone:main-1"] = [pull_json(5, SHA[(commits or [1, 2])[-1]])]
+    return gh
+
+
+def test_a_fork_pr_is_found_by_owner_and_branch_when_the_commit_has_none() -> None:
+    gh = branch_gh(fork_run(1, 1, "failure", 10, branch="main-1"), fork_run(2, 2, "success", 11))
+    with_compare(gh, 1, 2)
+
+    found = find(gh)
+
+    [candidate] = found.candidates
+    assert (candidate["pairing"], candidate["pr"], candidate["pr_lookup"]) == (
+        "H1-pr",
+        5,
+        "owner_branch",
+    )
+    endpoints = gh.endpoints()
+    # extra calls over the commit lookup: the PR list of owner:branch (the commits of the PR are
+    # read anyway)
+    assert sum("/pulls?state=all&head=someone:main-1" in e for e in endpoints) == 1
+    assert sum(e.endswith("/pulls/5/commits?per_page=100") for e in endpoints) == 1
+
+
+def test_a_candidate_found_by_the_commit_records_that_lookup() -> None:
+    gh = fork_gh(fork_run(1, 1, "failure", 10), fork_run(2, 2, "success", 11))
+    with_compare(gh, 1, 2)
+
+    [candidate] = find(gh).candidates
+
+    assert candidate["pr_lookup"] == "commit"
+    assert not any("state=all" in e for e in gh.endpoints())  # the second lookup was not needed
+
+
+def test_two_pull_requests_of_one_branch_name_are_told_apart_by_their_commits() -> None:
+    gh = branch_gh(fork_run(1, 1, "failure", 10, branch="main-1"), fork_run(2, 2, "success", 11))
+    gh.branch_pulls["someone:main-1"] = [pull_json(9, SHA[7]), pull_json(5, SHA[2])]
+    gh.pull_commits[9] = [SHA[6], SHA[7]]  # another history under the same name
+    with_compare(gh, 1, 2)
+
+    [candidate] = find(gh).candidates
+
+    assert candidate["pr"] == 5
+    other_owner = branch_gh(fork_run(1, 1, "failure", 10, branch="main-1", owner="other"))
+    other_owner.branch_pulls = {"someone:main-1": [pull_json(5, SHA[2])]}  # not this owner's
+    assert reasons(find(other_owner)) == {1: "fork run: no pull request for the commit"}
+
+
+def test_a_pull_request_whose_commits_lack_the_failed_sha_is_rejected() -> None:
+    gh = branch_gh(fork_run(1, 1, "failure", 10, branch="main-1"), commits=[3, 4])
+
+    found = find(gh)
+
+    assert found.candidates == []
+    assert reasons(found) == {1: "fork run: no pull request for the commit"}
+    assert not any("head_sha=" in e for e in gh.endpoints())
+
+
+def test_a_deleted_fork_is_discarded_with_its_reason() -> None:
+    gh = branch_gh(fork_run(1, 1, "failure", 10, branch="main-1", deleted_fork=True))
+
+    found = find(gh)
+
+    assert found.candidates == []
+    assert reasons(found) == {
+        1: "fork run: the head repository is gone and no pull request has the commit"
+    }
+    assert not any("state=all" in e for e in gh.endpoints())  # no owner to ask for
+
+
+def test_a_closed_unmerged_pr_found_by_branch_is_paired() -> None:
+    gh = branch_gh(fork_run(1, 1, "failure", 10, branch="main-1"), fork_run(2, 2, "success", 11))
+    gh.branch_pulls["someone:main-1"] = [pull_json(5, SHA[2], state="closed", merged=False)]
+    with_compare(gh, 1, 2)
+
+    [candidate] = find(gh).candidates
+
+    assert (candidate["pr"], candidate["pr_lookup"]) == (5, "owner_branch")
+
+
+def test_a_force_push_found_by_branch_is_discarded() -> None:
+    gh = branch_gh(fork_run(1, 1, "failure", 10, branch="main-1"), commits=[3, 4])
+    gh.pull_commits[5] = CaptureError("gh api failed: gh: Not Found (HTTP 404)")
+
+    assert reasons(find(gh)) == {1: "fork run: no pull request for the commit"}
+
+
+def test_the_pull_request_list_is_paginated() -> None:
+    gh = branch_gh(fork_run(1, 1, "failure", 10, branch="main-1"), fork_run(2, 2, "success", 11))
+    filler = [pull_json(100 + n, SHA[7]) for n in range(100)]
+    for pull in filler:
+        gh.pull_commits[pull["number"]] = [SHA[7]]
+    gh.branch_pulls["someone:main-1"] = [*filler, pull_json(5, SHA[1])]  # page 2
+    with_compare(gh, 1, 2)
+
+    found = find(gh)
+
+    assert [c["pr"] for c in found.candidates] == [5]
+    pages = [e for e in gh.endpoints() if "state=all" in e]
+    assert [e.rsplit("page=", 1)[1] for e in pages] == ["1", "2"]
+
+
+def test_the_branch_lookup_is_read_once_per_commit_and_counted_in_the_budget() -> None:
+    gh = branch_gh(
+        fork_run(1, 1, "failure", 10, branch="main-1"),
+        fork_run(4, 1, "failure", 10, branch="main-1", workflow_id=8),
+        fork_run(2, 2, "success", 11),
+        fork_run(5, 2, "success", 11, workflow_id=8),
+    )
+    gh.jobs["4/1"] = gh.jobs["1/1"]
+    with_compare(gh, 1, 2)
+    budget = BudgetedGh(gh, max_calls=400)
+
+    found = discover(REPO, gh=budget, now=lambda: NOW, calls=lambda: budget.calls)
+
+    assert len(found.candidates) == 2
+    assert sum("state=all" in e for e in gh.endpoints()) == 1
+    assert found.api_calls == len(gh.calls) - sum("rate_limit" in e for e in gh.endpoints())
+
+
 def test_a_later_run_of_another_workflow_is_no_answer() -> None:
     gh = fork_gh(fork_run(1, 1, "failure", 10), fork_run(2, 2, "success", 11, workflow_id=8))
     with_compare(gh, 1, 2)

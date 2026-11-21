@@ -13,7 +13,10 @@ Two pairings, and nothing is a case until the owner labels it (D-102):
   branch: the PR of the failed head commit (`commits/{sha}/pulls`), its commits
   (`pulls/{n}/commits`), and the runs of the same workflow on the next head commits of that PR
   (at most `MAX_COMMITS`). The same filters apply. A PR whose history no longer has the failed
-  commit (a force-push) is discarded.
+  commit (a force-push) is discarded. When the commit has no PR (a fork head commit often has
+  none), the PR is looked up by the run's head owner and branch (`pulls?head=<owner>:<branch>`) and
+  accepted only if its own commits contain the failed commit; the candidate records which lookup
+  found it (`pr_lookup`: `commit` or `owner_branch`). A deleted fork is tried the same way.
 
 A matrix is accepted when every failed job fails at the same step, taking the lowest job id;
 different steps, a job that never started and workflows on the exclusion list are discarded, each
@@ -23,6 +26,7 @@ import re
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
+from enum import StrEnum
 from pathlib import Path
 from typing import Any
 from urllib.parse import quote
@@ -50,7 +54,16 @@ RERUN_PAGES = 2
 FAILED_STATUSES = ("failure", "timed_out")
 _CONCLUSIVE_FAILURES = frozenset(FAILED_STATUSES)
 _NOT_CONCLUSIVE = frozenset({"cancelled", "skipped", "neutral", "stale", "action_required", None})
+PULL_PAGES = 3
+MAX_BRANCH_PULLS = 5  # pull requests of one owner:branch whose commits are read to confirm
 DEFAULT_CANDIDATES = Path("candidates.yaml")
+
+
+class PrLookup(StrEnum):
+    """Which lookup found the pull request of an H1-pr candidate."""
+
+    COMMIT = "commit"  # GET commits/{sha}/pulls
+    OWNER_BRANCH = "owner_branch"  # GET pulls?head=<owner>:<branch>, confirmed by its commits
 
 
 @dataclass
@@ -166,7 +179,10 @@ def _h1(result: Discovery, gh: Gh, since: str, terms: Sequence[str], limit: int 
             result.discard(run, "workflow is on the exclusion list")
             continue
         head_repo = run.get("head_repository")
-        if isinstance(head_repo, dict) and head_repo.get("full_name") != result.repo:
+        deleted_fork = "head_repository" in run and head_repo is None
+        if deleted_fork or (
+            isinstance(head_repo, dict) and head_repo.get("full_name") != result.repo
+        ):
             _pair_fork(result, gh, run, pulls)
             continue
         branch = run.get("head_branch")
@@ -189,6 +205,7 @@ class _PullCache:
     """What was already read about pull requests, so that two failures of one PR cost it once."""
 
     by_sha: dict[str, int | None] = field(default_factory=dict)
+    by_head: dict[tuple[str, str, str], int | None] = field(default_factory=dict)
     commits: dict[int, list[str] | None] = field(default_factory=dict)
     runs: dict[tuple[object, str], list[dict[str, Any]]] = field(default_factory=dict)
 
@@ -211,6 +228,60 @@ def _pull_of(result: Discovery, gh: Gh, sha: str, cache: _PullCache) -> int | No
         found.sort(key=lambda p: (p.get("head") or {}).get("sha") != sha)  # same head first
         cache.by_sha[sha] = found[0]["number"] if found else None
     return cache.by_sha[sha]
+
+
+def _head_owner(run: dict[str, Any]) -> str | None:
+    head_repo = run.get("head_repository")
+    if not isinstance(head_repo, dict):
+        return None
+    owner = (head_repo.get("owner") or {}).get("login")
+    if not isinstance(owner, str) or not owner:
+        full = head_repo.get("full_name")
+        owner = full.split("/")[0] if isinstance(full, str) and "/" in full else None
+    return owner or None
+
+
+def _pull_of_branch(
+    result: Discovery, gh: Gh, run: dict[str, Any], sha: str, cache: _PullCache
+) -> int | None:
+    """The pull request of ``<owner>:<branch>`` whose own commits contain ``sha``. The branch name
+    alone proves nothing (two forks can use the same one): the commits of the PR decide."""
+    owner, branch = _head_owner(run), run.get("head_branch")
+    if owner is None or not isinstance(branch, str) or not branch:
+        return None
+    key = (owner, branch, sha)
+    if key in cache.by_head:
+        return cache.by_head[key]
+    found: list[dict[str, Any]] = []
+    for page in range(1, PULL_PAGES + 1):
+        try:
+            data = read_json(
+                gh,
+                f"repos/{result.repo}/pulls?state=all&head={quote(owner, safe='')}:"
+                f"{quote(branch, safe='')}&per_page=100&page={page}",
+            )
+        except CaptureError as error:
+            if not is_gone(error):
+                raise
+            data = []
+        found += [
+            p
+            for p in (data if isinstance(data, list) else [])
+            if isinstance(p, dict)
+            and isinstance(p.get("number"), int)
+            and ((p.get("base") or {}).get("repo") or {}).get("full_name") == result.repo
+        ]
+        if not isinstance(data, list) or len(data) < 100:
+            break
+    found.sort(key=lambda p: (p.get("head") or {}).get("sha") != sha)  # same head first
+    number: int | None = None
+    for pull in found[:MAX_BRANCH_PULLS]:
+        shas = _pull_commits(result, gh, pull["number"], cache)
+        if shas is not None and sha in shas:
+            number = pull["number"]
+            break
+    cache.by_head[key] = number
+    return number
 
 
 def _pull_commits(result: Discovery, gh: Gh, number: int, cache: _PullCache) -> list[str] | None:
@@ -237,8 +308,17 @@ def _pair_fork(result: Discovery, gh: Gh, run: dict[str, Any], cache: _PullCache
         result.discard(run, "no head commit")
         return
     number = _pull_of(result, gh, sha, cache)
+    lookup = PrLookup.COMMIT
     if number is None:
-        result.discard(run, "fork run: no pull request for the commit")
+        number = _pull_of_branch(result, gh, run, sha, cache)
+        lookup = PrLookup.OWNER_BRANCH
+    if number is None:
+        reason = (
+            "fork run: the head repository is gone and no pull request has the commit"
+            if run.get("head_repository") is None
+            else "fork run: no pull request for the commit"
+        )
+        result.discard(run, reason)
         return
     shas = _pull_commits(result, gh, number, cache)
     if shas is None or sha not in shas:
@@ -259,7 +339,7 @@ def _pair_fork(result: Discovery, gh: Gh, run: dict[str, Any], cache: _PullCache
             )
         siblings += cache.runs[key]
     siblings.sort(key=lambda r: (_created(r), r.get("id") or 0))
-    _pair(result, gh, run, siblings, pairing="H1-pr", pr=number)
+    _pair(result, gh, run, siblings, pairing="H1-pr", pr=number, lookup=lookup)
 
 
 def _pair(
@@ -270,6 +350,7 @@ def _pair(
     *,
     pairing: str = "H1",
     pr: int | None = None,
+    lookup: PrLookup | None = None,
 ) -> None:
     later = [
         r for r in siblings if (_created(r), r.get("id") or 0) > (_created(run), run.get("id") or 0)
@@ -320,6 +401,7 @@ def _pair(
             attempt=int(run.get("run_attempt") or 1),
             pairing=pairing,
             pr=pr,
+            lookup=lookup,
             fix_sha=str(green.get("head_sha")),
             fix_run_id=green.get("id"),
             fix_attempt=None,
@@ -415,6 +497,7 @@ def _record(
     attempt: int,
     pairing: str,
     pr: int | None = None,
+    lookup: PrLookup | None = None,
     fix_sha: str,
     fix_run_id: object,
     fix_attempt: int | None,
@@ -428,6 +511,7 @@ def _record(
         "id": _candidate_id(repo, run.get("id"), attempt),
         "pairing": pairing,
         "pr": pr,
+        "pr_lookup": lookup.value if lookup else None,
         "run_id": run.get("id"),
         "attempt": attempt,
         "workflow": clean_label(run.get("name")),
