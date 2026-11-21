@@ -108,7 +108,15 @@ def run_json(
     workflow_id: int = 7,
     fork: bool = False,
     updated: str | None = None,
+    owner: str = "someone",
+    deleted_fork: bool = False,
 ) -> dict[str, Any]:
+    head_repository: dict[str, Any] | None = {
+        "full_name": f"{owner}/widgets" if fork else REPO,
+        "owner": {"login": owner if fork else "acme"},
+    }
+    if deleted_fork:
+        head_repository = None
     return {
         "id": run_id,
         "name": name,
@@ -121,7 +129,7 @@ def run_json(
         "created_at": created,
         "run_started_at": created,
         "updated_at": updated or created,
-        "head_repository": {"full_name": "someone/widgets" if fork else REPO},
+        "head_repository": head_repository,
     }
 
 
@@ -170,6 +178,7 @@ class FakePublicGh:
         self.green: list[dict[str, Any]] = []  # answer of status=success
         self.branch_runs: list[dict[str, Any]] = []  # every run, filtered by ?branch= or ?head_sha=
         self.commit_pulls: dict[str, list[dict[str, Any]] | CaptureError] = {}  # sha -> PRs
+        self.branch_pulls: dict[str, list[dict[str, Any]] | CaptureError] = {}  # "owner:branch"
         self.pull_commits: dict[int, list[str] | CaptureError] = {}  # PR number -> shas
 
     def __call__(self, args: Sequence[str]) -> bytes:
@@ -212,6 +221,14 @@ class FakePublicGh:
             if isinstance(item, CaptureError):
                 raise item
             return item
+        if rest == ["pulls"]:
+            q = dict(p.split("=", 1) for p in query.split("&"))
+            assert q["state"] == "all", query
+            item = self.branch_pulls.get(unquote(q["head"]), [])
+            if isinstance(item, CaptureError):
+                raise item
+            start = (int(q.get("page", "1")) - 1) * 100
+            return item[start : start + 100]
         if rest[0] == "pulls" and rest[2:] == ["commits"]:
             shas = self.pull_commits.get(int(rest[1]))
             if shas is None:
