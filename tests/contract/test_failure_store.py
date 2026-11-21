@@ -475,14 +475,14 @@ async def test_similar_honors_k(harness: Harness) -> None:
     assert await harness.store.similar(100, query, k=0, min_score=0.0) == []
 
 
-async def test_similar_rounds_the_score_to_three_decimals(harness: Harness) -> None:
+async def test_similar_rounds_the_score_to_two_decimals(harness: Harness) -> None:
     await _publish(harness, "No module named numpy in tests")
 
     [result] = await harness.store.similar(
         100, _embedding("No module named requests in tests"), k=3, min_score=0.0
     )
 
-    assert result.score == round(result.score, 3)
+    assert result.score == round(result.score, 2)
 
 
 async def test_similar_is_isolated_by_repository(harness: Harness) -> None:

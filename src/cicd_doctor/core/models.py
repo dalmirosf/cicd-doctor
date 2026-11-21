@@ -272,7 +272,9 @@ class SimilarFailure(DomainModel):
     """A past failure of the same repository that looks like the current one (D-79, D-82).
 
     It carries ids, not a URL: the renderer builds the link, so no stored string is trusted as
-    one (D-64). The score is rounded so that the same inputs print the same on every platform.
+    one (D-64). The score is rounded to two decimals, what the model and the report show (D-115):
+    the float noise of an embedder on another CPU must not reach the request, and with three
+    decimals a score near a rounding edge did (H1). The stores order a list by the raw score.
     """
 
     failure_id: UUID
@@ -286,7 +288,7 @@ class SimilarFailure(DomainModel):
     @field_validator("score")
     @classmethod
     def _round_score(cls, value: float) -> float:
-        return round(value, 3)
+        return round(value, 2)
 
 
 class SuccessRef(DomainModel):

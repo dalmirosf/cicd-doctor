@@ -209,7 +209,7 @@ class InMemoryFailureStore:
         min_score: float,
         exclude_run_id: int | None = None,
     ) -> list[SimilarFailure]:
-        scored: list[SimilarFailure] = []
+        scored: list[tuple[float, SimilarFailure]] = []
         for failure in self._failures.values():
             run = failure.job.job.run
             if (
@@ -226,18 +226,24 @@ class InMemoryFailureStore:
             if score < min_score:
                 continue
             scored.append(
-                SimilarFailure(
-                    failure_id=failure.id,
-                    run_id=run.run_id,
-                    run_attempt=run.run_attempt,
-                    score=score,
-                    category=published.category,
-                    probable_cause=published.probable_cause,
-                    fix_commit_sha=failure.fix_commit_sha,
+                (
+                    score,
+                    SimilarFailure(
+                        failure_id=failure.id,
+                        run_id=run.run_id,
+                        run_attempt=run.run_attempt,
+                        score=score,
+                        category=published.category,
+                        fix_commit_sha=failure.fix_commit_sha,
+                        probable_cause=published.probable_cause,
+                    ),
                 )
             )
-        scored.sort(key=lambda item: (-item.score, str(item.failure_id)))
-        return scored[:k]
+        # The order is decided by the raw score in buckets of a thousandth, then by id, as it was
+        # when the stored score had three decimals; only the score that the request carries is
+        # coarser (D-115).
+        scored.sort(key=lambda item: (-round(item[0], 3), str(item[1].failure_id)))
+        return [item for _, item in scored[:k]]
 
     async def open_failures(self, repo_id: int, workflow_id: int, branch_key: str) -> list[Failure]:
         return [
