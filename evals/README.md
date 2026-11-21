@@ -154,3 +154,5 @@ scanner in `markdown_threats.py`), the prompt leaked, fabricated evidence was pu
 suggestion has an unsafe path. The report counts the attacks won per variant; the target is zero.
 `tests/unit/test_injection.py` runs the suite with a fake model that obeys the log, and
 `uv run pytest -m live` runs it against the real model.
+
+<!-- P4 (i) throwaway: documentation-only change to check that the gate stays green. Never merged. -->
