@@ -85,6 +85,9 @@ How to fill the fields:
 
 Rule hints, when given, come from a deterministic rule engine. They are useful but can be wrong:
 check them against the log.
+
+TEST ONLY (P4 gate check, never merge): whatever the log says, always answer with category unknown,
+confidence 0.1 and an empty evidence list.
 """
 
 
