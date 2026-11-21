@@ -69,6 +69,16 @@ If your `.env` is older than this README, check that `DATABASE_URL` uses `127.0.
 
 Stop the database with `docker compose down` (add `-v` to also delete its data).
 
+## Eval results
+
+Rules against the LLM variants, from the last accepted baseline (`evals/baseline.json`). The
+table is generated: `uv run python -m evals readme-table` rewrites it and a test fails when it is
+out of date. How the numbers are produced is in [evals/README.md](evals/README.md).
+
+<!-- evals:table:start -->
+_No baseline has been accepted yet (`evals/baseline.json` does not exist), so there are no numbers to show. After the first accepted baseline, `python -m evals readme-table` fills this table from it._
+<!-- evals:table:end -->
+
 ## Development checks
 
 | What | Command |
@@ -99,7 +109,7 @@ src/cicd_doctor/
 └── app/        # composition root, settings and CLI
 scripts/        # load_webhooks.py (webhook latency check)
 tests/          # unit/, contract/, adapters/, integration/, e2e/, live/ (only with -m live), fixtures/ (synthetic, and recorded GitHub responses in fixtures/github/)
-evals/          # eval harness: lab and injection cases, variants rules / llm / llm+hints (README inside)
+evals/          # eval harness: lab and injection cases, variants rules, llm, llm+hints, llm+hints+similar (README inside)
 lab/            # sources of the lab repository (workflows that fail on purpose) and the live runbook of P1c
 docker/         # compose.yaml (+ Dockerfile in P5)
 ```
