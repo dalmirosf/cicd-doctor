@@ -1,0 +1,19 @@
+{
+  "sha": "a520d5707773e174b89684af85c0ac3f33adb659",
+  "pairing": "H1-pr",
+  "commits": 1,
+  "files_total": 2,
+  "files": [
+    {
+      "path": "examples/complete/README.md",
+      "additions": 1,
+      "deletions": 1
+    },
+    {
+      "path": "examples/complete/versions.tf",
+      "additions": 1,
+      "deletions": 1
+    }
+  ],
+  "summary": "1 commit(s), 2 file(s), +2/-2"
+}

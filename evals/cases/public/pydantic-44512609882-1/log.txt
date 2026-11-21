@@ -1,0 +1,414 @@
+﻿2026-11-19T11:11:56.1356103Z Current runner version: '2.338.2'
+2026-11-19T11:11:56.1380388Z ##[group]Runner Image Provisioner
+2026-11-19T11:11:56.1381238Z Hosted Compute Agent
+2026-11-19T11:11:56.1382121Z Version: 20261103.629
+2026-11-19T11:11:56.1382788Z Commit: 15dbd9ccb5dbf34fae002b6ed1a2670f52df37bc
+2026-11-19T11:11:56.1383591Z Build Date: 2026-11-03T17:26:59Z
+2026-11-19T11:11:56.1384362Z Worker ID: {46e2bacb-ebcb-4841-bd37-da994ca8e31c}
+2026-11-19T11:11:56.1385068Z Region: westus2
+2026-11-19T11:11:56.1385653Z Cloud: Azure
+2026-11-19T11:11:56.1386207Z ##[endgroup]
+2026-11-19T11:11:56.1387700Z ##[group]Operating System
+2026-11-19T11:11:56.1388434Z Ubuntu
+2026-11-19T11:11:56.1388953Z 26.04.1
+2026-11-19T11:11:56.1389493Z LTS
+2026-11-19T11:11:56.1390019Z ##[endgroup]
+2026-11-19T11:11:56.1390601Z ##[group]Runner Image
+2026-11-19T11:11:56.1391253Z Image: ubuntu-26.04
+2026-11-19T11:11:56.1392032Z Version: 20261111.196.1
+2026-11-19T11:11:56.1393352Z Included Software: https://github.com/actions/runner-images/blob/ubuntu26/20261111.196/images/ubuntu/Ubuntu2604-Readme.md
+2026-11-19T11:11:56.1394918Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu26%2F20261111.196
+2026-11-19T11:11:56.1395945Z ##[endgroup]
+2026-11-19T11:11:56.1397161Z ##[group]GITHUB_TOKEN Permissions
+2026-11-19T11:11:56.1399064Z Attestations: write
+2026-11-19T11:11:56.1399819Z Contents: read
+2026-11-19T11:11:56.1400471Z Metadata: read
+2026-11-19T11:11:56.1401051Z ##[endgroup]
+2026-11-19T11:11:56.1403814Z Secret source: Actions
+2026-11-19T11:11:56.1404813Z Cache mode: write
+2026-11-19T11:11:56.1405751Z Prepare workflow directory
+2026-11-19T11:11:56.1815270Z Prepare all required actions
+2026-11-19T11:11:56.1864470Z Getting action download info
+2026-11-19T11:11:56.5348876Z Download action repository 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+2026-11-19T11:11:56.9163826Z Download action repository 'astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7' (SHA:c18668ad3cf93ea998bef934396af7bb5c839dc7)
+2026-11-19T11:11:57.1809337Z Download action repository 'PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b' (SHA:e83996d129638aa358a18fbd1dfb82f0b0fb5d3b)
+2026-11-19T11:11:57.3643012Z Download action repository 'actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6' (SHA:1e69f48acb82d1966a394da916b4c1698aa569d6)
+2026-11-19T11:11:57.5614886Z Download action repository 'actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9' (SHA:cf430e030ddbb5b0abf93d22962f4752f3646cd9)
+2026-11-19T11:11:57.8171882Z Complete job name: core / Build on linux (i686 - all - manylinux)
+2026-11-19T11:11:57.9176238Z ##[group]Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+2026-11-19T11:11:57.9178298Z with:
+2026-11-19T11:11:57.9179256Z   persist-credentials: false
+2026-11-19T11:11:57.9180451Z   repository: pydantic/pydantic
+2026-11-19T11:11:57.9189282Z   token: ***
+2026-11-19T11:11:57.9190232Z   ssh-strict: true
+2026-11-19T11:11:57.9191315Z   ssh-user: git
+2026-11-19T11:11:57.9192382Z   clean: true
+2026-11-19T11:11:57.9193444Z   sparse-checkout-cone-mode: true
+2026-11-19T11:11:57.9194616Z   fetch-depth: 1
+2026-11-19T11:11:57.9195580Z   fetch-tags: false
+2026-11-19T11:11:57.9196647Z   show-progress: true
+2026-11-19T11:11:57.9197638Z   lfs: false
+2026-11-19T11:11:57.9198546Z   submodules: false
+2026-11-19T11:11:57.9199758Z   set-safe-directory: true
+2026-11-19T11:11:57.9201339Z   allow-unsafe-pr-checkout: false
+2026-11-19T11:11:57.9203584Z env:
+2026-11-19T11:11:57.9204489Z   COLUMNS: 150
+2026-11-19T11:11:57.9205402Z   UV_FROZEN: true
+2026-11-19T11:11:57.9206412Z   FORCE_COLOR: 1
+2026-11-19T11:11:57.9207672Z ##[endgroup]
+2026-11-19T11:11:59.9503512Z Syncing repository: pydantic/pydantic
+2026-11-19T11:11:59.9505000Z ##[group]Getting Git version info
+2026-11-19T11:11:59.9505491Z Working directory is '/home/runner/work/pydantic/pydantic'
+2026-11-19T11:11:59.9506152Z [command]/usr/bin/git version
+2026-11-19T11:11:59.9564269Z git version 2.56.1
+2026-11-19T11:11:59.9585260Z ##[endgroup]
+2026-11-19T11:11:59.9596841Z Temporarily overriding HOME='/home/runner/work/_temp/c3e1b396-cd32-4ae2-a4b5-6bb112d67735' before making global git config changes
+2026-11-19T11:11:59.9598452Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-19T11:11:59.9603420Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/pydantic/pydantic
+2026-11-19T11:11:59.9982487Z Deleting the contents of '/home/runner/work/pydantic/pydantic'
+2026-11-19T11:11:59.9985559Z ##[group]Determining repository object format
+2026-11-19T11:11:59.9987229Z ##[endgroup]
+2026-11-19T11:11:59.9987853Z ##[group]Initializing the repository
+2026-11-19T11:11:59.9991516Z [command]/usr/bin/git init /home/runner/work/pydantic/pydantic
+2026-11-19T11:12:00.0453854Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-11-19T11:12:00.0454913Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-11-19T11:12:00.0455842Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-11-19T11:12:00.0456593Z hint: call:
+2026-11-19T11:12:00.0456974Z hint:
+2026-11-19T11:12:00.0457475Z hint: 	git config --global init.defaultBranch <name>
+2026-11-19T11:12:00.0458050Z hint:
+2026-11-19T11:12:00.0458610Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-11-19T11:12:00.0459511Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-11-19T11:12:00.0460204Z hint:
+2026-11-19T11:12:00.0460678Z hint: 	git branch -m <name>
+2026-11-19T11:12:00.0461167Z hint:
+2026-11-19T11:12:00.0462090Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-11-19T11:12:00.0589950Z Initialized empty Git repository in /home/runner/work/pydantic/pydantic/.git/
+2026-11-19T11:12:00.0602605Z [command]/usr/bin/git remote add origin https://github.com/pydantic/pydantic
+2026-11-19T11:12:00.0841208Z ##[endgroup]
+2026-11-19T11:12:00.0842621Z ##[group]Disabling automatic garbage collection
+2026-11-19T11:12:00.0846388Z [command]/usr/bin/git config --local gc.auto 0
+2026-11-19T11:12:00.0885486Z ##[endgroup]
+2026-11-19T11:12:00.0886461Z ##[group]Setting up auth
+2026-11-19T11:12:00.0890667Z Removing SSH command configuration
+2026-11-19T11:12:00.0892066Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-19T11:12:00.0927877Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-19T11:12:00.2850142Z Removing HTTP extra header
+2026-11-19T11:12:00.2855370Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-19T11:12:00.2887882Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-19T11:12:00.3163670Z Removing includeIf entries pointing to credentials config files
+2026-11-19T11:12:00.3168932Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-19T11:12:00.3201552Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-19T11:12:00.3483334Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-392864d0-bcb3-41b7-a416-0eba4bd1d11d.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-11-19T11:12:00.3525052Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/pydantic/pydantic/.git.path /home/runner/work/_temp/git-credentials-392864d0-bcb3-41b7-a416-0eba4bd1d11d.config
+2026-11-19T11:12:00.3558620Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/pydantic/pydantic/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-392864d0-bcb3-41b7-a416-0eba4bd1d11d.config
+2026-11-19T11:12:00.3638968Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-392864d0-bcb3-41b7-a416-0eba4bd1d11d.config
+2026-11-19T11:12:00.3673993Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-392864d0-bcb3-41b7-a416-0eba4bd1d11d.config
+2026-11-19T11:12:00.3707662Z ##[endgroup]
+2026-11-19T11:12:00.3708440Z ##[group]Fetching the repository
+2026-11-19T11:12:00.3715070Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +f135ba783528261c10ce7517d16ffb212abf192f:refs/remotes/origin/main
+2026-11-19T11:12:00.9174040Z From https://github.com/pydantic/pydantic
+2026-11-19T11:12:00.9175027Z  * [new ref]         f135ba783528261c10ce7517d16ffb212abf192f -> origin/main
+2026-11-19T11:12:00.9185828Z [command]/usr/bin/git branch --list --remote origin/main
+2026-11-19T11:12:00.9211325Z   origin/main
+2026-11-19T11:12:00.9220457Z [command]/usr/bin/git rev-parse refs/remotes/origin/main
+2026-11-19T11:12:00.9246558Z f135ba783528261c10ce7517d16ffb212abf192f
+2026-11-19T11:12:00.9251517Z ##[endgroup]
+2026-11-19T11:12:00.9252711Z ##[group]Determining the checkout info
+2026-11-19T11:12:00.9253692Z ##[endgroup]
+2026-11-19T11:12:00.9257997Z [command]/usr/bin/git sparse-checkout disable
+2026-11-19T11:12:00.9431431Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-11-19T11:12:00.9462552Z ##[group]Checking out the ref
+2026-11-19T11:12:00.9466854Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+2026-11-19T11:12:01.1326987Z Switched to a new branch 'main'
+2026-11-19T11:12:01.1364659Z branch 'main' set up to track 'origin/main'.
+2026-11-19T11:12:01.1374394Z ##[endgroup]
+2026-11-19T11:12:01.1432777Z [command]/usr/bin/git log -1 --format=%H
+2026-11-19T11:12:01.1462077Z f135ba783528261c10ce7517d16ffb212abf192f
+2026-11-19T11:12:01.1474373Z ##[group]Removing auth
+2026-11-19T11:12:01.1474883Z Removing SSH command configuration
+2026-11-19T11:12:01.1479689Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-19T11:12:01.1523538Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-19T11:12:01.1812532Z Removing HTTP extra header
+2026-11-19T11:12:01.1817321Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-19T11:12:01.1850151Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-19T11:12:01.2126166Z Removing includeIf entries pointing to credentials config files
+2026-11-19T11:12:01.2130475Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-19T11:12:01.2158665Z includeif.gitdir:/home/runner/work/pydantic/pydantic/.git.path
+2026-11-19T11:12:01.2159235Z includeif.gitdir:/home/runner/work/pydantic/pydantic/.git/worktrees/*.path
+2026-11-19T11:12:01.2159771Z includeif.gitdir:/github/workspace/.git.path
+2026-11-19T11:12:01.2160181Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-11-19T11:12:01.2168274Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/pydantic/pydantic/.git.path
+2026-11-19T11:12:01.2191622Z /home/runner/work/_temp/git-credentials-392864d0-bcb3-41b7-a416-0eba4bd1d11d.config
+2026-11-19T11:12:01.2202200Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/pydantic/pydantic/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-392864d0\-bcb3\-41b7\-a416\-0eba4bd1d11d\.config
+2026-11-19T11:12:01.2236790Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/pydantic/pydantic/.git/worktrees/*.path
+2026-11-19T11:12:01.2275562Z /home/runner/work/_temp/git-credentials-392864d0-bcb3-41b7-a416-0eba4bd1d11d.config
+2026-11-19T11:12:01.2278301Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/pydantic/pydantic/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-392864d0\-bcb3\-41b7\-a416\-0eba4bd1d11d\.config
+2026-11-19T11:12:01.2309514Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-11-19T11:12:01.2333266Z /github/runner_temp/git-credentials-392864d0-bcb3-41b7-a416-0eba4bd1d11d.config
+2026-11-19T11:12:01.2341252Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-392864d0\-bcb3\-41b7\-a416\-0eba4bd1d11d\.config
+2026-11-19T11:12:01.2374585Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-11-19T11:12:01.2398124Z /github/runner_temp/git-credentials-392864d0-bcb3-41b7-a416-0eba4bd1d11d.config
+2026-11-19T11:12:01.2405972Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-392864d0\-bcb3\-41b7\-a416\-0eba4bd1d11d\.config
+2026-11-19T11:12:01.2439134Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-19T11:12:01.2732696Z Removing credentials config '/home/runner/work/_temp/git-credentials-392864d0-bcb3-41b7-a416-0eba4bd1d11d.config'
+2026-11-19T11:12:01.2744593Z ##[endgroup]
+2026-11-19T11:12:01.3035091Z ##[group]Run astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7
+2026-11-19T11:12:01.3035508Z with:
+2026-11-19T11:12:01.3035724Z   python-version: 3.14
+2026-11-19T11:12:01.3035969Z   enable-cache: false
+2026-11-19T11:12:01.3036220Z   activate-environment: false
+2026-11-19T11:12:01.3036490Z   no-project: false
+2026-11-19T11:12:01.3036787Z   working-directory: /home/runner/work/pydantic/pydantic
+2026-11-19T11:12:01.3039294Z   github-token: ***
+2026-11-19T11:12:01.3039883Z   cache-dependency-glob: **/*requirements*.txt
+**/*requirements*.in
+**/*constraints*.txt
+**/*constraints*.in
+**/pyproject.toml
+**/uv.lock
+**/*.py.lock
+
+2026-11-19T11:12:01.3040519Z   restore-cache: true
+2026-11-19T11:12:01.3040747Z   save-cache: auto
+2026-11-19T11:12:01.3040963Z   prune-cache: false
+2026-11-19T11:12:01.3041190Z   cache-python: false
+2026-11-19T11:12:01.3041429Z   ignore-nothing-to-cache: false
+2026-11-19T11:12:01.3042102Z   ignore-empty-workdir: false
+2026-11-19T11:12:01.3042453Z   download-from-astral-mirror: true
+2026-11-19T11:12:01.3042745Z   add-problem-matchers: true
+2026-11-19T11:12:01.3042989Z   quiet: false
+2026-11-19T11:12:01.3043208Z   resolution-strategy: highest
+2026-11-19T11:12:01.3043457Z env:
+2026-11-19T11:12:01.3043646Z   COLUMNS: 150
+2026-11-19T11:12:01.3043847Z   UV_FROZEN: true
+2026-11-19T11:12:01.3044051Z   FORCE_COLOR: 1
+2026-11-19T11:12:01.3044253Z ##[endgroup]
+2026-11-19T11:12:01.5407968Z Trying to find version for uv in: /home/runner/work/pydantic/pydantic/uv.toml
+2026-11-19T11:12:01.5408973Z Could not find file: /home/runner/work/pydantic/pydantic/uv.toml
+2026-11-19T11:12:01.5409840Z Trying to find version for uv in: /home/runner/work/pydantic/pydantic/pyproject.toml
+2026-11-19T11:12:01.5415975Z Found version for uv in /home/runner/work/pydantic/pydantic/pyproject.toml: >=0.13.0
+2026-11-19T11:12:01.5420979Z Found minimum version specifier, using latest version
+2026-11-19T11:12:01.5424104Z Fetching manifest data from https://raw.githubusercontent.com/astral-sh/versions/main/v1/uv.ndjson ...
+2026-11-19T11:12:01.6593792Z Downloading uv from "https://releases.astral.sh/github/uv/releases/download/0.13.9/uv-x86_64-unknown-linux-gnu.tar.gz" ...
+2026-11-19T11:12:01.8703751Z [command]/usr/bin/tar xz --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/7e0ca7ac-4947-4f90-9399-cc2cf00310f8 -f /home/runner/work/_temp/dfa0c88f-4ce8-4bdc-9fdc-9abe2f1753e1
+2026-11-19T11:12:02.0891149Z Added /home/runner/.local/bin to the path
+2026-11-19T11:12:02.0894831Z Added /opt/hostedtoolcache/uv/0.13.9/x86_64 to the path
+2026-11-19T11:12:02.0896509Z Set UV_PYTHON_INSTALL_DIR to /home/runner/work/_temp/uv-python-dir
+2026-11-19T11:12:02.0897432Z Added /home/runner/work/_temp/uv-python-dir to the path
+2026-11-19T11:12:02.0899285Z Set UV_PYTHON to 3.14
+2026-11-19T11:12:02.0917883Z Successfully installed uv version 0.13.9
+2026-11-19T11:12:02.2062732Z ##[group]Run uv sync --only-group build
+2026-11-19T11:12:02.2063160Z uv sync --only-group build
+2026-11-19T11:12:02.2117953Z shell: /usr/bin/bash -e {0}
+2026-11-19T11:12:02.2118234Z env:
+2026-11-19T11:12:02.2118435Z   COLUMNS: 150
+2026-11-19T11:12:02.2118651Z   UV_FROZEN: true
+2026-11-19T11:12:02.2118865Z   FORCE_COLOR: 1
+2026-11-19T11:12:02.2119164Z   UV_PYTHON_INSTALL_DIR: /home/runner/work/_temp/uv-python-dir
+2026-11-19T11:12:02.2119534Z   UV_PYTHON: 3.14
+2026-11-19T11:12:02.2119753Z ##[endgroup]
+2026-11-19T11:12:02.2765992Z Using CPython 3.14.4 interpreter at: /usr/bin/python3.14
+2026-11-19T11:12:02.2767049Z Creating virtual environment at: .venv
+2026-11-19T11:12:02.3703885Z Downloading pygments (1.2MiB)
+2026-11-19T11:12:02.3705447Z Downloading cryptography (4.5MiB)
+2026-11-19T11:12:02.5314871Z  Downloaded pygments
+2026-11-19T11:12:02.5754971Z  Downloaded cryptography
+2026-11-19T11:12:02.5757242Z Prepared 29 packages in 297ms
+2026-11-19T11:12:02.5954153Z Installed 29 packages in 19ms
+2026-11-19T11:12:02.5955106Z  + build==1.6.1
+2026-11-19T11:12:02.5955894Z  + certifi==2026.10.19
+2026-11-19T11:12:02.5956534Z  + cffi==2.1.0
+2026-11-19T11:12:02.5957173Z  + charset-normalizer==3.4.1
+2026-11-19T11:12:02.5957842Z  + cryptography==50.0.0
+2026-11-19T11:12:02.5958454Z  + docutils==0.22.4
+2026-11-19T11:12:02.5959012Z  + id==1.6.1
+2026-11-19T11:12:02.5959555Z  + idna==3.15
+2026-11-19T11:12:02.5960160Z  + jaraco-classes==3.4.0
+2026-11-19T11:12:02.5960792Z  + jaraco-context==6.1.2
+2026-11-19T11:12:02.5961397Z  + jaraco-functools==4.4.0
+2026-11-19T11:12:02.5962174Z  + jeepney==0.9.0
+2026-11-19T11:12:02.5962727Z  + keyring==25.7.0
+2026-11-19T11:12:02.5963328Z  + markdown-it-py==3.0.0
+2026-11-19T11:12:02.5963900Z  + mdurl==0.1.2
+2026-11-19T11:12:02.5964462Z  + more-itertools==11.0.1
+2026-11-19T11:12:02.5965028Z  + nh3==0.3.4
+2026-11-19T11:12:02.5965575Z  + packaging==26.3
+2026-11-19T11:12:02.5966061Z  + pycparser==2.22
+2026-11-19T11:12:02.5966432Z  + pygments==2.20.0
+2026-11-19T11:12:02.5967085Z  + pyproject-hooks==1.2.0
+2026-11-19T11:12:02.5967762Z  + readme-renderer==44.0
+2026-11-19T11:12:02.5968393Z  + requests==2.33.0
+2026-11-19T11:12:02.5969034Z  + requests-toolbelt==1.0.0
+2026-11-19T11:12:02.5969723Z  + rfc3986==2.0.0
+2026-11-19T11:12:02.5970314Z  + rich==15.0.0
+2026-11-19T11:12:02.5970913Z  + secretstorage==3.5.0
+2026-11-19T11:12:02.5971429Z  + twine==7.0.0
+2026-11-19T11:12:02.5972046Z  + urllib3==2.8.0
+2026-11-19T11:12:02.6108696Z ##[group]Run PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b
+2026-11-19T11:12:02.6109114Z with:
+2026-11-19T11:12:02.6109343Z   working-directory: pydantic-core
+2026-11-19T11:12:02.6109621Z   maturin-version: v1.16.0
+2026-11-19T11:12:02.6109864Z   target: i686
+2026-11-19T11:12:02.6110065Z   manylinux: auto
+2026-11-19T11:12:02.6110617Z   args: --release --locked --out dist --interpreter 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t pypy3.11
+2026-11-19T11:12:02.6111067Z   rust-toolchain: stable
+2026-11-19T11:12:02.6111307Z   docker-options: -e CI
+2026-11-19T11:12:02.6113862Z   token: ***
+2026-11-19T11:12:02.6114079Z   command: build
+2026-11-19T11:12:02.6114291Z   sccache: false
+2026-11-19T11:12:02.6114492Z env:
+2026-11-19T11:12:02.6114678Z   COLUMNS: 150
+2026-11-19T11:12:02.6114877Z   UV_FROZEN: true
+2026-11-19T11:12:02.6115091Z   FORCE_COLOR: 1
+2026-11-19T11:12:02.6115386Z   UV_PYTHON_INSTALL_DIR: /home/runner/work/_temp/uv-python-dir
+2026-11-19T11:12:02.6115764Z   UV_PYTHON: 3.14
+2026-11-19T11:12:02.6115978Z ##[endgroup]
+2026-11-19T11:12:03.9293122Z ##[group]Pull Docker image
+2026-11-19T11:12:03.9295539Z Using quay.io/pypa/manylinux2014_i686:latest Docker image
+2026-11-19T11:12:03.9310943Z [command]/usr/bin/docker pull quay.io/pypa/manylinux2014_i686:latest
+2026-11-19T11:12:04.3189887Z latest: Pulling from pypa/manylinux2014_i686
+2026-11-19T11:12:04.8955936Z ccbaaf3371e2: Pulling fs layer
+2026-11-19T11:12:04.8956578Z 43a5817eeef3: Pulling fs layer
+2026-11-19T11:12:04.8957093Z d93e06e371fd: Pulling fs layer
+2026-11-19T11:12:04.8957434Z da9082c5c9aa: Pulling fs layer
+2026-11-19T11:12:04.8957769Z 0b7a29338b7f: Pulling fs layer
+2026-11-19T11:12:04.8958091Z 13542e6f4554: Pulling fs layer
+2026-11-19T11:12:04.8958612Z 87f6846d5d05: Pulling fs layer
+2026-11-19T11:12:04.8958940Z b2ac021d799b: Pulling fs layer
+2026-11-19T11:12:04.8959308Z 8ff9f783250b: Pulling fs layer
+2026-11-19T11:12:04.8959641Z 3cf73f691ee9: Pulling fs layer
+2026-11-19T11:12:04.8959986Z 66f30849245d: Pulling fs layer
+2026-11-19T11:12:04.8960274Z 6b2cbabf6d66: Pulling fs layer
+2026-11-19T11:12:04.8960532Z e949d45d7b4a: Pulling fs layer
+2026-11-19T11:12:04.8960839Z 0cd093f1befc: Pulling fs layer
+2026-11-19T11:12:04.8961137Z 5b8982901fe9: Pulling fs layer
+2026-11-19T11:12:04.8961440Z 640ea9a45754: Pulling fs layer
+2026-11-19T11:12:04.8962161Z 81a0022d7dab: Pulling fs layer
+2026-11-19T11:12:04.8962755Z bd8ae4280c30: Pulling fs layer
+2026-11-19T11:12:04.8963172Z 97bd1c97bf14: Pulling fs layer
+2026-11-19T11:12:04.8963493Z c731d52cf5aa: Pulling fs layer
+2026-11-19T11:12:04.8963990Z 2768f0307949: Pulling fs layer
+2026-11-19T11:12:04.8964635Z d260ff958920: Pulling fs layer
+2026-11-19T11:12:04.8965157Z b73d326b5565: Pulling fs layer
+2026-11-19T11:12:04.8965626Z 0753adb084fd: Pulling fs layer
+2026-11-19T11:12:04.8966145Z d4219659be9b: Pulling fs layer
+2026-11-19T11:12:05.0606315Z d4219659be9b: Download complete
+2026-11-19T11:12:05.2598094Z da9082c5c9aa: Download complete
+2026-11-19T11:12:05.2599345Z 8ff9f783250b: Download complete
+2026-11-19T11:12:05.2603813Z 66f30849245d: Download complete
+2026-11-19T11:12:05.2608479Z 5b8982901fe9: Download complete
+2026-11-19T11:12:05.2613306Z b2ac021d799b: Download complete
+2026-11-19T11:12:05.2619296Z d260ff958920: Download complete
+2026-11-19T11:12:05.2619990Z b73d326b5565: Download complete
+2026-11-19T11:12:05.2624880Z 0753adb084fd: Download complete
+2026-11-19T11:12:05.2630617Z d93e06e371fd: Download complete
+2026-11-19T11:12:05.2633827Z 0b7a29338b7f: Download complete
+2026-11-19T11:12:05.2635520Z 3cf73f691ee9: Download complete
+2026-11-19T11:12:05.2639024Z 97bd1c97bf14: Download complete
+2026-11-19T11:12:05.3618905Z 0cd093f1befc: Download complete
+2026-11-19T11:12:05.3619442Z 43a5817eeef3: Download complete
+2026-11-19T11:12:05.3632371Z bd8ae4280c30: Download complete
+2026-11-19T11:12:05.3647452Z 13542e6f4554: Download complete
+2026-11-19T11:12:05.3648813Z c731d52cf5aa: Download complete
+2026-11-19T11:12:05.3655243Z 87f6846d5d05: Download complete
+2026-11-19T11:12:05.3674051Z 6b2cbabf6d66: Download complete
+2026-11-19T11:12:05.4621414Z 640ea9a45754: Download complete
+2026-11-19T11:12:05.4632774Z e949d45d7b4a: Download complete
+2026-11-19T11:12:05.4639053Z 81a0022d7dab: Download complete
+2026-11-19T11:12:07.3597022Z 2768f0307949: Download complete
+2026-11-19T11:12:07.3597665Z ccbaaf3371e2: Download complete
+2026-11-19T11:12:11.7713761Z d260ff958920: Pull complete
+2026-11-19T11:12:11.7722547Z b73d326b5565: Pull complete
+2026-11-19T11:12:11.7739479Z 0753adb084fd: Pull complete
+2026-11-19T11:12:11.7741466Z d93e06e371fd: Pull complete
+2026-11-19T11:12:11.8010537Z ccbaaf3371e2: Pull complete
+2026-11-19T11:12:11.8629508Z 8ff9f783250b: Pull complete
+2026-11-19T11:12:11.8672004Z 0b7a29338b7f: Pull complete
+2026-11-19T11:12:11.8694077Z 3cf73f691ee9: Pull complete
+2026-11-19T11:12:11.8750572Z 43a5817eeef3: Pull complete
+2026-11-19T11:12:11.8783178Z 13542e6f4554: Pull complete
+2026-11-19T11:12:11.9639569Z da9082c5c9aa: Pull complete
+2026-11-19T11:12:11.9674745Z 5b8982901fe9: Pull complete
+2026-11-19T11:12:11.9702895Z 97bd1c97bf14: Pull complete
+2026-11-19T11:12:11.9769005Z c731d52cf5aa: Pull complete
+2026-11-19T11:12:11.9782474Z 87f6846d5d05: Pull complete
+2026-11-19T11:12:11.9796577Z 6b2cbabf6d66: Pull complete
+2026-11-19T11:12:12.0657353Z bd8ae4280c30: Pull complete
+2026-11-19T11:12:12.2632909Z 66f30849245d: Pull complete
+2026-11-19T11:12:12.2639300Z b2ac021d799b: Pull complete
+2026-11-19T11:12:12.2683447Z 81a0022d7dab: Pull complete
+2026-11-19T11:12:12.3638714Z 640ea9a45754: Pull complete
+2026-11-19T11:12:12.5628597Z 0cd093f1befc: Pull complete
+2026-11-19T11:12:12.5652505Z e949d45d7b4a: Pull complete
+2026-11-19T11:12:20.4386402Z d4219659be9b: Pull complete
+2026-11-19T11:12:20.4397739Z 2768f0307949: Pull complete
+2026-11-19T11:12:20.4399470Z Digest: sha256:7ff084c274da66ed891df826b97cd5bb1b1d36db2cc86e4f052ce47cb4b69ead
+2026-11-19T11:12:20.4400298Z Status: Downloaded newer image for quay.io/pypa/manylinux2014_i686:latest
+2026-11-19T11:12:20.4408300Z quay.io/pypa/manylinux2014_i686:latest
+2026-11-19T11:12:20.4438541Z ##[endgroup]
+2026-11-19T11:12:20.4451141Z ##[group]Cleanup build scripts artifact directory
+2026-11-19T11:12:20.4452161Z ##[endgroup]
+2026-11-19T11:12:20.4488735Z [command]/usr/bin/docker run --rm --workdir /home/runner/work/pydantic/pydantic/pydantic-core -e DEBIAN_FRONTEND=noninteractive -e ARCHFLAGS -e _PYTHON_SYSCONFIGDATA_NAME -e ACTIONS_RUNNER_RETURN_JOB_RESULT_FOR_HOSTED -e GITHUB_ACTIONS -e ACTIONS_RUNNER_ACTION_ARCHIVE_CACHE -e GITHUB_JOB -e GITHUB_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_REPOSITORY_OWNER -e GITHUB_REPOSITORY_OWNER_ID -e GITHUB_RUN_ID -e GITHUB_RUN_NUMBER -e GITHUB_RETENTION_DAYS -e GITHUB_RUN_ATTEMPT -e GITHUB_ACTOR_ID -e GITHUB_ACTOR -e GITHUB_WORKFLOW -e GITHUB_HEAD_REF -e GITHUB_BASE_REF -e GITHUB_EVENT_NAME -e GITHUB_SERVER_URL -e GITHUB_API_URL -e GITHUB_GRAPHQL_URL -e GITHUB_REF_NAME -e GITHUB_REF_PROTECTED -e GITHUB_REF_TYPE -e GITHUB_WORKFLOW_REF -e GITHUB_WORKFLOW_SHA -e GITHUB_REPOSITORY_ID -e GITHUB_TRIGGERING_ACTOR -e GITHUB_WORKSPACE -e GITHUB_ACTION -e GITHUB_EVENT_PATH -e GITHUB_ACTION_REPOSITORY -e GITHUB_ACTION_REF -e GITHUB_PATH -e GITHUB_ENV -e GITHUB_STEP_SUMMARY -e GITHUB_STATE -e GITHUB_OUTPUT -e GITHUB_ARTIFACTS -e GITHUB_ARTIFACTS_LIST -e ACTIONS_RUNTIME_URL -e ACTIONS_RUNTIME_TOKEN -e ACTIONS_CACHE_URL -e ACTIONS_ID_TOKEN_REQUEST_URL -e ACTIONS_ID_TOKEN_REQUEST_TOKEN -e ACTIONS_RESULTS_URL -e ACTIONS_CACHE_SERVICE_V2 -e ACTIONS_CACHE_MODE -e ACTIONS_ORCHESTRATION_ID -e CARGO_INCREMENTAL -e CARGO_TERM_COLOR -v /home/runner/work/_temp/run-maturin-action.sh:/home/runner/work/_temp/run-maturin-action.sh -v /home/runner/work/pydantic/pydantic:/home/runner/work/pydantic/pydantic -e CI quay.io/pypa/manylinux2014_i686:latest /home/runner/work/_temp/run-maturin-action.sh
+2026-11-19T11:12:23.5224784Z ##[group]Install libatomic
+2026-11-19T11:12:23.6690662Z Loaded plugins: ovl
+2026-11-19T11:12:23.7453313Z https://vault.centos.org/altarch/7/os/i386/repodata/repomd.xml: [Errno 14] curl#6 - "Could not resolve host: vault.centos.org; Name or service not known"
+2026-11-19T11:12:23.7455376Z Trying other mirror.
+2026-11-19T11:12:23.7470334Z 
+2026-11-19T11:12:23.7470345Z 
+2026-11-19T11:12:23.7470740Z  One of the configured repositories failed (CentOS-7 - Base),
+2026-11-19T11:12:23.7471395Z  and yum doesn't have enough cached data to continue. At this point the only
+2026-11-19T11:12:23.7472333Z  safe thing yum can do is fail. There are a few ways to work "fix" this:
+2026-11-19T11:12:23.7472964Z 
+2026-11-19T11:12:23.7473250Z      1. Contact the upstream for the repository and get them to fix the problem.
+2026-11-19T11:12:23.7473662Z 
+2026-11-19T11:12:23.7473937Z      2. Reconfigure the baseurl/etc. for the repository, to point to a working
+2026-11-19T11:12:23.7474553Z         upstream. This is most often useful if you are using a newer
+2026-11-19T11:12:23.7475144Z         distribution release than is supported by the repository (and the
+2026-11-19T11:12:23.7475832Z         packages for the previous distribution release still work).
+2026-11-19T11:12:23.7476178Z 
+2026-11-19T11:12:23.7476391Z      3. Run the command with the repository temporarily disabled
+2026-11-19T11:12:23.7476864Z             yum --disablerepo=base ...
+2026-11-19T11:12:23.7477104Z 
+2026-11-19T11:12:23.7477733Z      4. Disable the repository permanently, so yum won't use it by default. Yum
+2026-11-19T11:12:23.7478630Z         will then just ignore the repository until you permanently enable it
+2026-11-19T11:12:23.7479309Z         again or use --enablerepo for temporary usage:
+2026-11-19T11:12:23.7479747Z 
+2026-11-19T11:12:23.7480122Z             yum-config-manager --disable base
+2026-11-19T11:12:23.7482741Z         or
+2026-11-19T11:12:23.7483179Z             subscription-manager repos --disable=base
+2026-11-19T11:12:23.7483561Z 
+2026-11-19T11:12:23.7483911Z      5. Configure the failing repository to be skipped, if it is unavailable.
+2026-11-19T11:12:23.7484710Z         Note that yum will try to contact the repo. when it runs most commands,
+2026-11-19T11:12:23.7485464Z         so will have to try and fail each time (and thus. yum will be be much
+2026-11-19T11:12:23.7486218Z         slower). If it is a very temporary problem though, this is often a nice
+2026-11-19T11:12:23.7486812Z         compromise:
+2026-11-19T11:12:23.7487024Z 
+2026-11-19T11:12:23.7487338Z             yum-config-manager --save --setopt=base.skip_if_unavailable=true
+2026-11-19T11:12:23.7487803Z 
+2026-11-19T11:12:23.7488157Z failure: repodata/repomd.xml from base: [Errno 256] No more mirrors to try.
+2026-11-19T11:12:23.7489410Z https://vault.centos.org/altarch/7/os/i386/repodata/repomd.xml: [Errno 14] curl#6 - "Could not resolve host: vault.centos.org; Name or service not known"
+2026-11-19T11:12:23.8525212Z Error: The process '/usr/bin/docker' failed with exit code 1
+2026-11-19T11:12:23.8526528Z     at ExecState._setResult (file:///home/runner/work/_actions/PyO3/maturin-action/e83996d129638aa358a18fbd1dfb82f0b0fb5d3b/dist/index.js:45748:25)
+2026-11-19T11:12:23.8528341Z     at ExecState.CheckComplete (file:///home/runner/work/_actions/PyO3/maturin-action/e83996d129638aa358a18fbd1dfb82f0b0fb5d3b/dist/index.js:45731:18)
+2026-11-19T11:12:23.8530022Z     at ChildProcess.<anonymous> (file:///home/runner/work/_actions/PyO3/maturin-action/e83996d129638aa358a18fbd1dfb82f0b0fb5d3b/dist/index.js:45627:27)
+2026-11-19T11:12:23.8531119Z     at ChildProcess.emit (node:events:514:28)
+2026-11-19T11:12:23.8531614Z     at maybeClose (node:internal/child_process:1172:16)
+2026-11-19T11:12:23.8532478Z     at ChildProcess._handle.onexit (node:internal/child_process:335:5)
+2026-11-19T11:12:23.8554907Z ##[error]The process '/usr/bin/docker' failed with exit code 1
+2026-11-19T11:12:23.8732398Z Post job cleanup.
+2026-11-19T11:12:23.9607642Z [command]/usr/bin/git version
+2026-11-19T11:12:23.9648173Z git version 2.56.1
+2026-11-19T11:12:23.9683182Z Temporarily overriding HOME='/home/runner/work/_temp/e71f7045-fa98-41ba-84cc-42006c4f821e' before making global git config changes
+2026-11-19T11:12:23.9684770Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-19T11:12:23.9688842Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/pydantic/pydantic
+2026-11-19T11:12:23.9721997Z Removing SSH command configuration
+2026-11-19T11:12:23.9728202Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-19T11:12:23.9764235Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-19T11:12:24.0044629Z Removing HTTP extra header
+2026-11-19T11:12:24.0049921Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-19T11:12:24.0085475Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-19T11:12:24.0358758Z Removing includeIf entries pointing to credentials config files
+2026-11-19T11:12:24.0364581Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-19T11:12:24.0397353Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-19T11:12:24.0847189Z Cleaning up orphan processes

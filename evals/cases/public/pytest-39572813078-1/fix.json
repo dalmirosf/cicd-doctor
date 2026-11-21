@@ -1,0 +1,39 @@
+{
+  "sha": "4088e1a84ef1cb8ba80aac4e75449459fc092c12",
+  "pairing": "H1",
+  "commits": 3,
+  "files_total": 6,
+  "files": [
+    {
+      "path": "AUTHORS",
+      "additions": 1,
+      "deletions": 0
+    },
+    {
+      "path": "changelog/7323.deprecation.rst",
+      "additions": 1,
+      "deletions": 0
+    },
+    {
+      "path": "doc/en/deprecations.rst",
+      "additions": 11,
+      "deletions": 0
+    },
+    {
+      "path": "src/_pytest/deprecated.py",
+      "additions": 6,
+      "deletions": 0
+    },
+    {
+      "path": "src/_pytest/terminal.py",
+      "additions": 2,
+      "deletions": 0
+    },
+    {
+      "path": "testing/deprecated_test.py",
+      "additions": 13,
+      "deletions": 0
+    }
+  ],
+  "summary": "3 commit(s), 6 file(s), +34/-0"
+}

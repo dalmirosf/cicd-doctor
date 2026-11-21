@@ -1,0 +1,509 @@
+﻿2026-08-29T15:18:23.3801599Z Current runner version: '2.336.0'
+2026-08-29T15:18:23.3827301Z ##[group]Runner Image Provisioner
+2026-08-29T15:18:23.3828174Z Hosted Compute Agent
+2026-08-29T15:18:23.3828909Z Version: 20260819.586
+2026-08-29T15:18:23.3829604Z Commit: 3cc4a88dfa507ef76119ad1bb3eccc6378bb2b76
+2026-08-29T15:18:23.3830321Z Build Date: 2026-08-18T23:20:18Z
+2026-08-29T15:18:23.3831433Z Worker ID: {f3e3cf30-1486-4bd0-95ef-688870ebf66c}
+2026-08-29T15:18:23.3832350Z Azure Region: westus
+2026-08-29T15:18:23.3832989Z ##[endgroup]
+2026-08-29T15:18:23.3834701Z ##[group]Operating System
+2026-08-29T15:18:23.3835351Z Ubuntu
+2026-08-29T15:18:23.3835956Z 24.04.4
+2026-08-29T15:18:23.3836467Z LTS
+2026-08-29T15:18:23.3837055Z ##[endgroup]
+2026-08-29T15:18:23.3837660Z ##[group]Runner Image
+2026-08-29T15:18:23.3838239Z Image: ubuntu-24.04
+2026-08-29T15:18:23.3838870Z Version: 20260823.283.1
+2026-08-29T15:18:23.3840118Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260823.283/images/ubuntu/Ubuntu2404-Readme.md
+2026-08-29T15:18:23.3841970Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260823.283
+2026-08-29T15:18:23.3842953Z ##[endgroup]
+2026-08-29T15:18:23.3845865Z ##[group]GITHUB_TOKEN Permissions
+2026-08-29T15:18:23.3848009Z Actions: read
+2026-08-29T15:18:23.3848812Z ArtifactMetadata: read
+2026-08-29T15:18:23.3849433Z Attestations: read
+2026-08-29T15:18:23.3850043Z Checks: read
+2026-08-29T15:18:23.3850616Z CodeQuality: read
+2026-08-29T15:18:23.3851760Z Contents: read
+2026-08-29T15:18:23.3852584Z Deployments: read
+2026-08-29T15:18:23.3853330Z Discussions: read
+2026-08-29T15:18:23.3853888Z Drives: read
+2026-08-29T15:18:23.3854511Z Issues: read
+2026-08-29T15:18:23.3855043Z Metadata: read
+2026-08-29T15:18:23.3855697Z Models: read
+2026-08-29T15:18:23.3856388Z Packages: read
+2026-08-29T15:18:23.3856922Z Pages: read
+2026-08-29T15:18:23.3857532Z PullRequests: read
+2026-08-29T15:18:23.3858106Z RepositoryProjects: read
+2026-08-29T15:18:23.3858803Z SecurityEvents: read
+2026-08-29T15:18:23.3859415Z Statuses: read
+2026-08-29T15:18:23.3859969Z VulnerabilityAlerts: read
+2026-08-29T15:18:23.3860614Z ##[endgroup]
+2026-08-29T15:18:23.3862985Z Secret source: None
+2026-08-29T15:18:23.3864153Z Prepare workflow directory
+2026-08-29T15:18:23.4828844Z Prepare all required actions
+2026-08-29T15:18:23.4887212Z Getting action download info
+2026-08-29T15:18:23.8412479Z Download action repository 'jaxxstorm/action-install-gh-release@v3.0.0' (SHA:25e24d2d23ae098373794ef1d6faecb48ee52da8)
+2026-08-29T15:18:24.8462444Z Download action repository 'actions/checkout@v7' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+2026-08-29T15:18:25.1137866Z Download action repository 'clowdhaus/terraform-min-max@v3.0.1' (SHA:5e40f8cf535d84fbd031571abd363ffd81dbfbfc)
+2026-08-29T15:18:25.3774654Z Download action repository 'clowdhaus/terraform-composite-actions@v1.14.0' (SHA:462243b714d762cbcac6732098e9fdb4ab236cb7)
+2026-08-29T15:18:25.7864340Z Complete job name: Min TF pre-commit (./examples/ipv6-only)
+2026-08-29T15:18:25.8604880Z ##[group]Run jaxxstorm/action-install-gh-release@v3.0.0
+2026-08-29T15:18:25.8605664Z with:
+2026-08-29T15:18:25.8605943Z   repo: SUPERCILEX/fuc
+2026-08-29T15:18:25.8606269Z   asset-name: x86_64-unknown-linux-gnu-rmz
+2026-08-29T15:18:25.8606609Z   rename-to: rmz
+2026-08-29T15:18:25.8606865Z   chmod: 755
+2026-08-29T15:18:25.8607135Z   extension-matching: disable
+2026-08-29T15:18:25.8609739Z   token: ***
+2026-08-29T15:18:25.8609999Z   tag: latest
+2026-08-29T15:18:25.8610263Z   prerelease: false
+2026-08-29T15:18:25.8610730Z env:
+2026-08-29T15:18:25.8611012Z   TERRAFORM_DOCS_VERSION: v0.24.0
+2026-08-29T15:18:25.8611553Z   TFLINT_VERSION: v0.64.0
+2026-08-29T15:18:25.8611840Z ##[endgroup]
+2026-08-29T15:18:25.9937975Z ==> System reported platform: linux
+2026-08-29T15:18:25.9938741Z ==> Using platform: linux
+2026-08-29T15:18:25.9939251Z ==> System reported arch: x64
+2026-08-29T15:18:25.9939772Z ==> Using arch: x64
+2026-08-29T15:18:25.9940242Z ==> File extension matching disabled
+2026-08-29T15:18:25.9940865Z ==> Will rename downloaded release to rmz
+2026-08-29T15:18:25.9942247Z ==> Will chmod downloaded release asset to 755
+2026-08-29T15:18:25.9943278Z ==> Binaries will be located at: /opt/hostedtoolcache/SUPERCILEX/x86_64-unknown-linux-gnu-rmz/latest/linux-x64
+2026-08-29T15:18:26.2758331Z checking for arch/vendor/os/glibc triple matches for (normalized) asset [aarch64-apple-darwin-cpz]
+2026-08-29T15:18:26.2783554Z checking for arch/vendor/os/glibc triple matches for (normalized) asset [aarch64-apple-darwin-rmz]
+2026-08-29T15:18:26.2785967Z checking for arch/vendor/os/glibc triple matches for (normalized) asset [aarch64-pc-windows-msvc-cpz.exe]
+2026-08-29T15:18:26.2788679Z checking for arch/vendor/os/glibc triple matches for (normalized) asset [aarch64-pc-windows-msvc-rmz.exe]
+2026-08-29T15:18:26.2791561Z checking for arch/vendor/os/glibc triple matches for (normalized) asset [aarch64-unknown-linux-gnu-cpz]
+2026-08-29T15:18:26.2793808Z checking for arch/vendor/os/glibc triple matches for (normalized) asset [aarch64-unknown-linux-gnu-rmz]
+2026-08-29T15:18:26.2796131Z checking for arch/vendor/os/glibc triple matches for (normalized) asset [riscv64gc-unknown-linux-gnu-cpz]
+2026-08-29T15:18:26.2798420Z checking for arch/vendor/os/glibc triple matches for (normalized) asset [riscv64gc-unknown-linux-gnu-rmz]
+2026-08-29T15:18:26.2800525Z checking for arch/vendor/os/glibc triple matches for (normalized) asset [x86_64-apple-darwin-cpz]
+2026-08-29T15:18:26.2802965Z checking for arch/vendor/os/glibc triple matches for (normalized) asset [x86_64-apple-darwin-rmz]
+2026-08-29T15:18:26.2805168Z checking for arch/vendor/os/glibc triple matches for (normalized) asset [x86_64-pc-windows-msvc-cpz.exe]
+2026-08-29T15:18:26.2807441Z checking for arch/vendor/os/glibc triple matches for (normalized) asset [x86_64-pc-windows-msvc-rmz.exe]
+2026-08-29T15:18:26.2809652Z checking for arch/vendor/os/glibc triple matches for (normalized) asset [x86_64-unknown-linux-gnu-cpz]
+2026-08-29T15:18:26.2811838Z checking for arch/vendor/os/glibc triple matches for (normalized) asset [x86_64-unknown-linux-gnu-rmz]
+2026-08-29T15:18:26.2812964Z artifact matched: x86_64-unknown-linux-gnu-rmz
+2026-08-29T15:18:26.2814265Z Downloading x86_64-unknown-linux-gnu-rmz from https://api.github.com/repos/SUPERCILEX/fuc/releases/assets/475472351
+2026-08-29T15:18:26.5305108Z Release asset x86_64-unknown-linux-gnu-rmz did not have a recognised file extension, unable to automatically extract it
+2026-08-29T15:18:26.5306784Z Created output directory /opt/hostedtoolcache/SUPERCILEX/x86_64-unknown-linux-gnu-rmz/latest/linux-x64
+2026-08-29T15:18:26.5308640Z Moved release asset x86_64-unknown-linux-gnu-rmz to /opt/hostedtoolcache/SUPERCILEX/x86_64-unknown-linux-gnu-rmz/latest/linux-x64/rmz
+2026-08-29T15:18:26.5310297Z chmod'd /opt/hostedtoolcache/SUPERCILEX/x86_64-unknown-linux-gnu-rmz/latest/linux-x64/rmz to 755
+2026-08-29T15:18:26.5311879Z Adding /opt/hostedtoolcache/SUPERCILEX/x86_64-unknown-linux-gnu-rmz/latest/linux-x64 to the path
+2026-08-29T15:18:26.5313294Z Successfully installed x86_64-unknown-linux-gnu-rmz
+2026-08-29T15:18:26.5314399Z Binaries available at /opt/hostedtoolcache/SUPERCILEX/x86_64-unknown-linux-gnu-rmz/latest/linux-x64
+2026-08-29T15:18:26.5507875Z ##[group]Run formatByteCount() { echo $(numfmt --to=iec-i --suffix=B --padding=7 $1'000'); }
+2026-08-29T15:18:26.5508689Z formatByteCount() { echo $(numfmt --to=iec-i --suffix=B --padding=7 $1'000'); }
+2026-08-29T15:18:26.5509364Z getAvailableSpace() { echo $(df -a $1 | awk 'NR > 1 {avail+=$4} END {print avail}'); }
+2026-08-29T15:18:26.5509865Z 
+2026-08-29T15:18:26.5510138Z BEFORE=$(getAvailableSpace)
+2026-08-29T15:18:26.5510457Z 
+2026-08-29T15:18:26.5510982Z ln -s /opt/hostedtoolcache/SUPERCILEX/x86_64-unknown-linux-gnu-rmz/latest/linux-x64/rmz /usr/local/bin/rmz
+2026-08-29T15:18:26.5511955Z rmz -f /opt/hostedtoolcache/CodeQL &
+2026-08-29T15:18:26.5512404Z rmz -f /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk &
+2026-08-29T15:18:26.5512836Z rmz -f /opt/hostedtoolcache/PyPy &
+2026-08-29T15:18:26.5513437Z rmz -f /opt/hostedtoolcache/Ruby &
+2026-08-29T15:18:26.5513843Z rmz -f /opt/hostedtoolcache/go &
+2026-08-29T15:18:26.5514167Z 
+2026-08-29T15:18:26.5514402Z wait
+2026-08-29T15:18:26.5514645Z 
+2026-08-29T15:18:26.5514903Z AFTER=$(getAvailableSpace)
+2026-08-29T15:18:26.5515239Z SAVED=$((AFTER-BEFORE))
+2026-08-29T15:18:26.5515598Z echo "=> Saved $(formatByteCount $SAVED)"
+2026-08-29T15:18:26.5558794Z shell: /usr/bin/bash -e {0}
+2026-08-29T15:18:26.5559136Z env:
+2026-08-29T15:18:26.5559412Z   TERRAFORM_DOCS_VERSION: v0.24.0
+2026-08-29T15:18:26.5559759Z   TFLINT_VERSION: v0.64.0
+2026-08-29T15:18:26.5560042Z ##[endgroup]
+2026-08-29T15:18:28.2060336Z => Saved 3.3GiB
+2026-08-29T15:18:28.2214186Z ##[group]Run actions/checkout@v7
+2026-08-29T15:18:28.2214560Z with:
+2026-08-29T15:18:28.2214874Z   repository: terraform-aws-modules/terraform-aws-vpc
+2026-08-29T15:18:28.2217525Z   token: ***
+2026-08-29T15:18:28.2217798Z   ssh-strict: true
+2026-08-29T15:18:28.2218053Z   ssh-user: git
+2026-08-29T15:18:28.2218313Z   persist-credentials: true
+2026-08-29T15:18:28.2218602Z   clean: true
+2026-08-29T15:18:28.2218868Z   sparse-checkout-cone-mode: true
+2026-08-29T15:18:28.2219169Z   fetch-depth: 1
+2026-08-29T15:18:28.2219413Z   fetch-tags: false
+2026-08-29T15:18:28.2219664Z   show-progress: true
+2026-08-29T15:18:28.2219918Z   lfs: false
+2026-08-29T15:18:28.2220154Z   submodules: false
+2026-08-29T15:18:28.2220414Z   set-safe-directory: true
+2026-08-29T15:18:28.2220712Z   allow-unsafe-pr-checkout: false
+2026-08-29T15:18:28.2221003Z env:
+2026-08-29T15:18:28.2221556Z   TERRAFORM_DOCS_VERSION: v0.24.0
+2026-08-29T15:18:28.2221901Z   TFLINT_VERSION: v0.64.0
+2026-08-29T15:18:28.2222223Z ##[endgroup]
+2026-08-29T15:18:28.3326086Z Syncing repository: terraform-aws-modules/terraform-aws-vpc
+2026-08-29T15:18:28.3328240Z ##[group]Getting Git version info
+2026-08-29T15:18:28.3329060Z Working directory is '/home/runner/work/terraform-aws-vpc/terraform-aws-vpc'
+2026-08-29T15:18:28.3330230Z [command]/usr/bin/git version
+2026-08-29T15:18:28.3430880Z git version 2.55.0
+2026-08-29T15:18:28.3462143Z ##[endgroup]
+2026-08-29T15:18:28.3477219Z Temporarily overriding HOME='/home/runner/work/_temp/62278324-4002-4472-ae10-0684a89fda9f' before making global git config changes
+2026-08-29T15:18:28.3478896Z Adding repository directory to the temporary git global config as a safe directory
+2026-08-29T15:18:28.3486748Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/terraform-aws-vpc/terraform-aws-vpc
+2026-08-29T15:18:28.3553826Z Deleting the contents of '/home/runner/work/terraform-aws-vpc/terraform-aws-vpc'
+2026-08-29T15:18:28.3558361Z ##[group]Determining repository object format
+2026-08-29T15:18:28.3560560Z ##[endgroup]
+2026-08-29T15:18:28.3561883Z ##[group]Initializing the repository
+2026-08-29T15:18:28.3566403Z [command]/usr/bin/git init /home/runner/work/terraform-aws-vpc/terraform-aws-vpc
+2026-08-29T15:18:28.3722935Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-08-29T15:18:28.3724040Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-08-29T15:18:28.3725039Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-08-29T15:18:28.3725833Z hint: call:
+2026-08-29T15:18:28.3726219Z hint:
+2026-08-29T15:18:28.3726738Z hint: 	git config --global init.defaultBranch <name>
+2026-08-29T15:18:28.3727325Z hint:
+2026-08-29T15:18:28.3727892Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-08-29T15:18:28.3728861Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-08-29T15:18:28.3729771Z hint:
+2026-08-29T15:18:28.3730212Z hint: 	git branch -m <name>
+2026-08-29T15:18:28.3730725Z hint:
+2026-08-29T15:18:28.3731598Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-08-29T15:18:28.3732871Z Initialized empty Git repository in /home/runner/work/terraform-aws-vpc/terraform-aws-vpc/.git/
+2026-08-29T15:18:28.3742471Z [command]/usr/bin/git remote add origin https://github.com/terraform-aws-modules/terraform-aws-vpc
+2026-08-29T15:18:28.3810661Z ##[endgroup]
+2026-08-29T15:18:28.3812189Z ##[group]Disabling automatic garbage collection
+2026-08-29T15:18:28.3815814Z [command]/usr/bin/git config --local gc.auto 0
+2026-08-29T15:18:28.3878002Z ##[endgroup]
+2026-08-29T15:18:28.3879158Z ##[group]Setting up auth
+2026-08-29T15:18:28.3879812Z Removing SSH command configuration
+2026-08-29T15:18:28.3880944Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-08-29T15:18:28.3933597Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-08-29T15:18:28.4612635Z Removing HTTP extra header
+2026-08-29T15:18:28.4617422Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-08-29T15:18:28.4676278Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-08-29T15:18:28.5012921Z Removing includeIf entries pointing to credentials config files
+2026-08-29T15:18:28.5015901Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-08-29T15:18:28.5067216Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-08-29T15:18:28.5352772Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-9ee7028d-6821-4c35-be38-b53c484d7ece.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-08-29T15:18:28.5405670Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/terraform-aws-vpc/terraform-aws-vpc/.git.path /home/runner/work/_temp/git-credentials-9ee7028d-6821-4c35-be38-b53c484d7ece.config
+2026-08-29T15:18:28.5456996Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/terraform-aws-vpc/terraform-aws-vpc/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-9ee7028d-6821-4c35-be38-b53c484d7ece.config
+2026-08-29T15:18:28.5506510Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-9ee7028d-6821-4c35-be38-b53c484d7ece.config
+2026-08-29T15:18:28.5556528Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-9ee7028d-6821-4c35-be38-b53c484d7ece.config
+2026-08-29T15:18:28.5597724Z ##[endgroup]
+2026-08-29T15:18:28.5598587Z ##[group]Fetching the repository
+2026-08-29T15:18:28.5608191Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +7d72711d4885bbbd054adb480751b5c3fb7e7187:refs/remotes/pull/1307/merge
+2026-08-29T15:18:29.2137636Z From https://github.com/terraform-aws-modules/terraform-aws-vpc
+2026-08-29T15:18:29.2138404Z  * [new ref]         7d72711d4885bbbd054adb480751b5c3fb7e7187 -> pull/1307/merge
+2026-08-29T15:18:29.2145848Z ##[endgroup]
+2026-08-29T15:18:29.2146574Z ##[group]Determining the checkout info
+2026-08-29T15:18:29.2150559Z ##[endgroup]
+2026-08-29T15:18:29.2157037Z [command]/usr/bin/git sparse-checkout disable
+2026-08-29T15:18:29.2225411Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-08-29T15:18:29.2268551Z ##[group]Checking out the ref
+2026-08-29T15:18:29.2278028Z [command]/usr/bin/git checkout --progress --force refs/remotes/pull/1307/merge
+2026-08-29T15:18:29.2493928Z Note: switching to 'refs/remotes/pull/1307/merge'.
+2026-08-29T15:18:29.2494463Z 
+2026-08-29T15:18:29.2494887Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-08-29T15:18:29.2495794Z changes and commit them, and you can discard any commits you make in this
+2026-08-29T15:18:29.2496948Z state without impacting any branches by switching back to a branch.
+2026-08-29T15:18:29.2497468Z 
+2026-08-29T15:18:29.2497864Z If you want to create a new branch to retain commits you create, you may
+2026-08-29T15:18:29.2498684Z do so (now or later) by using -c with the switch command. Example:
+2026-08-29T15:18:29.2499162Z 
+2026-08-29T15:18:29.2499360Z   git switch -c <new-branch-name>
+2026-08-29T15:18:29.2499701Z 
+2026-08-29T15:18:29.2499892Z Or undo this operation with:
+2026-08-29T15:18:29.2500198Z 
+2026-08-29T15:18:29.2500418Z   git switch -
+2026-08-29T15:18:29.2500688Z 
+2026-08-29T15:18:29.2501328Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-08-29T15:18:29.2501971Z 
+2026-08-29T15:18:29.2502959Z HEAD is now at 7d72711 Merge db6249ebcc9040d1afdf4ce2f7b90204e5532ffd into cf0e3ca46fd51f47bf095957f2a6ac6127c89045
+2026-08-29T15:18:29.2509475Z ##[endgroup]
+2026-08-29T15:18:29.2577403Z [command]/usr/bin/git log -1 --format=%H
+2026-08-29T15:18:29.2627612Z 7d72711d4885bbbd054adb480751b5c3fb7e7187
+2026-08-29T15:18:29.2851394Z ##[group]Run clowdhaus/terraform-min-max@v3.0.1
+2026-08-29T15:18:29.2852166Z with:
+2026-08-29T15:18:29.2852707Z   directory: ./examples/ipv6-only
+2026-08-29T15:18:29.2853352Z env:
+2026-08-29T15:18:29.2853765Z   TERRAFORM_DOCS_VERSION: v0.24.0
+2026-08-29T15:18:29.2854185Z   TFLINT_VERSION: v0.64.0
+2026-08-29T15:18:29.2854679Z ##[endgroup]
+2026-08-29T15:18:29.5875827Z ##[group]Run clowdhaus/terraform-composite-actions/pre-commit@v1.14.0
+2026-08-29T15:18:29.5876306Z with:
+2026-08-29T15:18:29.5876542Z   terraform-version: 1.0.0
+2026-08-29T15:18:29.5876834Z   tflint-version: v0.64.0
+2026-08-29T15:18:29.5877302Z   args: terraform_validate --color=always --show-diff-on-failure --files ./examples/ipv6-only/*
+2026-08-29T15:18:29.5877813Z   terraform-docs-version: v0.20.0
+2026-08-29T15:18:29.5878099Z   install-hcledit: false
+2026-08-29T15:18:29.5878357Z   hcledit-version: 0.2.17
+2026-08-29T15:18:29.5878599Z   install-tfsec: false
+2026-08-29T15:18:29.5878836Z   tfsec-version: 1.28.14
+2026-08-29T15:18:29.5879090Z   install-trivy: false
+2026-08-29T15:18:29.5879328Z   trivy-version: 0.65.0
+2026-08-29T15:18:29.5879566Z   parallelize-init: false
+2026-08-29T15:18:29.5879800Z env:
+2026-08-29T15:18:29.5880008Z   TERRAFORM_DOCS_VERSION: v0.24.0
+2026-08-29T15:18:29.5880275Z   TFLINT_VERSION: v0.64.0
+2026-08-29T15:18:29.5880507Z ##[endgroup]
+2026-08-29T15:18:29.5947110Z ##[start-action display=Determine OS and Architecture;id=__clowdhaus_terraform-composite-actions.os_arch]
+2026-08-29T15:18:29.5975331Z ##[group]Run os=$(uname -s | tr '[:upper:]' '[:lower:]')
+2026-08-29T15:18:29.5975815Z os=$(uname -s | tr '[:upper:]' '[:lower:]')
+2026-08-29T15:18:29.5976146Z case "$os" in
+2026-08-29T15:18:29.5976392Z     linux)
+2026-08-29T15:18:29.5976634Z         trivy_os="Linux"
+2026-08-29T15:18:29.5976948Z         rg_vendor_os="unknown-linux"
+2026-08-29T15:18:29.5977247Z         ;;
+2026-08-29T15:18:29.5977470Z     darwin)
+2026-08-29T15:18:29.5977723Z         trivy_os="macOS"
+2026-08-29T15:18:29.5978013Z         rg_vendor_os="apple-darwin"
+2026-08-29T15:18:29.5978304Z         ;;
+2026-08-29T15:18:29.5978525Z     windows)
+2026-08-29T15:18:29.5978765Z         trivy_os="Windows"
+2026-08-29T15:18:29.5979063Z         rg_vendor_os="pc-windows"
+2026-08-29T15:18:29.5979371Z         ;;
+2026-08-29T15:18:29.5979592Z esac
+2026-08-29T15:18:29.5979810Z 
+2026-08-29T15:18:29.5980017Z arch=$(uname -m)
+2026-08-29T15:18:29.5980269Z case $arch in
+2026-08-29T15:18:29.5980507Z     "x86_64")
+2026-08-29T15:18:29.5980748Z         arch="amd64"
+2026-08-29T15:18:29.5981011Z         trivy_arch="64bit"
+2026-08-29T15:18:29.5981460Z 
+2026-08-29T15:18:29.5981667Z         case $os in
+2026-08-29T15:18:29.5981917Z           linux)
+2026-08-29T15:18:29.5982206Z             rg_target="x86_64-unknown-linux-musl"
+2026-08-29T15:18:29.5982736Z             ;;
+2026-08-29T15:18:29.5982971Z           darwin)
+2026-08-29T15:18:29.5983249Z             rg_target="x86_64-apple-darwin"
+2026-08-29T15:18:29.5983554Z             ;;
+2026-08-29T15:18:29.5983789Z         esac
+2026-08-29T15:18:29.5984010Z 
+2026-08-29T15:18:29.5984213Z         ;;
+2026-08-29T15:18:29.5984442Z     "i386" | "i686")
+2026-08-29T15:18:29.5984693Z         arch="386"
+2026-08-29T15:18:29.5984951Z         trivy_arch="32bit"
+2026-08-29T15:18:29.5985219Z 
+2026-08-29T15:18:29.5985434Z         case $os in
+2026-08-29T15:18:29.5985679Z           linux)
+2026-08-29T15:18:29.5985957Z             rg_target="i386-unknown-linux-gnu"
+2026-08-29T15:18:29.5986270Z             ;;
+2026-08-29T15:18:29.5986503Z         esac
+2026-08-29T15:18:29.5986724Z 
+2026-08-29T15:18:29.5986927Z         ;;
+2026-08-29T15:18:29.5987154Z     "aarch64")
+2026-08-29T15:18:29.5987394Z         arch="arm64"
+2026-08-29T15:18:29.5987653Z         trivy_arch="ARM64"
+2026-08-29T15:18:29.5987958Z 
+2026-08-29T15:18:29.5988203Z         case $os in
+2026-08-29T15:18:29.5988453Z           linux)
+2026-08-29T15:18:29.5988915Z             rg_target="aarch64-unknown-linux-gnu"
+2026-08-29T15:18:29.5989245Z             ;;
+2026-08-29T15:18:29.5989479Z           darwin)
+2026-08-29T15:18:29.5989759Z             rg_target="aarch64-apple-darwin"
+2026-08-29T15:18:29.5990069Z             ;;
+2026-08-29T15:18:29.5990292Z         esac
+2026-08-29T15:18:29.5990508Z 
+2026-08-29T15:18:29.5990701Z         ;;
+2026-08-29T15:18:29.5990927Z     "armv7l")
+2026-08-29T15:18:29.5991392Z         arch="arm"
+2026-08-29T15:18:29.5991649Z         trivy_arch="ARM"
+2026-08-29T15:18:29.5991914Z 
+2026-08-29T15:18:29.5992132Z         case $os in
+2026-08-29T15:18:29.5992385Z           linux)
+2026-08-29T15:18:29.5992696Z             rg_target="armv7-unknown-linux-gnueabihf"
+2026-08-29T15:18:29.5993030Z             ;;
+2026-08-29T15:18:29.5993267Z         esac
+2026-08-29T15:18:29.5993496Z 
+2026-08-29T15:18:29.5993692Z         ;;
+2026-08-29T15:18:29.5993915Z esac
+2026-08-29T15:18:29.5994123Z 
+2026-08-29T15:18:29.5994337Z echo "OS=$os" >> $GITHUB_ENV
+2026-08-29T15:18:29.5994630Z echo "ARCH=$arch" >> $GITHUB_ENV
+2026-08-29T15:18:29.5994953Z echo "TRIVY_OS=$trivy_os" >> $GITHUB_ENV
+2026-08-29T15:18:29.5995308Z echo "TRIVY_ARCH=$trivy_arch" >> $GITHUB_ENV
+2026-08-29T15:18:29.5995671Z echo "RG_TARGET=$rg_target" >> $GITHUB_ENV
+2026-08-29T15:18:29.6034621Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-08-29T15:18:29.6035008Z env:
+2026-08-29T15:18:29.6035240Z   TERRAFORM_DOCS_VERSION: v0.24.0
+2026-08-29T15:18:29.6035524Z   TFLINT_VERSION: v0.64.0
+2026-08-29T15:18:29.6035774Z ##[endgroup]
+2026-08-29T15:18:29.6144530Z ##[end-action id=__clowdhaus_terraform-composite-actions.os_arch;outcome=success;conclusion=success;duration_ms=19]
+2026-08-29T15:18:29.6149044Z ##[start-action display=Install Terraform v1.0.0;id=__clowdhaus_terraform-composite-actions.__run]
+2026-08-29T15:18:29.6169353Z ##[group]Run rm -rf $(which terraform)
+2026-08-29T15:18:29.6169678Z rm -rf $(which terraform)
+2026-08-29T15:18:29.6170314Z curl --retry 3 --retry-all-errors --retry-delay 3 -sSO https://releases.hashicorp.com/terraform/1.0.0/terraform_1.0.0_linux_amd64.zip
+2026-08-29T15:18:29.6171365Z sudo unzip -qq terraform_1.0.0_linux_amd64.zip terraform -d /usr/bin/
+2026-08-29T15:18:29.6171888Z rm terraform_1.0.0_linux_amd64.zip 2> /dev/null
+2026-08-29T15:18:29.6209309Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-08-29T15:18:29.6209681Z env:
+2026-08-29T15:18:29.6209887Z   TERRAFORM_DOCS_VERSION: v0.24.0
+2026-08-29T15:18:29.6210148Z   TFLINT_VERSION: v0.64.0
+2026-08-29T15:18:29.6210384Z   OS: linux
+2026-08-29T15:18:29.6210579Z   ARCH: amd64
+2026-08-29T15:18:29.6210779Z   TRIVY_OS: Linux
+2026-08-29T15:18:29.6210981Z   TRIVY_ARCH: 64bit
+2026-08-29T15:18:29.6211507Z   RG_TARGET: x86_64-unknown-linux-musl
+2026-08-29T15:18:29.6211786Z ##[endgroup]
+2026-08-29T15:18:30.3140461Z ##[end-action id=__clowdhaus_terraform-composite-actions.__run;outcome=success;conclusion=success;duration_ms=699]
+2026-08-29T15:18:30.3144969Z ##[start-action display=Install pre-commit;id=__clowdhaus_terraform-composite-actions.__run_2]
+2026-08-29T15:18:30.3170560Z ##[group]Run mkdir -p ~/.venv
+2026-08-29T15:18:30.3170883Z mkdir -p ~/.venv
+2026-08-29T15:18:30.3171451Z python3 -m venv ~/.venv
+2026-08-29T15:18:30.3171751Z source ~/.venv/bin/activate
+2026-08-29T15:18:30.3172064Z pip install -q pre-commit
+2026-08-29T15:18:30.3209676Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-08-29T15:18:30.3210040Z env:
+2026-08-29T15:18:30.3210262Z   TERRAFORM_DOCS_VERSION: v0.24.0
+2026-08-29T15:18:30.3210541Z   TFLINT_VERSION: v0.64.0
+2026-08-29T15:18:30.3210793Z   OS: linux
+2026-08-29T15:18:30.3211000Z   ARCH: amd64
+2026-08-29T15:18:30.3211694Z   TRIVY_OS: Linux
+2026-08-29T15:18:30.3211928Z   TRIVY_ARCH: 64bit
+2026-08-29T15:18:30.3212172Z   RG_TARGET: x86_64-unknown-linux-musl
+2026-08-29T15:18:30.3212450Z ##[endgroup]
+2026-08-29T15:18:34.7523717Z ##[end-action id=__clowdhaus_terraform-composite-actions.__run_2;outcome=success;conclusion=success;duration_ms=4437]
+2026-08-29T15:18:34.7526837Z ##[start-action display=Install terraform-docs;id=__clowdhaus_terraform-composite-actions.__run_3]
+2026-08-29T15:18:34.7549804Z ##[group]Run curl --retry 3 --retry-all-errors --retry-delay 3 -sSLo ./terraform-docs.tar.gz https://github.com/terraform-docs/terraform-docs/releases/download/v0.20.0/terraform-docs-v0.20.0-linux-amd64.tar.gz
+2026-08-29T15:18:34.7551587Z curl --retry 3 --retry-all-errors --retry-delay 3 -sSLo ./terraform-docs.tar.gz https://github.com/terraform-docs/terraform-docs/releases/download/v0.20.0/terraform-docs-v0.20.0-linux-amd64.tar.gz
+2026-08-29T15:18:34.7552595Z sudo tar -xzf terraform-docs.tar.gz -C /usr/bin/ terraform-docs
+2026-08-29T15:18:34.7553040Z rm terraform-docs.tar.gz 2> /dev/null
+2026-08-29T15:18:34.7590472Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-08-29T15:18:34.7590818Z env:
+2026-08-29T15:18:34.7591026Z   TERRAFORM_DOCS_VERSION: v0.24.0
+2026-08-29T15:18:34.7591563Z   TFLINT_VERSION: v0.64.0
+2026-08-29T15:18:34.7591793Z   OS: linux
+2026-08-29T15:18:34.7591978Z   ARCH: amd64
+2026-08-29T15:18:34.7592168Z   TRIVY_OS: Linux
+2026-08-29T15:18:34.7592379Z   TRIVY_ARCH: 64bit
+2026-08-29T15:18:34.7592610Z   RG_TARGET: x86_64-unknown-linux-musl
+2026-08-29T15:18:34.7592887Z ##[endgroup]
+2026-08-29T15:18:35.0177214Z ##[end-action id=__clowdhaus_terraform-composite-actions.__run_3;outcome=success;conclusion=success;duration_ms=264]
+2026-08-29T15:18:35.0179814Z ##[start-action display=Install tflint;id=__clowdhaus_terraform-composite-actions.__run_4]
+2026-08-29T15:18:35.0200138Z ##[group]Run rm -rf $(which tflint)
+2026-08-29T15:18:35.0200476Z rm -rf $(which tflint)
+2026-08-29T15:18:35.0200719Z 
+2026-08-29T15:18:35.0200933Z if [[ "v0.64.0" == "latest" ]]; then
+2026-08-29T15:18:35.0202282Z   curl --retry 3 --retry-all-errors --retry-delay 3 -sSL "$(curl --retry 3 --retry-all-errors --retry-delay 3 -s https://api.github.com/repos/terraform-linters/tflint/releases/latest | grep -o -E "https://.+?_linux_amd64.zip")" > tflint.zip
+2026-08-29T15:18:35.0203268Z else
+2026-08-29T15:18:35.0203945Z   curl --retry 3 --retry-all-errors --retry-delay 3 -sSLo ./tflint.zip https://github.com/terraform-linters/tflint/releases/download/v0.64.0/tflint_linux_amd64.zip
+2026-08-29T15:18:35.0204893Z fi
+2026-08-29T15:18:35.0205146Z sudo unzip -qq tflint.zip tflint -d /usr/bin/
+2026-08-29T15:18:35.0205471Z rm tflint.zip 2> /dev/null
+2026-08-29T15:18:35.0242176Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-08-29T15:18:35.0242524Z env:
+2026-08-29T15:18:35.0242753Z   TERRAFORM_DOCS_VERSION: v0.24.0
+2026-08-29T15:18:35.0243049Z   TFLINT_VERSION: v0.64.0
+2026-08-29T15:18:35.0243273Z   OS: linux
+2026-08-29T15:18:35.0243458Z   ARCH: amd64
+2026-08-29T15:18:35.0243648Z   TRIVY_OS: Linux
+2026-08-29T15:18:35.0243852Z   TRIVY_ARCH: 64bit
+2026-08-29T15:18:35.0244087Z   RG_TARGET: x86_64-unknown-linux-musl
+2026-08-29T15:18:35.0244351Z ##[endgroup]
+2026-08-29T15:18:35.5646655Z ##[end-action id=__clowdhaus_terraform-composite-actions.__run_4;outcome=success;conclusion=success;duration_ms=546]
+2026-08-29T15:18:35.5649314Z ##[start-action display=Install hcledit;id=__clowdhaus_terraform-composite-actions.__run_5]
+2026-08-29T15:18:35.5659793Z ##[end-action id=__clowdhaus_terraform-composite-actions.__run_5;outcome=skipped;conclusion=skipped;duration_ms=0]
+2026-08-29T15:18:35.5662345Z ##[start-action display=Install tfsec;id=__clowdhaus_terraform-composite-actions.__run_6]
+2026-08-29T15:18:35.5666540Z ##[end-action id=__clowdhaus_terraform-composite-actions.__run_6;outcome=skipped;conclusion=skipped;duration_ms=0]
+2026-08-29T15:18:35.5668544Z ##[start-action display=Install trivy;id=__clowdhaus_terraform-composite-actions.__run_7]
+2026-08-29T15:18:35.5672338Z ##[end-action id=__clowdhaus_terraform-composite-actions.__run_7;outcome=skipped;conclusion=skipped;duration_ms=0]
+2026-08-29T15:18:35.5674371Z ##[start-action display=Initialize directories in parallel;id=__clowdhaus_terraform-composite-actions.__run_8]
+2026-08-29T15:18:35.5677837Z ##[end-action id=__clowdhaus_terraform-composite-actions.__run_8;outcome=skipped;conclusion=skipped;duration_ms=0]
+2026-08-29T15:18:35.5679737Z ##[start-action display=Execute pre-commit;id=__clowdhaus_terraform-composite-actions.__run_9]
+2026-08-29T15:18:35.5709635Z ##[group]Run source ~/.venv/bin/activate
+2026-08-29T15:18:35.5709956Z source ~/.venv/bin/activate
+2026-08-29T15:18:35.5710477Z pre-commit run terraform_validate --color=always --show-diff-on-failure --files ./examples/ipv6-only/*
+2026-08-29T15:18:35.5747338Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-08-29T15:18:35.5747686Z env:
+2026-08-29T15:18:35.5747889Z   TERRAFORM_DOCS_VERSION: v0.24.0
+2026-08-29T15:18:35.5748161Z   TFLINT_VERSION: v0.64.0
+2026-08-29T15:18:35.5748384Z   OS: linux
+2026-08-29T15:18:35.5748571Z   ARCH: amd64
+2026-08-29T15:18:35.5748760Z   TRIVY_OS: Linux
+2026-08-29T15:18:35.5748961Z   TRIVY_ARCH: 64bit
+2026-08-29T15:18:35.5749185Z   RG_TARGET: x86_64-unknown-linux-musl
+2026-08-29T15:18:35.5749443Z ##[endgroup]
+2026-08-29T15:18:35.7030565Z [INFO] Initializing environment for https://github.com/antonbabenko/pre-commit-terraform.
+2026-08-29T15:18:36.3389017Z [INFO] Initializing environment for https://github.com/pre-commit/pre-commit-hooks.
+2026-08-29T15:18:37.2250872Z Terraform validate.......................................................Failed
+2026-08-29T15:18:37.2252137Z - hook id: terraform_validate
+2026-08-29T15:18:37.2252639Z - exit code: 1
+2026-08-29T15:18:37.2252862Z 
+2026-08-29T15:18:37.2253510Z 'terraform init' failed, '/usr/bin/terraform validate' skipped: examples/ipv6-only
+2026-08-29T15:18:37.2254354Z Initializing modules...
+2026-08-29T15:18:37.2254746Z - disabled in ../..
+2026-08-29T15:18:37.2254974Z - vpc in ../..
+2026-08-29T15:18:37.2255404Z There are some problems with the configuration, described below.
+2026-08-29T15:18:37.2255723Z 
+2026-08-29T15:18:37.2255927Z The Terraform configuration must be valid before initialization so that
+2026-08-29T15:18:37.2256520Z Terraform can determine which modules and providers need to be installed.
+2026-08-29T15:18:37.2257212Z ╷
+2026-08-29T15:18:37.2258055Z │ Error: Unsupported argument
+2026-08-29T15:18:37.2258429Z │ 
+2026-08-29T15:18:37.2258960Z │   on ../../variables.tf line 1214, in variable "regional_nat_gateway_availability_zone_addresses":
+2026-08-29T15:18:37.2259553Z │ 1214:   nullable = false
+2026-08-29T15:18:37.2259885Z │ 
+2026-08-29T15:18:37.2260214Z │ An argument named "nullable" is not expected here.
+2026-08-29T15:18:37.2260577Z ╵
+2026-08-29T15:18:37.2260782Z 
+2026-08-29T15:18:37.2260994Z ╷
+2026-08-29T15:18:37.2261700Z │ Error: Unsupported argument
+2026-08-29T15:18:37.2262065Z │ 
+2026-08-29T15:18:37.2262568Z │   on ../../variables.tf line 1214, in variable "regional_nat_gateway_availability_zone_addresses":
+2026-08-29T15:18:37.2263141Z │ 1214:   nullable = false
+2026-08-29T15:18:37.2263466Z │ 
+2026-08-29T15:18:37.2263785Z │ An argument named "nullable" is not expected here.
+2026-08-29T15:18:37.2264139Z ╵
+2026-08-29T15:18:37.2264346Z 
+2026-08-29T15:18:37.2264555Z ╷
+2026-08-29T15:18:37.2264884Z │ Error: Unsupported argument
+2026-08-29T15:18:37.2265235Z │ 
+2026-08-29T15:18:37.2265821Z │   on ../../variables.tf line 1221, in variable "regional_nat_gateway_tags":
+2026-08-29T15:18:37.2266338Z │ 1221:   nullable    = false
+2026-08-29T15:18:37.2266649Z │ 
+2026-08-29T15:18:37.2266962Z │ An argument named "nullable" is not expected here.
+2026-08-29T15:18:37.2267312Z ╵
+2026-08-29T15:18:37.2267519Z 
+2026-08-29T15:18:37.2267724Z ╷
+2026-08-29T15:18:37.2268042Z │ Error: Unsupported argument
+2026-08-29T15:18:37.2268393Z │ 
+2026-08-29T15:18:37.2268797Z │   on ../../variables.tf line 1221, in variable "regional_nat_gateway_tags":
+2026-08-29T15:18:37.2269284Z │ 1221:   nullable    = false
+2026-08-29T15:18:37.2269584Z │ 
+2026-08-29T15:18:37.2269892Z │ An argument named "nullable" is not expected here.
+2026-08-29T15:18:37.2270229Z ╵
+2026-08-29T15:18:37.2270436Z 
+2026-08-29T15:18:37.2270544Z 
+2026-08-29T15:18:37.2433891Z ##[error]Process completed with exit code 1.
+2026-08-29T15:18:37.2441575Z ##[end-action id=__clowdhaus_terraform-composite-actions.__run_9;outcome=failure;conclusion=failure;duration_ms=1676]
+2026-08-29T15:18:37.2445437Z ##[start-action display=Cleanup venv;id=__clowdhaus_terraform-composite-actions.__run_10]
+2026-08-29T15:18:37.2448079Z ##[end-action id=__clowdhaus_terraform-composite-actions.__run_10;outcome=skipped;conclusion=skipped;duration_ms=0]
+2026-08-29T15:18:37.2569979Z Post job cleanup.
+2026-08-29T15:18:37.3456810Z [command]/usr/bin/git version
+2026-08-29T15:18:37.3503071Z git version 2.55.0
+2026-08-29T15:18:37.3545065Z Temporarily overriding HOME='/home/runner/work/_temp/a87461c8-211b-4fb7-8a2b-239b2bde33f3' before making global git config changes
+2026-08-29T15:18:37.3546552Z Adding repository directory to the temporary git global config as a safe directory
+2026-08-29T15:18:37.3551834Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/terraform-aws-vpc/terraform-aws-vpc
+2026-08-29T15:18:37.3587176Z Removing SSH command configuration
+2026-08-29T15:18:37.3595425Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-08-29T15:18:37.3633089Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-08-29T15:18:37.3883724Z Removing HTTP extra header
+2026-08-29T15:18:37.3888839Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-08-29T15:18:37.3935342Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-08-29T15:18:37.4194659Z Removing includeIf entries pointing to credentials config files
+2026-08-29T15:18:37.4201557Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-08-29T15:18:37.4238645Z includeif.gitdir:/home/runner/work/terraform-aws-vpc/terraform-aws-vpc/.git.path
+2026-08-29T15:18:37.4239537Z includeif.gitdir:/home/runner/work/terraform-aws-vpc/terraform-aws-vpc/.git/worktrees/*.path
+2026-08-29T15:18:37.4240401Z includeif.gitdir:/github/workspace/.git.path
+2026-08-29T15:18:37.4241417Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-08-29T15:18:37.4249518Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/terraform-aws-vpc/terraform-aws-vpc/.git.path
+2026-08-29T15:18:37.4302336Z /home/runner/work/_temp/git-credentials-9ee7028d-6821-4c35-be38-b53c484d7ece.config
+2026-08-29T15:18:37.4343727Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/terraform-aws-vpc/terraform-aws-vpc/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-9ee7028d\-6821\-4c35\-be38\-b53c484d7ece\.config
+2026-08-29T15:18:37.4372958Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/terraform-aws-vpc/terraform-aws-vpc/.git/worktrees/*.path
+2026-08-29T15:18:37.4418230Z /home/runner/work/_temp/git-credentials-9ee7028d-6821-4c35-be38-b53c484d7ece.config
+2026-08-29T15:18:37.4422553Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/terraform-aws-vpc/terraform-aws-vpc/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-9ee7028d\-6821\-4c35\-be38\-b53c484d7ece\.config
+2026-08-29T15:18:37.4483362Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-08-29T15:18:37.4514169Z /github/runner_temp/git-credentials-9ee7028d-6821-4c35-be38-b53c484d7ece.config
+2026-08-29T15:18:37.4524584Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-9ee7028d\-6821\-4c35\-be38\-b53c484d7ece\.config
+2026-08-29T15:18:37.4569207Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-08-29T15:18:37.4598758Z /github/runner_temp/git-credentials-9ee7028d-6821-4c35-be38-b53c484d7ece.config
+2026-08-29T15:18:37.4609139Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-9ee7028d\-6821\-4c35\-be38\-b53c484d7ece\.config
+2026-08-29T15:18:37.4654681Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-08-29T15:18:37.4878399Z Removing credentials config '/home/runner/work/_temp/git-credentials-9ee7028d-6821-4c35-be38-b53c484d7ece.config'
+2026-08-29T15:18:37.5018451Z Cleaning up orphan processes

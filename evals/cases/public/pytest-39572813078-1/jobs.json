@@ -1,0 +1,61 @@
+{
+  "total_count": 1,
+  "jobs": [
+    {
+      "id": 119130928172,
+      "run_id": 39572813078,
+      "run_attempt": 1,
+      "workflow_name": "uv in /. for certifi - Update #1642108423",
+      "name": "Dependabot",
+      "status": "completed",
+      "conclusion": "failure",
+      "started_at": "2026-10-21T08:54:25Z",
+      "completed_at": "2026-10-21T08:55:13Z",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-10-21T08:54:26Z",
+          "completed_at": "2026-10-21T08:54:26Z"
+        },
+        {
+          "name": "Create job directory",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-10-21T08:54:26Z",
+          "completed_at": "2026-10-21T08:54:26Z"
+        },
+        {
+          "name": "Run Dependabot",
+          "status": "completed",
+          "conclusion": "failure",
+          "number": 3,
+          "started_at": "2026-10-21T08:54:26Z",
+          "completed_at": "2026-10-21T08:55:11Z"
+        },
+        {
+          "name": "Post Run Dependabot",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-10-21T08:55:11Z",
+          "completed_at": "2026-10-21T08:55:12Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-10-21T08:55:12Z",
+          "completed_at": "2026-10-21T08:55:12Z"
+        }
+      ]
+    }
+  ]
+}

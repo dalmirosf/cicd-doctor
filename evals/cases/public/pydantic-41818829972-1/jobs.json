@@ -1,0 +1,117 @@
+{
+  "total_count": 1,
+  "jobs": [
+    {
+      "id": 126536465171,
+      "run_id": 41818829972,
+      "run_attempt": 1,
+      "workflow_name": "CI",
+      "name": "Test windows-latest / 3.15t",
+      "status": "completed",
+      "conclusion": "failure",
+      "started_at": "2026-11-04T11:08:09Z",
+      "completed_at": "2026-11-04T11:12:45Z",
+      "labels": [
+        "windows-latest"
+      ],
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-04T11:08:10Z",
+          "completed_at": "2026-11-04T11:08:11Z"
+        },
+        {
+          "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-04T11:08:11Z",
+          "completed_at": "2026-11-04T11:08:20Z"
+        },
+        {
+          "name": "Run astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-11-04T11:08:20Z",
+          "completed_at": "2026-11-04T11:08:25Z"
+        },
+        {
+          "name": "Install dependencies",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-11-04T11:08:25Z",
+          "completed_at": "2026-11-04T11:09:53Z"
+        },
+        {
+          "name": "Run uv run python -c \"import pydantic.version; print(pydantic.version.version_info())\"",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-11-04T11:09:53Z",
+          "completed_at": "2026-11-04T11:09:54Z"
+        },
+        {
+          "name": "Run mkdir coverage",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-11-04T11:09:54Z",
+          "completed_at": "2026-11-04T11:09:54Z"
+        },
+        {
+          "name": "Run pytest",
+          "status": "completed",
+          "conclusion": "failure",
+          "number": 7,
+          "started_at": "2026-11-04T11:09:54Z",
+          "completed_at": "2026-11-04T11:12:40Z"
+        },
+        {
+          "name": "Run pytest (no coverage)",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 8,
+          "started_at": "2026-11-04T11:12:40Z",
+          "completed_at": "2026-11-04T11:12:40Z"
+        },
+        {
+          "name": "Store coverage files",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 9,
+          "started_at": "2026-11-04T11:12:40Z",
+          "completed_at": "2026-11-04T11:12:40Z"
+        },
+        {
+          "name": "Post Run astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 17,
+          "started_at": "2026-11-04T11:12:40Z",
+          "completed_at": "2026-11-04T11:12:40Z"
+        },
+        {
+          "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 18,
+          "started_at": "2026-11-04T11:12:40Z",
+          "completed_at": "2026-11-04T11:12:42Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 19,
+          "started_at": "2026-11-04T11:12:42Z",
+          "completed_at": "2026-11-04T11:12:42Z"
+        }
+      ]
+    }
+  ]
+}

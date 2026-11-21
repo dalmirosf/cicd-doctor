@@ -1,0 +1,706 @@
+﻿2026-08-28T17:29:09.6387357Z Current runner version: '2.336.0'
+2026-08-28T17:29:09.6414173Z ##[group]Runner Image Provisioner
+2026-08-28T17:29:09.6415281Z Hosted Compute Agent
+2026-08-28T17:29:09.6415911Z Version: 20260819.586
+2026-08-28T17:29:09.6416582Z Commit: 3cc4a88dfa507ef76119ad1bb3eccc6378bb2b76
+2026-08-28T17:29:09.6417401Z Build Date: 2026-08-18T23:20:18Z
+2026-08-28T17:29:09.6418385Z Worker ID: {a0214dd9-5d8f-492a-a7e1-8923b651f4d6}
+2026-08-28T17:29:09.6419216Z Azure Region: centralus
+2026-08-28T17:29:09.6419830Z ##[endgroup]
+2026-08-28T17:29:09.6422051Z ##[group]Operating System
+2026-08-28T17:29:09.6422812Z Ubuntu
+2026-08-28T17:29:09.6423417Z 24.04.4
+2026-08-28T17:29:09.6424109Z LTS
+2026-08-28T17:29:09.6424731Z ##[endgroup]
+2026-08-28T17:29:09.6425303Z ##[group]Runner Image
+2026-08-28T17:29:09.6426045Z Image: ubuntu-24.04
+2026-08-28T17:29:09.6426640Z Version: 20260823.283.1
+2026-08-28T17:29:09.6427975Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260823.283/images/ubuntu/Ubuntu2404-Readme.md
+2026-08-28T17:29:09.6429527Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260823.283
+2026-08-28T17:29:09.6430697Z ##[endgroup]
+2026-08-28T17:29:09.6433498Z ##[group]GITHUB_TOKEN Permissions
+2026-08-28T17:29:09.6436499Z Actions: read
+2026-08-28T17:29:09.6437391Z ArtifactMetadata: read
+2026-08-28T17:29:09.6438013Z Attestations: read
+2026-08-28T17:29:09.6438719Z Checks: read
+2026-08-28T17:29:09.6439332Z CodeQuality: read
+2026-08-28T17:29:09.6439955Z Contents: read
+2026-08-28T17:29:09.6440514Z Deployments: read
+2026-08-28T17:29:09.6441062Z Discussions: read
+2026-08-28T17:29:09.6441785Z Drives: read
+2026-08-28T17:29:09.6442339Z Issues: read
+2026-08-28T17:29:09.6442910Z Metadata: read
+2026-08-28T17:29:09.6443479Z Models: read
+2026-08-28T17:29:09.6444340Z Packages: read
+2026-08-28T17:29:09.6445040Z Pages: read
+2026-08-28T17:29:09.6445593Z PullRequests: read
+2026-08-28T17:29:09.6446218Z RepositoryProjects: read
+2026-08-28T17:29:09.6446879Z SecurityEvents: read
+2026-08-28T17:29:09.6447468Z Statuses: read
+2026-08-28T17:29:09.6448113Z VulnerabilityAlerts: read
+2026-08-28T17:29:09.6448725Z ##[endgroup]
+2026-08-28T17:29:09.6451196Z Secret source: None
+2026-08-28T17:29:09.6452574Z Prepare workflow directory
+2026-08-28T17:29:09.6858642Z Prepare all required actions
+2026-08-28T17:29:09.6906466Z Getting action download info
+2026-08-28T17:29:09.9602577Z Download action repository 'jaxxstorm/action-install-gh-release@v3.0.0' (SHA:25e24d2d23ae098373794ef1d6faecb48ee52da8)
+2026-08-28T17:29:10.4771395Z Download action repository 'actions/checkout@v7' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+2026-08-28T17:29:10.5220433Z Download action repository 'clowdhaus/terraform-min-max@v3.0.1' (SHA:5e40f8cf535d84fbd031571abd363ffd81dbfbfc)
+2026-08-28T17:29:10.7846161Z Download action repository 'clowdhaus/terraform-composite-actions@v1.14.0' (SHA:462243b714d762cbcac6732098e9fdb4ab236cb7)
+2026-08-28T17:29:11.2279798Z Complete job name: Min TF pre-commit (./examples/network-firewall)
+2026-08-28T17:29:11.3113425Z ##[group]Run jaxxstorm/action-install-gh-release@v3.0.0
+2026-08-28T17:29:11.3114882Z with:
+2026-08-28T17:29:11.3115430Z   repo: SUPERCILEX/fuc
+2026-08-28T17:29:11.3116074Z   asset-name: x86_64-unknown-linux-gnu-rmz
+2026-08-28T17:29:11.3116788Z   rename-to: rmz
+2026-08-28T17:29:11.3117324Z   chmod: 755
+2026-08-28T17:29:11.3117881Z   extension-matching: disable
+2026-08-28T17:29:11.3122769Z   token: ***
+2026-08-28T17:29:11.3123305Z   tag: latest
+2026-08-28T17:29:11.3124017Z   prerelease: false
+2026-08-28T17:29:11.3124849Z env:
+2026-08-28T17:29:11.3125408Z   TERRAFORM_DOCS_VERSION: v0.24.0
+2026-08-28T17:29:11.3126096Z   TFLINT_VERSION: v0.64.0
+2026-08-28T17:29:11.3126715Z ##[endgroup]
+2026-08-28T17:29:11.4421307Z ==> System reported platform: linux
+2026-08-28T17:29:11.4422687Z ==> Using platform: linux
+2026-08-28T17:29:11.4423968Z ==> System reported arch: x64
+2026-08-28T17:29:11.4425040Z ==> Using arch: x64
+2026-08-28T17:29:11.4425997Z ==> File extension matching disabled
+2026-08-28T17:29:11.4426863Z ==> Will rename downloaded release to rmz
+2026-08-28T17:29:11.4428056Z ==> Will chmod downloaded release asset to 755
+2026-08-28T17:29:11.4429342Z ==> Binaries will be located at: /opt/hostedtoolcache/SUPERCILEX/x86_64-unknown-linux-gnu-rmz/latest/linux-x64
+2026-08-28T17:29:11.7073575Z checking for arch/vendor/os/glibc triple matches for (normalized) asset [aarch64-apple-darwin-cpz]
+2026-08-28T17:29:11.7104864Z checking for arch/vendor/os/glibc triple matches for (normalized) asset [aarch64-apple-darwin-rmz]
+2026-08-28T17:29:11.7112598Z checking for arch/vendor/os/glibc triple matches for (normalized) asset [aarch64-pc-windows-msvc-cpz.exe]
+2026-08-28T17:29:11.7120809Z checking for arch/vendor/os/glibc triple matches for (normalized) asset [aarch64-pc-windows-msvc-rmz.exe]
+2026-08-28T17:29:11.7129085Z checking for arch/vendor/os/glibc triple matches for (normalized) asset [aarch64-unknown-linux-gnu-cpz]
+2026-08-28T17:29:11.7136740Z checking for arch/vendor/os/glibc triple matches for (normalized) asset [aarch64-unknown-linux-gnu-rmz]
+2026-08-28T17:29:11.7144615Z checking for arch/vendor/os/glibc triple matches for (normalized) asset [riscv64gc-unknown-linux-gnu-cpz]
+2026-08-28T17:29:11.7152385Z checking for arch/vendor/os/glibc triple matches for (normalized) asset [riscv64gc-unknown-linux-gnu-rmz]
+2026-08-28T17:29:11.7165574Z checking for arch/vendor/os/glibc triple matches for (normalized) asset [x86_64-apple-darwin-cpz]
+2026-08-28T17:29:11.7173658Z checking for arch/vendor/os/glibc triple matches for (normalized) asset [x86_64-apple-darwin-rmz]
+2026-08-28T17:29:11.7182725Z checking for arch/vendor/os/glibc triple matches for (normalized) asset [x86_64-pc-windows-msvc-cpz.exe]
+2026-08-28T17:29:11.7191322Z checking for arch/vendor/os/glibc triple matches for (normalized) asset [x86_64-pc-windows-msvc-rmz.exe]
+2026-08-28T17:29:11.7199766Z checking for arch/vendor/os/glibc triple matches for (normalized) asset [x86_64-unknown-linux-gnu-cpz]
+2026-08-28T17:29:11.7209410Z checking for arch/vendor/os/glibc triple matches for (normalized) asset [x86_64-unknown-linux-gnu-rmz]
+2026-08-28T17:29:11.7214101Z artifact matched: x86_64-unknown-linux-gnu-rmz
+2026-08-28T17:29:11.7261098Z Downloading x86_64-unknown-linux-gnu-rmz from https://api.github.com/repos/SUPERCILEX/fuc/releases/assets/475472351
+2026-08-28T17:29:11.9921481Z Release asset x86_64-unknown-linux-gnu-rmz did not have a recognised file extension, unable to automatically extract it
+2026-08-28T17:29:11.9927433Z Created output directory /opt/hostedtoolcache/SUPERCILEX/x86_64-unknown-linux-gnu-rmz/latest/linux-x64
+2026-08-28T17:29:11.9933574Z Moved release asset x86_64-unknown-linux-gnu-rmz to /opt/hostedtoolcache/SUPERCILEX/x86_64-unknown-linux-gnu-rmz/latest/linux-x64/rmz
+2026-08-28T17:29:11.9940046Z chmod'd /opt/hostedtoolcache/SUPERCILEX/x86_64-unknown-linux-gnu-rmz/latest/linux-x64/rmz to 755
+2026-08-28T17:29:11.9945490Z Adding /opt/hostedtoolcache/SUPERCILEX/x86_64-unknown-linux-gnu-rmz/latest/linux-x64 to the path
+2026-08-28T17:29:11.9949839Z Successfully installed x86_64-unknown-linux-gnu-rmz
+2026-08-28T17:29:11.9954177Z Binaries available at /opt/hostedtoolcache/SUPERCILEX/x86_64-unknown-linux-gnu-rmz/latest/linux-x64
+2026-08-28T17:29:12.0171108Z ##[group]Run formatByteCount() { echo $(numfmt --to=iec-i --suffix=B --padding=7 $1'000'); }
+2026-08-28T17:29:12.0174254Z formatByteCount() { echo $(numfmt --to=iec-i --suffix=B --padding=7 $1'000'); }
+2026-08-28T17:29:12.0176939Z getAvailableSpace() { echo $(df -a $1 | awk 'NR > 1 {avail+=$4} END {print avail}'); }
+2026-08-28T17:29:12.0179412Z 
+2026-08-28T17:29:12.0180467Z BEFORE=$(getAvailableSpace)
+2026-08-28T17:29:12.0181738Z 
+2026-08-28T17:29:12.0184023Z ln -s /opt/hostedtoolcache/SUPERCILEX/x86_64-unknown-linux-gnu-rmz/latest/linux-x64/rmz /usr/local/bin/rmz
+2026-08-28T17:29:12.0186643Z rmz -f /opt/hostedtoolcache/CodeQL &
+2026-08-28T17:29:12.0188302Z rmz -f /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk &
+2026-08-28T17:29:12.0189967Z rmz -f /opt/hostedtoolcache/PyPy &
+2026-08-28T17:29:12.0191638Z rmz -f /opt/hostedtoolcache/Ruby &
+2026-08-28T17:29:12.0193087Z rmz -f /opt/hostedtoolcache/go &
+2026-08-28T17:29:12.0194532Z 
+2026-08-28T17:29:12.0195405Z wait
+2026-08-28T17:29:12.0196309Z 
+2026-08-28T17:29:12.0197264Z AFTER=$(getAvailableSpace)
+2026-08-28T17:29:12.0198507Z SAVED=$((AFTER-BEFORE))
+2026-08-28T17:29:12.0199827Z echo "=> Saved $(formatByteCount $SAVED)"
+2026-08-28T17:29:12.0246352Z shell: /usr/bin/bash -e {0}
+2026-08-28T17:29:12.0247473Z env:
+2026-08-28T17:29:12.0248393Z   TERRAFORM_DOCS_VERSION: v0.24.0
+2026-08-28T17:29:12.0249578Z   TFLINT_VERSION: v0.64.0
+2026-08-28T17:29:12.0250630Z ##[endgroup]
+2026-08-28T17:29:20.5470310Z => Saved 3.3GiB
+2026-08-28T17:29:20.5608078Z ##[group]Run actions/checkout@v7
+2026-08-28T17:29:20.5608464Z with:
+2026-08-28T17:29:20.5608794Z   repository: terraform-aws-modules/terraform-aws-vpc
+2026-08-28T17:29:20.5611618Z   token: ***
+2026-08-28T17:29:20.5611894Z   ssh-strict: true
+2026-08-28T17:29:20.5612170Z   ssh-user: git
+2026-08-28T17:29:20.5612452Z   persist-credentials: true
+2026-08-28T17:29:20.5612764Z   clean: true
+2026-08-28T17:29:20.5613047Z   sparse-checkout-cone-mode: true
+2026-08-28T17:29:20.5613370Z   fetch-depth: 1
+2026-08-28T17:29:20.5613636Z   fetch-tags: false
+2026-08-28T17:29:20.5614087Z   show-progress: true
+2026-08-28T17:29:20.5614364Z   lfs: false
+2026-08-28T17:29:20.5614634Z   submodules: false
+2026-08-28T17:29:20.5614935Z   set-safe-directory: true
+2026-08-28T17:29:20.5615258Z   allow-unsafe-pr-checkout: false
+2026-08-28T17:29:20.5615582Z env:
+2026-08-28T17:29:20.5615846Z   TERRAFORM_DOCS_VERSION: v0.24.0
+2026-08-28T17:29:20.5616171Z   TFLINT_VERSION: v0.64.0
+2026-08-28T17:29:20.5616500Z ##[endgroup]
+2026-08-28T17:29:20.6579549Z Syncing repository: terraform-aws-modules/terraform-aws-vpc
+2026-08-28T17:29:20.6581385Z ##[group]Getting Git version info
+2026-08-28T17:29:20.6581973Z Working directory is '/home/runner/work/terraform-aws-vpc/terraform-aws-vpc'
+2026-08-28T17:29:20.6582867Z [command]/usr/bin/git version
+2026-08-28T17:29:20.6619572Z git version 2.55.0
+2026-08-28T17:29:20.6643090Z ##[endgroup]
+2026-08-28T17:29:20.6654859Z Temporarily overriding HOME='/home/runner/work/_temp/15ea8da5-2ba9-48d2-af08-16ca70a0e520' before making global git config changes
+2026-08-28T17:29:20.6656374Z Adding repository directory to the temporary git global config as a safe directory
+2026-08-28T17:29:20.6661626Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/terraform-aws-vpc/terraform-aws-vpc
+2026-08-28T17:29:20.6714205Z Deleting the contents of '/home/runner/work/terraform-aws-vpc/terraform-aws-vpc'
+2026-08-28T17:29:20.6717899Z ##[group]Determining repository object format
+2026-08-28T17:29:20.6719928Z ##[endgroup]
+2026-08-28T17:29:20.6721273Z ##[group]Initializing the repository
+2026-08-28T17:29:20.6726092Z [command]/usr/bin/git init /home/runner/work/terraform-aws-vpc/terraform-aws-vpc
+2026-08-28T17:29:20.6844681Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-08-28T17:29:20.6845773Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-08-28T17:29:20.6846730Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-08-28T17:29:20.6847497Z hint: call:
+2026-08-28T17:29:20.6847904Z hint:
+2026-08-28T17:29:20.6848464Z hint: 	git config --global init.defaultBranch <name>
+2026-08-28T17:29:20.6849066Z hint:
+2026-08-28T17:29:20.6849666Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-08-28T17:29:20.6850611Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-08-28T17:29:20.6851336Z hint:
+2026-08-28T17:29:20.6851741Z hint: 	git branch -m <name>
+2026-08-28T17:29:20.6852232Z hint:
+2026-08-28T17:29:20.6852902Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-08-28T17:29:20.6854332Z Initialized empty Git repository in /home/runner/work/terraform-aws-vpc/terraform-aws-vpc/.git/
+2026-08-28T17:29:20.6860349Z [command]/usr/bin/git remote add origin https://github.com/terraform-aws-modules/terraform-aws-vpc
+2026-08-28T17:29:20.6939102Z ##[endgroup]
+2026-08-28T17:29:20.6939868Z ##[group]Disabling automatic garbage collection
+2026-08-28T17:29:20.6942053Z [command]/usr/bin/git config --local gc.auto 0
+2026-08-28T17:29:20.6974632Z ##[endgroup]
+2026-08-28T17:29:20.6975398Z ##[group]Setting up auth
+2026-08-28T17:29:20.6975952Z Removing SSH command configuration
+2026-08-28T17:29:20.6980961Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-08-28T17:29:20.7026201Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-08-28T17:29:20.7392326Z Removing HTTP extra header
+2026-08-28T17:29:20.7398227Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-08-28T17:29:20.7437528Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-08-28T17:29:20.7671391Z Removing includeIf entries pointing to credentials config files
+2026-08-28T17:29:20.7676526Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-08-28T17:29:20.7711990Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-08-28T17:29:20.7934561Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-1827c9cc-7d8c-44df-9ad6-9018271d6599.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-08-28T17:29:20.7973693Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/terraform-aws-vpc/terraform-aws-vpc/.git.path /home/runner/work/_temp/git-credentials-1827c9cc-7d8c-44df-9ad6-9018271d6599.config
+2026-08-28T17:29:20.8007486Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/terraform-aws-vpc/terraform-aws-vpc/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-1827c9cc-7d8c-44df-9ad6-9018271d6599.config
+2026-08-28T17:29:20.8044389Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-1827c9cc-7d8c-44df-9ad6-9018271d6599.config
+2026-08-28T17:29:20.8079066Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-1827c9cc-7d8c-44df-9ad6-9018271d6599.config
+2026-08-28T17:29:20.8109589Z ##[endgroup]
+2026-08-28T17:29:20.8110107Z ##[group]Fetching the repository
+2026-08-28T17:29:20.8116627Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +a6773c639bd49bdaef6ea55b67eebb7c7c10ef6c:refs/remotes/pull/1307/merge
+2026-08-28T17:29:21.2608026Z From https://github.com/terraform-aws-modules/terraform-aws-vpc
+2026-08-28T17:29:21.2608921Z  * [new ref]         a6773c639bd49bdaef6ea55b67eebb7c7c10ef6c -> pull/1307/merge
+2026-08-28T17:29:21.2615909Z ##[endgroup]
+2026-08-28T17:29:21.2616741Z ##[group]Determining the checkout info
+2026-08-28T17:29:21.2617490Z ##[endgroup]
+2026-08-28T17:29:21.2623109Z [command]/usr/bin/git sparse-checkout disable
+2026-08-28T17:29:21.2682512Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-08-28T17:29:21.2717074Z ##[group]Checking out the ref
+2026-08-28T17:29:21.2725134Z [command]/usr/bin/git checkout --progress --force refs/remotes/pull/1307/merge
+2026-08-28T17:29:21.2885502Z Note: switching to 'refs/remotes/pull/1307/merge'.
+2026-08-28T17:29:21.2886183Z 
+2026-08-28T17:29:21.2886557Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-08-28T17:29:21.2887834Z changes and commit them, and you can discard any commits you make in this
+2026-08-28T17:29:21.2889378Z state without impacting any branches by switching back to a branch.
+2026-08-28T17:29:21.2890126Z 
+2026-08-28T17:29:21.2890582Z If you want to create a new branch to retain commits you create, you may
+2026-08-28T17:29:21.2891576Z do so (now or later) by using -c with the switch command. Example:
+2026-08-28T17:29:21.2892207Z 
+2026-08-28T17:29:21.2892393Z   git switch -c <new-branch-name>
+2026-08-28T17:29:21.2892785Z 
+2026-08-28T17:29:21.2892965Z Or undo this operation with:
+2026-08-28T17:29:21.2893356Z 
+2026-08-28T17:29:21.2893521Z   git switch -
+2026-08-28T17:29:21.2894079Z 
+2026-08-28T17:29:21.2894475Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-08-28T17:29:21.2895005Z 
+2026-08-28T17:29:21.2895677Z HEAD is now at a6773c6 Merge f20ca85cef1f3cd7d8654a44ba3698701c29dcbf into cf0e3ca46fd51f47bf095957f2a6ac6127c89045
+2026-08-28T17:29:21.2901137Z ##[endgroup]
+2026-08-28T17:29:21.2966254Z [command]/usr/bin/git log -1 --format=%H
+2026-08-28T17:29:21.3006628Z a6773c639bd49bdaef6ea55b67eebb7c7c10ef6c
+2026-08-28T17:29:21.3191616Z ##[group]Run clowdhaus/terraform-min-max@v3.0.1
+2026-08-28T17:29:21.3192200Z with:
+2026-08-28T17:29:21.3192595Z   directory: ./examples/network-firewall
+2026-08-28T17:29:21.3193053Z env:
+2026-08-28T17:29:21.3193342Z   TERRAFORM_DOCS_VERSION: v0.24.0
+2026-08-28T17:29:21.3194053Z   TFLINT_VERSION: v0.64.0
+2026-08-28T17:29:21.3194501Z ##[endgroup]
+2026-08-28T17:29:21.6830160Z ##[group]Run clowdhaus/terraform-composite-actions/pre-commit@v1.14.0
+2026-08-28T17:29:21.6830593Z with:
+2026-08-28T17:29:21.6830816Z   terraform-version: 1.0.0
+2026-08-28T17:29:21.6831070Z   tflint-version: v0.64.0
+2026-08-28T17:29:21.6831529Z   args: terraform_validate --color=always --show-diff-on-failure --files ./examples/network-firewall/*
+2026-08-28T17:29:21.6832052Z   terraform-docs-version: v0.20.0
+2026-08-28T17:29:21.6832324Z   install-hcledit: false
+2026-08-28T17:29:21.6832562Z   hcledit-version: 0.2.17
+2026-08-28T17:29:21.6832793Z   install-tfsec: false
+2026-08-28T17:29:21.6833035Z   tfsec-version: 1.28.14
+2026-08-28T17:29:21.6833257Z   install-trivy: false
+2026-08-28T17:29:21.6833477Z   trivy-version: 0.65.0
+2026-08-28T17:29:21.6833721Z   parallelize-init: false
+2026-08-28T17:29:21.6834167Z env:
+2026-08-28T17:29:21.6834368Z   TERRAFORM_DOCS_VERSION: v0.24.0
+2026-08-28T17:29:21.6834631Z   TFLINT_VERSION: v0.64.0
+2026-08-28T17:29:21.6834857Z ##[endgroup]
+2026-08-28T17:29:21.6895448Z ##[start-action display=Determine OS and Architecture;id=__clowdhaus_terraform-composite-actions.os_arch]
+2026-08-28T17:29:21.6920021Z ##[group]Run os=$(uname -s | tr '[:upper:]' '[:lower:]')
+2026-08-28T17:29:21.6920469Z os=$(uname -s | tr '[:upper:]' '[:lower:]')
+2026-08-28T17:29:21.6920785Z case "$os" in
+2026-08-28T17:29:21.6921015Z     linux)
+2026-08-28T17:29:21.6921242Z         trivy_os="Linux"
+2026-08-28T17:29:21.6921531Z         rg_vendor_os="unknown-linux"
+2026-08-28T17:29:21.6921810Z         ;;
+2026-08-28T17:29:21.6922029Z     darwin)
+2026-08-28T17:29:21.6922245Z         trivy_os="macOS"
+2026-08-28T17:29:21.6922520Z         rg_vendor_os="apple-darwin"
+2026-08-28T17:29:21.6922797Z         ;;
+2026-08-28T17:29:21.6923005Z     windows)
+2026-08-28T17:29:21.6923238Z         trivy_os="Windows"
+2026-08-28T17:29:21.6923523Z         rg_vendor_os="pc-windows"
+2026-08-28T17:29:21.6923990Z         ;;
+2026-08-28T17:29:21.6924207Z esac
+2026-08-28T17:29:21.6924415Z 
+2026-08-28T17:29:21.6924615Z arch=$(uname -m)
+2026-08-28T17:29:21.6924864Z case $arch in
+2026-08-28T17:29:21.6925090Z     "x86_64")
+2026-08-28T17:29:21.6925319Z         arch="amd64"
+2026-08-28T17:29:21.6925572Z         trivy_arch="64bit"
+2026-08-28T17:29:21.6925826Z 
+2026-08-28T17:29:21.6926019Z         case $os in
+2026-08-28T17:29:21.6926253Z           linux)
+2026-08-28T17:29:21.6926701Z             rg_target="x86_64-unknown-linux-musl"
+2026-08-28T17:29:21.6927024Z             ;;
+2026-08-28T17:29:21.6927259Z           darwin)
+2026-08-28T17:29:21.6927529Z             rg_target="x86_64-apple-darwin"
+2026-08-28T17:29:21.6927823Z             ;;
+2026-08-28T17:29:21.6928041Z         esac
+2026-08-28T17:29:21.6928253Z 
+2026-08-28T17:29:21.6928439Z         ;;
+2026-08-28T17:29:21.6928651Z     "i386" | "i686")
+2026-08-28T17:29:21.6928885Z         arch="386"
+2026-08-28T17:29:21.6929123Z         trivy_arch="32bit"
+2026-08-28T17:29:21.6929375Z 
+2026-08-28T17:29:21.6929565Z         case $os in
+2026-08-28T17:29:21.6929800Z           linux)
+2026-08-28T17:29:21.6930061Z             rg_target="i386-unknown-linux-gnu"
+2026-08-28T17:29:21.6930354Z             ;;
+2026-08-28T17:29:21.6930569Z         esac
+2026-08-28T17:29:21.6930779Z 
+2026-08-28T17:29:21.6930962Z         ;;
+2026-08-28T17:29:21.6931168Z     "aarch64")
+2026-08-28T17:29:21.6931392Z         arch="arm64"
+2026-08-28T17:29:21.6931631Z         trivy_arch="ARM64"
+2026-08-28T17:29:21.6931904Z 
+2026-08-28T17:29:21.6932127Z         case $os in
+2026-08-28T17:29:21.6932517Z           linux)
+2026-08-28T17:29:21.6932796Z             rg_target="aarch64-unknown-linux-gnu"
+2026-08-28T17:29:21.6933106Z             ;;
+2026-08-28T17:29:21.6933324Z           darwin)
+2026-08-28T17:29:21.6933586Z             rg_target="aarch64-apple-darwin"
+2026-08-28T17:29:21.6934188Z             ;;
+2026-08-28T17:29:21.6934417Z         esac
+2026-08-28T17:29:21.6934628Z 
+2026-08-28T17:29:21.6934813Z         ;;
+2026-08-28T17:29:21.6935019Z     "armv7l")
+2026-08-28T17:29:21.6935423Z         arch="arm"
+2026-08-28T17:29:21.6935714Z         trivy_arch="ARM"
+2026-08-28T17:29:21.6935958Z 
+2026-08-28T17:29:21.6936162Z         case $os in
+2026-08-28T17:29:21.6936395Z           linux)
+2026-08-28T17:29:21.6936682Z             rg_target="armv7-unknown-linux-gnueabihf"
+2026-08-28T17:29:21.6937000Z             ;;
+2026-08-28T17:29:21.6937224Z         esac
+2026-08-28T17:29:21.6937430Z 
+2026-08-28T17:29:21.6937613Z         ;;
+2026-08-28T17:29:21.6937821Z esac
+2026-08-28T17:29:21.6938015Z 
+2026-08-28T17:29:21.6938213Z echo "OS=$os" >> $GITHUB_ENV
+2026-08-28T17:29:21.6938495Z echo "ARCH=$arch" >> $GITHUB_ENV
+2026-08-28T17:29:21.6938803Z echo "TRIVY_OS=$trivy_os" >> $GITHUB_ENV
+2026-08-28T17:29:21.6939137Z echo "TRIVY_ARCH=$trivy_arch" >> $GITHUB_ENV
+2026-08-28T17:29:21.6939481Z echo "RG_TARGET=$rg_target" >> $GITHUB_ENV
+2026-08-28T17:29:21.6978115Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-08-28T17:29:21.6978479Z env:
+2026-08-28T17:29:21.6978692Z   TERRAFORM_DOCS_VERSION: v0.24.0
+2026-08-28T17:29:21.6978960Z   TFLINT_VERSION: v0.64.0
+2026-08-28T17:29:21.6979189Z ##[endgroup]
+2026-08-28T17:29:21.7094772Z ##[end-action id=__clowdhaus_terraform-composite-actions.os_arch;outcome=success;conclusion=success;duration_ms=19]
+2026-08-28T17:29:21.7099890Z ##[start-action display=Install Terraform v1.0.0;id=__clowdhaus_terraform-composite-actions.__run]
+2026-08-28T17:29:21.7127350Z ##[group]Run rm -rf $(which terraform)
+2026-08-28T17:29:21.7127816Z rm -rf $(which terraform)
+2026-08-28T17:29:21.7128740Z curl --retry 3 --retry-all-errors --retry-delay 3 -sSO https://releases.hashicorp.com/terraform/1.0.0/terraform_1.0.0_linux_amd64.zip
+2026-08-28T17:29:21.7129821Z sudo unzip -qq terraform_1.0.0_linux_amd64.zip terraform -d /usr/bin/
+2026-08-28T17:29:21.7130522Z rm terraform_1.0.0_linux_amd64.zip 2> /dev/null
+2026-08-28T17:29:21.7176620Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-08-28T17:29:21.7177176Z env:
+2026-08-28T17:29:21.7177476Z   TERRAFORM_DOCS_VERSION: v0.24.0
+2026-08-28T17:29:21.7177893Z   TFLINT_VERSION: v0.64.0
+2026-08-28T17:29:21.7178248Z   OS: linux
+2026-08-28T17:29:21.7178508Z   ARCH: amd64
+2026-08-28T17:29:21.7178817Z   TRIVY_OS: Linux
+2026-08-28T17:29:21.7179145Z   TRIVY_ARCH: 64bit
+2026-08-28T17:29:21.7179476Z   RG_TARGET: x86_64-unknown-linux-musl
+2026-08-28T17:29:21.7179874Z ##[endgroup]
+2026-08-28T17:29:22.5697879Z ##[end-action id=__clowdhaus_terraform-composite-actions.__run;outcome=success;conclusion=success;duration_ms=859]
+2026-08-28T17:29:22.5700487Z ##[start-action display=Install pre-commit;id=__clowdhaus_terraform-composite-actions.__run_2]
+2026-08-28T17:29:22.5718501Z ##[group]Run mkdir -p ~/.venv
+2026-08-28T17:29:22.5718807Z mkdir -p ~/.venv
+2026-08-28T17:29:22.5719058Z python3 -m venv ~/.venv
+2026-08-28T17:29:22.5719331Z source ~/.venv/bin/activate
+2026-08-28T17:29:22.5719629Z pip install -q pre-commit
+2026-08-28T17:29:22.5756941Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-08-28T17:29:22.5757308Z env:
+2026-08-28T17:29:22.5757528Z   TERRAFORM_DOCS_VERSION: v0.24.0
+2026-08-28T17:29:22.5757809Z   TFLINT_VERSION: v0.64.0
+2026-08-28T17:29:22.5758046Z   OS: linux
+2026-08-28T17:29:22.5758236Z   ARCH: amd64
+2026-08-28T17:29:22.5758610Z   TRIVY_OS: Linux
+2026-08-28T17:29:22.5758831Z   TRIVY_ARCH: 64bit
+2026-08-28T17:29:22.5759066Z   RG_TARGET: x86_64-unknown-linux-musl
+2026-08-28T17:29:22.5759349Z ##[endgroup]
+2026-08-28T17:29:27.5918788Z ##[end-action id=__clowdhaus_terraform-composite-actions.__run_2;outcome=success;conclusion=success;duration_ms=5021]
+2026-08-28T17:29:27.5921386Z ##[start-action display=Install terraform-docs;id=__clowdhaus_terraform-composite-actions.__run_3]
+2026-08-28T17:29:27.5942388Z ##[group]Run curl --retry 3 --retry-all-errors --retry-delay 3 -sSLo ./terraform-docs.tar.gz https://github.com/terraform-docs/terraform-docs/releases/download/v0.20.0/terraform-docs-v0.20.0-linux-amd64.tar.gz
+2026-08-28T17:29:27.5944189Z curl --retry 3 --retry-all-errors --retry-delay 3 -sSLo ./terraform-docs.tar.gz https://github.com/terraform-docs/terraform-docs/releases/download/v0.20.0/terraform-docs-v0.20.0-linux-amd64.tar.gz
+2026-08-28T17:29:27.5945190Z sudo tar -xzf terraform-docs.tar.gz -C /usr/bin/ terraform-docs
+2026-08-28T17:29:27.5945616Z rm terraform-docs.tar.gz 2> /dev/null
+2026-08-28T17:29:27.5982132Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-08-28T17:29:27.5982492Z env:
+2026-08-28T17:29:27.5982702Z   TERRAFORM_DOCS_VERSION: v0.24.0
+2026-08-28T17:29:27.5982975Z   TFLINT_VERSION: v0.64.0
+2026-08-28T17:29:27.5983209Z   OS: linux
+2026-08-28T17:29:27.5983399Z   ARCH: amd64
+2026-08-28T17:29:27.5983596Z   TRIVY_OS: Linux
+2026-08-28T17:29:27.5984020Z   TRIVY_ARCH: 64bit
+2026-08-28T17:29:27.5984261Z   RG_TARGET: x86_64-unknown-linux-musl
+2026-08-28T17:29:27.5984548Z ##[endgroup]
+2026-08-28T17:29:28.0776631Z ##[end-action id=__clowdhaus_terraform-composite-actions.__run_3;outcome=success;conclusion=success;duration_ms=485]
+2026-08-28T17:29:28.0779240Z ##[start-action display=Install tflint;id=__clowdhaus_terraform-composite-actions.__run_4]
+2026-08-28T17:29:28.0807067Z ##[group]Run rm -rf $(which tflint)
+2026-08-28T17:29:28.0807601Z rm -rf $(which tflint)
+2026-08-28T17:29:28.0808033Z 
+2026-08-28T17:29:28.0808410Z if [[ "v0.64.0" == "latest" ]]; then
+2026-08-28T17:29:28.0810120Z   curl --retry 3 --retry-all-errors --retry-delay 3 -sSL "$(curl --retry 3 --retry-all-errors --retry-delay 3 -s https://api.github.com/repos/terraform-linters/tflint/releases/latest | grep -o -E "https://.+?_linux_amd64.zip")" > tflint.zip
+2026-08-28T17:29:28.0811788Z else
+2026-08-28T17:29:28.0812934Z   curl --retry 3 --retry-all-errors --retry-delay 3 -sSLo ./tflint.zip https://github.com/terraform-linters/tflint/releases/download/v0.64.0/tflint_linux_amd64.zip
+2026-08-28T17:29:28.0814748Z fi
+2026-08-28T17:29:28.0815210Z sudo unzip -qq tflint.zip tflint -d /usr/bin/
+2026-08-28T17:29:28.0815791Z rm tflint.zip 2> /dev/null
+2026-08-28T17:29:28.0869603Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-08-28T17:29:28.0870175Z env:
+2026-08-28T17:29:28.0870536Z   TERRAFORM_DOCS_VERSION: v0.24.0
+2026-08-28T17:29:28.0870988Z   TFLINT_VERSION: v0.64.0
+2026-08-28T17:29:28.0871442Z   OS: linux
+2026-08-28T17:29:28.0871759Z   ARCH: amd64
+2026-08-28T17:29:28.0872079Z   TRIVY_OS: Linux
+2026-08-28T17:29:28.0872417Z   TRIVY_ARCH: 64bit
+2026-08-28T17:29:28.0872798Z   RG_TARGET: x86_64-unknown-linux-musl
+2026-08-28T17:29:28.0873249Z ##[endgroup]
+2026-08-28T17:29:28.8208777Z ##[end-action id=__clowdhaus_terraform-composite-actions.__run_4;outcome=success;conclusion=success;duration_ms=742]
+2026-08-28T17:29:28.8211339Z ##[start-action display=Install hcledit;id=__clowdhaus_terraform-composite-actions.__run_5]
+2026-08-28T17:29:28.8222222Z ##[end-action id=__clowdhaus_terraform-composite-actions.__run_5;outcome=skipped;conclusion=skipped;duration_ms=0]
+2026-08-28T17:29:28.8224635Z ##[start-action display=Install tfsec;id=__clowdhaus_terraform-composite-actions.__run_6]
+2026-08-28T17:29:28.8228770Z ##[end-action id=__clowdhaus_terraform-composite-actions.__run_6;outcome=skipped;conclusion=skipped;duration_ms=0]
+2026-08-28T17:29:28.8230790Z ##[start-action display=Install trivy;id=__clowdhaus_terraform-composite-actions.__run_7]
+2026-08-28T17:29:28.8234642Z ##[end-action id=__clowdhaus_terraform-composite-actions.__run_7;outcome=skipped;conclusion=skipped;duration_ms=0]
+2026-08-28T17:29:28.8236753Z ##[start-action display=Initialize directories in parallel;id=__clowdhaus_terraform-composite-actions.__run_8]
+2026-08-28T17:29:28.8240320Z ##[end-action id=__clowdhaus_terraform-composite-actions.__run_8;outcome=skipped;conclusion=skipped;duration_ms=0]
+2026-08-28T17:29:28.8242246Z ##[start-action display=Execute pre-commit;id=__clowdhaus_terraform-composite-actions.__run_9]
+2026-08-28T17:29:28.8271459Z ##[group]Run source ~/.venv/bin/activate
+2026-08-28T17:29:28.8271795Z source ~/.venv/bin/activate
+2026-08-28T17:29:28.8272348Z pre-commit run terraform_validate --color=always --show-diff-on-failure --files ./examples/network-firewall/*
+2026-08-28T17:29:28.8309209Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-08-28T17:29:28.8309556Z env:
+2026-08-28T17:29:28.8309757Z   TERRAFORM_DOCS_VERSION: v0.24.0
+2026-08-28T17:29:28.8310024Z   TFLINT_VERSION: v0.64.0
+2026-08-28T17:29:28.8310250Z   OS: linux
+2026-08-28T17:29:28.8310433Z   ARCH: amd64
+2026-08-28T17:29:28.8310624Z   TRIVY_OS: Linux
+2026-08-28T17:29:28.8310825Z   TRIVY_ARCH: 64bit
+2026-08-28T17:29:28.8311054Z   RG_TARGET: x86_64-unknown-linux-musl
+2026-08-28T17:29:28.8311324Z ##[endgroup]
+2026-08-28T17:29:28.9553996Z [INFO] Initializing environment for https://github.com/antonbabenko/pre-commit-terraform.
+2026-08-28T17:29:29.5122430Z [INFO] Initializing environment for https://github.com/pre-commit/pre-commit-hooks.
+2026-08-28T17:29:30.7971935Z Terraform validate.......................................................Failed
+2026-08-28T17:29:30.7972805Z - hook id: terraform_validate
+2026-08-28T17:29:30.7973293Z - exit code: 1
+2026-08-28T17:29:30.7973451Z 
+2026-08-28T17:29:30.7974190Z 'terraform init' failed, '/usr/bin/terraform validate' skipped: examples/network-firewall
+2026-08-28T17:29:30.7974747Z Initializing modules...
+2026-08-28T17:29:30.7975043Z - firewall_subnet in ../../modules/subnet
+2026-08-28T17:29:30.7975510Z Downloading terraform-aws-modules/network-firewall/aws 1.0.2 for network_firewall...
+2026-08-28T17:29:30.7976018Z - network_firewall in .terraform/modules/network_firewall
+2026-08-28T17:29:30.7976492Z - network_firewall.firewall in .terraform/modules/network_firewall/modules/firewall
+2026-08-28T17:29:30.7977053Z - network_firewall.policy in .terraform/modules/network_firewall/modules/policy
+2026-08-28T17:29:30.7977793Z - public_subnet in ../../modules/subnet
+2026-08-28T17:29:30.7978076Z - vpc in ../..
+2026-08-28T17:29:30.7978562Z There are some problems with the configuration, described below.
+2026-08-28T17:29:30.7978855Z 
+2026-08-28T17:29:30.7979064Z The Terraform configuration must be valid before initialization so that
+2026-08-28T17:29:30.7979659Z Terraform can determine which modules and providers need to be installed.
+2026-08-28T17:29:30.7980322Z ╷
+2026-08-28T17:29:30.7980795Z │ Error: Optional object type attributes are experimental
+2026-08-28T17:29:30.7981253Z │ 
+2026-08-28T17:29:30.7981586Z │   on ../../modules/subnet/variables.tf line 125:
+2026-08-28T17:29:30.7982008Z │  125: variable "timeouts" {
+2026-08-28T17:29:30.7982335Z │ 
+2026-08-28T17:29:30.7982753Z │ This feature is currently an opt-in experiment, subject to change in future
+2026-08-28T17:29:30.7983248Z │ releases based on feedback.
+2026-08-28T17:29:30.7983551Z │ 
+2026-08-28T17:29:30.7984143Z │ Activate the feature for this module by adding
+2026-08-28T17:29:30.7984690Z │ module_variable_optional_attrs to the list of active experiments.
+2026-08-28T17:29:30.7985098Z ╵
+2026-08-28T17:29:30.7985558Z 
+2026-08-28T17:29:30.7985785Z ╷
+2026-08-28T17:29:30.7986203Z │ Error: Optional object type attributes are experimental
+2026-08-28T17:29:30.7986641Z │ 
+2026-08-28T17:29:30.7986967Z │   on ../../modules/subnet/variables.tf line 125:
+2026-08-28T17:29:30.7987385Z │  125: variable "timeouts" {
+2026-08-28T17:29:30.7987698Z │ 
+2026-08-28T17:29:30.7988111Z │ This feature is currently an opt-in experiment, subject to change in future
+2026-08-28T17:29:30.7988591Z │ releases based on feedback.
+2026-08-28T17:29:30.7988878Z │ 
+2026-08-28T17:29:30.7989179Z │ Activate the feature for this module by adding
+2026-08-28T17:29:30.7989678Z │ module_variable_optional_attrs to the list of active experiments.
+2026-08-28T17:29:30.7990089Z ╵
+2026-08-28T17:29:30.7990297Z 
+2026-08-28T17:29:30.7990510Z ╷
+2026-08-28T17:29:30.7990919Z │ Error: Optional object type attributes are experimental
+2026-08-28T17:29:30.7991360Z │ 
+2026-08-28T17:29:30.7991681Z │   on ../../modules/subnet/variables.tf line 144:
+2026-08-28T17:29:30.7992123Z │  144: variable "cidr_reservations" {
+2026-08-28T17:29:30.7992456Z │ 
+2026-08-28T17:29:30.7992862Z │ This feature is currently an opt-in experiment, subject to change in future
+2026-08-28T17:29:30.7993340Z │ releases based on feedback.
+2026-08-28T17:29:30.7993648Z │ 
+2026-08-28T17:29:30.7994615Z │ Activate the feature for this module by adding
+2026-08-28T17:29:30.7995162Z │ module_variable_optional_attrs to the list of active experiments.
+2026-08-28T17:29:30.7995584Z ╵
+2026-08-28T17:29:30.7995794Z 
+2026-08-28T17:29:30.7996005Z ╷
+2026-08-28T17:29:30.7996434Z │ Error: Optional object type attributes are experimental
+2026-08-28T17:29:30.7996872Z │ 
+2026-08-28T17:29:30.7997185Z │   on ../../modules/subnet/variables.tf line 144:
+2026-08-28T17:29:30.7997626Z │  144: variable "cidr_reservations" {
+2026-08-28T17:29:30.7997963Z │ 
+2026-08-28T17:29:30.7998371Z │ This feature is currently an opt-in experiment, subject to change in future
+2026-08-28T17:29:30.7998841Z │ releases based on feedback.
+2026-08-28T17:29:30.7999129Z │ 
+2026-08-28T17:29:30.7999609Z │ Activate the feature for this module by adding
+2026-08-28T17:29:30.8000115Z │ module_variable_optional_attrs to the list of active experiments.
+2026-08-28T17:29:30.8000520Z ╵
+2026-08-28T17:29:30.8000723Z 
+2026-08-28T17:29:30.8000929Z ╷
+2026-08-28T17:29:30.8001265Z │ Error: Unsupported argument
+2026-08-28T17:29:30.8001612Z │ 
+2026-08-28T17:29:30.8002039Z │   on ../../modules/subnet/variables.tf line 152, in variable "cidr_reservations":
+2026-08-28T17:29:30.8002545Z │  152:   nullable = false
+2026-08-28T17:29:30.8002847Z │ 
+2026-08-28T17:29:30.8003159Z │ An argument named "nullable" is not expected here.
+2026-08-28T17:29:30.8003504Z ╵
+2026-08-28T17:29:30.8003710Z 
+2026-08-28T17:29:30.8004211Z ╷
+2026-08-28T17:29:30.8004549Z │ Error: Unsupported argument
+2026-08-28T17:29:30.8004917Z │ 
+2026-08-28T17:29:30.8005357Z │   on ../../modules/subnet/variables.tf line 152, in variable "cidr_reservations":
+2026-08-28T17:29:30.8005871Z │  152:   nullable = false
+2026-08-28T17:29:30.8006177Z │ 
+2026-08-28T17:29:30.8006635Z │ An argument named "nullable" is not expected here.
+2026-08-28T17:29:30.8006999Z ╵
+2026-08-28T17:29:30.8007207Z 
+2026-08-28T17:29:30.8007418Z ╷
+2026-08-28T17:29:30.8007835Z │ Error: Optional object type attributes are experimental
+2026-08-28T17:29:30.8008263Z │ 
+2026-08-28T17:29:30.8008578Z │   on ../../modules/subnet/variables.tf line 193:
+2026-08-28T17:29:30.8009031Z │  193: variable "route_table_timeouts" {
+2026-08-28T17:29:30.8009371Z │ 
+2026-08-28T17:29:30.8009780Z │ This feature is currently an opt-in experiment, subject to change in future
+2026-08-28T17:29:30.8010268Z │ releases based on feedback.
+2026-08-28T17:29:30.8010555Z │ 
+2026-08-28T17:29:30.8010863Z │ Activate the feature for this module by adding
+2026-08-28T17:29:30.8011364Z │ module_variable_optional_attrs to the list of active experiments.
+2026-08-28T17:29:30.8011802Z ╵
+2026-08-28T17:29:30.8012020Z 
+2026-08-28T17:29:30.8012229Z ╷
+2026-08-28T17:29:30.8012637Z │ Error: Optional object type attributes are experimental
+2026-08-28T17:29:30.8013062Z │ 
+2026-08-28T17:29:30.8013373Z │   on ../../modules/subnet/variables.tf line 193:
+2026-08-28T17:29:30.8014041Z │  193: variable "route_table_timeouts" {
+2026-08-28T17:29:30.8014410Z │ 
+2026-08-28T17:29:30.8014823Z │ This feature is currently an opt-in experiment, subject to change in future
+2026-08-28T17:29:30.8015307Z │ releases based on feedback.
+2026-08-28T17:29:30.8015597Z │ 
+2026-08-28T17:29:30.8015903Z │ Activate the feature for this module by adding
+2026-08-28T17:29:30.8016398Z │ module_variable_optional_attrs to the list of active experiments.
+2026-08-28T17:29:30.8016799Z ╵
+2026-08-28T17:29:30.8017000Z 
+2026-08-28T17:29:30.8017217Z ╷
+2026-08-28T17:29:30.8017542Z │ Error: Unsupported argument
+2026-08-28T17:29:30.8017880Z │ 
+2026-08-28T17:29:30.8018298Z │   on ../../modules/subnet/variables.tf line 207, in variable "route_table_tags":
+2026-08-28T17:29:30.8018811Z │  207:   nullable    = false
+2026-08-28T17:29:30.8019123Z │ 
+2026-08-28T17:29:30.8019441Z │ An argument named "nullable" is not expected here.
+2026-08-28T17:29:30.8019788Z ╵
+2026-08-28T17:29:30.8020211Z 
+2026-08-28T17:29:30.8020420Z ╷
+2026-08-28T17:29:30.8020736Z │ Error: Unsupported argument
+2026-08-28T17:29:30.8021075Z │ 
+2026-08-28T17:29:30.8021486Z │   on ../../modules/subnet/variables.tf line 207, in variable "route_table_tags":
+2026-08-28T17:29:30.8021995Z │  207:   nullable    = false
+2026-08-28T17:29:30.8022307Z │ 
+2026-08-28T17:29:30.8022621Z │ An argument named "nullable" is not expected here.
+2026-08-28T17:29:30.8022969Z ╵
+2026-08-28T17:29:30.8023172Z 
+2026-08-28T17:29:30.8023483Z ╷
+2026-08-28T17:29:30.8024093Z │ Error: Invalid type specification
+2026-08-28T17:29:30.8024481Z │ 
+2026-08-28T17:29:30.8024869Z │   on ../../modules/subnet/variables.tf line 228, in variable "routes":
+2026-08-28T17:29:30.8025423Z │  228:     this_nat_gateway          = optional(bool, false)
+2026-08-28T17:29:30.8025825Z │ 
+2026-08-28T17:29:30.8026241Z │ Optional attribute modifier expects only one argument: the attribute type.
+2026-08-28T17:29:30.8026676Z ╵
+2026-08-28T17:29:30.8026882Z 
+2026-08-28T17:29:30.8027091Z ╷
+2026-08-28T17:29:30.8027584Z │ Error: Invalid type specification
+2026-08-28T17:29:30.8027958Z │ 
+2026-08-28T17:29:30.8028347Z │   on ../../modules/subnet/variables.tf line 228, in variable "routes":
+2026-08-28T17:29:30.8028902Z │  228:     this_nat_gateway          = optional(bool, false)
+2026-08-28T17:29:30.8029291Z │ 
+2026-08-28T17:29:30.8029701Z │ Optional attribute modifier expects only one argument: the attribute type.
+2026-08-28T17:29:30.8030132Z ╵
+2026-08-28T17:29:30.8030341Z 
+2026-08-28T17:29:30.8030549Z ╷
+2026-08-28T17:29:30.8030886Z │ Error: Unsupported argument
+2026-08-28T17:29:30.8031228Z │ 
+2026-08-28T17:29:30.8031601Z │   on ../../modules/subnet/variables.tf line 240, in variable "routes":
+2026-08-28T17:29:30.8032051Z │  240:   nullable = false
+2026-08-28T17:29:30.8032353Z │ 
+2026-08-28T17:29:30.8032679Z │ An argument named "nullable" is not expected here.
+2026-08-28T17:29:30.8033026Z ╵
+2026-08-28T17:29:30.8033231Z 
+2026-08-28T17:29:30.8033439Z ╷
+2026-08-28T17:29:30.8034190Z │ Error: Unsupported argument
+2026-08-28T17:29:30.8034575Z │ 
+2026-08-28T17:29:30.8034956Z │   on ../../modules/subnet/variables.tf line 240, in variable "routes":
+2026-08-28T17:29:30.8035404Z │  240:   nullable = false
+2026-08-28T17:29:30.8035705Z │ 
+2026-08-28T17:29:30.8036018Z │ An argument named "nullable" is not expected here.
+2026-08-28T17:29:30.8036373Z ╵
+2026-08-28T17:29:30.8036576Z 
+2026-08-28T17:29:30.8036780Z ╷
+2026-08-28T17:29:30.8037197Z │ Error: Optional object type attributes are experimental
+2026-08-28T17:29:30.8037618Z │ 
+2026-08-28T17:29:30.8037931Z │   on ../../modules/subnet/variables.tf line 243:
+2026-08-28T17:29:30.8038366Z │  243: variable "route_timeouts" {
+2026-08-28T17:29:30.8038696Z │ 
+2026-08-28T17:29:30.8039106Z │ This feature is currently an opt-in experiment, subject to change in future
+2026-08-28T17:29:30.8039582Z │ releases based on feedback.
+2026-08-28T17:29:30.8039872Z │ 
+2026-08-28T17:29:30.8040176Z │ Activate the feature for this module by adding
+2026-08-28T17:29:30.8040680Z │ module_variable_optional_attrs to the list of active experiments.
+2026-08-28T17:29:30.8041311Z ╵
+2026-08-28T17:29:30.8041525Z 
+2026-08-28T17:29:30.8041736Z ╷
+2026-08-28T17:29:30.8042172Z │ Error: Optional object type attributes are experimental
+2026-08-28T17:29:30.8042613Z │ 
+2026-08-28T17:29:30.8042948Z │   on ../../modules/subnet/variables.tf line 243:
+2026-08-28T17:29:30.8043402Z │  243: variable "route_timeouts" {
+2026-08-28T17:29:30.8044066Z │ 
+2026-08-28T17:29:30.8044548Z │ This feature is currently an opt-in experiment, subject to change in future
+2026-08-28T17:29:30.8045044Z │ releases based on feedback.
+2026-08-28T17:29:30.8045342Z │ 
+2026-08-28T17:29:30.8045669Z │ Activate the feature for this module by adding
+2026-08-28T17:29:30.8046200Z │ module_variable_optional_attrs to the list of active experiments.
+2026-08-28T17:29:30.8046616Z ╵
+2026-08-28T17:29:30.8046839Z 
+2026-08-28T17:29:30.8047048Z ╷
+2026-08-28T17:29:30.8047467Z │ Error: Optional object type attributes are experimental
+2026-08-28T17:29:30.8047901Z │ 
+2026-08-28T17:29:30.8048213Z │   on ../../modules/subnet/variables.tf line 257:
+2026-08-28T17:29:30.8048816Z │  257: variable "associated_gateways" {
+2026-08-28T17:29:30.8049176Z │ 
+2026-08-28T17:29:30.8049594Z │ This feature is currently an opt-in experiment, subject to change in future
+2026-08-28T17:29:30.8050079Z │ releases based on feedback.
+2026-08-28T17:29:30.8050363Z │ 
+2026-08-28T17:29:30.8050676Z │ Activate the feature for this module by adding
+2026-08-28T17:29:30.8051183Z │ module_variable_optional_attrs to the list of active experiments.
+2026-08-28T17:29:30.8051591Z ╵
+2026-08-28T17:29:30.8051798Z 
+2026-08-28T17:29:30.8052012Z ╷
+2026-08-28T17:29:30.8052431Z │ Error: Optional object type attributes are experimental
+2026-08-28T17:29:30.8052861Z │ 
+2026-08-28T17:29:30.8053178Z │   on ../../modules/subnet/variables.tf line 257:
+2026-08-28T17:29:30.8053628Z │  257: variable "associated_gateways" {
+2026-08-28T17:29:30.8054300Z │ 
+2026-08-28T17:29:30.8054727Z │ This feature is currently an opt-in experiment, subject to change in future
+2026-08-28T17:29:30.8055212Z │ releases based on feedback.
+2026-08-28T17:29:30.8055497Z │ 
+2026-08-28T17:29:30.8055811Z │ Activate the feature for this module by adding
+2026-08-28T17:29:30.8056318Z │ module_variable_optional_attrs to the list of active experiments.
+2026-08-28T17:29:30.8056728Z ╵
+2026-08-28T17:29:30.8056934Z 
+2026-08-28T17:29:30.8057143Z ╷
+2026-08-28T17:29:30.8057575Z │ Error: Optional object type attributes are experimental
+2026-08-28T17:29:30.8058005Z │ 
+2026-08-28T17:29:30.8058322Z │   on ../../modules/subnet/variables.tf line 270:
+2026-08-28T17:29:30.8058812Z │  270: variable "route_table_association_timeouts" {
+2026-08-28T17:29:30.8059199Z │ 
+2026-08-28T17:29:30.8059625Z │ This feature is currently an opt-in experiment, subject to change in future
+2026-08-28T17:29:30.8060109Z │ releases based on feedback.
+2026-08-28T17:29:30.8060399Z │ 
+2026-08-28T17:29:30.8060713Z │ Activate the feature for this module by adding
+2026-08-28T17:29:30.8061222Z │ module_variable_optional_attrs to the list of active experiments.
+2026-08-28T17:29:30.8061630Z ╵
+2026-08-28T17:29:30.8061836Z 
+2026-08-28T17:29:30.8062039Z ╷
+2026-08-28T17:29:30.8062452Z │ Error: Optional object type attributes are experimental
+2026-08-28T17:29:30.8063033Z │ 
+2026-08-28T17:29:30.8063345Z │   on ../../modules/subnet/variables.tf line 270:
+2026-08-28T17:29:30.8064053Z │  270: variable "route_table_association_timeouts" {
+2026-08-28T17:29:30.8064451Z │ 
+2026-08-28T17:29:30.8064875Z │ This feature is currently an opt-in experiment, subject to change in future
+2026-08-28T17:29:30.8065358Z │ releases based on feedback.
+2026-08-28T17:29:30.8065640Z │ 
+2026-08-28T17:29:30.8065942Z │ Activate the feature for this module by adding
+2026-08-28T17:29:30.8066441Z │ module_variable_optional_attrs to the list of active experiments.
+2026-08-28T17:29:30.8066841Z ╵
+2026-08-28T17:29:30.8067047Z 
+2026-08-28T17:29:30.8067157Z 
+2026-08-28T17:29:30.8145160Z ##[error]Process completed with exit code 1.
+2026-08-28T17:29:30.8152229Z ##[end-action id=__clowdhaus_terraform-composite-actions.__run_9;outcome=failure;conclusion=failure;duration_ms=1990]
+2026-08-28T17:29:30.8156579Z ##[start-action display=Cleanup venv;id=__clowdhaus_terraform-composite-actions.__run_10]
+2026-08-28T17:29:30.8159108Z ##[end-action id=__clowdhaus_terraform-composite-actions.__run_10;outcome=skipped;conclusion=skipped;duration_ms=0]
+2026-08-28T17:29:30.8279875Z Post job cleanup.
+2026-08-28T17:29:30.9188675Z [command]/usr/bin/git version
+2026-08-28T17:29:30.9234363Z git version 2.55.0
+2026-08-28T17:29:30.9315085Z Temporarily overriding HOME='/home/runner/work/_temp/cb222490-dd67-4eba-adce-c8b91a56974b' before making global git config changes
+2026-08-28T17:29:30.9316528Z Adding repository directory to the temporary git global config as a safe directory
+2026-08-28T17:29:30.9318088Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/terraform-aws-vpc/terraform-aws-vpc
+2026-08-28T17:29:30.9319606Z Removing SSH command configuration
+2026-08-28T17:29:30.9324354Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-08-28T17:29:30.9362072Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-08-28T17:29:30.9620552Z Removing HTTP extra header
+2026-08-28T17:29:30.9627012Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-08-28T17:29:30.9682157Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-08-28T17:29:30.9918573Z Removing includeIf entries pointing to credentials config files
+2026-08-28T17:29:30.9925247Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-08-28T17:29:30.9957876Z includeif.gitdir:/home/runner/work/terraform-aws-vpc/terraform-aws-vpc/.git.path
+2026-08-28T17:29:30.9959113Z includeif.gitdir:/home/runner/work/terraform-aws-vpc/terraform-aws-vpc/.git/worktrees/*.path
+2026-08-28T17:29:30.9960089Z includeif.gitdir:/github/workspace/.git.path
+2026-08-28T17:29:30.9960809Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-08-28T17:29:30.9967248Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/terraform-aws-vpc/terraform-aws-vpc/.git.path
+2026-08-28T17:29:31.0003398Z /home/runner/work/_temp/git-credentials-1827c9cc-7d8c-44df-9ad6-9018271d6599.config
+2026-08-28T17:29:31.0017752Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/terraform-aws-vpc/terraform-aws-vpc/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-1827c9cc\-7d8c\-44df\-9ad6\-9018271d6599\.config
+2026-08-28T17:29:31.0104543Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/terraform-aws-vpc/terraform-aws-vpc/.git/worktrees/*.path
+2026-08-28T17:29:31.0124734Z /home/runner/work/_temp/git-credentials-1827c9cc-7d8c-44df-9ad6-9018271d6599.config
+2026-08-28T17:29:31.0170357Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/terraform-aws-vpc/terraform-aws-vpc/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-1827c9cc\-7d8c\-44df\-9ad6\-9018271d6599\.config
+2026-08-28T17:29:31.0171926Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-08-28T17:29:31.0172555Z /github/runner_temp/git-credentials-1827c9cc-7d8c-44df-9ad6-9018271d6599.config
+2026-08-28T17:29:31.0175412Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-1827c9cc\-7d8c\-44df\-9ad6\-9018271d6599\.config
+2026-08-28T17:29:31.0211742Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-08-28T17:29:31.0238862Z /github/runner_temp/git-credentials-1827c9cc-7d8c-44df-9ad6-9018271d6599.config
+2026-08-28T17:29:31.0249324Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-1827c9cc\-7d8c\-44df\-9ad6\-9018271d6599\.config
+2026-08-28T17:29:31.0289339Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-08-28T17:29:31.0509408Z Removing credentials config '/home/runner/work/_temp/git-credentials-1827c9cc-7d8c-44df-9ad6-9018271d6599.config'
+2026-08-28T17:29:31.0647606Z Cleaning up orphan processes

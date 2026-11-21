@@ -533,3 +533,185 @@ repos:
     fix_run_id: 42173412232
     evidence:
     - String\.raw. should be transformed
+- repo: terraform-aws-modules/terraform-aws-vpc
+  license: Apache-2.0
+  cases:
+  - id: terraform-aws-vpc-33194881411-1
+    run_id: 33194881411
+    attempt: 1
+    job_id: 98929395855
+    pairing: H1-pr
+    fix_sha: 1c27e249d00af4d7369e6aec9003d655e9532f3c
+    category: config_or_secrets
+    cause: terraform validate con Terraform 1.0.0 rechaza los atributos opcionales del módulo subnet (feature experimental en esa versión).
+    fix_summary: 1 commit(s), 3 file(s), +17/-3
+    evidence:
+    - Optional object type attributes are experimental
+    flaky: false
+    tags:
+    - terraform
+    labeled_by: owner (draft by Claude)
+    label_basis: log
+    fix_run_id: 33195693106
+  - id: terraform-aws-vpc-33118753094-1
+    run_id: 33118753094
+    attempt: 1
+    job_id: 98680069738
+    pairing: H1-pr
+    fix_sha: a520d5707773e174b89684af85c0ac3f33adb659
+    category: dependency
+    cause: 'terraform validate con Terraform 1.0.0 falla en el módulo rds_security_group: optional() con valor por defecto no soportado.'
+    fix_summary: 1 commit(s), 2 file(s), +2/-2
+    evidence:
+    - Optional attribute modifier expects only one argument
+    flaky: false
+    tags:
+    - terraform
+    labeled_by: owner (draft by Claude)
+    label_basis: log
+    fix_run_id: 33119501558
+  - id: terraform-aws-vpc-33259857456-1
+    run_id: 33259857456
+    attempt: 1
+    job_id: 99119879289
+    pairing: H1-pr
+    fix_sha: 5cf27ab9e187466e1289b80666cf5027fdc25fc8
+    category: config_or_secrets
+    cause: terraform validate con Terraform 1.0.0 rechaza el argumento 'nullable' en las variables del módulo.
+    fix_summary: 1 commit(s), 2 file(s), +2/-4
+    evidence:
+    - An argument named "nullable" is not expected here
+    flaky: false
+    tags:
+    - terraform
+    labeled_by: owner (draft by Claude)
+    label_basis: log
+    fix_run_id: 33260284103
+- repo: pydantic/pydantic
+  license: MIT
+  cases:
+  - id: pydantic-41818829972-1
+    run_id: 41818829972
+    attempt: 1
+    job_id: 126536465171
+    pairing: H1-pr
+    fix_sha: b6ddfdcf734715ee00d557551180008bac117488
+    category: broken_test
+    cause: Un test de concurrencia (freethreaded) falla con 'dictionary changed size during iteration' al generar el esquema.
+    fix_summary: 1 commit(s), 1 file(s), +15/-6
+    evidence:
+    - dictionary changed size during iteration
+    flaky: false
+    tags:
+    - python
+    labeled_by: owner (draft by Claude)
+    label_basis: log
+    fix_run_id: 41819544481
+  - id: pydantic-44512609882-1
+    run_id: 44512609882
+    attempt: 1
+    job_id: 135520408182
+    pairing: H1
+    fix_sha: 17873f3b65e085aa721a634857ca9fd042e83af4
+    category: network
+    cause: El build de wheels falla porque yum no resuelve el host vault.centos.org dentro del contenedor.
+    fix_summary: 1 commit(s), 1 file(s), +2/-1
+    evidence:
+    - 'Could not resolve host: vault.centos.org'
+    flaky: false
+    tags:
+    - python
+    labeled_by: owner (draft by Claude)
+    label_basis: log
+    fix_run_id: 44516649579
+- repo: docker/build-push-action
+  license: Apache-2.0
+  cases:
+  - id: build-push-action-40990625095-1
+    run_id: 40990625095
+    attempt: 1
+    job_id: 123851909278
+    pairing: H1
+    fix_sha: 75f7dabc19c6aa3139cf1c952f42af3a6080db18
+    category: broken_test
+    cause: La validación falla porque el dist/ commiteado difiere del resultado del build (no se regeneró).
+    fix_summary: 1 commit(s), 3 file(s), +156/-156
+    evidence:
+    - Build result differs
+    flaky: false
+    tags:
+    - docker
+    labeled_by: owner (draft by Claude)
+    label_basis: log
+    fix_run_id: 40990721535
+  - id: build-push-action-34332850910-1
+    run_id: 34332850910
+    attempt: 1
+    job_id: 102405317107
+    pairing: H1
+    fix_sha: a6d4b5ad252d633626d10b115073a60b3483e104
+    category: broken_test
+    cause: La validación falla porque el dist/ commiteado difiere del resultado del build (no se regeneró).
+    fix_summary: 1 commit(s), 3 file(s), +173/-162
+    evidence:
+    - Build result differs
+    flaky: false
+    tags:
+    - docker
+    labeled_by: owner (draft by Claude)
+    label_basis: log
+    fix_run_id: 34332948693
+  - id: build-push-action-35596460410-1
+    run_id: 35596460410
+    attempt: 1
+    job_id: 106322324654
+    pairing: H1
+    fix_sha: 5b2acb28cb008c7c8ebe91ddc3852e9eea1e7883
+    category: broken_test
+    cause: La validación falla porque el dist/ commiteado difiere del resultado del build (no se regeneró).
+    fix_summary: 1 commit(s), 3 file(s), +24/-24
+    evidence:
+    - Build result differs
+    flaky: false
+    tags:
+    - docker
+    labeled_by: owner (draft by Claude)
+    label_basis: log
+    fix_run_id: 35596558321
+  - id: build-push-action-38607052120-1
+    run_id: 38607052120
+    attempt: 1
+    job_id: 116000584015
+    pairing: H1
+    fix_sha: c3981c995ad0478300aab5a3d82d9bc67587b6e8
+    category: broken_test
+    cause: La validación falla porque el dist/ commiteado difiere del resultado del build (no se regeneró).
+    fix_summary: 1 commit(s), 3 file(s), +251/-260
+    evidence:
+    - Build result differs
+    flaky: false
+    tags:
+    - docker
+    labeled_by: owner (draft by Claude)
+    label_basis: log
+    fix_run_id: 38607211005
+- repo: pytest-dev/pytest
+  license: MIT
+  cases:
+  - id: pytest-39572813078-1
+    run_id: 39572813078
+    attempt: 1
+    job_id: 119130928172
+    pairing: H1
+    fix_sha: 4088e1a84ef1cb8ba80aac4e75449459fc092c12
+    category: dependency
+    cause: Dependabot no puede resolver las dependencias (error dependency_file_not_resolvable en certifi).
+    fix_summary: 3 commit(s), 6 file(s), +34/-0
+    evidence:
+    - dependency_file_not_resolvable
+    flaky: false
+    tags:
+    - python
+    labeled_by: owner (draft by Claude)
+    label_basis: log
+    fix_run_id: 40056615841

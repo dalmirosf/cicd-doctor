@@ -1,0 +1,24 @@
+{
+  "sha": "1c27e249d00af4d7369e6aec9003d655e9532f3c",
+  "pairing": "H1-pr",
+  "commits": 1,
+  "files_total": 3,
+  "files": [
+    {
+      "path": "examples/network-firewall/README.md",
+      "additions": 2,
+      "deletions": 1
+    },
+    {
+      "path": "examples/network-firewall/main.tf",
+      "additions": 14,
+      "deletions": 1
+    },
+    {
+      "path": "examples/network-firewall/versions.tf",
+      "additions": 1,
+      "deletions": 1
+    }
+  ],
+  "summary": "1 commit(s), 3 file(s), +17/-3"
+}

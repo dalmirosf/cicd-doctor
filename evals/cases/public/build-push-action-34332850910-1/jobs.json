@@ -1,0 +1,53 @@
+{
+  "total_count": 1,
+  "jobs": [
+    {
+      "id": 102405317107,
+      "run_id": 34332850910,
+      "run_attempt": 1,
+      "workflow_name": "validate",
+      "name": "validate (build-validate)",
+      "status": "completed",
+      "conclusion": "failure",
+      "started_at": "2026-09-09T09:06:53Z",
+      "completed_at": "2026-09-09T09:07:38Z",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-09-09T09:06:54Z",
+          "completed_at": "2026-09-09T09:06:55Z"
+        },
+        {
+          "name": "Validate",
+          "status": "completed",
+          "conclusion": "failure",
+          "number": 2,
+          "started_at": "2026-09-09T09:06:55Z",
+          "completed_at": "2026-09-09T09:07:35Z"
+        },
+        {
+          "name": "Post Validate",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-09-09T09:07:35Z",
+          "completed_at": "2026-09-09T09:07:36Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-09-09T09:07:36Z",
+          "completed_at": "2026-09-09T09:07:36Z"
+        }
+      ]
+    }
+  ]
+}

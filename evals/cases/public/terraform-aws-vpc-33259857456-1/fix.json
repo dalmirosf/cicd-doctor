@@ -1,0 +1,19 @@
+{
+  "sha": "5cf27ab9e187466e1289b80666cf5027fdc25fc8",
+  "pairing": "H1-pr",
+  "commits": 1,
+  "files_total": 2,
+  "files": [
+    {
+      "path": "main.tf",
+      "additions": 1,
+      "deletions": 1
+    },
+    {
+      "path": "variables.tf",
+      "additions": 1,
+      "deletions": 3
+    }
+  ],
+  "summary": "1 commit(s), 2 file(s), +2/-4"
+}
