@@ -40,6 +40,8 @@ uv run python -m evals prune [--apply] [--model <id>]   # delete answers in eval
 uv run python -m evals run --variant llm+hints --model <id> --judge --judge-model <id> [--judge-price <id>=IN,OUT --live]   # cause match (D-103); off without --judge
 uv run python -m evals calibrate sheet   # then label evals/calibration/judge-labels.yaml, then `calibrate score [--live]` and `calibrate report` (D-104)
 uv run python -m evals readme-table [--check]   # regenerate the README comparison table from evals/baseline.json (D-111)
+uv run python -m evals run --estimate --variant all --sources lab,public,injection --model <id> --price <id>=IN,OUT   # cost of a live run before it runs, exit 5 if the caps would stop it (D-112)
+uv run python -m evals variance report1.json report2.json report3.json   # mean and sigma of the macro-F1 across reports (D-112)
 uv run python -m evals check [--summary out.md]   # the CI gate, offline: exit 1 regression, 2 injection won, 3 answers missing, 4 stale baseline, 5 error (D-105, D-106)
 uv run python -m evals baseline --accept --model <id> --price <id>=IN,OUT   # a person only: writes evals/baseline.json; never in CI
 uv run python -m evals write-injection   # regenerate evals/cases/injection from evals/runner/injection.py (a test checks they match)
