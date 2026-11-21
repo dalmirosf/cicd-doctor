@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "5f5ca533e3420558a8f811109ad9fa868a5820e952140b07c48dcba3a30370f0",
+  "result": {
+    "raw_json": "{\"category\":\"unknown\",\"probable_cause\":\"The failure cause is not diagnosed for this test-only gate.\",\"evidence\":[],\"suggested_fix\":\"Review the workflow configuration and AWS credential setup to determine why the step failed.\",\"suggestion\":null,\"confidence\":0.1}",
+    "model": "gpt-6-luna",
+    "input_tokens": 2049,
+    "output_tokens": 354,
+    "latency_ms": 4180
+  }
+}

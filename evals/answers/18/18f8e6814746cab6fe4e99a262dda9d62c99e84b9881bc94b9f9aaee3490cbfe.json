@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "5f5ca533e3420558a8f811109ad9fa868a5820e952140b07c48dcba3a30370f0",
+  "result": {
+    "raw_json": "{\"category\":\"unknown\",\"probable_cause\":\"The cause cannot be determined for this diagnosis.\",\"evidence\":[],\"suggested_fix\":\"Review the failed validation step and compare the generated build artifacts with the committed files to identify the discrepancy.\",\"suggestion\":null,\"confidence\":0.1}",
+    "model": "gpt-6-luna",
+    "input_tokens": 6302,
+    "output_tokens": 184,
+    "latency_ms": 2941
+  }
+}

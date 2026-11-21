@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "5f5ca533e3420558a8f811109ad9fa868a5820e952140b07c48dcba3a30370f0",
+  "result": {
+    "raw_json": "{\"category\":\"broken_test\",\"probable_cause\":\"The Prettier lint check failed because src/language-html/embed.js does not match the repository's formatting rules.\",\"evidence\":[{\"line\":222,\"text\":\"[warn] src/language-html/embed.js\"},{\"line\":223,\"text\":\"[warn] Code style issues found in the above file. Run Prettier with --write to fix.\"},{\"line\":224,\"text\":\"##[error]Process completed with exit code 1.\"}],\"suggested_fix\":\"Run Prettier with --write on src/language-html/embed.js, then commit the formatting change and rerun the lint check.\",\"suggestion\":null,\"confidence\":0.99}",
+    "model": "gpt-6-luna",
+    "input_tokens": 1854,
+    "output_tokens": 302,
+    "latency_ms": 3547
+  }
+}

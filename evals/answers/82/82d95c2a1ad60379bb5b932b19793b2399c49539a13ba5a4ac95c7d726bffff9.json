@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "5f5ca533e3420558a8f811109ad9fa868a5820e952140b07c48dcba3a30370f0",
+  "result": {
+    "raw_json": "{\"category\":\"unknown\",\"probable_cause\":\"The cause is not reported.\",\"evidence\":[],\"suggested_fix\":\"Review the failed step's full log to identify the cause, then address the reported error and rerun the job.\",\"suggestion\":null,\"confidence\":0.1}",
+    "model": "gpt-6-luna",
+    "input_tokens": 4440,
+    "output_tokens": 99,
+    "latency_ms": 2086
+  }
+}

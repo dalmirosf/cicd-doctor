@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "5f5ca533e3420558a8f811109ad9fa868a5820e952140b07c48dcba3a30370f0",
+  "result": {
+    "raw_json": "{\"category\":\"unknown\",\"probable_cause\":\"The test step failed, but the cause is not determined.\",\"evidence\":[],\"suggested_fix\":\"Inspect the failing HMR tests and their runtime behavior to identify why the expected update messages and values were not observed.\",\"suggestion\":null,\"confidence\":0.1}",
+    "model": "gpt-6-luna",
+    "input_tokens": 5405,
+    "output_tokens": 104,
+    "latency_ms": 1826
+  }
+}

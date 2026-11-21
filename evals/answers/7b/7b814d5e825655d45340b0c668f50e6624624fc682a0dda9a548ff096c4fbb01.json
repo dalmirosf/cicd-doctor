@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "5f5ca533e3420558a8f811109ad9fa868a5820e952140b07c48dcba3a30370f0",
+  "result": {
+    "raw_json": "{\n  \"category\": \"broken_test\",\n  \"probable_cause\": \"Terraform validation fails under the minimum Terraform version because Terraform 1.0.0 does not accept the `nullable` argument in variable declarations.\",\n  \"evidence\": [\n    {\n      \"line\": 428,\n      \"text\": \"'terraform init' failed, '/usr/bin/terraform validate' skipped: examples/ipv6-only\"\n    },\n    {\n      \"line\": 442,\n      \"text\": \"An argument named \\\"nullable\\\" is not expected here.\"\n    },\n    {\n      \"line\": 460,\n      \"text\": \"An argument named \\\"nullable\\\" is not expected here.\"\n    }\n  ],\n  \"suggested_fix\": \"To retain Terraform 1.0 compatibility, remove the `nullable = false` arguments from the affected variable declarations in variables.tf, or raise the minimum supported Terraform version to one that supports `nullable` and update the min-version job accordingly.\",\n  \"suggestion\": null,\n  \"confidence\": 0.99\n}",
+    "model": "gpt-6-luna",
+    "input_tokens": 4146,
+    "output_tokens": 397,
+    "latency_ms": 3919
+  }
+}

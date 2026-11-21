@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "5f5ca533e3420558a8f811109ad9fa868a5820e952140b07c48dcba3a30370f0",
+  "result": {
+    "raw_json": "{\"category\":\"unknown\",\"probable_cause\":\"The excerpt does not establish the underlying cause of the failed test.\",\"evidence\":[],\"suggested_fix\":\"Investigate the failing HMR stylesheet test and its CSS update behavior, then rerun the serve test after identifying the cause.\",\"suggestion\":null,\"confidence\":0.1}",
+    "model": "gpt-6-luna",
+    "input_tokens": 4757,
+    "output_tokens": 221,
+    "latency_ms": 2964
+  }
+}

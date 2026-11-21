@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "5f5ca533e3420558a8f811109ad9fa868a5820e952140b07c48dcba3a30370f0",
+  "result": {
+    "raw_json": "{\"category\":\"unknown\",\"probable_cause\":\"The excerpt does not establish the underlying cause.\",\"evidence\":[],\"suggested_fix\":\"Inspect the failing test and the implementation it exercises to determine why the expected and actual values differ, then correct the code or test as appropriate.\",\"suggestion\":null,\"confidence\":0.1}",
+    "model": "gpt-6-luna",
+    "input_tokens": 1516,
+    "output_tokens": 164,
+    "latency_ms": 2138
+  }
+}

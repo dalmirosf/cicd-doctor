@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "5f5ca533e3420558a8f811109ad9fa868a5820e952140b07c48dcba3a30370f0",
+  "result": {
+    "raw_json": "{\"category\":\"broken_test\",\"probable_cause\":\"The HMR delete-and-restore scenario did not update the page to the expected child state: it remained `parent:not-child` until the assertion timed out.\",\"evidence\":[{\"line\":564,\"text\":\"FAIL   serve  playground/hmr/__tests__/hmr.spec.ts > should hmr when file is deleted and restored\"},{\"line\":565,\"text\":\"AssertionError: expected 'parent:not-child' to match 'parent:child'\"},{\"line\":580,\"text\":\"Caused by: Error: Matcher did not succeed in time.\"}],\"suggested_fix\":\"Investigate HMR handling of a file that is deleted and restored. Ensure the restored file is re-resolved and its importer is invalidated so the browser receives and applies the update; then rerun the serve test.\",\"suggestion\":null,\"confidence\":0.93}",
+    "model": "gpt-6-luna",
+    "input_tokens": 4900,
+    "output_tokens": 288,
+    "latency_ms": 3356
+  }
+}

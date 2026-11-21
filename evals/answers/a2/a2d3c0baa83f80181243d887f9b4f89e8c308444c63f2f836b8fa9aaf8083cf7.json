@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "5f5ca533e3420558a8f811109ad9fa868a5820e952140b07c48dcba3a30370f0",
+  "result": {
+    "raw_json": "{\"category\":\"unknown\",\"probable_cause\":\"The cause cannot be determined from the available evidence.\",\"evidence\":[],\"suggested_fix\":\"Review the dependency installation and configuration for this step, then rerun it to identify the failure.\",\"suggestion\":null,\"confidence\":0.1}",
+    "model": "gpt-6-luna",
+    "input_tokens": 1526,
+    "output_tokens": 212,
+    "latency_ms": 3224
+  }
+}

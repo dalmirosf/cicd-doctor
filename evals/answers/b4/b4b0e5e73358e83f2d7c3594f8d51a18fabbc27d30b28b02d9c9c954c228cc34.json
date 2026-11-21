@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "5f5ca533e3420558a8f811109ad9fa868a5820e952140b07c48dcba3a30370f0",
+  "result": {
+    "raw_json": "{\"category\":\"unknown\",\"probable_cause\":\"The log excerpt does not establish a diagnosable cause.\",\"evidence\":[],\"suggested_fix\":\"Review the complete job output and the relevant source code to determine why the step failed.\",\"suggestion\":null,\"confidence\":0.1}",
+    "model": "gpt-6-luna",
+    "input_tokens": 2771,
+    "output_tokens": 98,
+    "latency_ms": 1795
+  }
+}

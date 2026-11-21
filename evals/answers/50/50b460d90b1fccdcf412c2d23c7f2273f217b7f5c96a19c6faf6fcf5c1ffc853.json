@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "5f5ca533e3420558a8f811109ad9fa868a5820e952140b07c48dcba3a30370f0",
+  "result": {
+    "raw_json": "{\"category\":\"unknown\",\"probable_cause\":\"The failure is reported as an unused TypeScript @ts-expect-error directive, but the underlying cause cannot be determined from this excerpt.\",\"evidence\":[],\"suggested_fix\":\"Review the type-check error at src/language-js/print/class-body.js:269 and remove or correct the directive if the expected type error no longer occurs.\",\"suggestion\":null,\"confidence\":0.1}",
+    "model": "gpt-6-luna",
+    "input_tokens": 2265,
+    "output_tokens": 186,
+    "latency_ms": 2700
+  }
+}

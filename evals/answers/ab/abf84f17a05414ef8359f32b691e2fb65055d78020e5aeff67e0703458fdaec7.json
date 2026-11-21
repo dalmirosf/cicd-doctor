@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "5f5ca533e3420558a8f811109ad9fa868a5820e952140b07c48dcba3a30370f0",
+  "result": {
+    "raw_json": "{\"category\":\"unknown\",\"probable_cause\":\"The excerpt does not establish why the test worker exited unexpectedly.\",\"evidence\":[],\"suggested_fix\":\"Inspect the worker's full output and rerun the failing test file to identify the underlying cause.\",\"suggestion\":null,\"confidence\":0.1}",
+    "model": "gpt-6-luna",
+    "input_tokens": 3857,
+    "output_tokens": 214,
+    "latency_ms": 2797
+  }
+}

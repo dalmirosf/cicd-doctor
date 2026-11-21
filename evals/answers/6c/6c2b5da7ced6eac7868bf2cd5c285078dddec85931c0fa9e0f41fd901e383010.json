@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "5f5ca533e3420558a8f811109ad9fa868a5820e952140b07c48dcba3a30370f0",
+  "result": {
+    "raw_json": "{\"category\":\"unknown\",\"probable_cause\":\"The excerpt does not establish why the bundled HMR test timed out.\",\"evidence\":[],\"suggested_fix\":\"Investigate why the browser did not log the expected hot update, then rerun the test to check whether the failure reproduces.\",\"suggestion\":null,\"confidence\":0.1}",
+    "model": "gpt-6-luna",
+    "input_tokens": 3686,
+    "output_tokens": 136,
+    "latency_ms": 2124
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "5f5ca533e3420558a8f811109ad9fa868a5820e952140b07c48dcba3a30370f0",
+  "result": {
+    "raw_json": "{\"category\":\"unknown\",\"probable_cause\":\"The excerpt does not establish a reliable cause for the job failure.\",\"evidence\":[],\"suggested_fix\":\"Review the test and application code to determine why the job failed, then address the underlying issue.\",\"suggestion\":null,\"confidence\":0.1}",
+    "model": "gpt-6-luna",
+    "input_tokens": 1477,
+    "output_tokens": 109,
+    "latency_ms": 1896
+  }
+}

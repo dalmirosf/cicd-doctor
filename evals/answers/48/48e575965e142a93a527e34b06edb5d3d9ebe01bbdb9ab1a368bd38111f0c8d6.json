@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "5f5ca533e3420558a8f811109ad9fa868a5820e952140b07c48dcba3a30370f0",
+  "result": {
+    "raw_json": "{\"category\":\"unknown\",\"probable_cause\":\"The step exited with status 3, but the log excerpt does not show why the script returned that code.\",\"evidence\":[],\"suggested_fix\":\"Inspect scripts/opaque.sh and its checks to determine what causes exit code 3, then address the reported condition and rerun the workflow.\",\"suggestion\":null,\"confidence\":0.1}",
+    "model": "gpt-6-luna",
+    "input_tokens": 1993,
+    "output_tokens": 137,
+    "latency_ms": 2270
+  }
+}

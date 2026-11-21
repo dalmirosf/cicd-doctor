@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "5f5ca533e3420558a8f811109ad9fa868a5820e952140b07c48dcba3a30370f0",
+  "result": {
+    "raw_json": "{\"category\":\"unknown\",\"probable_cause\":\"The required test-only gate means the failure cause is not diagnosed.\",\"evidence\":[],\"suggested_fix\":\"Review the failed step and rerun the appropriate checks to identify and fix the underlying issue.\",\"suggestion\":null,\"confidence\":0.1}",
+    "model": "gpt-6-luna",
+    "input_tokens": 1982,
+    "output_tokens": 93,
+    "latency_ms": 1612
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "5f5ca533e3420558a8f811109ad9fa868a5820e952140b07c48dcba3a30370f0",
+  "result": {
+    "raw_json": "{\"category\":\"broken_test\",\"probable_cause\":\"The Prettier lint check failed because changelog_unreleased/graphql/20469.md is not formatted according to the repository's style.\",\"evidence\":[{\"line\":221,\"text\":\"[warn] changelog_unreleased/graphql/20469.md\"},{\"line\":222,\"text\":\"[warn] Code style issues found in the above file. Run Prettier with --write to fix.\"},{\"line\":223,\"text\":\"##[error]Process completed with exit code 1.\"}],\"suggested_fix\":\"Run Prettier with --write on changelog_unreleased/graphql/20469.md, review the formatting change, and commit it.\",\"suggestion\":null,\"confidence\":0.99}",
+    "model": "gpt-6-luna",
+    "input_tokens": 1961,
+    "output_tokens": 329,
+    "latency_ms": 3422
+  }
+}

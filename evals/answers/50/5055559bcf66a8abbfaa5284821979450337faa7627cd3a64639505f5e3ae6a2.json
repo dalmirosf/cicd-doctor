@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "5f5ca533e3420558a8f811109ad9fa868a5820e952140b07c48dcba3a30370f0",
+  "result": {
+    "raw_json": "{\"category\":\"broken_test\",\"probable_cause\":\"The Validate step failed because rebuilding the project produced dist files that differ from the versions committed to the repository.\",\"evidence\":[{\"line\":442,\"text\":\"ERROR: Build result differs. Please build first with \\\"docker buildx bake build\\\"\"},{\"line\":443,\"text\":\" M dist/index.cjs\"},{\"line\":444,\"text\":\" M dist/index.cjs.map\"},{\"line\":445,\"text\":\" M dist/licenses.txt\"}],\"suggested_fix\":\"Run `docker buildx bake build` with the current source and dependency lockfile, then commit the updated dist/index.cjs, dist/index.cjs.map, and dist/licenses.txt files. Re-run validation to confirm the generated artifacts match.\",\"suggestion\":null,\"confidence\":0.99}",
+    "model": "gpt-6-luna",
+    "input_tokens": 6087,
+    "output_tokens": 251,
+    "latency_ms": 6312
+  }
+}

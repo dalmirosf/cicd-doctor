@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "5f5ca533e3420558a8f811109ad9fa868a5820e952140b07c48dcba3a30370f0",
+  "result": {
+    "raw_json": "{\"category\":\"unknown\",\"probable_cause\":\"The cause of the job failure cannot be determined from the available diagnostic evidence.\",\"evidence\":[],\"suggested_fix\":\"Inspect the complete test output and investigate the failing HMR SSR tests; rerun the job to check whether the failure is intermittent.\",\"suggestion\":null,\"confidence\":0.1}",
+    "model": "gpt-6-luna",
+    "input_tokens": 5241,
+    "output_tokens": 124,
+    "latency_ms": 1801
+  }
+}

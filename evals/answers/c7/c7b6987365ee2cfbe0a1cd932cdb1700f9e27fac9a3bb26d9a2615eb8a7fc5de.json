@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "5f5ca533e3420558a8f811109ad9fa868a5820e952140b07c48dcba3a30370f0",
+  "result": {
+    "raw_json": "{\"category\":\"dependency\",\"probable_cause\":\"The typecheck cannot resolve the three @prettier/cli imports used by the experimental CLI, likely because the package or its generated files are not available at the expected paths.\",\"evidence\":[{\"line\":208,\"text\":\"src/experimental-cli/constants.evaluate.js(2,15): error TS2307: Cannot find module '@prettier/cli/dist/constants.js' or its corresponding type declarations.\"},{\"line\":209,\"text\":\"src/experimental-cli/index.js(1,15): error TS2307: Cannot find module '@prettier/cli/bin' or its corresponding type declarations.\"},{\"line\":210,\"text\":\"src/experimental-cli/worker.js(1,15): error TS2307: Cannot find module '@prettier/cli/dist/prettier_serial.js' or its corresponding type declarations.\"}],\"suggested_fix\":\"Check that the @prettier/cli workspace package is installed and that its build outputs exist at the imported paths before lint:typecheck runs. If those files are generated, add or correct the build step/order; otherwise, update the imports or package exports to match the actual files.\",\"suggestion\":null,\"confidence\":0.91}",
+    "model": "gpt-6-luna",
+    "input_tokens": 2129,
+    "output_tokens": 334,
+    "latency_ms": 4714
+  }
+}

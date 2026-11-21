@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "5f5ca533e3420558a8f811109ad9fa868a5820e952140b07c48dcba3a30370f0",
+  "result": {
+    "raw_json": "{\"category\":\"dependency\",\"probable_cause\":\"Dependabot could not resolve the project\u2019s dependencies because pytest-xdist\u2019s dependency on pytest is being treated as a dependency on the local project, whose name is also pytest. The resulting requirements are reported as unsatisfiable, so the certifi",
+    "model": "gpt-6-luna",
+    "input_tokens": 7341,
+    "output_tokens": 800,
+    "latency_ms": 8996
+  }
+}

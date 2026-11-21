@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "5f5ca533e3420558a8f811109ad9fa868a5820e952140b07c48dcba3a30370f0",
+  "result": {
+    "raw_json": "{\n  \"category\": \"dependency\",\n  \"probable_cause\": \"Vitest 5.1.0's reporter calls Map.groupBy, which is unavailable in the Node 20 runtime used by this job. The test process fails while formatting its error summary.\",\n  \"evidence\": [\n    {\n      \"line\": 680,\n      \"text\": \"TypeError: Map.groupBy is not a function or its return value is not iterable\"\n    },\n    {\n      \"line\": 681,\n      \"text\": \"\u276f formatErrorAttempts node_modules/.pnpm/vitest@5.1.0_@types+node@26.6.6_vite@packages+vite/node_modules/vitest/dist/chunks/cli-api.COfZo8lK.js:9184:17\"\n    },\n    {\n      \"line\": 663,\n      \"text\": \"$ vitest run -c vitest.config.e2e.ts --project build\"\n    }\n  ],\n  \"suggested_fix\": \"Run the build tests with a Node version that supports Map.groupBy, or use a Vitest version compatible with Node 20. Verify the repository's supported Node range and the Vitest engine requirements before changing the workflow or dependency version.\",\n  \"suggestion\": null,\n  \"confidence\": 0.95\n}",
+    "model": "gpt-6-luna",
+    "input_tokens": 3445,
+    "output_tokens": 420,
+    "latency_ms": 4233
+  }
+}

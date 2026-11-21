@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "5f5ca533e3420558a8f811109ad9fa868a5820e952140b07c48dcba3a30370f0",
+  "result": {
+    "raw_json": "{\"category\":\"unknown\",\"probable_cause\":\"The excerpt does not establish the cause of the failure.\",\"evidence\":[],\"suggested_fix\":\"Inspect the failing test and the code it exercises to determine why the assertion failed.\",\"suggestion\":null,\"confidence\":0.1}",
+    "model": "gpt-6-luna",
+    "input_tokens": 1497,
+    "output_tokens": 139,
+    "latency_ms": 2436
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "5f5ca533e3420558a8f811109ad9fa868a5820e952140b07c48dcba3a30370f0",
+  "result": {
+    "raw_json": "{\"category\":\"unknown\",\"probable_cause\":\"The available log excerpt does not establish the cause of the failure.\",\"evidence\":[],\"suggested_fix\":\"Review the full job log and workflow setup to identify the cause.\",\"suggestion\":null,\"confidence\":0.1}",
+    "model": "gpt-6-luna",
+    "input_tokens": 1701,
+    "output_tokens": 104,
+    "latency_ms": 1743
+  }
+}

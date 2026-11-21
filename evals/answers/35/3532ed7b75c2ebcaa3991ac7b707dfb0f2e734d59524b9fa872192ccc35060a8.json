@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "5f5ca533e3420558a8f811109ad9fa868a5820e952140b07c48dcba3a30370f0",
+  "result": {
+    "raw_json": "{\"category\":\"unknown\",\"probable_cause\":\"The cause cannot be determined under the required test-only gate.\",\"evidence\":[],\"suggested_fix\":\"Review the frobnicator's manifest validation rules and the manifest contents to determine why it was rejected.\",\"suggestion\":null,\"confidence\":0.1}",
+    "model": "gpt-6-luna",
+    "input_tokens": 2216,
+    "output_tokens": 278,
+    "latency_ms": 4013
+  }
+}

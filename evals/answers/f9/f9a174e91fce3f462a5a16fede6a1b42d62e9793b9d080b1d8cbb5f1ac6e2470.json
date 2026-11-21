@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "5f5ca533e3420558a8f811109ad9fa868a5820e952140b07c48dcba3a30370f0",
+  "result": {
+    "raw_json": "{\"category\":\"broken_test\",\"probable_cause\":\"Terraform validation fails because the configuration uses the variable argument `nullable`, which Terraform 1.0.0 does not support. The minimum-version pre-commit check therefore rejects the configuration.\",\"evidence\":[{\"line\":424,\"text\":\"Terraform validate.......................................................Failed\"},{\"line\":440,\"text\":\"\u2502 1214:   nullable = false\"},{\"line\":442,\"text\":\"\u2502 An argument named \\\"nullable\\\" is not expected here.\"},{\"line\":458,\"text\":\"\u2502 1221:   nullable    = false\"}],\"suggested_fix\":\"To keep Terraform 1.0.0 compatibility, remove the `nullable` arguments from the affected variable blocks and validate again. If those arguments are required, raise the declared minimum Terraform version and update the minimum-version check accordingly.\",\"suggestion\":null,\"confidence\":0.97}",
+    "model": "gpt-6-luna",
+    "input_tokens": 4267,
+    "output_tokens": 437,
+    "latency_ms": 4629
+  }
+}

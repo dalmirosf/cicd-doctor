@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "5f5ca533e3420558a8f811109ad9fa868a5820e952140b07c48dcba3a30370f0",
+  "result": {
+    "raw_json": "{\"category\":\"unknown\",\"probable_cause\":\"The test run failed because Vitest reported an unhandled rejection while the SSR runtime test file was running, but the excerpt does not establish the underlying cause.\",\"evidence\":[],\"suggested_fix\":\"Investigate the asynchronous bundle-state handling around the SSR runtime tests, ensure rejected promises are handled, and reproduce the failure on the same Node and macOS versions.\",\"suggestion\":null,\"confidence\":0.1}",
+    "model": "gpt-6-luna",
+    "input_tokens": 5130,
+    "output_tokens": 175,
+    "latency_ms": 2618
+  }
+}

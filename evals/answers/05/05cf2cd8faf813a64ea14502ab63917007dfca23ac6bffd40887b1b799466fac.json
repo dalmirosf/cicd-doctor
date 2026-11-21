@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "5f5ca533e3420558a8f811109ad9fa868a5820e952140b07c48dcba3a30370f0",
+  "result": {
+    "raw_json": "{\"category\":\"unknown\",\"probable_cause\":\"The cause cannot be determined from this excerpt.\",\"evidence\":[],\"suggested_fix\":\"Review the full test output and the failing test setup to identify the underlying cause before making a change.\",\"suggestion\":null,\"confidence\":0.1}",
+    "model": "gpt-6-luna",
+    "input_tokens": 4734,
+    "output_tokens": 178,
+    "latency_ms": 2446
+  }
+}

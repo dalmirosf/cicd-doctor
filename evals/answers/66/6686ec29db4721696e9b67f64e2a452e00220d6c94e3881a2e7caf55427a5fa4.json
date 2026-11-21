@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "5f5ca533e3420558a8f811109ad9fa868a5820e952140b07c48dcba3a30370f0",
+  "result": {
+    "raw_json": "{\"category\":\"broken_test\",\"probable_cause\":\"The validation step regenerated the distribution files and found that they differ from the checked-in versions, so the generated-artifact consistency check failed.\",\"evidence\":[{\"line\":455,\"text\":\"ERROR: Build result differs. Please build first with \\\"docker buildx bake build\\\"\"},{\"line\":456,\"text\":\" M dist/index.cjs\"},{\"line\":457,\"text\":\" M dist/index.cjs.map\"},{\"line\":458,\"text\":\" M dist/licenses.txt\"},{\"line\":459,\"text\":\"ERROR: process \\\"/bin/sh -c   set -e\\\\n  rsync -a /context/. .\\\\n  git add -A\\\\n  rm -rf dist\\\\n  cp -rf /out/* .\\\\n  if [ -n \\\\\"  }] ,\"suggested_fix\":\"Run `docker buildx bake build` using the repository's expected toolchain, review the resulting changes to `dist/index.cjs`, `dist/index.cjs.map`, and `dist/licenses.txt`, and commit the updated generated files.\",\"suggestion\":null,\"confidence\":0.99}",
+    "model": "gpt-6-luna",
+    "input_tokens": 6196,
+    "output_tokens": 310,
+    "latency_ms": 3460
+  }
+}

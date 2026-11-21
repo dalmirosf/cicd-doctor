@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "5f5ca533e3420558a8f811109ad9fa868a5820e952140b07c48dcba3a30370f0",
+  "result": {
+    "raw_json": "{\"category\":\"broken_test\",\"probable_cause\":\"Terraform validation fails under the Terraform 1.0.0 minimum-version job because the configuration uses the `nullable` variable argument, which that Terraform version does not support.\",\"evidence\":[{\"line\":411,\"text\":\"pre-commit run terraform_validate --color=always --show-diff-on-failure --files ./examples/ipv6-only/*\"},{\"line\":437,\"text\":\"\u2502 Error: Unsupported argument\"},{\"line\":442,\"text\":\"\u2502 An argument named \\\"nullable\\\" is not expected here.\"},{\"line\":455,\"text\":\"\u2502 Error: Unsupported argument\"},{\"line\":460,\"text\":\"\u2502 An argument named \\\"nullable\\\" is not expected here.\"}],\"suggested_fix\":\"To retain Terraform 1.0.0 support, remove the `nullable = false` arguments from the affected variable blocks in `variables.tf`, or replace that behavior with validation supported by Terraform 1.0. Alternatively, raise the declared minimum Terraform version to one that supports `nullable` and adjust the minimum-version CI job accordingly.\",\"suggestion\":null,\"confidence\":0.99}",
+    "model": "gpt-6-luna",
+    "input_tokens": 4169,
+    "output_tokens": 486,
+    "latency_ms": 4972
+  }
+}

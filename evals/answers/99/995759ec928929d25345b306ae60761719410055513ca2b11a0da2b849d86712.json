@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "5f5ca533e3420558a8f811109ad9fa868a5820e952140b07c48dcba3a30370f0",
+  "result": {
+    "raw_json": "{\n  \"category\": \"dependency\",\n  \"probable_cause\": \"The Python command failed because the `requests` package is not installed in the environment.\",\n  \"evidence\": [\n    {\n      \"line\": 18,\n      \"text\": \"    import requests\"\n    },\n    {\n      \"line\": 19,\n      \"text\": \"ModuleNotFoundError: No module named 'requests'\"\n    }\n  ],\n  \"suggested_fix\": \"Declare `requests` in the project\u2019s dependency file and ensure the workflow installs project dependencies before running `python -m labpkg.cli`.\",\n  \"suggestion\": null,\n  \"confidence\": 0.99\n}",
+    "model": "gpt-6-luna",
+    "input_tokens": 1496,
+    "output_tokens": 197,
+    "latency_ms": 2520
+  }
+}

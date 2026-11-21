@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "5f5ca533e3420558a8f811109ad9fa868a5820e952140b07c48dcba3a30370f0",
+  "result": {
+    "raw_json": "{\"category\":\"broken_test\",\"probable_cause\":\"The Spellcheck step failed because CSpell flags \u201ccombinators\u201d as an unknown word in src/language-css/printer-postcss.js.\",\"evidence\":[{\"line\":222,\"text\":\"src/language-css/printer-postcss.js:396:55 - Unknown word (combinators)\"},{\"line\":223,\"text\":\"CSpell: Files checked: 2867, Issues found: 1 in 1 file.\"}],\"suggested_fix\":\"If \u201ccombinators\u201d is the intended technical term, add it to the project\u2019s CSpell word list; otherwise, replace it with a recognized spelling. Then rerun the spellcheck.\",\"suggestion\":null,\"confidence\":0.98}",
+    "model": "gpt-6-luna",
+    "input_tokens": 1870,
+    "output_tokens": 296,
+    "latency_ms": 3374
+  }
+}

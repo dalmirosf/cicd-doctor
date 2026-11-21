@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "5f5ca533e3420558a8f811109ad9fa868a5820e952140b07c48dcba3a30370f0",
+  "result": {
+    "raw_json": "{\"category\":\"unknown\",\"probable_cause\":\"The test step failed, but the cause is intentionally classified as unknown by the test-only gate.\",\"evidence\":[],\"suggested_fix\":\"Review the failing test and its build/watch output to determine why it failed, then correct the underlying issue and rerun the test suite.\",\"suggestion\":null,\"confidence\":0.1}",
+    "model": "gpt-6-luna",
+    "input_tokens": 3090,
+    "output_tokens": 110,
+    "latency_ms": 1715
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "model": "gpt-6-luna",
+  "prompt_version": "diag-v3",
+  "fingerprint": "5f5ca533e3420558a8f811109ad9fa868a5820e952140b07c48dcba3a30370f0",
+  "result": {
+    "raw_json": "{\"category\":\"unknown\",\"probable_cause\":\"The failure cause is not diagnosed because this is a test-only gate check.\",\"evidence\":[],\"suggested_fix\":\"No fix is provided for a test-only gate check.\",\"suggestion\":null,\"confidence\":0.1}",
+    "model": "gpt-6-luna",
+    "input_tokens": 1986,
+    "output_tokens": 85,
+    "latency_ms": 1675
+  }
+}
