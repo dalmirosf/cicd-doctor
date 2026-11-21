@@ -1,0 +1,893 @@
+﻿2026-11-04T11:08:10.3940305Z Current runner version: '2.338.2'
+2026-11-04T11:08:10.3964985Z ##[group]Runner Image Provisioner
+2026-11-04T11:08:10.3965890Z Hosted Compute Agent
+2026-11-04T11:08:10.3966455Z Version: 20261021.618
+2026-11-04T11:08:10.3967015Z Commit: 21505ad2541d5be6135ed84fc33697146cf75b8e
+2026-11-04T11:08:10.3967711Z Build Date: 2026-10-21T00:45:21Z
+2026-11-04T11:08:10.3968335Z Worker ID: {1b4967a2-0c8b-46d4-84a3-8ae315de17dc}
+2026-11-04T11:08:10.3969015Z Region: westus
+2026-11-04T11:08:10.3969523Z Cloud: Azure
+2026-11-04T11:08:10.3970003Z ##[endgroup]
+2026-11-04T11:08:10.3971324Z ##[group]Operating System
+2026-11-04T11:08:10.3971962Z Microsoft Windows Server 2025
+2026-11-04T11:08:10.3972528Z 10.0.26100
+2026-11-04T11:08:10.3973001Z Datacenter
+2026-11-04T11:08:10.3973693Z ##[endgroup]
+2026-11-04T11:08:10.3974260Z ##[group]Runner Image
+2026-11-04T11:08:10.3974798Z Image: windows-2025-vs2026
+2026-11-04T11:08:10.3975329Z Version: 20261030.294.1
+2026-11-04T11:08:10.3976808Z Included Software: https://github.com/actions/runner-images/blob/win25-vs2026/20261030.294/images/windows/Windows2025-VS2026-Readme.md
+2026-11-04T11:08:10.3978413Z Image Release: https://github.com/actions/runner-images/releases/tag/win25-vs2026%2F20261030.294
+2026-11-04T11:08:10.3979608Z ##[endgroup]
+2026-11-04T11:08:10.3980693Z ##[group]GITHUB_TOKEN Permissions
+2026-11-04T11:08:10.3982447Z Contents: read
+2026-11-04T11:08:10.3982984Z Metadata: read
+2026-11-04T11:08:10.3983514Z ##[endgroup]
+2026-11-04T11:08:10.3985515Z Secret source: None
+2026-11-04T11:08:10.3986390Z Cache mode: write
+2026-11-04T11:08:10.3987107Z Prepare workflow directory
+2026-11-04T11:08:10.4543921Z Prepare all required actions
+2026-11-04T11:08:10.4596025Z Getting action download info
+2026-11-04T11:08:10.7954312Z Download action repository 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+2026-11-04T11:08:10.9323897Z Download action repository 'astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7' (SHA:c18668ad3cf93ea998bef934396af7bb5c839dc7)
+2026-11-04T11:08:11.4110872Z Download action repository 'actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9' (SHA:cf430e030ddbb5b0abf93d22962f4752f3646cd9)
+2026-11-04T11:08:11.6355932Z Complete job name: Test windows-latest / 3.15t
+2026-11-04T11:08:11.8036165Z ##[group]Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+2026-11-04T11:08:11.8038345Z with:
+2026-11-04T11:08:11.8038998Z   persist-credentials: false
+2026-11-04T11:08:11.8039800Z   repository: pydantic/pydantic
+2026-11-04T11:08:11.8044502Z   token: ***
+2026-11-04T11:08:11.8045008Z   ssh-strict: true
+2026-11-04T11:08:11.8045512Z   ssh-user: git
+2026-11-04T11:08:11.8045988Z   clean: true
+2026-11-04T11:08:11.8046497Z   sparse-checkout-cone-mode: true
+2026-11-04T11:08:11.8047104Z   fetch-depth: 1
+2026-11-04T11:08:11.8047645Z   fetch-tags: false
+2026-11-04T11:08:11.8048159Z   show-progress: true
+2026-11-04T11:08:11.8048657Z   lfs: false
+2026-11-04T11:08:11.8049142Z   submodules: false
+2026-11-04T11:08:11.8049687Z   set-safe-directory: true
+2026-11-04T11:08:11.8050243Z   allow-unsafe-pr-checkout: false
+2026-11-04T11:08:11.8051071Z env:
+2026-11-04T11:08:11.8051537Z   COLUMNS: 150
+2026-11-04T11:08:11.8052015Z   UV_FROZEN: true
+2026-11-04T11:08:11.8052611Z   FORCE_COLOR: 1
+2026-11-04T11:08:11.8053091Z   OS: windows-latest
+2026-11-04T11:08:11.8053628Z   DEPS: yes
+2026-11-04T11:08:11.8054109Z   UV_PYTHON_PREFERENCE: only-managed
+2026-11-04T11:08:11.8054720Z ##[endgroup]
+2026-11-04T11:08:11.9584401Z Syncing repository: pydantic/pydantic
+2026-11-04T11:08:11.9586406Z ##[group]Getting Git version info
+2026-11-04T11:08:11.9587192Z Working directory is 'D:\a\pydantic\pydantic'
+2026-11-04T11:08:12.0538641Z [command]"C:\Program Files\Git\bin\git.exe" version
+2026-11-04T11:08:12.3954005Z git version 2.56.0.windows.4
+2026-11-04T11:08:12.4015877Z ##[endgroup]
+2026-11-04T11:08:12.4032238Z Temporarily overriding HOME='D:\a\_temp\68b4da49-2cf8-4edd-b149-d98a9f18389e' before making global git config changes
+2026-11-04T11:08:12.4039032Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-04T11:08:12.4044330Z [command]"C:\Program Files\Git\bin\git.exe" config --global --add safe.directory D:\a\pydantic\pydantic
+2026-11-04T11:08:12.4689225Z Deleting the contents of 'D:\a\pydantic\pydantic'
+2026-11-04T11:08:12.4694773Z ##[group]Determining repository object format
+2026-11-04T11:08:12.4698219Z ##[endgroup]
+2026-11-04T11:08:12.4700556Z ##[group]Initializing the repository
+2026-11-04T11:08:12.4709301Z [command]"C:\Program Files\Git\bin\git.exe" init D:\a\pydantic\pydantic
+2026-11-04T11:08:12.5700461Z Initialized empty Git repository in D:/a/pydantic/pydantic/.git/
+2026-11-04T11:08:12.5752659Z [command]"C:\Program Files\Git\bin\git.exe" remote add origin https://github.com/pydantic/pydantic
+2026-11-04T11:08:12.6408130Z ##[endgroup]
+2026-11-04T11:08:12.6410198Z ##[group]Disabling automatic garbage collection
+2026-11-04T11:08:12.6417970Z [command]"C:\Program Files\Git\bin\git.exe" config --local gc.auto 0
+2026-11-04T11:08:12.6820223Z ##[endgroup]
+2026-11-04T11:08:12.6823033Z ##[group]Setting up auth
+2026-11-04T11:08:12.6825093Z Removing SSH command configuration
+2026-11-04T11:08:12.6832577Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-11-04T11:08:12.7233469Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-11-04T11:08:14.2604843Z Removing HTTP extra header
+2026-11-04T11:08:14.2614629Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-04T11:08:14.3065804Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-11-04T11:08:14.8961286Z Removing includeIf entries pointing to credentials config files
+2026-11-04T11:08:14.8974234Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-04T11:08:14.9377666Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-11-04T11:08:15.4882303Z [command]"C:\Program Files\Git\bin\git.exe" config --file D:\a\_temp\git-credentials-becc1578-4817-4b5f-80cb-69de2c96d32c.config http.https://github.com/.extraheader "AUTHORIZATION: basic ***"
+2026-11-04T11:08:15.5278052Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:D:/a/pydantic/pydantic/.git.path D:\a\_temp\git-credentials-becc1578-4817-4b5f-80cb-69de2c96d32c.config
+2026-11-04T11:08:15.5669161Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:D:/a/pydantic/pydantic/.git/worktrees/*.path D:\a\_temp\git-credentials-becc1578-4817-4b5f-80cb-69de2c96d32c.config
+2026-11-04T11:08:15.6254230Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-becc1578-4817-4b5f-80cb-69de2c96d32c.config
+2026-11-04T11:08:15.6746817Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-becc1578-4817-4b5f-80cb-69de2c96d32c.config
+2026-11-04T11:08:15.7187108Z ##[endgroup]
+2026-11-04T11:08:15.7188025Z ##[group]Fetching the repository
+2026-11-04T11:08:15.7201679Z [command]"C:\Program Files\Git\bin\git.exe" -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +4585fc1571ecbd58e4d3126a9d508791686bbc82:refs/remotes/pull/14217/merge
+2026-11-04T11:08:16.9851525Z From https://github.com/pydantic/pydantic
+2026-11-04T11:08:16.9852433Z  * [new ref]         4585fc1571ecbd58e4d3126a9d508791686bbc82 -> pull/14217/merge
+2026-11-04T11:08:16.9901351Z ##[endgroup]
+2026-11-04T11:08:16.9902516Z ##[group]Determining the checkout info
+2026-11-04T11:08:16.9903594Z ##[endgroup]
+2026-11-04T11:08:16.9912177Z [command]"C:\Program Files\Git\bin\git.exe" sparse-checkout disable
+2026-11-04T11:08:17.0352481Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset-all extensions.worktreeConfig
+2026-11-04T11:08:17.0757827Z ##[group]Checking out the ref
+2026-11-04T11:08:17.0768661Z [command]"C:\Program Files\Git\bin\git.exe" checkout --progress --force refs/remotes/pull/14217/merge
+2026-11-04T11:08:18.0019909Z Note: switching to 'refs/remotes/pull/14217/merge'.
+2026-11-04T11:08:18.0020403Z 
+2026-11-04T11:08:18.0020742Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-11-04T11:08:18.0021564Z changes and commit them, and you can discard any commits you make in this
+2026-11-04T11:08:18.0022380Z state without impacting any branches by switching back to a branch.
+2026-11-04T11:08:18.0022928Z 
+2026-11-04T11:08:18.0023268Z If you want to create a new branch to retain commits you create, you may
+2026-11-04T11:08:18.0024048Z do so (now or later) by using -c with the switch command. Example:
+2026-11-04T11:08:18.0024472Z 
+2026-11-04T11:08:18.0024669Z   git switch -c <new-branch-name>
+2026-11-04T11:08:18.0025025Z 
+2026-11-04T11:08:18.0025177Z Or undo this operation with:
+2026-11-04T11:08:18.0025450Z 
+2026-11-04T11:08:18.0025575Z   git switch -
+2026-11-04T11:08:18.0025778Z 
+2026-11-04T11:08:18.0026150Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-11-04T11:08:18.0026730Z 
+2026-11-04T11:08:18.0027417Z HEAD is now at 4585fc1 Merge 846cc237875036a439f950b763cd6976606a375c into bfa7f4f6cbb442678df7e2ba976943599182411a
+2026-11-04T11:08:18.0088735Z ##[endgroup]
+2026-11-04T11:08:18.0498729Z [command]"C:\Program Files\Git\bin\git.exe" log -1 --format=%H
+2026-11-04T11:08:18.0837736Z 4585fc1571ecbd58e4d3126a9d508791686bbc82
+2026-11-04T11:08:18.0880249Z ##[group]Removing auth
+2026-11-04T11:08:18.0880582Z Removing SSH command configuration
+2026-11-04T11:08:18.0889178Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-11-04T11:08:18.1266273Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-11-04T11:08:18.7257708Z Removing HTTP extra header
+2026-11-04T11:08:18.7266374Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-04T11:08:18.7658586Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-11-04T11:08:19.3110275Z Removing includeIf entries pointing to credentials config files
+2026-11-04T11:08:19.3117959Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-04T11:08:19.3461631Z includeif.gitdir:D:/a/pydantic/pydantic/.git.path
+2026-11-04T11:08:19.3462626Z includeif.gitdir:D:/a/pydantic/pydantic/.git/worktrees/*.path
+2026-11-04T11:08:19.3464002Z includeif.gitdir:/github/workspace/.git.path
+2026-11-04T11:08:19.3464599Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-11-04T11:08:19.3516607Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:D:/a/pydantic/pydantic/.git.path
+2026-11-04T11:08:19.3855662Z D:\a\_temp\git-credentials-becc1578-4817-4b5f-80cb-69de2c96d32c.config
+2026-11-04T11:08:19.3905187Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:D:/a/pydantic/pydantic/.git.path D\:\\a\\_temp\\git\-credentials\-becc1578\-4817\-4b5f\-80cb\-69de2c96d32c\.config
+2026-11-04T11:08:19.4290573Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:D:/a/pydantic/pydantic/.git/worktrees/*.path
+2026-11-04T11:08:19.4638170Z D:\a\_temp\git-credentials-becc1578-4817-4b5f-80cb-69de2c96d32c.config
+2026-11-04T11:08:19.4685265Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:D:/a/pydantic/pydantic/.git/worktrees/*.path D\:\\a\\_temp\\git\-credentials\-becc1578\-4817\-4b5f\-80cb\-69de2c96d32c\.config
+2026-11-04T11:08:19.5064465Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-11-04T11:08:19.5406508Z /github/runner_temp/git-credentials-becc1578-4817-4b5f-80cb-69de2c96d32c.config
+2026-11-04T11:08:19.5463549Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-becc1578\-4817\-4b5f\-80cb\-69de2c96d32c\.config
+2026-11-04T11:08:19.5886271Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-11-04T11:08:19.6224514Z /github/runner_temp/git-credentials-becc1578-4817-4b5f-80cb-69de2c96d32c.config
+2026-11-04T11:08:19.6271484Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-becc1578\-4817\-4b5f\-80cb\-69de2c96d32c\.config
+2026-11-04T11:08:19.6656452Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-11-04T11:08:20.2349656Z Removing credentials config 'D:\a\_temp\git-credentials-becc1578-4817-4b5f-80cb-69de2c96d32c.config'
+2026-11-04T11:08:20.2360871Z ##[endgroup]
+2026-11-04T11:08:20.2809233Z ##[group]Run astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7
+2026-11-04T11:08:20.2809669Z with:
+2026-11-04T11:08:20.2809854Z   python-version: 3.15t
+2026-11-04T11:08:20.2810084Z   enable-cache: true
+2026-11-04T11:08:20.2810293Z   activate-environment: false
+2026-11-04T11:08:20.2810508Z   no-project: false
+2026-11-04T11:08:20.2810731Z   working-directory: D:\a\pydantic\pydantic
+2026-11-04T11:08:20.2813197Z   github-token: ***
+2026-11-04T11:08:20.2813759Z   cache-dependency-glob: **/*requirements*.txt
+**/*requirements*.in
+**/*constraints*.txt
+**/*constraints*.in
+**/pyproject.toml
+**/uv.lock
+**/*.py.lock
+
+2026-11-04T11:08:20.2814371Z   restore-cache: true
+2026-11-04T11:08:20.2814560Z   save-cache: auto
+2026-11-04T11:08:20.2814741Z   prune-cache: false
+2026-11-04T11:08:20.2814928Z   cache-python: false
+2026-11-04T11:08:20.2815132Z   ignore-nothing-to-cache: false
+2026-11-04T11:08:20.2815368Z   ignore-empty-workdir: false
+2026-11-04T11:08:20.2815648Z   download-from-astral-mirror: true
+2026-11-04T11:08:20.2815893Z   add-problem-matchers: true
+2026-11-04T11:08:20.2816093Z   quiet: false
+2026-11-04T11:08:20.2816273Z   resolution-strategy: highest
+2026-11-04T11:08:20.2816478Z env:
+2026-11-04T11:08:20.2816623Z   COLUMNS: 150
+2026-11-04T11:08:20.2816785Z   UV_FROZEN: true
+2026-11-04T11:08:20.2816951Z   FORCE_COLOR: 1
+2026-11-04T11:08:20.2817128Z   OS: windows-latest
+2026-11-04T11:08:20.2817300Z   DEPS: yes
+2026-11-04T11:08:20.2817473Z   UV_PYTHON_PREFERENCE: only-managed
+2026-11-04T11:08:20.2817702Z ##[endgroup]
+2026-11-04T11:08:20.4831347Z Trying to find version for uv in: D:\a\pydantic\pydantic\uv.toml
+2026-11-04T11:08:20.4831908Z Could not find file: D:\a\pydantic\pydantic\uv.toml
+2026-11-04T11:08:20.4832369Z Trying to find version for uv in: D:\a\pydantic\pydantic\pyproject.toml
+2026-11-04T11:08:20.4853834Z Found version for uv in D:\a\pydantic\pydantic\pyproject.toml: >=0.13.0
+2026-11-04T11:08:20.4860101Z Found minimum version specifier, using latest version
+2026-11-04T11:08:20.4863200Z Fetching manifest data from https://raw.githubusercontent.com/astral-sh/versions/main/v1/uv.ndjson ...
+2026-11-04T11:08:20.5400777Z Downloading uv from "https://releases.astral.sh/github/uv/releases/download/0.13.7/uv-x86_64-pc-windows-msvc.zip" ...
+2026-11-04T11:08:21.1537049Z [command]C:\Windows\system32\tar.exe x -C D:\a\_temp\06788c1d-15ba-40a0-8c2b-a003258a67e7 -f D:\a\_temp\3ab0f564-e277-4e4f-8bec-543caf5b67d9
+2026-11-04T11:08:21.3628501Z Set UV_TOOL_BIN_DIR to D:\a\_temp\uv-tool-bin-dir
+2026-11-04T11:08:21.3633551Z Added D:\a\_temp\uv-tool-bin-dir to the path
+2026-11-04T11:08:21.3642811Z Added C:\hostedtoolcache\windows\uv\0.13.7\x86_64 to the path
+2026-11-04T11:08:21.3646188Z Set UV_TOOL_DIR to D:\a\_temp\uv-tool-dir
+2026-11-04T11:08:21.3650463Z Set UV_PYTHON_INSTALL_DIR to D:\a\_temp\uv-python-dir
+2026-11-04T11:08:21.3654160Z Added D:\a\_temp\uv-python-dir to the path
+2026-11-04T11:08:21.3658285Z Set UV_PYTHON to 3.15t
+2026-11-04T11:08:21.3684140Z Set UV_CACHE_DIR to D:\a\_temp\setup-uv-cache
+2026-11-04T11:08:21.3684735Z Successfully installed uv version 0.13.7
+2026-11-04T11:08:21.3694402Z Searching files using cache dependency glob: D:\a\pydantic\pydantic\**\*requirements*.txt,D:\a\pydantic\pydantic\**\*requirements*.in,D:\a\pydantic\pydantic\**\*constraints*.txt,D:\a\pydantic\pydantic\**\*constraints*.in,D:\a\pydantic\pydantic\**\pyproject.toml,D:\a\pydantic\pydantic\**\uv.lock,D:\a\pydantic\pydantic\**\*.py.lock
+2026-11-04T11:08:21.4061759Z D:\a\pydantic\pydantic\.github\actions\people\requirements.in
+2026-11-04T11:08:21.4083138Z D:\a\pydantic\pydantic\.github\build-constraints.txt
+2026-11-04T11:08:21.4125618Z D:\a\pydantic\pydantic\.github\pyodide\requirements.in
+2026-11-04T11:08:21.4880974Z D:\a\pydantic\pydantic\pydantic-core\pyproject.toml
+2026-11-04T11:08:21.5525387Z D:\a\pydantic\pydantic\pydantic-core\uv.lock
+2026-11-04T11:08:21.5552106Z D:\a\pydantic\pydantic\pyproject.toml
+2026-11-04T11:08:22.1232843Z D:\a\pydantic\pydantic\tests\plugin\pyproject.toml
+2026-11-04T11:08:22.1545557Z D:\a\pydantic\pydantic\tests\typechecking\pyproject.toml
+2026-11-04T11:08:22.1562081Z D:\a\pydantic\pydantic\tests\typechecking\uv.lock
+2026-11-04T11:08:22.1637805Z D:\a\pydantic\pydantic\uv.lock
+2026-11-04T11:08:22.1659155Z Found 10 files to hash.
+2026-11-04T11:08:22.1666832Z Trying to restore cache from GitHub Actions cache with key: setup-uv-2-x86_64-pc-windows-msvc-windows-2025-3.15t-8b3250c106cbf2ea9bbcdc60f4caf57f9f5d851af290721b436ec3108ec5af98
+2026-11-04T11:08:22.6809264Z Cache hit for: setup-uv-2-x86_64-pc-windows-msvc-windows-2025-3.15t-8b3250c106cbf2ea9bbcdc60f4caf57f9f5d851af290721b436ec3108ec5af98
+2026-11-04T11:08:23.8744248Z Received 30678439 of 30678439 (100.0%), 31.9 MBs/sec
+2026-11-04T11:08:23.8746216Z Cache Size: ~29 MB (30678439 B)
+2026-11-04T11:08:23.8771624Z [command]"C:\Program Files\Git\usr\bin\tar.exe" -xf D:/a/_temp/310f513b-6b20-429e-bb9d-1630148dd67d/cache.tzst -P -C D:/a/pydantic/pydantic --force-local --use-compress-program "zstd -d"
+2026-11-04T11:08:25.5341129Z Cache restored successfully
+2026-11-04T11:08:25.5369066Z cache restored from GitHub Actions cache with key: setup-uv-2-x86_64-pc-windows-msvc-windows-2025-3.15t-8b3250c106cbf2ea9bbcdc60f4caf57f9f5d851af290721b436ec3108ec5af98
+2026-11-04T11:08:25.6700150Z ##[group]Run uv sync --all-packages --group testing-extra --all-extras
+2026-11-04T11:08:25.6700761Z uv sync --all-packages --group testing-extra --all-extras
+2026-11-04T11:08:25.7008598Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-11-04T11:08:25.7009089Z env:
+2026-11-04T11:08:25.7009318Z   COLUMNS: 150
+2026-11-04T11:08:25.7009577Z   UV_FROZEN: true
+2026-11-04T11:08:25.7009837Z   FORCE_COLOR: 1
+2026-11-04T11:08:25.7010095Z   OS: windows-latest
+2026-11-04T11:08:25.7010365Z   DEPS: yes
+2026-11-04T11:08:25.7010628Z   UV_PYTHON_PREFERENCE: only-managed
+2026-11-04T11:08:25.7011022Z   UV_TOOL_BIN_DIR: D:\a\_temp\uv-tool-bin-dir
+2026-11-04T11:08:25.7011413Z   UV_TOOL_DIR: D:\a\_temp\uv-tool-dir
+2026-11-04T11:08:25.7011804Z   UV_PYTHON_INSTALL_DIR: D:\a\_temp\uv-python-dir
+2026-11-04T11:08:25.7012191Z   UV_PYTHON: 3.15t
+2026-11-04T11:08:25.7012486Z   UV_CACHE_DIR: D:\a\_temp\setup-uv-cache
+2026-11-04T11:08:25.7013595Z ##[endgroup]
+2026-11-04T11:08:26.2505911Z Downloading cpython-3.15.2+freethreaded-windows-x86_64-none (download) (23.4MiB)
+2026-11-04T11:08:27.0577348Z  Downloaded cpython-3.15.2+freethreaded-windows-x86_64-none (download)
+2026-11-04T11:08:27.3264755Z Using CPython 3.15.2+freethreaded
+2026-11-04T11:08:27.3265587Z Creating virtual environment at: .venv
+2026-11-04T11:08:27.3485042Z    Building pydantic @ file:///D:/a/pydantic/pydantic
+2026-11-04T11:08:27.3490600Z    Building pydantic-core @ file:///D:/a/pydantic/pydantic/pydantic-core
+2026-11-04T11:08:29.0766894Z       Built pydantic @ file:///D:/a/pydantic/pydantic
+2026-11-04T11:09:52.5388932Z       Built pydantic-core @ file:///D:/a/pydantic/pydantic/pydantic-core
+2026-11-04T11:09:52.5422575Z Prepared 2 packages in 1m 25s
+2026-11-04T11:09:52.9096049Z Installed 57 packages in 367ms
+2026-11-04T11:09:52.9098380Z  + annotated-types==0.7.0
+2026-11-04T11:09:52.9099295Z  + ansi2html==1.9.2
+2026-11-04T11:09:52.9101165Z  + asttokens==2.4.1
+2026-11-04T11:09:52.9103175Z  + attrs==24.3.0
+2026-11-04T11:09:52.9105079Z  + black==26.10.1
+2026-11-04T11:09:52.9105958Z  + cffi==2.1.0
+2026-11-04T11:09:52.9107683Z  + click==8.4.2
+2026-11-04T11:09:52.9109829Z  + cloudpickle==3.1.2
+2026-11-04T11:09:52.9110445Z  + colorama==0.4.6
+2026-11-04T11:09:52.9112766Z  + coverage==7.13.5
+2026-11-04T11:09:52.9113402Z  + devtools==0.12.2
+2026-11-04T11:09:52.9115183Z  + dirty-equals==0.9.0
+2026-11-04T11:09:52.9116845Z  + dnspython==2.7.0
+2026-11-04T11:09:52.9118452Z  + email-validator==2.2.0
+2026-11-04T11:09:52.9119303Z  + executing==2.2.0
+2026-11-04T11:09:52.9121185Z  + faker==35.0.0
+2026-11-04T11:09:52.9122089Z  + hypothesis==6.147.0
+2026-11-04T11:09:52.9123745Z  + idna==3.15
+2026-11-04T11:09:52.9124587Z  + iniconfig==2.0.0
+2026-11-04T11:09:52.9127341Z  + inline-snapshot==0.32.2
+2026-11-04T11:09:52.9128738Z  + jsonschema==4.26.0
+2026-11-04T11:09:52.9129944Z  + jsonschema-specifications==2024.10.1
+2026-11-04T11:09:52.9131171Z  + markdown-it-py==3.0.0
+2026-11-04T11:09:52.9134490Z  + maturin==1.16.0
+2026-11-04T11:09:52.9136062Z  + mdurl==0.1.2
+2026-11-04T11:09:52.9136656Z  + mypy-extensions==1.0.0
+2026-11-04T11:09:52.9141351Z  + packaging==26.3
+2026-11-04T11:09:52.9142112Z  + pathspec==1.1.1
+2026-11-04T11:09:52.9142782Z  + platformdirs==4.13.5
+2026-11-04T11:09:52.9143428Z  + pluggy==1.5.0
+2026-11-04T11:09:52.9145480Z  + py-cpuinfo==9.0.0
+2026-11-04T11:09:52.9146654Z  + pycparser==2.22
+2026-11-04T11:09:52.9149734Z  + pydantic==2.15.0a0+dev (from file:///D:/a/pydantic/pydantic)
+2026-11-04T11:09:52.9151747Z  + pydantic-core==2.50.0 (from file:///D:/a/pydantic/pydantic/pydantic-core)
+2026-11-04T11:09:52.9152413Z  + pygments==2.20.0
+2026-11-04T11:09:52.9154625Z  + pytest==9.1.1
+2026-11-04T11:09:52.9155233Z  + pytest-benchmark==5.1.0
+2026-11-04T11:09:52.9157361Z  + pytest-codspeed==4.5.0
+2026-11-04T11:09:52.9158501Z  + pytest-examples==0.0.15
+2026-11-04T11:09:52.9160320Z  + pytest-mock==3.14.0
+2026-11-04T11:09:52.9161170Z  + pytest-pretty==1.2.0
+2026-11-04T11:09:52.9163109Z  + pytest-run-parallel==0.7.1
+2026-11-04T11:09:52.9164362Z  + pytest-timeout==2.4.0
+2026-11-04T11:09:52.9166244Z  + python-dateutil==2.9.0.post0
+2026-11-04T11:09:52.9167500Z  + pytokens==0.4.1
+2026-11-04T11:09:52.9168927Z  + pytz==2024.2
+2026-11-04T11:09:52.9170174Z  + referencing==0.36.1
+2026-11-04T11:09:52.9171808Z  + rich==15.0.0
+2026-11-04T11:09:52.9173285Z  + rpds-py==2026.9.1
+2026-11-04T11:09:52.9174800Z  + ruff==0.17.3
+2026-11-04T11:09:52.9175670Z  + six==1.17.0
+2026-11-04T11:09:52.9177490Z  + sortedcontainers==2.4.0
+2026-11-04T11:09:52.9178713Z  + sqlalchemy==2.0.37
+2026-11-04T11:09:52.9180473Z  + time-machine==3.3.0
+2026-11-04T11:09:52.9181665Z  + typing-extensions==4.16.0
+2026-11-04T11:09:52.9183374Z  + typing-inspection==0.4.4
+2026-11-04T11:09:52.9183957Z  + tzdata==2025.1
+2026-11-04T11:09:53.1373990Z ##[group]Run uv run python -c "import pydantic.version; print(pydantic.version.version_info())"
+2026-11-04T11:09:53.1374756Z uv run python -c "import pydantic.version; print(pydantic.version.version_info())"
+2026-11-04T11:09:53.1446376Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-11-04T11:09:53.1446742Z env:
+2026-11-04T11:09:53.1446907Z   COLUMNS: 150
+2026-11-04T11:09:53.1447087Z   UV_FROZEN: true
+2026-11-04T11:09:53.1447278Z   FORCE_COLOR: 1
+2026-11-04T11:09:53.1447462Z   OS: windows-latest
+2026-11-04T11:09:53.1447662Z   DEPS: yes
+2026-11-04T11:09:53.1447854Z   UV_PYTHON_PREFERENCE: only-managed
+2026-11-04T11:09:53.1448131Z   UV_TOOL_BIN_DIR: D:\a\_temp\uv-tool-bin-dir
+2026-11-04T11:09:53.1448412Z   UV_TOOL_DIR: D:\a\_temp\uv-tool-dir
+2026-11-04T11:09:53.1448698Z   UV_PYTHON_INSTALL_DIR: D:\a\_temp\uv-python-dir
+2026-11-04T11:09:53.1448969Z   UV_PYTHON: 3.15t
+2026-11-04T11:09:53.1449239Z   UV_CACHE_DIR: D:\a\_temp\setup-uv-cache
+2026-11-04T11:09:53.1449488Z ##[endgroup]
+2026-11-04T11:09:53.9730726Z              pydantic version: 2.15.0a0+dev
+2026-11-04T11:09:53.9731286Z         pydantic-core version: 2.50.0
+2026-11-04T11:09:53.9731817Z           pydantic-core build: profile=debug pgo=false
+2026-11-04T11:09:53.9732705Z                python version: 3.15.2 free-threading build (main, Oct 26 2026, 14:26:13) [MSC v.1951 64 bit (AMD64)]
+2026-11-04T11:09:53.9733590Z                      platform: Windows-2025Server-10.0.26100-SP0
+2026-11-04T11:09:53.9734198Z              related packages: typing_extensions-4.16.0
+2026-11-04T11:09:53.9734701Z                        commit: 4585fc1
+2026-11-04T11:09:54.1326378Z ##[group]Run mkdir coverage
+2026-11-04T11:09:54.1326704Z mkdir coverage
+2026-11-04T11:09:54.1396588Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-11-04T11:09:54.1396999Z env:
+2026-11-04T11:09:54.1397168Z   COLUMNS: 150
+2026-11-04T11:09:54.1397347Z   UV_FROZEN: true
+2026-11-04T11:09:54.1397522Z   FORCE_COLOR: 1
+2026-11-04T11:09:54.1397710Z   OS: windows-latest
+2026-11-04T11:09:54.1397904Z   DEPS: yes
+2026-11-04T11:09:54.1398093Z   UV_PYTHON_PREFERENCE: only-managed
+2026-11-04T11:09:54.1398364Z   UV_TOOL_BIN_DIR: D:\a\_temp\uv-tool-bin-dir
+2026-11-04T11:09:54.1398642Z   UV_TOOL_DIR: D:\a\_temp\uv-tool-dir
+2026-11-04T11:09:54.1398934Z   UV_PYTHON_INSTALL_DIR: D:\a\_temp\uv-python-dir
+2026-11-04T11:09:54.1399213Z   UV_PYTHON: 3.15t
+2026-11-04T11:09:54.1399425Z   UV_CACHE_DIR: D:\a\_temp\setup-uv-cache
+2026-11-04T11:09:54.1399857Z ##[endgroup]
+2026-11-04T11:09:54.5095129Z 
+2026-11-04T11:09:54.5103396Z     Directory: D:\a\pydantic\pydantic
+2026-11-04T11:09:54.5104192Z 
+2026-11-04T11:09:54.5106892Z Mode                 LastWriteTime         Length Name
+2026-11-04T11:09:54.5108031Z ----                 -------------         ------ ----
+2026-11-04T11:09:54.5299932Z d----           11/4/2026 11:09 AM                coverage
+2026-11-04T11:09:54.5337828Z 
+2026-11-04T11:09:54.6028325Z ##[group]Run make test NUM_THREADS=4
+2026-11-04T11:09:54.6028685Z make test NUM_THREADS=4
+2026-11-04T11:09:54.6099466Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-11-04T11:09:54.6100094Z env:
+2026-11-04T11:09:54.6100268Z   COLUMNS: 150
+2026-11-04T11:09:54.6100448Z   UV_FROZEN: true
+2026-11-04T11:09:54.6100635Z   FORCE_COLOR: 1
+2026-11-04T11:09:54.6100841Z   OS: windows-latest
+2026-11-04T11:09:54.6101040Z   DEPS: yes
+2026-11-04T11:09:54.6101235Z   UV_PYTHON_PREFERENCE: only-managed
+2026-11-04T11:09:54.6101520Z   UV_TOOL_BIN_DIR: D:\a\_temp\uv-tool-bin-dir
+2026-11-04T11:09:54.6101801Z   UV_TOOL_DIR: D:\a\_temp\uv-tool-dir
+2026-11-04T11:09:54.6102098Z   UV_PYTHON_INSTALL_DIR: D:\a\_temp\uv-python-dir
+2026-11-04T11:09:54.6102372Z   UV_PYTHON: 3.15t
+2026-11-04T11:09:54.6102581Z   UV_CACHE_DIR: D:\a\_temp\setup-uv-cache
+2026-11-04T11:09:54.6102878Z   COVERAGE_FILE: coverage/.coverage.Windows-py3.15t
+2026-11-04T11:09:54.6103215Z   CONTEXT: Windows-py3.15t-without-deps
+2026-11-04T11:09:54.6103468Z ##[endgroup]
+2026-11-04T11:09:55.1341822Z uv 0.13.7 (316c827e0 2026-11-03 x86_64-pc-windows-msvc)
+2026-11-04T11:09:55.1559499Z uv run coverage run -m pytest --durations=10 --parallel-threads 4
+2026-11-04T11:09:55.6856400Z D:\a\pydantic\pydantic\.venv\Lib\site-packages\pluggy\_callers.py:141: SyntaxWarning: 'return' in a 'finally' block
+2026-11-04T11:09:55.6857442Z   return result
+2026-11-04T11:09:55.6858530Z D:\a\pydantic\pydantic\.venv\Lib\site-packages\pluggy\_callers.py:182: SyntaxWarning: 'return' in a 'finally' block
+2026-11-04T11:09:55.6859099Z   return outcome.get_result()
+2026-11-04T11:10:12.9406023Z ================================================================ test session starts ================================================================
+2026-11-04T11:10:12.9406997Z platform win32 -- Python 3.15.2, pytest-9.1.1, pluggy-1.5.0
+2026-11-04T11:10:12.9407534Z codspeed: 4.5.0 (disabled, mode: walltime, callgraph: not supported, timer_resolution: 100.0ns)
+2026-11-04T11:10:12.9408436Z benchmark: 5.1.0 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=True warmup_iterations=100000)
+2026-11-04T11:10:12.9409154Z rootdir: D:\a\pydantic\pydantic
+2026-11-04T11:10:12.9409403Z configfile: pyproject.toml
+2026-11-04T11:10:12.9409617Z testpaths: tests
+2026-11-04T11:10:12.9410452Z plugins: devtools-0.12.2, Faker-35.0.0, hypothesis-6.147.0, inline-snapshot-0.32.2, platformdirs-4.13.5, benchmark-5.1.0, codspeed-4.5.0, examples-0.0.15, mock-3.14.0, pretty-1.2.0, run-parallel-0.7.1, timeout-2.4.0, time-machine-3.3.0
+2026-11-04T11:10:12.9411353Z collected 16998 items
+2026-11-04T11:10:12.9411568Z Collected 0 items to run in parallel
+2026-11-04T11:10:12.9411738Z 
+2026-11-04T11:10:15.1641296Z tests\benchmarks\json_documents\test_json_documents.py ..............                                                                          [  0%]
+2026-11-04T11:10:15.1759670Z tests\benchmarks\test_attribute_access.py ..                                                                                                   [  0%]
+2026-11-04T11:10:15.1823726Z tests\benchmarks\test_discriminated_unions.py ..                                                                                               [  0%]
+2026-11-04T11:10:15.3117942Z tests\benchmarks\test_fastapi_startup_generics.py .                                                                                            [  0%]
+2026-11-04T11:10:15.3647476Z tests\benchmarks\test_fastapi_startup_simple.py .                                                                                              [  0%]
+2026-11-04T11:10:15.3685628Z tests\benchmarks\test_imports.py ..                                                                                                            [  0%]
+2026-11-04T11:10:15.3709728Z tests\benchmarks\test_isinstance.py .                                                                                                          [  0%]
+2026-11-04T11:10:15.4100040Z tests\benchmarks\test_json_escapes.py .......                                                                                                  [  0%]
+2026-11-04T11:10:15.4185199Z tests\benchmarks\test_json_invalid.py ....                                                                                                     [  0%]
+2026-11-04T11:10:15.4864259Z tests\benchmarks\test_json_nested_models.py ....                                                                                               [  0%]
+2026-11-04T11:10:15.5126669Z tests\benchmarks\test_json_numbers.py ........                                                                                                 [  0%]
+2026-11-04T11:10:15.5635787Z tests\benchmarks\test_json_string_cache.py ............                                                                                        [  0%]
+2026-11-04T11:10:16.7706855Z tests\benchmarks\test_mcp_model_corpus.py .                                                                                                    [  0%]
+2026-11-04T11:10:41.3785214Z tests\benchmarks\test_model_corpus.py ........................................                                                                 [  0%]
+2026-11-04T11:10:41.3865455Z tests\benchmarks\test_model_eq.py ...                                                                                                          [  0%]
+2026-11-04T11:10:41.3983834Z tests\benchmarks\test_model_extra_validation.py ......                                                                                         [  0%]
+2026-11-04T11:10:41.4709836Z tests\benchmarks\test_model_json_streaming.py .....                                                                                            [  0%]
+2026-11-04T11:10:42.8565578Z tests\benchmarks\test_model_schema_generation.py ..............sssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss [  1%]
+2026-11-04T11:10:42.8827439Z sssssssssssssssssssssssssssss.                                                                                                                 [  1%]
+2026-11-04T11:10:42.9011055Z tests\benchmarks\test_model_schema_generation_recursive.py ......                                                                              [  1%]
+2026-11-04T11:10:42.9316004Z tests\benchmarks\test_model_serialization.py ......                                                                                            [  1%]
+2026-11-04T11:10:42.9461995Z tests\benchmarks\test_model_validation.py ........                                                                                             [  1%]
+2026-11-04T11:10:45.2903232Z tests\benchmarks\test_north_star.py ........                                                                                                   [  1%]
+2026-11-04T11:10:45.3284176Z tests\benchmarks\test_regex.py .                                                                                                               [  1%]
+2026-11-04T11:10:45.3430237Z tests\benchmarks\test_validators_build.py .                                                                                                    [  1%]
+2026-11-04T11:10:45.3809163Z tests\mypy\test_mypy.py sssssssssssssssssssssssssssssssssssssssssssssssss                                                                      [  1%]
+2026-11-04T11:10:45.3819034Z tests\plugin\test_plugin.py s                                                                                                                  [  1%]
+2026-11-04T11:10:45.4313004Z tests\pydantic_core\benchmarks\test_complete_benchmark.py ............                                                                         [  1%]
+2026-11-04T11:10:45.6272667Z tests\pydantic_core\benchmarks\test_micro_benchmarks.py ...................................................................................... [  2%]
+2026-11-04T11:10:45.7061005Z ...............................                                                                                                                [  2%]
+2026-11-04T11:10:45.9468438Z tests\pydantic_core\benchmarks\test_nested_benchmark.py ..                                                                                     [  2%]
+2026-11-04T11:10:46.0375572Z tests\pydantic_core\benchmarks\test_serialization_micro.py ..................................                                                  [  2%]
+2026-11-04T11:10:46.2048892Z tests\pydantic_core\serializers\test_any.py ..............................s........................................................s.......... [  3%]
+2026-11-04T11:10:46.2268074Z .............                                                                                                                                  [  3%]
+2026-11-04T11:10:46.2533299Z tests\pydantic_core\serializers\test_bytes.py ................                                                                                 [  3%]
+2026-11-04T11:10:46.2729721Z tests\pydantic_core\serializers\test_complex.py ............                                                                                   [  3%]
+2026-11-04T11:10:46.2923136Z tests\pydantic_core\serializers\test_core_schema_as_ser_schema.py ...........                                                                  [  3%]
+2026-11-04T11:10:46.3055775Z tests\pydantic_core\serializers\test_counter.py ........                                                                                       [  3%]
+2026-11-04T11:10:46.5754440Z tests\pydantic_core\serializers\test_dataclasses.py .....x..........                                                                           [  3%]
+2026-11-04T11:10:46.6531722Z tests\pydantic_core\serializers\test_datetime.py .......................................                                                       [  4%]
+2026-11-04T11:10:46.6647511Z tests\pydantic_core\serializers\test_decimal.py .......                                                                                        [  4%]
+2026-11-04T11:10:46.6759294Z tests\pydantic_core\serializers\test_definitions.py .......                                                                                    [  4%]
+2026-11-04T11:10:46.6843053Z tests\pydantic_core\serializers\test_definitions_recursive.py .....                                                                            [  4%]
+2026-11-04T11:10:46.7037498Z tests\pydantic_core\serializers\test_deque.py ...........                                                                                      [  4%]
+2026-11-04T11:10:46.7493630Z tests\pydantic_core\serializers\test_dict.py ............................                                                                      [  4%]
+2026-11-04T11:10:46.7589555Z tests\pydantic_core\serializers\test_enum.py .....                                                                                             [  4%]
+2026-11-04T11:10:46.7844116Z tests\pydantic_core\serializers\test_format.py ...............                                                                                 [  4%]
+2026-11-04T11:10:46.7943707Z tests\pydantic_core\serializers\test_frozendict.py ......                                                                                      [  4%]
+2026-11-04T11:10:46.8471973Z tests\pydantic_core\serializers\test_functions.py .........................s....s.                                                             [  4%]
+2026-11-04T11:10:46.8588760Z tests\pydantic_core\serializers\test_generator.py ......                                                                                       [  4%]
+2026-11-04T11:10:46.8640945Z tests\pydantic_core\serializers\test_infer.py ...                                                                                              [  4%]
+2026-11-04T11:10:46.8717642Z tests\pydantic_core\serializers\test_json.py ....                                                                                              [  4%]
+2026-11-04T11:10:46.8756651Z tests\pydantic_core\serializers\test_json_or_python.py ..                                                                                      [  4%]
+2026-11-04T11:10:46.9841175Z tests\pydantic_core\serializers\test_list_tuple.py ...............................................................                             [  5%]
+2026-11-04T11:10:46.9952949Z tests\pydantic_core\serializers\test_literal.py ......                                                                                         [  5%]
+2026-11-04T11:10:47.0038318Z tests\pydantic_core\serializers\test_missing_sentinel.py .....                                                                                 [  5%]
+2026-11-04T11:10:47.1322611Z tests\pydantic_core\serializers\test_model.py ...................................................................                              [  5%]
+2026-11-04T11:10:47.1461450Z tests\pydantic_core\serializers\test_model_root.py ........                                                                                    [  5%]
+2026-11-04T11:10:47.1905554Z tests\pydantic_core\serializers\test_none.py ............................                                                                      [  5%]
+2026-11-04T11:10:47.1924938Z tests\pydantic_core\serializers\test_nullable.py .                                                                                             [  5%]
+2026-11-04T11:10:47.2056496Z tests\pydantic_core\serializers\test_ordered_dict.py ........                                                                                  [  5%]
+2026-11-04T11:10:47.2170024Z tests\pydantic_core\serializers\test_other.py .......                                                                                          [  5%]
+2026-11-04T11:10:47.2274892Z tests\pydantic_core\serializers\test_pickling.py ......                                                                                        [  6%]
+2026-11-04T11:10:47.2498652Z tests\pydantic_core\serializers\test_serialize_as_any.py ............                                                                          [  6%]
+2026-11-04T11:10:47.2631066Z tests\pydantic_core\serializers\test_set_frozenset.py .......                                                                                  [  6%]
+2026-11-04T11:10:47.3339599Z tests\pydantic_core\serializers\test_simple.py ..........................s.............                                                        [  6%]
+2026-11-04T11:10:47.3691728Z tests\pydantic_core\serializers\test_string.py .....................                                                                           [  6%]
+2026-11-04T11:10:47.5414307Z tests\pydantic_core\serializers\test_timedelta.py ...s...............................................................................          [  6%]
+2026-11-04T11:10:47.6035371Z tests\pydantic_core\serializers\test_typed_dict.py .....................................                                                       [  7%]
+2026-11-04T11:10:47.7838953Z tests\pydantic_core\serializers\test_union.py ................................................................................................ [  7%]
+2026-11-04T11:10:47.8016264Z ..........                                                                                                                                     [  7%]
+2026-11-04T11:10:47.8187731Z tests\pydantic_core\serializers\test_url.py ..........                                                                                         [  7%]
+2026-11-04T11:10:47.8305476Z tests\pydantic_core\serializers\test_uuid.py .......                                                                                           [  7%]
+2026-11-04T11:10:47.8469986Z tests\pydantic_core\test_build.py s.........                                                                                                   [  7%]
+2026-11-04T11:10:47.8714707Z tests\pydantic_core\test_config.py ..............                                                                                              [  8%]
+2026-11-04T11:10:47.8782237Z tests\pydantic_core\test_custom_errors.py ....                                                                                                 [  8%]
+2026-11-04T11:10:47.9313116Z tests\pydantic_core\test_docstrings.py ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss                                      [  8%]
+2026-11-04T11:10:48.1033808Z tests\pydantic_core\test_errors.py ........................................................................................................... [  9%]
+2026-11-04T11:10:48.8466706Z ................................................................s.......................s.....                                                 [  9%]
+2026-11-04T11:10:48.9171981Z tests\pydantic_core\test_fields_set.py .......................................                                                                 [  9%]
+2026-11-04T11:10:54.4865421Z tests\pydantic_core\test_garbage_collection.py ........                                                                                        [  9%]
+2026-11-04T11:10:56.9440927Z tests\pydantic_core\test_hypothesis.py .s.........                                                                                             [ 10%]
+2026-11-04T11:10:56.9496212Z tests\pydantic_core\test_isinstance.py ...                                                                                                     [ 10%]
+2026-11-04T11:10:56.9799038Z tests\pydantic_core\test_json.py ...............                                                                                               [ 10%]
+2026-11-04T11:10:57.0223607Z tests\pydantic_core\test_misc.py ...............                                                                                               [ 10%]
+2026-11-04T11:10:57.0394946Z tests\pydantic_core\test_prebuilt.py .........                                                                                                 [ 10%]
+2026-11-04T11:10:57.2083729Z tests\pydantic_core\test_schema_functions.py ...........................................................................................       [ 10%]
+2026-11-04T11:10:57.2265565Z tests\pydantic_core\test_typing.py ...........                                                                                                 [ 10%]
+2026-11-04T11:10:57.2939394Z tests\pydantic_core\test_tzinfo.py ..........................................                                                                  [ 11%]
+2026-11-04T11:10:57.4459608Z tests\pydantic_core\validators\arguments_v3\test_alias.py .....sss.........sssss...s.s........................................................ [ 11%]
+2026-11-04T11:10:57.4899842Z ........................s                                                                                                                      [ 11%]
+2026-11-04T11:10:57.5003026Z tests\pydantic_core\validators\arguments_v3\test_build_errors.py ......                                                                        [ 11%]
+2026-11-04T11:10:57.5522068Z tests\pydantic_core\validators\arguments_v3\test_extra.py ........ssss........ss..                                                             [ 11%]
+2026-11-04T11:10:57.6002047Z tests\pydantic_core\validators\arguments_v3\test_general.py ....s.ss......ssss...s...s.                                                        [ 12%]
+2026-11-04T11:10:57.6284368Z tests\pydantic_core\validators\arguments_v3\test_keyword_only.py ....ss....s...s.                                                              [ 12%]
+2026-11-04T11:10:57.6493394Z tests\pydantic_core\validators\arguments_v3\test_positional_only.py ....ss...s.s                                                               [ 12%]
+2026-11-04T11:10:57.6894393Z tests\pydantic_core\validators\arguments_v3\test_positional_or_keyword.py ......ssss.....ss...s.                                               [ 12%]
+2026-11-04T11:10:57.7252471Z tests\pydantic_core\validators\arguments_v3\test_var_args.py .....ss.......ss....                                                              [ 12%]
+2026-11-04T11:10:57.7577256Z tests\pydantic_core\validators\arguments_v3\test_var_kwargs_uniform.py ....ss......ss....                                                      [ 12%]
+2026-11-04T11:10:57.8017918Z tests\pydantic_core\validators\arguments_v3\test_var_kwargs_unpacked_typed_dict.py ...........sssss........                                    [ 12%]
+2026-11-04T11:10:57.9363101Z tests\pydantic_core\validators\test_allow_partial.py ..............                                                                            [ 12%]
+2026-11-04T11:10:58.1130440Z tests\pydantic_core\validators\test_arguments.py ..............s..s....s........s.ssssss........ssssss................ss......s..s............ [ 13%]
+2026-11-04T11:10:58.3768180Z .s...sss.....s...s......ssss......sss....ssss...sss.....sssss.s.s............................................................................. [ 14%]
+2026-11-04T11:10:58.3980908Z ...........s                                                                                                                                   [ 14%]
+2026-11-04T11:10:58.4668645Z tests\pydantic_core\validators\test_bool.py .......................................                                                            [ 14%]
+2026-11-04T11:10:58.5162072Z tests\pydantic_core\validators\test_bytes.py ............................                                                                      [ 14%]
+2026-11-04T11:10:58.5599888Z tests\pydantic_core\validators\test_call.py .........................                                                                          [ 14%]
+2026-11-04T11:10:58.5825034Z tests\pydantic_core\validators\test_callable.py ..............                                                                                 [ 14%]
+2026-11-04T11:10:58.6030042Z tests\pydantic_core\validators\test_chain.py ............                                                                                      [ 14%]
+2026-11-04T11:10:58.6921591Z tests\pydantic_core\validators\test_complex.py ....................................................                                            [ 15%]
+2026-11-04T11:10:58.7307285Z tests\pydantic_core\validators\test_counter.py .......................                                                                         [ 15%]
+2026-11-04T11:10:58.7394217Z tests\pydantic_core\validators\test_custom_error.py .....                                                                                      [ 15%]
+2026-11-04T11:10:58.9105932Z tests\pydantic_core\validators\test_dataclasses.py ......s..ss.......ssss......s.............................................................. [ 15%]
+2026-11-04T11:11:00.0581127Z .............................................................................................................................................. [ 16%]
+2026-11-04T11:11:00.0827148Z ..........s.                                                                                                                                   [ 16%]
+2026-11-04T11:11:00.2518995Z tests\pydantic_core\validators\test_date.py .................................................................................................. [ 17%]
+2026-11-04T11:11:00.2939045Z .......................                                                                                                                        [ 17%]
+2026-11-04T11:11:00.4557974Z tests\pydantic_core\validators\test_datetime.py .............................................................................................. [ 18%]
+2026-11-04T11:11:00.5151115Z ...................................                                                                                                            [ 18%]
+2026-11-04T11:11:00.6781580Z tests\pydantic_core\validators\test_decimal.py ............................................................................................... [ 18%]
+2026-11-04T11:11:00.9343235Z .............................................................................................................................................. [ 19%]
+2026-11-04T11:11:01.1889036Z .............................................................................................................................................. [ 20%]
+2026-11-04T11:11:01.8414551Z .....................................                                                                                                          [ 20%]
+2026-11-04T11:11:01.8592176Z tests\pydantic_core\validators\test_definitions.py ...........                                                                                 [ 20%]
+2026-11-04T11:11:01.9589070Z tests\pydantic_core\validators\test_definitions_recursive.py ....................................                                              [ 21%]
+2026-11-04T11:11:02.0911935Z tests\pydantic_core\validators\test_deque.py .............................................................................                     [ 21%]
+2026-11-04T11:11:02.1523138Z tests\pydantic_core\validators\test_dict.py ....................................                                                               [ 21%]
+2026-11-04T11:11:02.1956159Z tests\pydantic_core\validators\test_enums.py ..................s.....                                                                          [ 21%]
+2026-11-04T11:11:02.3644684Z tests\pydantic_core\validators\test_float.py ................................................................................................. [ 22%]
+2026-11-04T11:11:02.6221342Z .............................................................................................................................................. [ 23%]
+2026-11-04T11:11:02.7658978Z ...................................................................................                                                            [ 23%]
+2026-11-04T11:11:02.8019081Z tests\pydantic_core\validators\test_frozendict.py ......................                                                                       [ 23%]
+2026-11-04T11:11:02.9255019Z tests\pydantic_core\validators\test_frozenset.py .........................................................................                     [ 24%]
+2026-11-04T11:11:03.0225289Z tests\pydantic_core\validators\test_function.py ..........................................................                                     [ 24%]
+2026-11-04T11:11:03.0892228Z tests\pydantic_core\validators\test_generator.py ......................................                                                        [ 24%]
+2026-11-04T11:11:03.2586150Z tests\pydantic_core\validators\test_int.py ................................................................................................... [ 25%]
+2026-11-04T11:11:03.4998751Z ............................................................................................................................................   [ 26%]
+2026-11-04T11:11:03.5571635Z tests\pydantic_core\validators\test_is_instance.py .................................                                                           [ 26%]
+2026-11-04T11:11:03.5801023Z tests\pydantic_core\validators\test_is_subclass.py ..............                                                                              [ 26%]
+2026-11-04T11:11:03.6382520Z tests\pydantic_core\validators\test_json.py .................................                                                                  [ 26%]
+2026-11-04T11:11:03.6401064Z tests\pydantic_core\validators\test_json_or_python.py .                                                                                        [ 26%]
+2026-11-04T11:11:03.6436522Z tests\pydantic_core\validators\test_lax_or_strict.py ..                                                                                        [ 26%]
+2026-11-04T11:11:03.8027609Z tests\pydantic_core\validators\test_list.py ................................................................................................   [ 27%]
+2026-11-04T11:11:03.8860028Z tests\pydantic_core\validators\test_literal.py ..............................................                                                  [ 27%]
+2026-11-04T11:11:03.8925807Z tests\pydantic_core\validators\test_missing_sentinel.py ....                                                                                   [ 27%]
+2026-11-04T11:11:03.9728538Z tests\pydantic_core\validators\test_model.py ...........................................s.                                                     [ 27%]
+2026-11-04T11:11:04.1382045Z tests\pydantic_core\validators\test_model_fields.py .......................................................................................... [ 28%]
+2026-11-04T11:11:04.3912668Z .............................................................................................................................................. [ 29%]
+2026-11-04T11:11:04.5347556Z ..............................................................................s                                                                [ 29%]
+2026-11-04T11:11:05.4064521Z tests\pydantic_core\validators\test_model_init.py ..............                                                                               [ 29%]
+2026-11-04T11:11:05.4216383Z tests\pydantic_core\validators\test_model_root.py .........                                                                                    [ 29%]
+2026-11-04T11:11:05.4250729Z tests\pydantic_core\validators\test_none.py ..                                                                                                 [ 29%]
+2026-11-04T11:11:05.7074015Z tests\pydantic_core\validators\test_nullable.py ...                                                                                            [ 29%]
+2026-11-04T11:11:05.7526314Z tests\pydantic_core\validators\test_ordered_dict.py .......................                                                                    [ 30%]
+2026-11-04T11:11:05.7596784Z tests\pydantic_core\validators\test_pickling.py ....                                                                                           [ 30%]
+2026-11-04T11:11:05.8892766Z tests\pydantic_core\validators\test_set.py ............................................................................                        [ 30%]
+2026-11-04T11:11:06.0566316Z tests\pydantic_core\validators\test_string.py ................................................................................................ [ 31%]
+2026-11-04T11:11:06.0793715Z ..............                                                                                                                                 [ 31%]
+2026-11-04T11:11:06.1707714Z tests\pydantic_core\validators\test_tagged_union.py ................................................                                           [ 31%]
+2026-11-04T11:11:06.3173000Z tests\pydantic_core\validators\test_time.py ...................................................................................                [ 31%]
+2026-11-04T11:11:06.4579180Z tests\pydantic_core\validators\test_timedelta.py ...................................................................................s          [ 32%]
+2026-11-04T11:11:06.6133572Z tests\pydantic_core\validators\test_tuple.py .........................................................................................         [ 32%]
+2026-11-04T11:11:06.7715920Z tests\pydantic_core\validators\test_typed_dict.py ............................................................................................ [ 33%]
+2026-11-04T11:11:07.3062060Z .............................................................................................................................................. [ 34%]
+2026-11-04T11:11:07.3464168Z ......................s                                                                                                                        [ 34%]
+2026-11-04T11:11:07.5261870Z tests\pydantic_core\validators\test_union.py .....................................................x..............................              [ 34%]
+2026-11-04T11:11:07.6905111Z tests\pydantic_core\validators\test_url.py ................................................................................................... [ 35%]
+2026-11-04T11:11:07.9361494Z .............................................................................................................................................. [ 36%]
+2026-11-04T11:11:10.4729683Z ...............................................................................................................................xx..xxx.x...... [ 37%]
+2026-11-04T11:11:10.4763876Z ..                                                                                                                                             [ 37%]
+2026-11-04T11:11:10.6395716Z tests\pydantic_core\validators\test_uuid.py ................................................................................................   [ 37%]
+2026-11-04T11:11:11.0756964Z tests\pydantic_core\validators\test_with_default.py .......................................................................................... [ 38%]
+2026-11-04T11:11:11.1392879Z ..................................                                                                                                             [ 38%]
+2026-11-04T11:11:11.1452754Z tests\test_abc.py ...                                                                                                                          [ 38%]
+2026-11-04T11:11:11.5448237Z tests\test_aliases.py ....................................................................s.....s..s.....ssssssssss..s.....s..s.....s..s.....s [ 39%]
+2026-11-04T11:11:11.6219752Z ..s.....s..s.....ssssssssss..........                                                                                                          [ 39%]
+2026-11-04T11:11:11.6750192Z tests\test_allow_partial.py ...................                                                                                                [ 39%]
+2026-11-04T11:11:11.9069264Z tests\test_annotated.py .....................................................                                                                  [ 39%]
+2026-11-04T11:11:11.9503591Z tests\test_annotation_fast_path.py ..............                                                                                              [ 39%]
+2026-11-04T11:11:11.9526545Z tests\test_assert_in_validators.py .                                                                                                           [ 39%]
+2026-11-04T11:11:11.9682864Z tests\test_callable.py ........                                                                                                                [ 40%]
+2026-11-04T11:11:12.1223718Z tests\test_computed_fields.py ................s...........x...s...x                                                                            [ 40%]
+2026-11-04T11:11:12.3575682Z tests\test_config.py ................................................................................                                          [ 40%]
+2026-11-04T11:11:12.4861553Z tests\test_construction.py ........................................x                                                                           [ 40%]
+2026-11-04T11:11:12.5779570Z tests\test_create_model.py ....................................                                                                                [ 41%]
+2026-11-04T11:11:13.0516385Z tests\test_dataclasses.py ............................................x....................................................................... [ 41%]
+2026-11-04T11:11:13.5171223Z ................................ss............................................................................................................ [ 42%]
+2026-11-04T11:11:13.5768561Z ...................                                                                                                                            [ 42%]
+2026-11-04T11:11:13.8263147Z tests\test_datetime.py ....................................................................................................................... [ 43%]
+2026-11-04T11:11:14.0619613Z .......................................................................................................................                        [ 44%]
+2026-11-04T11:11:14.1115997Z tests\test_decorators.py ...............................                                                                                       [ 44%]
+2026-11-04T11:11:14.1322241Z tests\test_deferred_annotations.py .........                                                                                                   [ 44%]
+2026-11-04T11:11:14.1902671Z tests\test_deprecated_fields.py ............                                                                                                   [ 44%]
+2026-11-04T11:11:14.1989184Z tests\test_docs.py sss..                                                                                                                       [ 44%]
+2026-11-04T11:11:14.2923564Z tests\test_docs_extraction.py ............x....                                                                                                [ 44%]
+2026-11-04T11:11:14.2954339Z tests\test_dunder_all.py ..                                                                                                                    [ 44%]
+2026-11-04T11:11:14.5902389Z tests\test_edge_cases.py ..................................................................................................................... [ 45%]
+2026-11-04T11:11:14.9803633Z ...................................................................................                                                            [ 45%]
+2026-11-04T11:11:14.9968240Z tests\test_errors.py .........                                                                                                                 [ 45%]
+2026-11-04T11:11:15.0414025Z tests\test_experimental_arguments_schema.py ..............                                                                                     [ 45%]
+2026-11-04T11:11:15.2205556Z tests\test_exports.py ........................................................................................................................ [ 46%]
+2026-11-04T11:11:15.9207023Z .......................                                                                                                                        [ 46%]
+2026-11-04T11:11:16.0758557Z tests\test_fields.py ........................................................................                                                  [ 47%]
+2026-11-04T11:11:17.1969755Z tests\test_forward_ref.py .................................................x..xx...........x...................                                [ 47%]
+2026-11-04T11:11:17.4394282Z tests\test_freethreaded.py x                                                                                                                   [ 47%]
+2026-11-04T11:11:17.4397234Z tests\test_freethreaded.py:37 test_typed_dict_concurrent_type_adapter - RuntimeError: dictionary changed size during iteration…
+2026-11-04T11:12:07.0802229Z tests\test_freethreaded.py ....                                                                                                                [ 47%]
+2026-11-04T11:12:12.2960757Z tests\test_generics.py .................................................s..........................x.....................sx.......xx.......... [ 48%]
+2026-11-04T11:12:12.3358832Z ...........                                                                                                                                    [ 48%]
+2026-11-04T11:12:13.0402509Z tests\test_internal.py ...xx......................................                                                                             [ 48%]
+2026-11-04T11:12:13.1881047Z tests\test_json.py ..................................................                                                                          [ 49%]
+2026-11-04T11:12:13.6677650Z tests\test_json_schema.py .................................................................................................................... [ 49%]
+2026-11-04T11:12:14.3034597Z ........................................x..................................................................................................... [ 50%]
+2026-11-04T11:12:15.1053351Z .............................................................................................x................................................ [ 51%]
+2026-11-04T11:12:16.0375650Z .....................................s........................................................................................................ [ 52%]
+2026-11-04T11:12:16.4702461Z .................................................................................................................................              [ 52%]
+2026-11-04T11:12:16.5383275Z tests\test_lazy_imports.py .....                                                                                                               [ 53%]
+2026-11-04T11:12:16.7879379Z tests\test_main.py .............................................................................................................ssssssssssssss [ 53%]
+2026-11-04T11:12:17.1404871Z sssssssssss................................................................................................................................... [ 54%]
+2026-11-04T11:12:17.3114372Z .................................................                                                                                              [ 54%]
+2026-11-04T11:12:17.3489128Z tests\test_meta.py x                                                                                                                           [ 54%]
+2026-11-04T11:12:17.3929809Z tests\test_missing_sentinel.py ............                                                                                                    [ 54%]
+2026-11-04T11:12:17.4381391Z tests\test_model_signature.py .....................s                                                                                           [ 55%]
+2026-11-04T11:12:17.4627232Z tests\test_model_validator.py ............                                                                                                     [ 55%]
+2026-11-04T11:12:17.7075845Z tests\test_networks.py ....................................................................s.................................................. [ 55%]
+2026-11-04T11:12:18.0806800Z ..............................................................................x............................................................... [ 56%]
+2026-11-04T11:12:18.2210311Z ............................................................                                                                                   [ 57%]
+2026-11-04T11:12:18.9046674Z tests\test_networks_ipaddress.py ............................................................................................................. [ 57%]
+2026-11-04T11:12:19.0068165Z ................................................                                                                                               [ 57%]
+2026-11-04T11:12:19.0294789Z tests\test_parse.py ..........                                                                                                                 [ 58%]
+2026-11-04T11:12:19.8199110Z tests\test_pickle.py ......................                                                                                                    [ 58%]
+2026-11-04T11:12:20.1020090Z tests\test_pipeline.py ..............................................................................................................          [ 58%]
+2026-11-04T11:12:20.1156186Z tests\test_plugin_loader.py .........                                                                                                          [ 58%]
+2026-11-04T11:12:20.1579413Z tests\test_plugins.py ..............                                                                                                           [ 58%]
+2026-11-04T11:12:20.2369468Z tests\test_private_attributes.py .....................................                                                                         [ 59%]
+2026-11-04T11:12:20.2393813Z tests\test_rich_repr.py .                                                                                                                      [ 59%]
+2026-11-04T11:12:20.4375962Z tests\test_root_model.py .................................................................................                                     [ 59%]
+2026-11-04T11:12:20.4928549Z tests\test_schema_gather.py ................                                                                                                   [ 59%]
+2026-11-04T11:12:20.7156975Z tests\test_serialize.py ............................................................................s.................                         [ 60%]
+2026-11-04T11:12:20.7628983Z tests\test_serialize_as_any.py ................                                                                                                [ 60%]
+2026-11-04T11:12:20.7744222Z tests\test_strict.py ......                                                                                                                    [ 60%]
+2026-11-04T11:12:20.7766409Z tests\test_structural_pattern_matching.py .                                                                                                    [ 60%]
+2026-11-04T11:12:21.2070571Z tests\test_titles.py ....................................................................................................................      [ 61%]
+2026-11-04T11:12:21.5157371Z tests\test_type_adapter.py .........................................................x......................................................... [ 61%]
+2026-11-04T11:12:21.7769747Z ...........................................................................................................                                    [ 62%]
+2026-11-04T11:12:21.8423511Z tests\test_type_alias_type.py ...................                                                                                              [ 62%]
+2026-11-04T11:12:21.8662330Z tests\test_type_hints.py ......                                                                                                                [ 62%]
+2026-11-04T11:12:22.1908089Z tests\test_types.py .......s...........................x.......................ss............................................................. [ 63%]
+2026-11-04T11:12:22.5393642Z .............................................................................................................................................. [ 64%]
+2026-11-04T11:12:22.5705339Z ..............                                                                                                                                 [ 64%]
+2026-11-04T11:12:22.6201371Z tests\test_types_self.py ..................                                                                                                    [ 64%]
+2026-11-04T11:12:22.9521313Z tests\test_types_typeddict.py ............................................................................................                     [ 64%]
+2026-11-04T11:12:22.9814050Z tests\test_typing.py ................                                                                                                          [ 64%]
+2026-11-04T11:12:23.1653981Z tests\test_utils.py .................................................................................................................          [ 65%]
+2026-11-04T11:12:23.3798052Z tests\test_validate_call.py ..................................................................                                                 [ 65%]
+2026-11-04T11:12:23.3875807Z tests\test_validation_context.py ....                                                                                                          [ 66%]
+2026-11-04T11:12:23.7255892Z tests\test_validators.py ............................................................................................................x.......x [ 66%]
+2026-11-04T11:12:23.7375020Z ....                                                                                                                                           [ 66%]
+2026-11-04T11:12:23.7597115Z tests\test_validators_dataclass.py ........                                                                                                    [ 66%]
+2026-11-04T11:12:23.9410935Z tests\test_version.py .......                                                                                                                  [ 66%]
+2026-11-04T11:12:23.9469143Z tests\test_warnings.py ....                                                                                                                    [ 66%]
+2026-11-04T11:12:24.0446848Z tests\types\test_bool.py ...........................................................                                                           [ 67%]
+2026-11-04T11:12:24.0828385Z tests\types\test_bytes.py ......................                                                                                               [ 67%]
+2026-11-04T11:12:24.1330892Z tests\types\test_bytesize.py .....................                                                                                             [ 67%]
+2026-11-04T11:12:24.1368715Z tests\types\test_complex.py ..                                                                                                                 [ 67%]
+2026-11-04T11:12:24.1702914Z tests\types\test_counter.py ...............                                                                                                    [ 67%]
+2026-11-04T11:12:24.2012100Z tests\types\test_date.py ................                                                                                                      [ 67%]
+2026-11-04T11:12:24.2280207Z tests\types\test_datetime.py ..............                                                                                                    [ 67%]
+2026-11-04T11:12:24.4737803Z tests\types\test_decimal.py .................................................................................................................. [ 68%]
+2026-11-04T11:12:24.6180845Z ....................................................................                                                                           [ 68%]
+2026-11-04T11:12:24.6525436Z tests\types\test_defaultdict.py ..................                                                                                             [ 68%]
+2026-11-04T11:12:24.7102217Z tests\types\test_deque.py .............................                                                                                        [ 69%]
+2026-11-04T11:12:24.7240408Z tests\types\test_dict.py .......                                                                                                               [ 69%]
+2026-11-04T11:12:24.7261572Z tests\types\test_ellipsis.py .                                                                                                                 [ 69%]
+2026-11-04T11:12:24.7735902Z tests\types\test_enum.py .....................                                                                                                 [ 69%]
+2026-11-04T11:12:24.7981877Z tests\types\test_fixed_schema_handlers.py ..............                                                                                       [ 69%]
+2026-11-04T11:12:24.8775386Z tests\types\test_float.py ..............................................                                                                       [ 69%]
+2026-11-04T11:12:25.0684736Z tests\types\test_fraction.py ................................................................................................................. [ 70%]
+2026-11-04T11:12:25.1342273Z ....................................                                                                                                           [ 70%]
+2026-11-04T11:12:25.1633094Z tests\types\test_frozendict.py ...............                                                                                                 [ 70%]
+2026-11-04T11:12:25.1943986Z tests\types\test_frozenset.py .................                                                                                                [ 70%]
+2026-11-04T11:12:25.3152439Z tests\types\test_int.py ...................................................................                                                    [ 71%]
+2026-11-04T11:12:25.3394557Z tests\types\test_iterable.py .............                                                                                                     [ 71%]
+2026-11-04T11:12:25.3900083Z tests\types\test_list.py ............................                                                                                          [ 71%]
+2026-11-04T11:12:25.3968329Z tests\types\test_literal.py ....                                                                                                               [ 71%]
+2026-11-04T11:12:25.4020643Z tests\types\test_mapping.py ...                                                                                                                [ 71%]
+2026-11-04T11:12:25.6011160Z tests\types\test_model.py ................................................................................                                     [ 71%]
+2026-11-04T11:12:25.6739031Z tests\types\test_namedtuple.py ...........................                                                                                     [ 71%]
+2026-11-04T11:12:25.6942923Z tests\types\test_none.py .....                                                                                                                 [ 71%]
+2026-11-04T11:12:25.7300578Z tests\types\test_ordered_dict.py .................                                                                                             [ 72%]
+2026-11-04T11:12:25.7994606Z tests\types\test_path.py .......................s.......                                                                                       [ 72%]
+2026-11-04T11:12:25.8366563Z tests\types\test_pattern.py ...............                                                                                                    [ 72%]
+2026-11-04T11:12:25.8532525Z tests\types\test_scalar_schema_copy.py .........                                                                                               [ 72%]
+2026-11-04T11:12:25.9451121Z tests\types\test_scalar_schema_fast_paths.py .....................................................                                             [ 72%]
+2026-11-04T11:12:25.9957981Z tests\types\test_sequence.py .......................                                                                                           [ 72%]
+2026-11-04T11:12:26.0422703Z tests\types\test_set.py ..........................                                                                                             [ 72%]
+2026-11-04T11:12:26.1280623Z tests\types\test_str.py ................................................                                                                       [ 73%]
+2026-11-04T11:12:26.1514559Z tests\types\test_time.py ..............                                                                                                        [ 73%]
+2026-11-04T11:12:26.1857625Z tests\types\test_timedelta.py ....................                                                                                             [ 73%]
+2026-11-04T11:12:26.2235810Z tests\types\test_tuple.py .....................                                                                                                [ 73%]
+2026-11-04T11:12:26.2437101Z tests\types\test_uuid.py ..........                                                                                                            [ 73%]
+2026-11-04T11:12:26.2585074Z tests\types\test_zoneinfo.py ........                                                                                                          [ 73%]
+2026-11-04T11:12:26.4441551Z tests\types\unions\test_direct_schema.py ..................................................................................................... [ 74%]
+2026-11-04T11:12:26.7095235Z .............................................................................................................................................. [ 75%]
+2026-11-04T11:12:27.0424215Z .............................................................................................................................................. [ 75%]
+2026-11-04T11:12:27.4008115Z .............................................................................................................................................. [ 76%]
+2026-11-04T11:12:27.6769045Z .............................................................................................................................................. [ 77%]
+2026-11-04T11:12:28.0443696Z .............................................................................................................................................. [ 78%]
+2026-11-04T11:12:28.3230282Z .............................................................................................................................................. [ 79%]
+2026-11-04T11:12:28.6898961Z .............................................................................................................................................. [ 80%]
+2026-11-04T11:12:29.0543352Z .............................................................................................................................................. [ 80%]
+2026-11-04T11:12:29.3312104Z .............................................................................................................................................. [ 81%]
+2026-11-04T11:12:29.7014196Z .............................................................................................................................................. [ 82%]
+2026-11-04T11:12:29.9955220Z .............................................................................................................................................. [ 83%]
+2026-11-04T11:12:30.6673604Z .............................................................................................................................................. [ 84%]
+2026-11-04T11:12:31.0266709Z .............................................................................................................................................. [ 85%]
+2026-11-04T11:12:31.3151222Z .............................................................................................................................................. [ 85%]
+2026-11-04T11:12:31.6776062Z .............................................................................................................................................. [ 86%]
+2026-11-04T11:12:31.9678932Z .............................................................................................................................................. [ 87%]
+2026-11-04T11:12:32.3257049Z .............................................................................................................................................. [ 88%]
+2026-11-04T11:12:32.6512717Z .............................................................................................................................................. [ 89%]
+2026-11-04T11:12:32.9677145Z .............................................................................................................................................. [ 90%]
+2026-11-04T11:12:33.3335225Z .............................................................................................................................................. [ 91%]
+2026-11-04T11:12:33.6127551Z .............................................................................................................................................. [ 91%]
+2026-11-04T11:12:33.9751316Z .............................................................................................................................................. [ 92%]
+2026-11-04T11:12:34.2944870Z .............................................................................................................................................. [ 93%]
+2026-11-04T11:12:34.6457645Z .............................................................................................................................................. [ 94%]
+2026-11-04T11:12:34.9866476Z .............................................................................................................................................. [ 95%]
+2026-11-04T11:12:35.2553662Z .............................................................................................................................................. [ 96%]
+2026-11-04T11:12:35.7785653Z .............................................................................................................................................. [ 96%]
+2026-11-04T11:12:36.4729715Z .............................................................................................................................................. [ 97%]
+2026-11-04T11:12:37.1483651Z .............................................................................................................................................. [ 98%]
+2026-11-04T11:12:37.8075792Z .............................................................................................................................................. [ 99%]
+2026-11-04T11:12:37.8094944Z .                                                                                                                                              [ 99%]
+2026-11-04T11:12:38.3359763Z tests\types\unions\test_discriminated_union.py ...........................................................x.........x...x...x.....             [ 99%]
+2026-11-04T11:12:38.4910976Z tests\types\unions\test_union.py ........................                                                                                      [100%]
+2026-11-04T11:12:38.4912242Z 
+2026-11-04T11:12:38.4941221Z ══════════════════════════════════════════════════════════════════ inline-snapshot ══════════════════════════════════════════════════════════════════
+2026-11-04T11:12:38.4948153Z INFO: CI run was detected because environment variable "CI" was defined. inline-snapshot runs with --inline-snapshot=disable by default in CI. This 
+2026-11-04T11:12:38.4949469Z means that tests with snapshots will continue to run, but snapshot(x) will only return x and inline-snapshot will not be able to fix snapshots or 
+2026-11-04T11:12:38.4950457Z generate reports. You can change this by using --inline-snapshot=report for example.
+2026-11-04T11:12:38.4950892Z 
+2026-11-04T11:12:38.5492641Z 
+2026-11-04T11:12:38.5492738Z 
+2026-11-04T11:12:38.5493204Z ===================================================================== FAILURES ======================================================================
+2026-11-04T11:12:38.5496453Z ______________________________________________________ test_typed_dict_concurrent_type_adapter ______________________________________________________
+2026-11-04T11:12:38.5497187Z 
+2026-11-04T11:12:38.5497558Z self = TypeAdapter(test_typed_dict_concurrent_type_adapter.<locals>.setup.<locals>.Record)
+2026-11-04T11:12:38.5498656Z ns_resolver = <pydantic._internal._namespace_utils.NsResolver object at 0x0000039F5E2A00B0>, force = False, raise_errors = False
+2026-11-04T11:12:38.5499154Z 
+2026-11-04T11:12:38.5499497Z     def _init_core_attrs(
+2026-11-04T11:12:38.5500377Z         self, ns_resolver: _namespace_utils.NsResolver, force: bool, raise_errors: bool = False
+2026-11-04T11:12:38.5501234Z     ) -> bool:
+2026-11-04T11:12:38.5501853Z         """Initialize the core schema, validator, and serializer for the type.
+2026-11-04T11:12:38.5502342Z     
+2026-11-04T11:12:38.5502585Z         Args:
+2026-11-04T11:12:38.5503134Z             ns_resolver: The namespace resolver to use when building the core schema for the adapted type.
+2026-11-04T11:12:38.5503969Z             force: Whether to force the construction of the core schema, validator, and serializer.
+2026-11-04T11:12:38.5504935Z                 If `force` is set to `False` and `_defer_build` is `True`, the core schema, validator, and serializer will be set to mocks.
+2026-11-04T11:12:38.5505811Z             raise_errors: Whether to raise errors if initializing any of the core attrs fails.
+2026-11-04T11:12:38.5506306Z     
+2026-11-04T11:12:38.5506557Z         Returns:
+2026-11-04T11:12:38.5507181Z             `True` if the core schema, validator, and serializer were successfully initialized, otherwise `False`.
+2026-11-04T11:12:38.5507708Z     
+2026-11-04T11:12:38.5507955Z         Raises:
+2026-11-04T11:12:38.5508571Z             PydanticUndefinedAnnotation: If `PydanticUndefinedAnnotation` occurs in`__get_pydantic_core_schema__`
+2026-11-04T11:12:38.5509225Z                 and `raise_errors=True`.
+2026-11-04T11:12:38.5509561Z         """
+2026-11-04T11:12:38.5510095Z         if not force and self._defer_build:
+2026-11-04T11:12:38.5510765Z             _mock_val_ser.set_type_adapter_mocks(self)
+2026-11-04T11:12:38.5511351Z             self.pydantic_complete = False
+2026-11-04T11:12:38.5511853Z             return False
+2026-11-04T11:12:38.5512199Z     
+2026-11-04T11:12:38.5512457Z         try:
+2026-11-04T11:12:38.5513219Z >           self.core_schema = _getattr_no_parents(self._type, '__pydantic_core_schema__')
+2026-11-04T11:12:38.5514025Z                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-11-04T11:12:38.5514283Z 
+2026-11-04T11:12:38.5514426Z pydantic\type_adapter.py:251: 
+2026-11-04T11:12:38.5514870Z _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+2026-11-04T11:12:38.5515207Z 
+2026-11-04T11:12:38.5516034Z obj = <class 'tests.test_freethreaded.test_typed_dict_concurrent_type_adapter.<locals>.setup.<locals>.Record'>, attribute = '__pydantic_core_schema__'
+2026-11-04T11:12:38.5516604Z 
+2026-11-04T11:12:38.5517071Z     def _getattr_no_parents(obj: Any, attribute: str) -> Any:
+2026-11-04T11:12:38.5518013Z         """Returns the attribute value without attempting to look up attributes from parent types."""
+2026-11-04T11:12:38.5519043Z         if hasattr(obj, '__dict__'):
+2026-11-04T11:12:38.5519570Z             try:
+2026-11-04T11:12:38.5520064Z                 return obj.__dict__[attribute]
+2026-11-04T11:12:38.5520563Z             except KeyError:
+2026-11-04T11:12:38.5520958Z                 pass
+2026-11-04T11:12:38.5521344Z     
+2026-11-04T11:12:38.5521891Z         slots = getattr(obj, '__slots__', None)
+2026-11-04T11:12:38.5522780Z         if slots is not None and attribute in slots:
+2026-11-04T11:12:38.5523542Z             return getattr(obj, attribute)
+2026-11-04T11:12:38.5523988Z         else:
+2026-11-04T11:12:38.5524456Z >           raise AttributeError(attribute)
+2026-11-04T11:12:38.5524947Z E           AttributeError: __pydantic_core_schema__
+2026-11-04T11:12:38.5525185Z 
+2026-11-04T11:12:38.5525385Z pydantic\type_adapter.py:55: AttributeError
+2026-11-04T11:12:38.5525607Z 
+2026-11-04T11:12:38.5525893Z During handling of the above exception, another exception occurred:
+2026-11-04T11:12:38.5526190Z 
+2026-11-04T11:12:38.5526625Z     def test_typed_dict_concurrent_type_adapter() -> None:
+2026-11-04T11:12:38.5527300Z         def setup():
+2026-11-04T11:12:38.5527841Z             class Record(TypedDict):
+2026-11-04T11:12:38.5528310Z                 value: int
+2026-11-04T11:12:38.5528613Z     
+2026-11-04T11:12:38.5528887Z             return Record
+2026-11-04T11:12:38.5529185Z     
+2026-11-04T11:12:38.5529585Z         def target(Record, _):
+2026-11-04T11:12:38.5530805Z             assert TypeAdapter(Record).validate_python({'value': '42'}) == {'value': 42}
+2026-11-04T11:12:38.5531666Z     
+2026-11-04T11:12:38.5531943Z >       run_concurrently(setup, target)
+2026-11-04T11:12:38.5532153Z 
+2026-11-04T11:12:38.5532295Z tests\test_freethreaded.py:48: 
+2026-11-04T11:12:38.5532731Z _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+2026-11-04T11:12:38.5533686Z tests\test_freethreaded.py:35: in run_concurrently
+2026-11-04T11:12:38.5534322Z     future.result()
+2026-11-04T11:12:38.5535017Z D:\a\_temp\uv-python-dir\cpython-3.15+freethreaded-windows-x86_64-none\Lib\concurrent\futures\_base.py:454: in result
+2026-11-04T11:12:38.5536074Z     return self.__get_result()
+2026-11-04T11:12:38.5536507Z            ^^^^^^^^^^^^^^^^^^^
+2026-11-04T11:12:38.5537180Z D:\a\_temp\uv-python-dir\cpython-3.15+freethreaded-windows-x86_64-none\Lib\concurrent\futures\_base.py:396: in __get_result
+2026-11-04T11:12:38.5537920Z     raise self._exception
+2026-11-04T11:12:38.5538673Z D:\a\_temp\uv-python-dir\cpython-3.15+freethreaded-windows-x86_64-none\Lib\concurrent\futures\thread.py:86: in run
+2026-11-04T11:12:38.5539573Z     result = ctx.run(self.task)
+2026-11-04T11:12:38.5539951Z              ^^^^^^^^^^^^^^^^^^
+2026-11-04T11:12:38.5540571Z D:\a\_temp\uv-python-dir\cpython-3.15+freethreaded-windows-x86_64-none\Lib\concurrent\futures\thread.py:73: in run
+2026-11-04T11:12:38.5541219Z     return fn(*args, **kwargs)
+2026-11-04T11:12:38.5541668Z            ^^^^^^^^^^^^^^^^^^^
+2026-11-04T11:12:38.5542028Z tests\test_freethreaded.py:31: in work
+2026-11-04T11:12:38.5542367Z     target(ctx, index)
+2026-11-04T11:12:38.5542722Z tests\test_freethreaded.py:46: in target
+2026-11-04T11:12:38.5543764Z     assert TypeAdapter(Record).validate_python({'value': '42'}) == {'value': 42}
+2026-11-04T11:12:38.5544646Z            ^^^^^^^^^^^^^^^^^^^
+2026-11-04T11:12:38.5545005Z pydantic\type_adapter.py:208: in __init__
+2026-11-04T11:12:38.5545392Z     self._init_core_attrs(
+2026-11-04T11:12:38.5545802Z pydantic\type_adapter.py:270: in _init_core_attrs
+2026-11-04T11:12:38.5546400Z     core_schema = schema_generator.generate_schema(self._type)
+2026-11-04T11:12:38.5546920Z                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-11-04T11:12:38.5547375Z pydantic\_internal\_generate_schema.py:864: in generate_schema
+2026-11-04T11:12:38.5547958Z     schema = self._generate_schema_inner(obj, origin)
+2026-11-04T11:12:38.5548453Z              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-11-04T11:12:38.5548931Z pydantic\_internal\_generate_schema.py:1157: in _generate_schema_inner
+2026-11-04T11:12:38.5549514Z     return self.match_type(obj, origin)
+2026-11-04T11:12:38.5550006Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-11-04T11:12:38.5550412Z pydantic\_internal\_generate_schema.py:1197: in match_type
+2026-11-04T11:12:38.5551008Z     return self._typed_dict_schema(obj, None)
+2026-11-04T11:12:38.5551521Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-11-04T11:12:38.5551962Z pydantic\_internal\_generate_schema.py:1491: in _typed_dict_schema
+2026-11-04T11:12:38.5553010Z     _typed_dict_schema_cache_key(typed_dict_cls, self._config_wrapper) if origin is None else None
+2026-11-04T11:12:38.5553852Z     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-11-04T11:12:38.5554388Z pydantic\_internal\_generate_schema.py:176: in _typed_dict_schema_cache_key
+2026-11-04T11:12:38.5555660Z     if any(not name.startswith('__') or not name.endswith('__') for name in namespace):
+2026-11-04T11:12:38.5557013Z        ^^^
+2026-11-04T11:12:38.5557400Z _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+2026-11-04T11:12:38.5557751Z 
+2026-11-04T11:12:38.5558485Z .0 = mappingproxy({'__module__': 'tests.test_freethreaded', '__firstlineno__': 40, '__annotate_func__': <function _TypedDic...otal__': True, '__closed__': None, '__extra_items__': NoExtraItems, '__annotations_cache__': {'value': <class 'int'>}})
+2026-11-04T11:12:38.5559417Z 
+2026-11-04T11:12:38.5560365Z >   if any(not name.startswith('__') or not name.endswith('__') for name in namespace):
+2026-11-04T11:12:38.5561514Z                                                                             ^^^^^^^^^
+2026-11-04T11:12:38.5562029Z E   RuntimeError: dictionary changed size during iteration
+2026-11-04T11:12:38.5562307Z 
+2026-11-04T11:12:38.5562531Z pydantic\_internal\_generate_schema.py:176: RuntimeError
+2026-11-04T11:12:38.5563036Z =============================================================== slowest 10 durations ================================================================
+2026-11-04T11:12:38.5563712Z 44.38s call     tests/test_freethreaded.py::test_dataclass_concurrent_creation_with_shared_base
+2026-11-04T11:12:38.5564293Z 4.90s call     tests/benchmarks/test_model_corpus.py::test_corpus_fresh_models[openai]
+2026-11-04T11:12:38.5564856Z 3.65s call     tests/test_freethreaded.py::test_base_model_concurrent_creation_with_shared_base
+2026-11-04T11:12:38.5565395Z 3.04s call     tests/benchmarks/test_model_corpus.py::test_model_corpus[openai]
+2026-11-04T11:12:38.5565902Z 2.68s call     tests/benchmarks/test_model_corpus.py::test_corpus_validation[openai]
+2026-11-04T11:12:38.5566461Z 2.30s call     tests/benchmarks/test_model_corpus.py::test_corpus_fresh_models[google-genai]
+2026-11-04T11:12:38.5567034Z 2.24s call     tests/benchmarks/test_model_corpus.py::test_corpus_fresh_models[anthropic]
+2026-11-04T11:12:38.5567569Z 1.65s call     tests/benchmarks/test_model_corpus.py::test_model_corpus[anthropic]
+2026-11-04T11:12:38.5568092Z 1.58s call     tests/benchmarks/test_model_corpus.py::test_model_corpus[google-genai]
+2026-11-04T11:12:38.5568645Z 1.56s call     tests/pydantic_core/test_garbage_collection.py::test_gc_enum_validator_lookup
+2026-11-04T11:12:38.5569259Z ************************************************************ pytest-run-parallel report *************************************************************
+2026-11-04T11:12:38.5570259Z 16998 tests were not run in parallel because of use of thread-unsafe functionality, to list the tests that were not run in parallel, re-run while setting PYTEST_RUN_PARALLEL_VERBOSE=1 in your shell environment
+2026-11-04T11:12:38.5571226Z                                                      Summary of Failures                                                      
+2026-11-04T11:12:38.5571973Z ┌──────────────────────────────┬───────────────────────────────────────────┬─────────────────┬──────────────┬────────────────┐
+2026-11-04T11:12:38.5572624Z │  File                        │  Function                                 │  Function Line  │  Error Line  │  Error         │
+2026-11-04T11:12:38.5573376Z ├──────────────────────────────┼───────────────────────────────────────────┼─────────────────┼──────────────┼────────────────┤
+2026-11-04T11:12:38.5574116Z │  tests\test_freethreaded.py  │  test_typed_dict_concurrent_type_adapter  │  38             │  48          │  RuntimeError  │
+2026-11-04T11:12:38.5574891Z └──────────────────────────────┴───────────────────────────────────────────┴─────────────────┴──────────────┴────────────────┘
+2026-11-04T11:12:38.5575304Z Results (157.16s):
+2026-11-04T11:12:38.5575590Z          1 failed
+2026-11-04T11:12:38.5575777Z      16538 passed
+2026-11-04T11:12:38.5576249Z        424 skipped
+2026-11-04T11:12:38.5576505Z         35 xfailed
+2026-11-04T11:12:40.6819908Z make: *** [Makefile:81: test] Error 1
+2026-11-04T11:12:40.7759877Z ##[error]Process completed with exit code 1.
+2026-11-04T11:12:40.8048852Z Post job cleanup.
+2026-11-04T11:12:41.0052670Z [command]"C:\Program Files\Git\bin\git.exe" version
+2026-11-04T11:12:41.0496037Z git version 2.56.0.windows.4
+2026-11-04T11:12:41.0579503Z Temporarily overriding HOME='D:\a\_temp\1c62dd31-3a3c-4c76-8fc0-86e6d26ec863' before making global git config changes
+2026-11-04T11:12:41.0580837Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-04T11:12:41.0592588Z [command]"C:\Program Files\Git\bin\git.exe" config --global --add safe.directory D:\a\pydantic\pydantic
+2026-11-04T11:12:41.1120698Z Removing SSH command configuration
+2026-11-04T11:12:41.1136526Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-11-04T11:12:41.1521454Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-11-04T11:12:41.7238265Z Removing HTTP extra header
+2026-11-04T11:12:41.7248564Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-04T11:12:41.7643546Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-11-04T11:12:42.2939363Z Removing includeIf entries pointing to credentials config files
+2026-11-04T11:12:42.2954230Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-04T11:12:42.3342407Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-11-04T11:12:42.8833637Z Cleaning up orphan processes
+2026-11-04T11:12:42.9237732Z Terminate orphan process: pid (3120) (vctip)

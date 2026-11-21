@@ -1,0 +1,28 @@
+id: terraform-aws-vpc-33194881411-1
+source: public
+repo: terraform-aws-modules/terraform-aws-vpc
+run_url: https://github.com/terraform-aws-modules/terraform-aws-vpc/actions/runs/33194881411/attempts/1
+job_id: 98929395855
+expected:
+  category: config_or_secrets
+  cause: terraform validate con Terraform 1.0.0 rechaza los atributos opcionales del
+    módulo subnet (feature experimental en esa versión).
+  evidence_lines:
+  - 442
+fix:
+  commit: 1c27e249d00af4d7369e6aec9003d655e9532f3c
+  summary: 1 commit(s), 3 file(s), +17/-3
+flaky: false
+tags:
+- terraform
+captured_at: '2026-11-21T18:26:47Z'
+provenance:
+  repo: terraform-aws-modules/terraform-aws-vpc
+  license: Apache-2.0
+  run_url: https://github.com/terraform-aws-modules/terraform-aws-vpc/actions/runs/33194881411/attempts/1
+  fix_sha: 1c27e249d00af4d7369e6aec9003d655e9532f3c
+  fix_run_url: https://github.com/terraform-aws-modules/terraform-aws-vpc/actions/runs/33195693106
+  occurred_at: '2026-08-28T17:29:32Z'
+  pairing: H1-pr
+  labeled_by: owner (draft by Claude)
+  label_basis: log

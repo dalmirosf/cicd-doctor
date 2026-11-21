@@ -6,6 +6,10 @@ licence is the one the repository declared when the case was captured (see `NOTI
 
 | Case | Repository | Licence | Failed run | Fix | Pairing | Occurred | Labelled by |
 |---|---|---|---|---|---|---|---|
+| build-push-action-34332850910-1 | docker/build-push-action | Apache-2.0 | https://github.com/docker/build-push-action/actions/runs/34332850910/attempts/1 | a6d4b5ad252d | H1 | 2026-09-09 | owner (draft by Claude) (log) |
+| build-push-action-35596460410-1 | docker/build-push-action | Apache-2.0 | https://github.com/docker/build-push-action/actions/runs/35596460410/attempts/1 | 5b2acb28cb00 | H1 | 2026-09-21 | owner (draft by Claude) (log) |
+| build-push-action-38607052120-1 | docker/build-push-action | Apache-2.0 | https://github.com/docker/build-push-action/actions/runs/38607052120/attempts/1 | c3981c995ad0 | H1 | 2026-10-14 | owner (draft by Claude) (log) |
+| build-push-action-40990625095-1 | docker/build-push-action | Apache-2.0 | https://github.com/docker/build-push-action/actions/runs/40990625095/attempts/1 | 75f7dabc19c6 | H1 | 2026-10-30 | owner (draft by Claude) (log) |
 | prettier-42169831062-1 | prettier/prettier | MIT | https://github.com/prettier/prettier/actions/runs/42169831062/attempts/1 | 72e29bec8e30 | H1 | 2026-11-06 | owner (draft by Claude) (log) |
 | prettier-42172690980-1 | prettier/prettier | MIT | https://github.com/prettier/prettier/actions/runs/42172690980/attempts/1 | 72e29bec8e30 | H1 | 2026-11-06 | owner (draft by Claude) (log) |
 | prettier-42175774637-1 | prettier/prettier | MIT | https://github.com/prettier/prettier/actions/runs/42175774637/attempts/1 | b66e814838d0 | H1 | 2026-11-06 | owner (draft by Claude) (log) |
@@ -20,6 +24,12 @@ licence is the one the repository declared when the case was captured (see `NOTI
 | prettier-44722794030-1 | prettier/prettier | MIT | https://github.com/prettier/prettier/actions/runs/44722794030/attempts/1 | 45ea86577f09 | H1-pr | 2026-11-20 | owner (draft by Claude) (log) |
 | prettier-44836931174-1 | prettier/prettier | MIT | https://github.com/prettier/prettier/actions/runs/44836931174/attempts/1 | 93aa5e735728 | H1 | 2026-11-20 | owner (draft by Claude) (log) |
 | prettier-44836931248-1 | prettier/prettier | MIT | https://github.com/prettier/prettier/actions/runs/44836931248/attempts/1 | c275b253ce03 | H2 | 2026-11-20 | owner (draft by Claude) (log) |
+| pydantic-41818829972-1 | pydantic/pydantic | MIT | https://github.com/pydantic/pydantic/actions/runs/41818829972/attempts/1 | b6ddfdcf7347 | H1-pr | 2026-11-04 | owner (draft by Claude) (log) |
+| pydantic-44512609882-1 | pydantic/pydantic | MIT | https://github.com/pydantic/pydantic/actions/runs/44512609882/attempts/1 | 17873f3b65e0 | H1 | 2026-11-19 | owner (draft by Claude) (log) |
+| pytest-39572813078-1 | pytest-dev/pytest | MIT | https://github.com/pytest-dev/pytest/actions/runs/39572813078/attempts/1 | 4088e1a84ef1 | H1 | 2026-10-21 | owner (draft by Claude) (log) |
+| terraform-aws-vpc-33118753094-1 | terraform-aws-modules/terraform-aws-vpc | Apache-2.0 | https://github.com/terraform-aws-modules/terraform-aws-vpc/actions/runs/33118753094/attempts/1 | a520d5707773 | H1-pr | 2026-08-27 | owner (draft by Claude) (log) |
+| terraform-aws-vpc-33194881411-1 | terraform-aws-modules/terraform-aws-vpc | Apache-2.0 | https://github.com/terraform-aws-modules/terraform-aws-vpc/actions/runs/33194881411/attempts/1 | 1c27e249d00a | H1-pr | 2026-08-28 | owner (draft by Claude) (log) |
+| terraform-aws-vpc-33259857456-1 | terraform-aws-modules/terraform-aws-vpc | Apache-2.0 | https://github.com/terraform-aws-modules/terraform-aws-vpc/actions/runs/33259857456/attempts/1 | 5cf27ab9e187 | H1-pr | 2026-08-29 | owner (draft by Claude) (log) |
 | vite-42557157506-1 | vitejs/vite | MIT | https://github.com/vitejs/vite/actions/runs/42557157506/attempts/1 | ad04aa78aa07 | H1 | 2026-11-09 | owner (draft by Claude) (log) |
 | vite-42600232139-1 | vitejs/vite | MIT | https://github.com/vitejs/vite/actions/runs/42600232139/attempts/1 | 53f093fac913 | H1 | 2026-11-09 | owner (draft by Claude) (log) |
 | vite-42601223848-1 | vitejs/vite | MIT | https://github.com/vitejs/vite/actions/runs/42601223848/attempts/1 | 33f16c1ac905 | H1 | 2026-11-09 | owner (draft by Claude) (log) |

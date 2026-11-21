@@ -1,0 +1,28 @@
+id: build-push-action-38607052120-1
+source: public
+repo: docker/build-push-action
+run_url: https://github.com/docker/build-push-action/actions/runs/38607052120/attempts/1
+job_id: 116000584015
+expected:
+  category: broken_test
+  cause: La validación falla porque el dist/ commiteado difiere del resultado del
+    build (no se regeneró).
+  evidence_lines:
+  - 448
+fix:
+  commit: c3981c995ad0478300aab5a3d82d9bc67587b6e8
+  summary: 1 commit(s), 3 file(s), +251/-260
+flaky: false
+tags:
+- docker
+captured_at: '2026-11-21T18:27:33Z'
+provenance:
+  repo: docker/build-push-action
+  license: Apache-2.0
+  run_url: https://github.com/docker/build-push-action/actions/runs/38607052120/attempts/1
+  fix_sha: c3981c995ad0478300aab5a3d82d9bc67587b6e8
+  fix_run_url: https://github.com/docker/build-push-action/actions/runs/38607211005
+  occurred_at: '2026-10-14T17:30:10Z'
+  pairing: H1
+  labeled_by: owner (draft by Claude)
+  label_basis: log

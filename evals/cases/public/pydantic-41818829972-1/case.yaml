@@ -1,0 +1,28 @@
+id: pydantic-41818829972-1
+source: public
+repo: pydantic/pydantic
+run_url: https://github.com/pydantic/pydantic/actions/runs/41818829972/attempts/1
+job_id: 126536465171
+expected:
+  category: broken_test
+  cause: Un test de concurrencia (freethreaded) falla con 'dictionary changed size
+    during iteration' al generar el esquema.
+  evidence_lines:
+  - 594
+fix:
+  commit: b6ddfdcf734715ee00d557551180008bac117488
+  summary: 1 commit(s), 1 file(s), +15/-6
+flaky: false
+tags:
+- python
+captured_at: '2026-11-21T18:27:04Z'
+provenance:
+  repo: pydantic/pydantic
+  license: MIT
+  run_url: https://github.com/pydantic/pydantic/actions/runs/41818829972/attempts/1
+  fix_sha: b6ddfdcf734715ee00d557551180008bac117488
+  fix_run_url: https://github.com/pydantic/pydantic/actions/runs/41819544481
+  occurred_at: '2026-11-04T11:12:45Z'
+  pairing: H1-pr
+  labeled_by: owner (draft by Claude)
+  label_basis: log

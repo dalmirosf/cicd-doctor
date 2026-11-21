@@ -3,5 +3,9 @@ repositories below, each under the licence it declares. The excerpts are redacte
 trimmed; copyright and trademarks remain with their owners. A maintainer who wants a case
 removed can ask and it will be deleted.
 
+- docker/build-push-action: Apache-2.0
 - prettier/prettier: MIT
+- pydantic/pydantic: MIT
+- pytest-dev/pytest: MIT
+- terraform-aws-modules/terraform-aws-vpc: Apache-2.0
 - vitejs/vite: MIT

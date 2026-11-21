@@ -1,0 +1,14 @@
+{
+  "sha": "b6ddfdcf734715ee00d557551180008bac117488",
+  "pairing": "H1-pr",
+  "commits": 1,
+  "files_total": 1,
+  "files": [
+    {
+      "path": "pydantic/_internal/_generate_schema.py",
+      "additions": 15,
+      "deletions": 6
+    }
+  ],
+  "summary": "1 commit(s), 1 file(s), +15/-6"
+}

@@ -1,0 +1,28 @@
+id: terraform-aws-vpc-33118753094-1
+source: public
+repo: terraform-aws-modules/terraform-aws-vpc
+run_url: https://github.com/terraform-aws-modules/terraform-aws-vpc/actions/runs/33118753094/attempts/1
+job_id: 98680069738
+expected:
+  category: dependency
+  cause: 'terraform validate con Terraform 1.0.0 falla en el módulo rds_security_group:
+    optional() con valor por defecto no soportado.'
+  evidence_lines:
+  - 460
+fix:
+  commit: a520d5707773e174b89684af85c0ac3f33adb659
+  summary: 1 commit(s), 2 file(s), +2/-2
+flaky: false
+tags:
+- terraform
+captured_at: '2026-11-21T18:26:52Z'
+provenance:
+  repo: terraform-aws-modules/terraform-aws-vpc
+  license: Apache-2.0
+  run_url: https://github.com/terraform-aws-modules/terraform-aws-vpc/actions/runs/33118753094/attempts/1
+  fix_sha: a520d5707773e174b89684af85c0ac3f33adb659
+  fix_run_url: https://github.com/terraform-aws-modules/terraform-aws-vpc/actions/runs/33119501558
+  occurred_at: '2026-08-27T21:34:49Z'
+  pairing: H1-pr
+  labeled_by: owner (draft by Claude)
+  label_basis: log

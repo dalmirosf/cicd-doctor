@@ -1,0 +1,307 @@
+﻿2026-10-21T08:54:26.0153545Z Current runner version: '2.338.0'
+2026-10-21T08:54:26.0180062Z ##[group]Runner Image Provisioner
+2026-10-21T08:54:26.0181125Z Hosted Compute Agent
+2026-10-21T08:54:26.0181860Z Version: 20261015.610
+2026-10-21T08:54:26.0182693Z Commit: 267fdb4e8bbec4ab5ea31367f3a00d5c480c7656
+2026-10-21T08:54:26.0183523Z Build Date: 2026-10-14T17:06:54Z
+2026-10-21T08:54:26.0184408Z Worker ID: {3d8e9625-828e-4af1-bebc-ffa6f94ee053}
+2026-10-21T08:54:26.0185189Z Region: eastus
+2026-10-21T08:54:26.0185769Z Cloud: Azure
+2026-10-21T08:54:26.0186465Z ##[endgroup]
+2026-10-21T08:54:26.0187943Z ##[group]Operating System
+2026-10-21T08:54:26.0189124Z Ubuntu
+2026-10-21T08:54:26.0189891Z 24.04.5
+2026-10-21T08:54:26.0190457Z LTS
+2026-10-21T08:54:26.0191108Z ##[endgroup]
+2026-10-21T08:54:26.0191756Z ##[group]Runner Image
+2026-10-21T08:54:26.0192455Z Image: ubuntu-24.04
+2026-10-21T08:54:26.0193102Z Version: 20261018.339.1
+2026-10-21T08:54:26.0194915Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261018.339/images/ubuntu/Ubuntu2404-Readme.md
+2026-10-21T08:54:26.0196567Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261018.339
+2026-10-21T08:54:26.0197667Z ##[endgroup]
+2026-10-21T08:54:26.0199325Z ##[group]GITHUB_TOKEN Permissions
+2026-10-21T08:54:26.0201423Z Contents: read
+2026-10-21T08:54:26.0202059Z Metadata: read
+2026-10-21T08:54:26.0202763Z Packages: read
+2026-10-21T08:54:26.0203418Z ##[endgroup]
+2026-10-21T08:54:26.0205622Z Secret source: None
+2026-10-21T08:54:26.0206701Z Cache mode: read
+2026-10-21T08:54:26.0207482Z Prepare workflow directory
+2026-10-21T08:54:26.0594730Z Prepare all required actions
+2026-10-21T08:54:26.0645366Z Getting action download info
+2026-10-21T08:54:26.3082066Z Download action repository 'github/dependabot-action@main' (SHA:3dfaa53a2da572ae1c31f7a876e2e397271acd2e)
+2026-10-21T08:54:26.6364644Z Complete job name: Dependabot
+2026-10-21T08:54:26.7196671Z ##[group]Run mkdir -p  ./dependabot-job-1642108423-1792572860
+2026-10-21T08:54:26.7197616Z mkdir -p  ./dependabot-job-1642108423-1792572860
+2026-10-21T08:54:26.7389566Z shell: /usr/bin/bash -e {0}
+2026-10-21T08:54:26.7390515Z ##[endgroup]
+2026-10-21T08:54:26.7720449Z ##[group]Run github/dependabot-action@main
+2026-10-21T08:54:26.7721126Z env:
+2026-10-21T08:54:26.7721589Z   DEPENDABOT_DISABLE_CLEANUP: 1
+2026-10-21T08:54:26.7722166Z   DEPENDABOT_ENABLE_CONNECTIVITY_CHECK: 0
+2026-10-21T08:54:26.7725886Z   GITHUB_TOKEN: ***
+2026-10-21T08:54:26.7726754Z   GITHUB_DEPENDABOT_JOB_TOKEN: ***
+2026-10-21T08:54:26.7727719Z   GITHUB_DEPENDABOT_CRED_TOKEN: ***
+2026-10-21T08:54:26.7728308Z   GITHUB_REGISTRIES_PROXY: ***
+2026-10-21T08:54:26.7729044Z ##[endgroup]
+2026-10-21T08:54:26.9409502Z 🤖 ~ starting update ~
+2026-10-21T08:54:26.9430911Z Fetching job details
+2026-10-21T08:54:28.6918133Z ##[group]Pulling updater images
+2026-10-21T08:54:28.6975543Z Pulling image ghcr.io/dependabot/dependabot-updater-uv:2c93e3d419ba3d4600f747c66433b62b44d6154e (attempt 1)...
+2026-10-21T08:54:28.7627612Z Successfully sent metric (dependabot.action.ghcr_image_pull) to remote API endpoint
+2026-10-21T08:54:51.4543545Z Pulled image ghcr.io/dependabot/dependabot-updater-uv:2c93e3d419ba3d4600f747c66433b62b44d6154e
+2026-10-21T08:54:51.4554604Z Pulling image ghcr.io/dependabot/proxy:v2.0.20261016101855@sha256:1a92374ed16022e6fb183f8870d66c72a66e896046bef3a3852d0094d6a948e6 (attempt 1)...
+2026-10-21T08:54:51.5021744Z Successfully sent metric (dependabot.action.ghcr_image_pull) to remote API endpoint
+2026-10-21T08:54:51.8862976Z Pulled image ghcr.io/dependabot/proxy:v2.0.20261016101855@sha256:1a92374ed16022e6fb183f8870d66c72a66e896046bef3a3852d0094d6a948e6
+2026-10-21T08:54:51.8864586Z ##[endgroup]
+2026-10-21T08:54:51.8864914Z Starting update process
+2026-10-21T08:54:52.0722083Z Created proxy container: 8e08f0ec1d73d21d7a1462079ede3597ba5b6e543852dd50006fdc0e15c4f273
+2026-10-21T08:54:52.5954857Z   proxy | 2026/10/21 08:54:52 proxy starting, commit: 5f186c538117cf00c0efad3d07dc14ed32dfa42c
+2026-10-21T08:54:52.5961070Z   proxy | 2026/10/21 08:54:52 Listening (:1080)
+2026-10-21T08:54:52.7925220Z Created container: 769ff78ffc09dcad53df48b59deb6b1da9518e3b972fab71a9ade0668b045e68
+2026-10-21T08:54:52.8961039Z Started container 769ff78ffc09dcad53df48b59deb6b1da9518e3b972fab71a9ade0668b045e68
+2026-10-21T08:54:52.9352087Z updater | Updating certificates in /etc/ssl/certs...
+2026-10-21T08:54:53.5377295Z updater | rehash: warning: skipping ca-certificates.crt,it does not contain exactly one certificate or CRL
+2026-10-21T08:54:53.5432255Z updater | 1 added, 0 removed; done.
+2026-10-21T08:54:53.5433648Z Running hooks in /etc/ca-certificates/update.d...
+2026-10-21T08:54:53.5444105Z updater | done.
+2026-10-21T08:54:53.8252523Z updater | fetch_files command is no longer used directly
+2026-10-21T08:54:55.8890833Z updater | 2026/10/21 08:54:55 INFO <job_1642108423> Starting job processing
+2026-10-21T08:54:55.8905379Z updater | 2026/10/21 08:54:55 INFO <job_1642108423> Job definition: {"job":{"command":"security","allowed-updates":[{"dependency-type":"direct","update-type":"all"}],"commit-message-options":{"prefix":null,"prefix-development":null,"include-scope":null},"credentials-metadata":[{"type":"git_source","host":"github.com"}],"debug":null,"dependencies":["certifi"],"dependency-groups":[],"dependency-group-to-refresh":null,"existing-pull-requests":[],"existing-group-pull-requests":[],"experiments":{"record-ecosystem-versions":true,"record-update-job-unknown-error":true,"azure-registry-backup":true,"automatic-github-packages-auth":true,"blocked-versions":true,"workflow-job-summary":true,"async-retry":true,"enable-npmrc-credential-generation":true,"proxy-read-only-git-credentials":true,"proxy-egress-observe":true,"proxy-egress-enforce":true,"github-actions-lockfile":true,"maven-wrapper-updater":true,"prioritize-scm-source":true,"enable-yarn-berry-conflicting-dependencies":true},"ignore-conditions":[],"lockfile-only":false,"package-manager":"uv","requirements-update-strategy":null,"reject-external-code":false,"security-advisories":[{"dependency-name":"certifi","patched-versions":[],"unaffected-versions":[],"affected-versions":[">= 2019.03.09, < 2026.10.19"]},{"dependency-name":"certifi","patched-versions":[],"unaffected-versions":[],"affected-versions":[">= 2021.5.30, < 2024.7.4"]},{"dependency-name":"certifi","patched-versions":[],"unaffected-versions":[],"affected-versions":[">= 2015.4.28, < 2023.7.22"]},{"dependency-name":"certifi","patched-versions":[],"unaffected-versions":[],"affected-versions":[">= 2017.11.05, < 2022.12.07"]}],"security-updates-only":true,"source":{"provider":"github","repo":"pytest-dev/pytest","branch":null,"api-endpoint":"https://api.github.com/","hostname":"github.com","directories":["/."]},"updating-a-pull-request":false,"update-subdependencies":false,"vendor-dependencies":false,"enable-beta-ecosystems":false,"repo-private":true,"multi-ecosystem-update":false,"exclude-paths":[]}}
+2026-10-21T08:54:56.0500439Z   proxy | 2026/10/21 08:54:56 [002] GET https://github.com:443/pytest-dev/pytest.git/info/refs?service=git-upload-pack
+2026-10-21T08:54:56.0501456Z   proxy | 2026/10/21 08:54:56 [002] * authenticating git server request (host: github.com)
+2026-10-21T08:54:56.1280564Z   proxy | 2026/10/21 08:54:56 [002] 200 https://github.com:443/pytest-dev/pytest.git/info/refs?service=git-upload-pack
+2026-10-21T08:54:56.2966316Z updater | 2026/10/21 08:54:56 INFO <job_1642108423> Started process PID: 999 with command: {} git clone --no-tags --depth 1 --recurse-submodules --shallow-submodules https://github.com/pytest-dev/pytest /home/dependabot/dependabot-updater/repo {}
+2026-10-21T08:54:56.3406947Z   proxy | 2026/10/21 08:54:56 [004] GET https://github.com:443/pytest-dev/pytest/info/refs?service=git-upload-pack
+2026-10-21T08:54:56.3407845Z   proxy | 2026/10/21 08:54:56 [004] * authenticating git server request (host: github.com)
+2026-10-21T08:54:56.3922584Z   proxy | 2026/10/21 08:54:56 [004] 200 https://github.com:443/pytest-dev/pytest/info/refs?service=git-upload-pack
+2026-10-21T08:54:56.3928285Z   proxy | 2026/10/21 08:54:56 [005] POST https://github.com:443/pytest-dev/pytest/git-upload-pack
+2026-10-21T08:54:56.3930692Z   proxy | 2026/10/21 08:54:56 [005] * authenticating git server request (host: github.com)
+2026-10-21T08:54:56.4530089Z   proxy | 2026/10/21 08:54:56 [005] 200 https://github.com:443/pytest-dev/pytest/git-upload-pack
+2026-10-21T08:54:56.4560084Z   proxy | 2026/10/21 08:54:56 [006] POST https://github.com:443/pytest-dev/pytest/git-upload-pack
+2026-10-21T08:54:56.4562096Z   proxy | 2026/10/21 08:54:56 [006] * authenticating git server request (host: github.com)
+2026-10-21T08:54:56.6781646Z   proxy | 2026/10/21 08:54:56 [006] 200 https://github.com:443/pytest-dev/pytest/git-upload-pack
+2026-10-21T08:54:57.0066469Z updater | 2026/10/21 08:54:57 INFO <job_1642108423> Process PID: 999 completed with status: pid 999 exit 0
+2026-10-21T08:54:57.0067274Z 2026/10/21 08:54:57 INFO <job_1642108423> Total execution time: 0.71 seconds
+2026-10-21T08:54:57.0075871Z updater | 2026/10/21 08:54:57 INFO <job_1642108423> Started process PID: 1041 with command: {} git -C /home/dependabot/dependabot-updater/repo ls-files --stage {}
+2026-10-21T08:54:57.0126974Z updater | 2026/10/21 08:54:57 INFO <job_1642108423> Process PID: 1041 completed with status: pid 1041 exit 0
+2026-10-21T08:54:57.0128477Z updater | 2026/10/21 08:54:57 INFO <job_1642108423> Total execution time: 0.01 seconds
+2026-10-21T08:54:57.0690810Z updater | 2026/10/21 08:54:57 INFO <job_1642108423> Started process PID: 1133 with command: {} git rev-parse HEAD {}
+2026-10-21T08:54:57.0726469Z updater | 2026/10/21 08:54:57 INFO <job_1642108423> Process PID: 1133 completed with status: pid 1133 exit 0
+2026-10-21T08:54:57.0727326Z 2026/10/21 08:54:57 INFO <job_1642108423> Total execution time: 0.0 seconds
+2026-10-21T08:54:57.5377763Z updater | 2026/10/21 08:54:57 INFO <job_1642108423> DEBUG filter_excluded: entries=32, exclude_paths=[]
+2026-10-21T08:54:57.5394204Z updater | 2026/10/21 08:54:57 INFO <job_1642108423> DEBUG filter_excluded: entries=11, exclude_paths=[]
+2026-10-21T08:54:57.5399347Z updater | 2026/10/21 08:54:57 INFO <job_1642108423> DEBUG filter_excluded: entries=10, exclude_paths=[]
+2026-10-21T08:54:57.5404424Z updater | 2026/10/21 08:54:57 INFO <job_1642108423> DEBUG filter_excluded: entries=7, exclude_paths=[]
+2026-10-21T08:54:57.5440597Z updater | 2026/10/21 08:54:57 INFO <job_1642108423> DEBUG filter_excluded: entries=96, exclude_paths=[]
+2026-10-21T08:54:57.5449758Z updater | 2026/10/21 08:54:57 INFO <job_1642108423> DEBUG filter_excluded: entries=1, exclude_paths=[]
+2026-10-21T08:54:57.5453676Z updater | 2026/10/21 08:54:57 INFO <job_1642108423> DEBUG filter_excluded: entries=1, exclude_paths=[]
+2026-10-21T08:54:57.5455405Z 2026/10/21 08:54:57 INFO <job_1642108423> DEBUG filter_excluded: entries=10, exclude_paths=[]
+2026-10-21T08:54:57.5457419Z updater | 2026/10/21 08:54:57 INFO <job_1642108423> DEBUG filter_excluded: entries=3, exclude_paths=[]
+2026-10-21T08:54:57.5486935Z updater | 2026/10/21 08:54:57 INFO <job_1642108423> DEBUG filter_excluded: entries=67, exclude_paths=[]
+2026-10-21T08:54:58.3798198Z updater | 2026/10/21 08:54:58 INFO <job_1642108423> Dependabot is using Python version '3.10.20'.
+2026-10-21T08:54:58.7165809Z   proxy | 2026/10/21 08:54:58 [008] POST /update_jobs/1642108423/record_ecosystem_versions
+2026-10-21T08:54:58.7691377Z   proxy | 2026/10/21 08:54:58 [008] 204 /update_jobs/1642108423/record_ecosystem_versions
+2026-10-21T08:54:58.7698929Z updater | 2026/10/21 08:54:58 INFO <job_1642108423> Base commit SHA: c9bf1edf9e0d388f3e7bebc88576e608ffbc40a4
+2026-10-21T08:54:58.7700037Z 2026/10/21 08:54:58 INFO <job_1642108423> Finished job processing
+2026-10-21T08:54:58.7715922Z updater | 2026/10/21 08:54:58 INFO <job_1642108423> Starting job processing
+2026-10-21T08:54:58.8540410Z   proxy | 2026/10/21 08:54:58 [010] GET /update_jobs/1642108423/blocked_versions?package-manager=uv
+2026-10-21T08:54:58.8786209Z   proxy | 2026/10/21 08:54:58 [010] 200 /update_jobs/1642108423/blocked_versions?package-manager=uv
+2026-10-21T08:54:58.8837906Z updater | 2026/10/21 08:54:58 INFO <job_1642108423> Started process PID: 1140 with command: {} pyenv exec uv --version {}
+2026-10-21T08:54:58.9455442Z updater | 2026/10/21 08:54:58 INFO <job_1642108423> Process PID: 1140 completed with status: pid 1140 exit 0
+2026-10-21T08:54:58.9456691Z updater | 2026/10/21 08:54:58 INFO <job_1642108423> Total execution time: 0.06 seconds
+2026-10-21T08:54:58.9482011Z updater | 2026/10/21 08:54:58 INFO <job_1642108423> Package manager uv, Info : uv 0.12.18 (x86_64-unknown-linux-gnu)
+2026-10-21T08:54:58.9482809Z 
+2026-10-21T08:54:59.4079779Z updater | 2026/10/21 08:54:59 INFO <job_1642108423> Started process PID: 1187 with command: {} pyenv exec python --version {}
+2026-10-21T08:54:59.4651758Z updater | 2026/10/21 08:54:59 INFO <job_1642108423> Process PID: 1187 completed with status: pid 1187 exit 0
+2026-10-21T08:54:59.4652421Z 2026/10/21 08:54:59 INFO <job_1642108423> Total execution time: 0.06 seconds
+2026-10-21T08:54:59.8339989Z updater | 2026/10/21 08:54:59 INFO <job_1642108423> Started process PID: 1234 with command: pyenv exec python3 /opt/python/run.py
+2026-10-21T08:55:03.0199152Z updater | 2026/10/21 08:55:03 INFO <job_1642108423> Process PID: 1234 completed with status: pid 1234 exit 0
+2026-10-21T08:55:03.0200218Z 2026/10/21 08:55:03 INFO <job_1642108423> Total execution time: 3.19 seconds
+2026-10-21T08:55:03.8264935Z   proxy | 2026/10/21 08:55:03 [012] POST /update_jobs/1642108423/update_dependency_list
+2026-10-21T08:55:03.8599415Z   proxy | 2026/10/21 08:55:03 [012] 204 /update_jobs/1642108423/update_dependency_list
+2026-10-21T08:55:03.9426085Z   proxy | 2026/10/21 08:55:03 [014] POST /update_jobs/1642108423/increment_metric
+2026-10-21T08:55:03.9746565Z   proxy | 2026/10/21 08:55:03 [014] 204 /update_jobs/1642108423/increment_metric
+2026-10-21T08:55:03.9755118Z updater | 2026/10/21 08:55:03 INFO <job_1642108423> Starting security update job for pytest-dev/pytest
+2026-10-21T08:55:03.9783325Z updater | 2026/10/21 08:55:03 INFO <job_1642108423> Checking if certifi 2026.1.4 needs updating
+2026-10-21T08:55:04.3030509Z updater | 2026/10/21 08:55:04 INFO <job_1642108423> Fetching release information from json registry at https://pypi.org/pypi/ for certifi
+2026-10-21T08:55:04.4111100Z   proxy | 2026/10/21 08:55:04 [016] GET https://pypi.org:443/pypi/certifi/json
+2026-10-21T08:55:04.4212139Z   proxy | 2026/10/21 08:55:04 [016] 200 https://pypi.org:443/pypi/certifi/json
+2026-10-21T08:55:04.4470530Z updater | 2026/10/21 08:55:04 INFO <job_1642108423> Filtered out 1 yanked versions
+2026-10-21T08:55:04.4490830Z updater | 2026/10/21 08:55:04 INFO <job_1642108423> Latest version is 2026.10.19
+2026-10-21T08:55:04.4540914Z updater | 2026/10/21 08:55:04 INFO <job_1642108423> Filtered out 1 yanked versions
+2026-10-21T08:55:05.3094762Z updater | 2026/10/21 08:55:05 INFO <job_1642108423> Fetching release information from json registry at https://pypi.org/pypi/ for certifi
+2026-10-21T08:55:05.3961978Z   proxy | 2026/10/21 08:55:05 [018] GET https://pypi.org:443/pypi/certifi/json
+2026-10-21T08:55:05.3963140Z   proxy | 2026/10/21 08:55:05 [018] 200 https://pypi.org:443/pypi/certifi/json (cached)
+2026-10-21T08:55:05.4185581Z updater | 2026/10/21 08:55:05 INFO <job_1642108423> Filtered out 1 yanked versions
+2026-10-21T08:55:05.4397919Z updater | 2026/10/21 08:55:05 INFO <job_1642108423> Started process PID: 1282 with command: {} git reset HEAD --hard {}
+2026-10-21T08:55:05.5087241Z updater | 2026/10/21 08:55:05 INFO <job_1642108423> Process PID: 1282 completed with status: pid 1282 exit 0
+2026-10-21T08:55:05.5087903Z updater | 2026/10/21 08:55:05 INFO <job_1642108423> Total execution time: 0.07 seconds
+2026-10-21T08:55:05.5095159Z updater | 2026/10/21 08:55:05 INFO <job_1642108423> Started process PID: 1289 with command: {} git clean -fx {}
+2026-10-21T08:55:05.5157801Z updater | 2026/10/21 08:55:05 INFO <job_1642108423> Process PID: 1289 completed with status: pid 1289 exit 0
+2026-10-21T08:55:05.5159419Z updater | 2026/10/21 08:55:05 INFO <job_1642108423> Total execution time: 0.01 seconds
+2026-10-21T08:55:05.7132288Z updater | 2026/10/21 08:55:05 INFO <job_1642108423> Creating directory for version file: src/_pytest
+2026-10-21T08:55:05.7134384Z 2026/10/21 08:55:05 INFO <job_1642108423> Setting up Python environment using LanguageVersionManager
+2026-10-21T08:55:05.7257093Z updater | 2026/10/21 08:55:05 INFO <job_1642108423> Started process PID: 1382 with command: {} pyenv versions {}
+2026-10-21T08:55:05.7681775Z updater | 2026/10/21 08:55:05 INFO <job_1642108423> Process PID: 1382 completed with status: pid 1382 exit 0
+2026-10-21T08:55:05.7682506Z 2026/10/21 08:55:05 INFO <job_1642108423> Total execution time: 0.05 seconds
+2026-10-21T08:55:06.1998865Z updater | 2026/10/21 08:55:06 INFO <job_1642108423> Started process PID: 1426 with command: {} tar -axf /usr/local/.pyenv/versions/3.10.20.tar.zst -C /usr/local/.pyenv/versions {}
+2026-10-21T08:55:06.8229551Z updater | 2026/10/21 08:55:06 INFO <job_1642108423> Process PID: 1426 completed with status: pid 1426 exit 0
+2026-10-21T08:55:06.8230615Z 2026/10/21 08:55:06 INFO <job_1642108423> Total execution time: 0.62 seconds
+2026-10-21T08:55:06.8231174Z updater | 2026/10/21 08:55:06 INFO <job_1642108423> Setting Python version to 3.10.20
+2026-10-21T08:55:06.8257929Z updater | 2026/10/21 08:55:06 INFO <job_1642108423> Started process PID: 1431 with command: {} pyenv local 3.10.20 {}
+2026-10-21T08:55:06.8550610Z updater | 2026/10/21 08:55:06 INFO <job_1642108423> Process PID: 1431 completed with status: pid 1431 exit 0
+2026-10-21T08:55:06.8551645Z 2026/10/21 08:55:06 INFO <job_1642108423> Total execution time: 0.03 seconds
+2026-10-21T08:55:06.8552458Z updater | 2026/10/21 08:55:06 INFO <job_1642108423> Using pre-installed uv package
+2026-10-21T08:55:07.5549140Z updater | 2026/10/21 08:55:07 INFO <job_1642108423> Running command: pyenv exec uv lock --upgrade-package certifi==2026.10.19 
+2026-10-21T08:55:07.5558317Z updater | 2026/10/21 08:55:07 INFO <job_1642108423> Started process PID: 1457 with command: {"SETUPTOOLS_SCM_PRETEND_VERSION_FOR_PYTEST" => "0.0.0"} pyenv exec uv lock --upgrade-package certifi\=\=2026.10.19 {}
+2026-10-21T08:55:07.8882226Z   proxy | 2026/10/21 08:55:07 [021] GET https://pypi.org:443/simple/setuptools-scm/
+2026-10-21T08:55:07.8883569Z   proxy | 2026/10/21 08:55:07 [022] GET https://pypi.org:443/simple/setuptools/
+2026-10-21T08:55:07.8900809Z   proxy | 2026/10/21 08:55:07 [021] 200 https://pypi.org:443/simple/setuptools-scm/
+2026-10-21T08:55:07.8944798Z   proxy | 2026/10/21 08:55:07 [022] 200 https://pypi.org:443/simple/setuptools/
+2026-10-21T08:55:08.0224511Z   proxy | 2026/10/21 08:55:08 [025] GET https://files.pythonhosted.org:443/packages/da/f5/54538a1f17ea753c42b0928dc2e62986d463f8c393340b9a1e602f2d4dd9/setuptools_scm-10.3.4-py3-none-any.whl.metadata
+2026-10-21T08:55:08.0232578Z   proxy | 2026/10/21 08:55:08 [026] GET https://files.pythonhosted.org:443/packages/ef/55/6dc6d6bb953bdfc52519a0059592c52b6e3b8ad51cf8256dffceb55b0610/setuptools-84.2.1-py3-none-any.whl.metadata
+2026-10-21T08:55:08.0347177Z   proxy | 2026/10/21 08:55:08 [025] 200 https://files.pythonhosted.org:443/packages/da/f5/54538a1f17ea753c42b0928dc2e62986d463f8c393340b9a1e602f2d4dd9/setuptools_scm-10.3.4-py3-none-any.whl.metadata
+2026-10-21T08:55:08.0357502Z   proxy | 2026/10/21 08:55:08 [026] 200 https://files.pythonhosted.org:443/packages/ef/55/6dc6d6bb953bdfc52519a0059592c52b6e3b8ad51cf8256dffceb55b0610/setuptools-84.2.1-py3-none-any.whl.metadata
+2026-10-21T08:55:08.0380008Z   proxy | 2026/10/21 08:55:08 [027] GET https://pypi.org:443/simple/packaging/
+2026-10-21T08:55:08.0389468Z   proxy | 2026/10/21 08:55:08 [029] GET https://pypi.org:443/simple/vcs-versioning/
+2026-10-21T08:55:08.0408007Z   proxy | 2026/10/21 08:55:08 [027] 200 https://pypi.org:443/simple/packaging/
+2026-10-21T08:55:08.0410118Z   proxy | 2026/10/21 08:55:08 [031] GET https://pypi.org:443/simple/typing-extensions/
+2026-10-21T08:55:08.0416560Z   proxy | 2026/10/21 08:55:08 [029] 200 https://pypi.org:443/simple/vcs-versioning/
+2026-10-21T08:55:08.0429997Z   proxy | 2026/10/21 08:55:08 [032] GET https://pypi.org:443/simple/tomli/
+2026-10-21T08:55:08.0441627Z   proxy | 2026/10/21 08:55:08 [033] GET https://files.pythonhosted.org:443/packages/73/1d/ad4064bf12f4503bf61e65d74c93c523672776d25ee0a06aaf42ae09ef3f/vcs_versioning-2.6.0-py3-none-any.whl.metadata
+2026-10-21T08:55:08.0454085Z   proxy | 2026/10/21 08:55:08 [034] GET https://files.pythonhosted.org:443/packages/63/34/ba1c580383c9eada3711951fef0795c80b829a078d72188184bcab9dd527/packaging-26.3-py3-none-any.whl.metadata
+2026-10-21T08:55:08.0455758Z   proxy | 2026/10/21 08:55:08 [032] 200 https://pypi.org:443/simple/tomli/
+2026-10-21T08:55:08.0457193Z   proxy | 2026/10/21 08:55:08 [031] 200 https://pypi.org:443/simple/typing-extensions/
+2026-10-21T08:55:08.0490018Z   proxy | 2026/10/21 08:55:08 [034] 200 https://files.pythonhosted.org:443/packages/63/34/ba1c580383c9eada3711951fef0795c80b829a078d72188184bcab9dd527/packaging-26.3-py3-none-any.whl.metadata
+2026-10-21T08:55:08.0506515Z   proxy | 2026/10/21 08:55:08 [033] 200 https://files.pythonhosted.org:443/packages/73/1d/ad4064bf12f4503bf61e65d74c93c523672776d25ee0a06aaf42ae09ef3f/vcs_versioning-2.6.0-py3-none-any.whl.metadata
+2026-10-21T08:55:08.0548335Z   proxy | 2026/10/21 08:55:08 [036] GET https://files.pythonhosted.org:443/packages/49/d3/b8441a820a491ddfc024b0b0cf0393375b75ea13866d9c66727e54c2fc80/typing_extensions-4.16.0-py3-none-any.whl.metadata
+2026-10-21T08:55:08.0551134Z   proxy | 2026/10/21 08:55:08 [038] GET https://files.pythonhosted.org:443/packages/60/3f/3e3f8fd0919249b0200c80fbc4f9a1e70be19f9883da71dfb7f8b9ab8aca/tomli-2.5.0-py3-none-any.whl.metadata
+2026-10-21T08:55:08.0566954Z   proxy | 2026/10/21 08:55:08 [038] 200 https://files.pythonhosted.org:443/packages/60/3f/3e3f8fd0919249b0200c80fbc4f9a1e70be19f9883da71dfb7f8b9ab8aca/tomli-2.5.0-py3-none-any.whl.metadata
+2026-10-21T08:55:08.0574664Z   proxy | 2026/10/21 08:55:08 [036] 200 https://files.pythonhosted.org:443/packages/49/d3/b8441a820a491ddfc024b0b0cf0393375b75ea13866d9c66727e54c2fc80/typing_extensions-4.16.0-py3-none-any.whl.metadata
+2026-10-21T08:55:08.0603286Z   proxy | 2026/10/21 08:55:08 [039] GET https://files.pythonhosted.org:443/packages/63/34/ba1c580383c9eada3711951fef0795c80b829a078d72188184bcab9dd527/packaging-26.3-py3-none-any.whl
+2026-10-21T08:55:08.0605932Z 2026/10/21 08:55:08 [040] GET https://files.pythonhosted.org:443/packages/49/d3/b8441a820a491ddfc024b0b0cf0393375b75ea13866d9c66727e54c2fc80/typing_extensions-4.16.0-py3-none-any.whl
+2026-10-21T08:55:08.0608232Z 2026/10/21 08:55:08 [041] GET https://files.pythonhosted.org:443/packages/ef/55/6dc6d6bb953bdfc52519a0059592c52b6e3b8ad51cf8256dffceb55b0610/setuptools-84.2.1-py3-none-any.whl
+2026-10-21T08:55:08.0610716Z 2026/10/21 08:55:08 [044] GET https://files.pythonhosted.org:443/packages/da/f5/54538a1f17ea753c42b0928dc2e62986d463f8c393340b9a1e602f2d4dd9/setuptools_scm-10.3.4-py3-none-any.whl
+2026-10-21T08:55:08.0635429Z   proxy | 2026/10/21 08:55:08 [040] 200 https://files.pythonhosted.org:443/packages/49/d3/b8441a820a491ddfc024b0b0cf0393375b75ea13866d9c66727e54c2fc80/typing_extensions-4.16.0-py3-none-any.whl
+2026-10-21T08:55:08.0652499Z   proxy | 2026/10/21 08:55:08 [045] GET https://files.pythonhosted.org:443/packages/73/1d/ad4064bf12f4503bf61e65d74c93c523672776d25ee0a06aaf42ae09ef3f/vcs_versioning-2.6.0-py3-none-any.whl
+2026-10-21T08:55:08.0654734Z 2026/10/21 08:55:08 [046] GET https://files.pythonhosted.org:443/packages/60/3f/3e3f8fd0919249b0200c80fbc4f9a1e70be19f9883da71dfb7f8b9ab8aca/tomli-2.5.0-py3-none-any.whl
+2026-10-21T08:55:08.0658454Z 2026/10/21 08:55:08 [039] 200 https://files.pythonhosted.org:443/packages/63/34/ba1c580383c9eada3711951fef0795c80b829a078d72188184bcab9dd527/packaging-26.3-py3-none-any.whl
+2026-10-21T08:55:08.0665873Z   proxy | 2026/10/21 08:55:08 [041] 200 https://files.pythonhosted.org:443/packages/ef/55/6dc6d6bb953bdfc52519a0059592c52b6e3b8ad51cf8256dffceb55b0610/setuptools-84.2.1-py3-none-any.whl
+2026-10-21T08:55:08.0693435Z   proxy | 2026/10/21 08:55:08 [044] 200 https://files.pythonhosted.org:443/packages/da/f5/54538a1f17ea753c42b0928dc2e62986d463f8c393340b9a1e602f2d4dd9/setuptools_scm-10.3.4-py3-none-any.whl
+2026-10-21T08:55:08.0698401Z   proxy | 2026/10/21 08:55:08 [045] 200 https://files.pythonhosted.org:443/packages/73/1d/ad4064bf12f4503bf61e65d74c93c523672776d25ee0a06aaf42ae09ef3f/vcs_versioning-2.6.0-py3-none-any.whl
+2026-10-21T08:55:08.0712512Z   proxy | 2026/10/21 08:55:08 [046] 200 https://files.pythonhosted.org:443/packages/60/3f/3e3f8fd0919249b0200c80fbc4f9a1e70be19f9883da71dfb7f8b9ab8aca/tomli-2.5.0-py3-none-any.whl
+2026-10-21T08:55:09.8600976Z   proxy | 2026/10/21 08:55:09 [047] GET https://pypi.org:443/simple/iniconfig/
+2026-10-21T08:55:09.8620803Z   proxy | 2026/10/21 08:55:09 [048] GET https://pypi.org:443/simple/pluggy/
+2026-10-21T08:55:09.8642297Z   proxy | 2026/10/21 08:55:09 [049] GET https://pypi.org:443/simple/colorama/
+2026-10-21T08:55:09.8645114Z 2026/10/21 08:55:09 [050] GET https://files.pythonhosted.org:443/packages/20/12/38679034af332785aac8774540895e234f4d07f7545804097de4b666afd8/packaging-25.0-py3-none-any.whl.metadata
+2026-10-21T08:55:09.8647007Z 2026/10/21 08:55:09 [051] GET https://pypi.org:443/simple/pygments/
+2026-10-21T08:55:09.8656494Z   proxy | 2026/10/21 08:55:09 [047] 200 https://pypi.org:443/simple/iniconfig/
+2026-10-21T08:55:09.8659112Z 2026/10/21 08:55:09 [050] 200 https://files.pythonhosted.org:443/packages/20/12/38679034af332785aac8774540895e234f4d07f7545804097de4b666afd8/packaging-25.0-py3-none-any.whl.metadata
+2026-10-21T08:55:09.8668556Z   proxy | 2026/10/21 08:55:09 [048] 200 https://pypi.org:443/simple/pluggy/
+2026-10-21T08:55:09.8680446Z   proxy | 2026/10/21 08:55:09 [063] GET https://pypi.org:443/simple/hypothesis/
+2026-10-21T08:55:09.8719811Z   proxy | 2026/10/21 08:55:09 [049] 200 https://pypi.org:443/simple/colorama/
+2026-10-21T08:55:09.8723026Z   proxy | 2026/10/21 08:55:09 [064] GET https://files.pythonhosted.org:443/packages/cb/b1/3846dd7f199d53cb17f49cba7e651e9ce294d8497c8c150530ed11865bb8/iniconfig-2.3.0-py3-none-any.whl.metadata
+2026-10-21T08:55:09.8726479Z   proxy | 2026/10/21 08:55:09 [065] GET https://pypi.org:443/simple/numpy/
+2026-10-21T08:55:09.8738219Z   proxy | 2026/10/21 08:55:09 [066] GET https://pypi.org:443/simple/pexpect/
+2026-10-21T08:55:09.8739865Z   proxy | 2026/10/21 08:55:09 [067] GET https://pypi.org:443/simple/coverage/
+2026-10-21T08:55:09.8744890Z   proxy | 2026/10/21 08:55:09 [051] 200 https://pypi.org:443/simple/pygments/
+2026-10-21T08:55:09.8772174Z   proxy | 2026/10/21 08:55:09 [063] 200 https://pypi.org:443/simple/hypothesis/
+2026-10-21T08:55:09.8787243Z   proxy | 2026/10/21 08:55:09 [068] GET https://files.pythonhosted.org:443/packages/a3/dc/17031897dae0efacfea57dfd3a82fdd2a2aeb58e0ff71b77b87e44edc772/setuptools-80.9.0-py3-none-any.whl.metadata
+2026-10-21T08:55:09.8795568Z   proxy | 2026/10/21 08:55:09 [065] 200 https://pypi.org:443/simple/numpy/
+2026-10-21T08:55:09.8803650Z   proxy | 2026/10/21 08:55:09 [066] 200 https://pypi.org:443/simple/pexpect/
+2026-10-21T08:55:09.8811064Z   proxy | 2026/10/21 08:55:09 [069] GET https://pypi.org:443/simple/mock/
+2026-10-21T08:55:09.8819785Z   proxy | 2026/10/21 08:55:09 [070] GET https://pypi.org:443/simple/xmlschema/
+2026-10-21T08:55:09.8830657Z   proxy | 2026/10/21 08:55:09 [071] GET https://pypi.org:443/simple/requests/
+2026-10-21T08:55:09.8837198Z   proxy | 2026/10/21 08:55:09 [068] 200 https://files.pythonhosted.org:443/packages/a3/dc/17031897dae0efacfea57dfd3a82fdd2a2aeb58e0ff71b77b87e44edc772/setuptools-80.9.0-py3-none-any.whl.metadata
+2026-10-21T08:55:09.8844221Z   proxy | 2026/10/21 08:55:09 [072] GET https://pypi.org:443/simple/attrs/
+2026-10-21T08:55:09.8851338Z   proxy | 2026/10/21 08:55:09 [067] 200 https://pypi.org:443/simple/coverage/
+2026-10-21T08:55:09.8864491Z   proxy | 2026/10/21 08:55:09 [073] GET https://pypi.org:443/simple/pytest-xdist/
+2026-10-21T08:55:09.8903481Z   proxy | 2026/10/21 08:55:09 [074] GET https://pypi.org:443/simple/argcomplete/
+2026-10-21T08:55:09.8904591Z   proxy | 2026/10/21 08:55:09 [075] GET https://pypi.org:443/simple/pyyaml/
+2026-10-21T08:55:09.8921465Z   proxy | 2026/10/21 08:55:09 [076] GET https://files.pythonhosted.org:443/packages/d1/d6/3965ed04c63042e047cb6a3e6ed1a63a35087b6a609aa3a15ed8ac56c221/colorama-0.4.6-py2.py3-none-any.whl.metadata
+2026-10-21T08:55:09.8924477Z   proxy | 2026/10/21 08:55:09 [077] GET https://files.pythonhosted.org:443/packages/c7/21/705964c7812476f378728bdf590ca4b771ec72385c533964653c68e86bdc/pygments-2.19.2-py3-none-any.whl.metadata
+2026-10-21T08:55:09.8926295Z   proxy | 2026/10/21 08:55:09 [069] 200 https://pypi.org:443/simple/mock/
+2026-10-21T08:55:09.8992328Z   proxy | 2026/10/21 08:55:09 [070] 200 https://pypi.org:443/simple/xmlschema/
+2026-10-21T08:55:09.8994164Z 2026/10/21 08:55:09 [078] GET https://files.pythonhosted.org:443/packages/9e/c3/059298687310d527a58bb01f3b1965787ee3b40dce76752eda8b44e9a2c5/pexpect-4.9.0-py2.py3-none-any.whl.metadata
+2026-10-21T08:55:09.9007227Z   proxy | 2026/10/21 08:55:09 [071] 200 https://pypi.org:443/simple/requests/
+2026-10-21T08:55:09.9032191Z   proxy | 2026/10/21 08:55:09 [079] GET https://files.pythonhosted.org:443/packages/bd/d9/617e6af809bf3a1d468e0d58c3997b1dc219a9a9202e650d30c2fc85d481/mock-5.2.0-py3-none-any.whl.metadata
+2026-10-21T08:55:09.9102868Z   proxy | 2026/10/21 08:55:09 [076] 200 https://files.pythonhosted.org:443/packages/d1/d6/3965ed04c63042e047cb6a3e6ed1a63a35087b6a609aa3a15ed8ac56c221/colorama-0.4.6-py2.py3-none-any.whl.metadata
+2026-10-21T08:55:09.9104740Z 2026/10/21 08:55:09 [074] 200 https://pypi.org:443/simple/argcomplete/
+2026-10-21T08:55:09.9126779Z   proxy | 2026/10/21 08:55:09 [080] GET https://files.pythonhosted.org:443/packages/c6/98/f7ee16a9350060a8ef9aacedff492311343e580ab0cd2897f8d0e726a50d/xmlschema-4.3.0-py3-none-any.whl.metadata
+2026-10-21T08:55:09.9129807Z   proxy | 2026/10/21 08:55:09 [072] 200 https://pypi.org:443/simple/attrs/
+2026-10-21T08:55:09.9208948Z   proxy | 2026/10/21 08:55:09 [078] 200 https://files.pythonhosted.org:443/packages/9e/c3/059298687310d527a58bb01f3b1965787ee3b40dce76752eda8b44e9a2c5/pexpect-4.9.0-py2.py3-none-any.whl.metadata
+2026-10-21T08:55:09.9244511Z   proxy | 2026/10/21 08:55:09 [077] 200 https://files.pythonhosted.org:443/packages/c7/21/705964c7812476f378728bdf590ca4b771ec72385c533964653c68e86bdc/pygments-2.19.2-py3-none-any.whl.metadata
+2026-10-21T08:55:09.9262963Z   proxy | 2026/10/21 08:55:09 [083] GET https://files.pythonhosted.org:443/packages/54/20/4d324d65cc6d9205fabedc306948156824eb9f0ee1633355a8f7ec5c66bf/pluggy-1.6.0-py3-none-any.whl.metadata
+2026-10-21T08:55:09.9265599Z   proxy | 2026/10/21 08:55:09 [080] 200 https://files.pythonhosted.org:443/packages/c6/98/f7ee16a9350060a8ef9aacedff492311343e580ab0cd2897f8d0e726a50d/xmlschema-4.3.0-py3-none-any.whl.metadata
+2026-10-21T08:55:09.9279202Z   proxy | 2026/10/21 08:55:09 [075] 200 https://pypi.org:443/simple/pyyaml/
+2026-10-21T08:55:09.9319039Z   proxy | 2026/10/21 08:55:09 [073] 200 https://pypi.org:443/simple/pytest-xdist/
+2026-10-21T08:55:09.9320934Z   proxy | 2026/10/21 08:55:09 [079] 200 https://files.pythonhosted.org:443/packages/bd/d9/617e6af809bf3a1d468e0d58c3997b1dc219a9a9202e650d30c2fc85d481/mock-5.2.0-py3-none-any.whl.metadata
+2026-10-21T08:55:09.9323520Z   proxy | 2026/10/21 08:55:09 [064] 200 https://files.pythonhosted.org:443/packages/cb/b1/3846dd7f199d53cb17f49cba7e651e9ce294d8497c8c150530ed11865bb8/iniconfig-2.3.0-py3-none-any.whl.metadata
+2026-10-21T08:55:09.9370232Z   proxy | 2026/10/21 08:55:09 [083] 200 https://files.pythonhosted.org:443/packages/54/20/4d324d65cc6d9205fabedc306948156824eb9f0ee1633355a8f7ec5c66bf/pluggy-1.6.0-py3-none-any.whl.metadata
+2026-10-21T08:55:09.9393117Z   proxy | 2026/10/21 08:55:09 [084] GET https://files.pythonhosted.org:443/packages/1e/db/4254e3eabe8020b458f1a747140d32277ec7a271daf1d235b70dc0b4e6e3/requests-2.32.5-py3-none-any.whl.metadata
+2026-10-21T08:55:09.9395721Z 2026/10/21 08:55:09 [085] GET https://files.pythonhosted.org:443/packages/74/f5/9373290775639cb67a2fce7f629a1c240dce9f12fe927bc32b2736e16dfc/argcomplete-3.6.3-py3-none-any.whl.metadata
+2026-10-21T08:55:09.9398359Z   proxy | 2026/10/21 08:55:09 [084] 200 https://files.pythonhosted.org:443/packages/1e/db/4254e3eabe8020b458f1a747140d32277ec7a271daf1d235b70dc0b4e6e3/requests-2.32.5-py3-none-any.whl.metadata
+2026-10-21T08:55:09.9410373Z   proxy | 2026/10/21 08:55:09 [085] 200 https://files.pythonhosted.org:443/packages/74/f5/9373290775639cb67a2fce7f629a1c240dce9f12fe927bc32b2736e16dfc/argcomplete-3.6.3-py3-none-any.whl.metadata
+2026-10-21T08:55:09.9444532Z   proxy | 2026/10/21 08:55:09 [086] GET https://files.pythonhosted.org:443/packages/3a/2a/7cc015f5b9f5db42b7d48157e23356022889fc354a2813c15934b7cb5c0e/attrs-25.4.0-py3-none-any.whl.metadata
+2026-10-21T08:55:09.9461535Z   proxy | 2026/10/21 08:55:09 [086] 200 https://files.pythonhosted.org:443/packages/3a/2a/7cc015f5b9f5db42b7d48157e23356022889fc354a2813c15934b7cb5c0e/attrs-25.4.0-py3-none-any.whl.metadata
+2026-10-21T08:55:09.9530929Z   proxy | 2026/10/21 08:55:09 [087] GET https://files.pythonhosted.org:443/packages/ca/31/d4e37e9e550c2b92a9cbc2e4d0b7420a27224968580b5a447f420847c975/pytest_xdist-3.8.0-py3-none-any.whl.metadata
+2026-10-21T08:55:09.9553776Z   proxy | 2026/10/21 08:55:09 [087] 200 https://files.pythonhosted.org:443/packages/ca/31/d4e37e9e550c2b92a9cbc2e4d0b7420a27224968580b5a447f420847c975/pytest_xdist-3.8.0-py3-none-any.whl.metadata
+2026-10-21T08:55:09.9688049Z   proxy | 2026/10/21 08:55:09 [088] GET https://files.pythonhosted.org:443/packages/a5/34/2b1bc18424f3ad9af577f6ce23600319968a70575bd7db31ce66731bbef9/numpy-2.4.1-cp311-cp311-macosx_10_9_x86_64.whl.metadata
+2026-10-21T08:55:09.9691247Z   proxy | 2026/10/21 08:55:09 [089] GET https://files.pythonhosted.org:443/packages/f4/a0/39350dd17dd6d6c6507025c0e53aef67a9293a6d37d3511f23ea510d5800/pyyaml-6.0.3-cp310-cp310-macosx_10_13_x86_64.whl.metadata
+2026-10-21T08:55:09.9707248Z   proxy | 2026/10/21 08:55:09 [089] 200 https://files.pythonhosted.org:443/packages/f4/a0/39350dd17dd6d6c6507025c0e53aef67a9293a6d37d3511f23ea510d5800/pyyaml-6.0.3-cp310-cp310-macosx_10_13_x86_64.whl.metadata
+2026-10-21T08:55:09.9720466Z   proxy | 2026/10/21 08:55:09 [088] 200 https://files.pythonhosted.org:443/packages/a5/34/2b1bc18424f3ad9af577f6ce23600319968a70575bd7db31ce66731bbef9/numpy-2.4.1-cp311-cp311-macosx_10_9_x86_64.whl.metadata
+2026-10-21T08:55:10.0181029Z   proxy | 2026/10/21 08:55:10 [090] GET https://files.pythonhosted.org:443/packages/2d/9a/3742e58fd04b233df95c012ee9f3dfe04708a5e1d32613bd2d47d4e1be0d/coverage-7.13.1-cp310-cp310-macosx_10_9_x86_64.whl.metadata
+2026-10-21T08:55:10.0209770Z   proxy | 2026/10/21 08:55:10 [090] 200 https://files.pythonhosted.org:443/packages/2d/9a/3742e58fd04b233df95c012ee9f3dfe04708a5e1d32613bd2d47d4e1be0d/coverage-7.13.1-cp310-cp310-macosx_10_9_x86_64.whl.metadata
+2026-10-21T08:55:10.0246138Z   proxy | 2026/10/21 08:55:10 [091] GET https://files.pythonhosted.org:443/packages/0f/6c/49e29a0b856be17048fa4a216cc21bf914623f66305f6327b7a9bcec6871/hypothesis-6.150.0-py3-none-any.whl.metadata
+2026-10-21T08:55:10.0268822Z   proxy | 2026/10/21 08:55:10 [091] 200 https://files.pythonhosted.org:443/packages/0f/6c/49e29a0b856be17048fa4a216cc21bf914623f66305f6327b7a9bcec6871/hypothesis-6.150.0-py3-none-any.whl.metadata
+2026-10-21T08:55:10.0289550Z   proxy | 2026/10/21 08:55:10 [092] GET https://pypi.org:443/simple/ptyprocess/
+2026-10-21T08:55:10.0295985Z   proxy | 2026/10/21 08:55:10 [093] GET https://pypi.org:443/simple/execnet/
+2026-10-21T08:55:10.0301125Z   proxy | 2026/10/21 08:55:10 [095] GET https://files.pythonhosted.org:443/packages/0d/b2/0e802fde6f1c5b2f7ae7e9ad42b83fd4ecebac18a8a8c2f2f14e39dce6e1/pytest_xdist-3.7.0-py3-none-any.whl.metadata
+2026-10-21T08:55:10.0302995Z 2026/10/21 08:55:10 [094] GET https://pypi.org:443/simple/sortedcontainers/
+2026-10-21T08:55:10.0311417Z   proxy | 2026/10/21 08:55:10 [092] 200 https://pypi.org:443/simple/ptyprocess/
+2026-10-21T08:55:10.0316329Z   proxy | 2026/10/21 08:55:10 [093] 200 https://pypi.org:443/simple/execnet/
+2026-10-21T08:55:10.0330689Z   proxy | 2026/10/21 08:55:10 [095] 200 https://files.pythonhosted.org:443/packages/0d/b2/0e802fde6f1c5b2f7ae7e9ad42b83fd4ecebac18a8a8c2f2f14e39dce6e1/pytest_xdist-3.7.0-py3-none-any.whl.metadata
+2026-10-21T08:55:10.0334466Z   proxy | 2026/10/21 08:55:10 [094] 200 https://pypi.org:443/simple/sortedcontainers/
+2026-10-21T08:55:10.0339823Z   proxy | 2026/10/21 08:55:10 [096] GET https://files.pythonhosted.org:443/packages/22/a6/858897256d0deac81a172289110f31629fc4cee19b6f01283303e18c8db3/ptyprocess-0.7.0-py2.py3-none-any.whl.metadata
+2026-10-21T08:55:10.0348868Z   proxy | 2026/10/21 08:55:10 [097] GET https://files.pythonhosted.org:443/packages/6d/82/1d96bf03ee4c0fdc3c0cbe61470070e659ca78dc0086fb88b66c185e2449/pytest_xdist-3.6.1-py3-none-any.whl.metadata
+2026-10-21T08:55:10.0358262Z   proxy | 2026/10/21 08:55:10 [098] GET https://files.pythonhosted.org:443/packages/32/46/9cb0e58b2deb7f82b84065f37f3bffeb12413f947f9388e4cac22c4621ce/sortedcontainers-2.4.0-py2.py3-none-any.whl.metadata
+2026-10-21T08:55:10.0362890Z   proxy | 2026/10/21 08:55:10 [096] 200 https://files.pythonhosted.org:443/packages/22/a6/858897256d0deac81a172289110f31629fc4cee19b6f01283303e18c8db3/ptyprocess-0.7.0-py2.py3-none-any.whl.metadata
+2026-10-21T08:55:10.0379614Z   proxy | 2026/10/21 08:55:10 [097] 200 https://files.pythonhosted.org:443/packages/6d/82/1d96bf03ee4c0fdc3c0cbe61470070e659ca78dc0086fb88b66c185e2449/pytest_xdist-3.6.1-py3-none-any.whl.metadata
+2026-10-21T08:55:10.0387791Z   proxy | 2026/10/21 08:55:10 [098] 200 https://files.pythonhosted.org:443/packages/32/46/9cb0e58b2deb7f82b84065f37f3bffeb12413f947f9388e4cac22c4621ce/sortedcontainers-2.4.0-py2.py3-none-any.whl.metadata
+2026-10-21T08:55:10.0399637Z   proxy | 2026/10/21 08:55:10 [099] GET https://files.pythonhosted.org:443/packages/50/37/125fe5ec459321e2d48a0c38672cfc2419ad87d580196fd894e5f25230b0/pytest_xdist-3.5.0-py3-none-any.whl.metadata
+2026-10-21T08:55:10.0417732Z   proxy | 2026/10/21 08:55:10 [099] 200 https://files.pythonhosted.org:443/packages/50/37/125fe5ec459321e2d48a0c38672cfc2419ad87d580196fd894e5f25230b0/pytest_xdist-3.5.0-py3-none-any.whl.metadata
+2026-10-21T08:55:10.0786570Z updater | 2026/10/21 08:55:10 INFO <job_1642108423> Process PID: 1457 completed with status: pid 1457 exit 1
+2026-10-21T08:55:10.0787653Z updater | 2026/10/21 08:55:10 INFO <job_1642108423> Total execution time: 2.52 seconds
+2026-10-21T08:55:10.1270116Z   proxy | 2026/10/21 08:55:10 [101] POST /update_jobs/1642108423/record_update_job_error
+2026-10-21T08:55:10.1641017Z   proxy | 2026/10/21 08:55:10 [101] 204 /update_jobs/1642108423/record_update_job_error
+2026-10-21T08:55:10.1654122Z updater | 2026/10/21 08:55:10 INFO <job_1642108423> Handled error whilst updating certifi: dependency_file_not_resolvable {message: "Using CPython 3.10.20 interpreter at: /usr/local/.pyenv/versions/3.10.20/bin/python3.10\nerror: No solution found when resolving dependencies for split (markers: python_full_version >= '3.11')\n  cause: Because pytest-xdist==3.5.0 depends on your project and pytest-xdist==3.6.0 was yanked (reason: fatal regression when combined with pytest-cov), we can conclude that pytest-xdist>=3.5.0,<=3.6.0 depends on your project.\n         And because pytest-xdist>=3.6.1 depends on your project, we can conclude that pytest-xdist>=3.5.0 depends on your project.\n         And because pytest[dev] depends on pytest-xdist>=3.5 and your project requires pytest[dev], we can conclude that your project's requirements are unsatisfiable.\n\nhint: While the active Python version is 3.10, the resolution failed for other Python versions supported by your project. Consider limiting your project's supported Python versions using `requires-python`.\n\nhint: The package `pytest-xdist` depends on the package `pytest` but the name is shadowed by your project. Consider changing the name of the project."}
+2026-10-21T08:55:10.2485454Z   proxy | 2026/10/21 08:55:10 [103] POST /update_jobs/1642108423/record_ecosystem_meta
+2026-10-21T08:55:10.2733946Z   proxy | 2026/10/21 08:55:10 [103] 204 /update_jobs/1642108423/record_ecosystem_meta
+2026-10-21T08:55:10.3585929Z   proxy | 2026/10/21 08:55:10 [105] PATCH /update_jobs/1642108423/mark_as_processed
+2026-10-21T08:55:10.4758375Z   proxy | 2026/10/21 08:55:10 [105] 204 /update_jobs/1642108423/mark_as_processed
+2026-10-21T08:55:10.4778363Z updater | 2026/10/21 08:55:10 INFO <job_1642108423> Finished job processing
+2026-10-21T08:55:10.4779748Z 2026/10/21 08:55:10 INFO Results:
+2026-10-21T08:55:10.4780518Z Dependabot encountered '1' error(s) during execution, please check the logs for more details.
+2026-10-21T08:55:10.4784319Z +---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+2026-10-21T08:55:10.4790476Z |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                Dependencies failed to update                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+2026-10-21T08:55:10.4796063Z +------------+--------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+2026-10-21T08:55:10.4801864Z | Dependency | Error Type                     | Error Details                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+2026-10-21T08:55:10.4806486Z +------------+--------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+2026-10-21T08:55:10.4811506Z | certifi    | dependency_file_not_resolvable | {                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+2026-10-21T08:55:10.4816875Z |            |                                |   "message": "Using CPython 3.10.20 interpreter at: /usr/local/.pyenv/versions/3.10.20/bin/python3.10\nerror: No solution found when resolving dependencies for split (markers: python_full_version >= '3.11')\n  cause: Because pytest-xdist==3.5.0 depends on your project and pytest-xdist==3.6.0 was yanked (reason: fatal regression when combined with pytest-cov), we can conclude that pytest-xdist>=3.5.0,<=3.6.0 depends on your project.\n         And because pytest-xdist>=3.6.1 depends on your project, we can conclude that pytest-xdist>=3.5.0 depends on your project.\n         And because pytest[dev] depends on pytest-xdist>=3.5 and your project requires pytest[dev], we can conclude that your project's requirements are unsatisfiable.\n\nhint: While the active Python version is 3.10, the resolution failed for other Python versions supported by your project. Consider limiting your project's supported Python versions using `requires-python`.\n\nhint: The package `pytest-xdist` depends on the package `pytest` but the name is shadowed by your project. Consider changing the name of the project." |
+2026-10-21T08:55:10.4822767Z |            |                                | }                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+2026-10-21T08:55:10.4827127Z +------------+--------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+2026-10-21T08:55:10.6273583Z Failure running container 769ff78ffc09dcad53df48b59deb6b1da9518e3b972fab71a9ade0668b045e68: Error: Command failed with exit code 1: /bin/sh -c $DEPENDABOT_HOME/dependabot-updater/bin/run update_files
+2026-10-21T08:55:11.5224543Z Cleaned up container 769ff78ffc09dcad53df48b59deb6b1da9518e3b972fab71a9ade0668b045e68
+2026-10-21T08:55:11.5346767Z   proxy | 2026/10/21 08:55:11 1/71 calls cached (1%)
+2026-10-21T08:55:11.5348327Z   proxy | 2026/10/21 08:55:11 Posting metrics to remote API endpoint
+2026-10-21T08:55:11.5592774Z   proxy | 2026/10/21 08:55:11 Successfully posted metrics data via api client
+2026-10-21T08:55:11.8843880Z ##[error]Dependabot encountered an error performing the update
+
+Error: The updater encountered one or more errors.
+
+For more information see: https://github.com/pytest-dev/pytest/network/updates/1642108423 (write access to the repository is required to view the log)
+2026-10-21T08:55:11.8854726Z 🤖 ~ finished: error reported to Dependabot ~
+2026-10-21T08:55:11.9090281Z Post job cleanup.
+2026-10-21T08:55:12.0561372Z Cleaning up orphan processes

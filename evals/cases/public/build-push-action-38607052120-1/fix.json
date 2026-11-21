@@ -1,0 +1,24 @@
+{
+  "sha": "c3981c995ad0478300aab5a3d82d9bc67587b6e8",
+  "pairing": "H1",
+  "commits": 1,
+  "files_total": 3,
+  "files": [
+    {
+      "path": "dist/index.cjs",
+      "additions": 183,
+      "deletions": 162
+    },
+    {
+      "path": "dist/index.cjs.map",
+      "additions": 4,
+      "deletions": 4
+    },
+    {
+      "path": "dist/licenses.txt",
+      "additions": 64,
+      "deletions": 94
+    }
+  ],
+  "summary": "1 commit(s), 3 file(s), +251/-260"
+}

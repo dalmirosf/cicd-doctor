@@ -1,0 +1,509 @@
+﻿2026-10-14T17:29:28.8181591Z Current runner version: '2.337.0'
+2026-10-14T17:29:28.8202295Z ##[group]Runner Image Provisioner
+2026-10-14T17:29:28.8202971Z Hosted Compute Agent
+2026-10-14T17:29:28.8203504Z Version: 20261002.596
+2026-10-14T17:29:28.8204062Z Commit: c3d12f3313a95f25162a1503be624f3b0617f8c0
+2026-10-14T17:29:28.8204646Z Build Date: 2026-10-02T22:28:27Z
+2026-10-14T17:29:28.8205235Z Worker ID: {182025f0-d398-4883-a6e7-bbfb4c11b488}
+2026-10-14T17:29:28.8205834Z Region: westus3
+2026-10-14T17:29:28.8206300Z Cloud: Azure
+2026-10-14T17:29:28.8206779Z ##[endgroup]
+2026-10-14T17:29:28.8208064Z ##[group]Operating System
+2026-10-14T17:29:28.8208642Z Ubuntu
+2026-10-14T17:29:28.8209074Z 24.04.5
+2026-10-14T17:29:28.8209481Z LTS
+2026-10-14T17:29:28.8209990Z ##[endgroup]
+2026-10-14T17:29:28.8210442Z ##[group]Runner Image
+2026-10-14T17:29:28.8211081Z Image: ubuntu-24.04
+2026-10-14T17:29:28.8211547Z Version: 20261004.327.1
+2026-10-14T17:29:28.8212929Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261004.327/images/ubuntu/Ubuntu2404-Readme.md
+2026-10-14T17:29:28.8214110Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261004.327
+2026-10-14T17:29:28.8214954Z ##[endgroup]
+2026-10-14T17:29:28.8215820Z ##[group]GITHUB_TOKEN Permissions
+2026-10-14T17:29:28.8217459Z Contents: read
+2026-10-14T17:29:28.8217942Z Metadata: read
+2026-10-14T17:29:28.8218383Z ##[endgroup]
+2026-10-14T17:29:28.8220047Z Secret source: Dependabot
+2026-10-14T17:29:28.8220811Z Cache mode: write
+2026-10-14T17:29:28.8221462Z Prepare workflow directory
+2026-10-14T17:29:28.8482678Z Prepare all required actions
+2026-10-14T17:29:28.8521596Z Getting action download info
+2026-10-14T17:29:29.1495099Z Download action repository 'docker/bake-action@d3418bd7d0e9324001bca92fa8ba175ea7e6dc9b' (SHA:d3418bd7d0e9324001bca92fa8ba175ea7e6dc9b)
+2026-10-14T17:29:30.2754879Z Complete job name: validate (build-validate)
+2026-10-14T17:29:30.3335219Z ##[group]Run docker/bake-action@d3418bd7d0e9324001bca92fa8ba175ea7e6dc9b
+2026-10-14T17:29:30.3336114Z with:
+2026-10-14T17:29:30.3336491Z   targets: build-validate
+2026-10-14T17:29:30.3336912Z   no-cache: false
+2026-10-14T17:29:30.3337296Z   pull: false
+2026-10-14T17:29:30.3337660Z   load: false
+2026-10-14T17:29:30.3338019Z   push: false
+2026-10-14T17:29:30.3341115Z   github-token: ***
+2026-10-14T17:29:30.3341819Z ##[endgroup]
+2026-10-14T17:29:30.5488122Z ##[group]GitHub Actions runtime token ACs
+2026-10-14T17:29:30.5488767Z refs/pull/1636/merge: read/write
+2026-10-14T17:29:30.5489191Z refs/heads/master: read
+2026-10-14T17:29:30.5489857Z ##[endgroup]
+2026-10-14T17:29:30.5490440Z ##[group]Docker info
+2026-10-14T17:29:30.5511399Z [command]/usr/bin/docker version
+2026-10-14T17:29:30.6274335Z Client: Docker Engine - Community
+2026-10-14T17:29:30.6275718Z  Version:           28.0.4
+2026-10-14T17:29:30.6276719Z  API version:       1.48
+2026-10-14T17:29:30.6277838Z  Go version:        go1.23.7
+2026-10-14T17:29:30.6278547Z  Git commit:        b8034c0
+2026-10-14T17:29:30.6279303Z  Built:             Tue Mar 25 15:07:16 2025
+2026-10-14T17:29:30.6280395Z  OS/Arch:           linux/amd64
+2026-10-14T17:29:30.6281244Z  Context:           default
+2026-10-14T17:29:30.6281929Z 
+2026-10-14T17:29:30.6282459Z Server: Docker Engine - Community
+2026-10-14T17:29:30.6283021Z  Engine:
+2026-10-14T17:29:30.6283479Z   Version:          28.0.4
+2026-10-14T17:29:30.6283927Z   API version:      1.48 (minimum version 1.24)
+2026-10-14T17:29:30.6284492Z   Go version:       go1.23.7
+2026-10-14T17:29:30.6284905Z   Git commit:       6430e49
+2026-10-14T17:29:30.6285341Z   Built:            Tue Mar 25 15:07:16 2025
+2026-10-14T17:29:30.6285795Z   OS/Arch:          linux/amd64
+2026-10-14T17:29:30.6286201Z   Experimental:     false
+2026-10-14T17:29:30.6286598Z  containerd:
+2026-10-14T17:29:30.6286954Z   Version:          v2.3.6
+2026-10-14T17:29:30.6287428Z   GitCommit:        ee2735368117d2eb259779949d5e75cdafec9761
+2026-10-14T17:29:30.6288026Z  runc:
+2026-10-14T17:29:30.6288528Z   Version:          1.5.1
+2026-10-14T17:29:30.6289137Z   GitCommit:        v1.5.1-0-g8f2685a4
+2026-10-14T17:29:30.6289896Z  docker-init:
+2026-10-14T17:29:30.6290244Z   Version:          0.19.0
+2026-10-14T17:29:30.6290629Z   GitCommit:        de40ad0
+2026-10-14T17:29:30.6323638Z [command]/usr/bin/docker info
+2026-10-14T17:29:30.8103027Z Client: Docker Engine - Community
+2026-10-14T17:29:30.8103708Z  Version:    28.0.4
+2026-10-14T17:29:30.8104252Z  Context:    default
+2026-10-14T17:29:30.8104640Z  Debug Mode: false
+2026-10-14T17:29:30.8105000Z  Plugins:
+2026-10-14T17:29:30.8105360Z   buildx: Docker Buildx (Docker Inc.)
+2026-10-14T17:29:30.8106024Z     Version:  v0.37.2
+2026-10-14T17:29:30.8106481Z     Path:     /usr/libexec/docker/cli-plugins/docker-buildx
+2026-10-14T17:29:30.8107020Z   compose: Docker Compose (Docker Inc.)
+2026-10-14T17:29:30.8107459Z     Version:  v2.38.2
+2026-10-14T17:29:30.8107946Z     Path:     /usr/libexec/docker/cli-plugins/docker-compose
+2026-10-14T17:29:30.8108302Z 
+2026-10-14T17:29:30.8108449Z Server:
+2026-10-14T17:29:30.8108777Z  Containers: 0
+2026-10-14T17:29:30.8109135Z   Running: 0
+2026-10-14T17:29:30.8109478Z   Paused: 0
+2026-10-14T17:29:30.8109804Z   Stopped: 0
+2026-10-14T17:29:30.8110134Z  Images: 6
+2026-10-14T17:29:30.8110471Z  Server Version: 28.0.4
+2026-10-14T17:29:30.8110854Z  Storage Driver: overlay2
+2026-10-14T17:29:30.8111237Z   Backing Filesystem: extfs
+2026-10-14T17:29:30.8111792Z   Supports d_type: true
+2026-10-14T17:29:30.8112220Z   Using metacopy: false
+2026-10-14T17:29:30.8112603Z   Native Overlay Diff: false
+2026-10-14T17:29:30.8112990Z   userxattr: false
+2026-10-14T17:29:30.8113353Z  Logging Driver: json-file
+2026-10-14T17:29:30.8113734Z  Cgroup Driver: systemd
+2026-10-14T17:29:30.8114101Z  Cgroup Version: 2
+2026-10-14T17:29:30.8114447Z  Plugins:
+2026-10-14T17:29:30.8114772Z   Volume: local
+2026-10-14T17:29:30.8115233Z   Network: bridge host ipvlan macvlan null overlay
+2026-10-14T17:29:30.8116211Z   Log: awslogs fluentd gcplogs gelf journald json-file local splunk syslog
+2026-10-14T17:29:30.8116788Z  Swarm: inactive
+2026-10-14T17:29:30.8117167Z  Runtimes: io.containerd.runc.v2 runc
+2026-10-14T17:29:30.8117596Z  Default Runtime: runc
+2026-10-14T17:29:30.8117975Z  Init Binary: docker-init
+2026-10-14T17:29:30.8118471Z  containerd version: ee2735368117d2eb259779949d5e75cdafec9761
+2026-10-14T17:29:30.8119002Z  runc version: v1.5.1-0-g8f2685a4
+2026-10-14T17:29:30.8119405Z  init version: de40ad0
+2026-10-14T17:29:30.8119770Z  Security Options:
+2026-10-14T17:29:30.8120115Z   apparmor
+2026-10-14T17:29:30.8120437Z   seccomp
+2026-10-14T17:29:30.8120764Z    Profile: builtin
+2026-10-14T17:29:30.8121127Z   cgroupns
+2026-10-14T17:29:30.8121468Z  Kernel Version: 6.17.0-1022-azure
+2026-10-14T17:29:30.8122076Z  Operating System: Ubuntu 24.04.5 LTS
+2026-10-14T17:29:30.8122498Z  OSType: linux
+2026-10-14T17:29:30.8122846Z  Architecture: x86_64
+2026-10-14T17:29:30.8123199Z  CPUs: 4
+2026-10-14T17:29:30.8123523Z  Total Memory: 15.61GiB
+2026-10-14T17:29:30.8123901Z  Name: runnervmmprz5
+2026-10-14T17:29:30.8124276Z  ID: 07f0e779-c305-4162-b8ec-c48c30f52fbe
+2026-10-14T17:29:30.8124753Z  Docker Root Dir: /var/lib/docker
+2026-10-14T17:29:30.8125161Z  Debug Mode: false
+2026-10-14T17:29:30.8125524Z  Username: githubactions
+2026-10-14T17:29:30.8125895Z  Experimental: false
+2026-10-14T17:29:30.8126253Z  Insecure Registries:
+2026-10-14T17:29:30.8129998Z   ::1/128
+2026-10-14T17:29:30.8130377Z   127.0.0.0/8
+2026-10-14T17:29:30.8130884Z  Live Restore Enabled: false
+2026-10-14T17:29:30.8131257Z 
+2026-10-14T17:29:30.8135824Z ##[endgroup]
+2026-10-14T17:29:30.8136699Z ##[group]Proxy configuration
+2026-10-14T17:29:30.8139200Z No proxy configuration found
+2026-10-14T17:29:30.8140725Z ##[endgroup]
+2026-10-14T17:29:30.8701983Z ##[group]Buildx version
+2026-10-14T17:29:30.8725058Z [command]/usr/bin/docker buildx version
+2026-10-14T17:29:30.9125437Z github.com/docker/buildx v0.37.2 2d379c0c3f22da0d2759d132a0ec81ca949098f0
+2026-10-14T17:29:30.9159497Z ##[endgroup]
+2026-10-14T17:29:30.9165373Z ##[group]Builder info
+2026-10-14T17:29:31.0195014Z {
+2026-10-14T17:29:31.0195571Z   "nodes": [
+2026-10-14T17:29:31.0196245Z     {
+2026-10-14T17:29:31.0196576Z       "name": "default",
+2026-10-14T17:29:31.0196980Z       "endpoint": "default",
+2026-10-14T17:29:31.0197381Z       "status": "running",
+2026-10-14T17:29:31.0197768Z       "buildkit": "v0.20.2",
+2026-10-14T17:29:31.0198340Z       "platforms": "linux/amd64,linux/amd64/v2,linux/amd64/v3,linux/amd64/v4,linux/386",
+2026-10-14T17:29:31.0198943Z       "features": {
+2026-10-14T17:29:31.0199423Z         "Automatically load images to the Docker Engine image store": true,
+2026-10-14T17:29:31.0200045Z         "Cache export": true,
+2026-10-14T17:29:31.0200543Z         "Direct push": true,
+2026-10-14T17:29:31.0200966Z         "Docker exporter": true,
+2026-10-14T17:29:31.0201487Z         "Multi-platform build": true,
+2026-10-14T17:29:31.0202195Z         "OCI exporter": true,
+2026-10-14T17:29:31.0202613Z         "Prefer image digest": true
+2026-10-14T17:29:31.0203116Z       },
+2026-10-14T17:29:31.0203481Z       "labels": {
+2026-10-14T17:29:31.0204133Z         "org.mobyproject.buildkit.worker.moby.host-gateway-ip": "172.17.0.1"
+2026-10-14T17:29:31.0204718Z       }
+2026-10-14T17:29:31.0205117Z     }
+2026-10-14T17:29:31.0205544Z   ],
+2026-10-14T17:29:31.0205954Z   "name": "default",
+2026-10-14T17:29:31.0206311Z   "driver": "docker"
+2026-10-14T17:29:31.0206733Z }
+2026-10-14T17:29:31.0207628Z ##[endgroup]
+2026-10-14T17:29:31.0208267Z ##[group]Parsing raw definition
+2026-10-14T17:29:31.0219582Z [command]/usr/bin/docker buildx bake https://github.com/docker/build-push-action.git#11d3cf9a7e20c67873171f947be6c13754b8d11d --print build-validate
+2026-10-14T17:29:31.2584711Z #0 building with "default" instance using docker driver
+2026-10-14T17:29:31.2585187Z 
+2026-10-14T17:29:31.2585698Z #1 [internal] load git source https://github.com/docker/build-push-action.git#11d3cf9a7e20c67873171f947be6c13754b8d11d
+2026-10-14T17:29:31.2586982Z #1 0.022 Initialized empty Git repository in /var/lib/docker/overlay2/owi82nbf7vt5uox4mc5s33vn5/diff/
+2026-10-14T17:29:31.2587883Z #1 0.028 fatal: Not a valid object name 11d3cf9a7e20c67873171f947be6c13754b8d11d^{commit}
+2026-10-14T17:29:37.6326546Z #1 6.552 From https://github.com/docker/build-push-action
+2026-10-14T17:29:37.6328249Z #1 6.552  * branch            11d3cf9a7e20c67873171f947be6c13754b8d11d -> FETCH_HEAD
+2026-10-14T17:29:37.6329128Z #1 6.552  * [new tag]         v1         -> v1
+2026-10-14T17:29:37.6329995Z #1 6.552  * [new tag]         v1.0       -> v1.0
+2026-10-14T17:29:37.6330703Z #1 6.552  * [new tag]         v1.0.0     -> v1.0.0
+2026-10-14T17:29:37.6331574Z #1 6.552  * [new tag]         v1.0.1     -> v1.0.1
+2026-10-14T17:29:37.6332463Z #1 6.552  * [new tag]         v1.1.0     -> v1.1.0
+2026-10-14T17:29:37.6333539Z #1 6.552  * [new tag]         v1.1.1     -> v1.1.1
+2026-10-14T17:29:37.6334291Z #1 6.552  * [new tag]         v1.1.2     -> v1.1.2
+2026-10-14T17:29:37.6335129Z #1 6.552  * [new tag]         v2         -> v2
+2026-10-14T17:29:37.6336167Z #1 6.552  * [new tag]         v2.0.0     -> v2.0.0
+2026-10-14T17:29:37.6337267Z #1 6.552  * [new tag]         v2.0.1     -> v2.0.1
+2026-10-14T17:29:37.6338397Z #1 6.552  * [new tag]         v2.1.0     -> v2.1.0
+2026-10-14T17:29:37.6339560Z #1 6.552  * [new tag]         v2.10.0    -> v2.10.0
+2026-10-14T17:29:37.6340793Z #1 6.552  * [new tag]         v2.2.0     -> v2.2.0
+2026-10-14T17:29:37.6342262Z #1 6.552  * [new tag]         v2.2.1     -> v2.2.1
+2026-10-14T17:29:37.6343455Z #1 6.552  * [new tag]         v2.2.2     -> v2.2.2
+2026-10-14T17:29:37.6344792Z #1 6.552  * [new tag]         v2.3.0     -> v2.3.0
+2026-10-14T17:29:37.6345858Z #1 6.552  * [new tag]         v2.4.0     -> v2.4.0
+2026-10-14T17:29:37.6346717Z #1 6.552  * [new tag]         v2.5.0     -> v2.5.0
+2026-10-14T17:29:37.6347680Z #1 6.552  * [new tag]         v2.6.0     -> v2.6.0
+2026-10-14T17:29:37.6348547Z #1 6.552  * [new tag]         v2.6.1     -> v2.6.1
+2026-10-14T17:29:37.6349586Z #1 6.552  * [new tag]         v2.7.0     -> v2.7.0
+2026-10-14T17:29:37.6350562Z #1 6.552  * [new tag]         v2.8.0     -> v2.8.0
+2026-10-14T17:29:37.6352002Z #1 6.552  * [new tag]         v2.9.0     -> v2.9.0
+2026-10-14T17:29:37.6353010Z #1 6.552  * [new tag]         v3         -> v3
+2026-10-14T17:29:37.6353991Z #1 6.552  * [new tag]         v3.0.0     -> v3.0.0
+2026-10-14T17:29:37.6354987Z #1 6.552  * [new tag]         v3.1.0     -> v3.1.0
+2026-10-14T17:29:37.6356069Z #1 6.552  * [new tag]         v3.1.1     -> v3.1.1
+2026-10-14T17:29:37.6357213Z #1 6.552  * [new tag]         v3.2.0     -> v3.2.0
+2026-10-14T17:29:37.6358458Z #1 6.552  * [new tag]         v3.3.0     -> v3.3.0
+2026-10-14T17:29:37.6359565Z #1 6.552  * [new tag]         v3.3.1     -> v3.3.1
+2026-10-14T17:29:37.6360644Z #1 6.552  * [new tag]         v4         -> v4
+2026-10-14T17:29:37.6361843Z #1 6.552  * [new tag]         v4.0.0     -> v4.0.0
+2026-10-14T17:29:37.6362971Z #1 6.552  * [new tag]         v4.1.0     -> v4.1.0
+2026-10-14T17:29:37.6364090Z #1 6.552  * [new tag]         v4.1.1     -> v4.1.1
+2026-10-14T17:29:37.6365197Z #1 6.552  * [new tag]         v4.2.0     -> v4.2.0
+2026-10-14T17:29:37.6366308Z #1 6.552  * [new tag]         v4.2.1     -> v4.2.1
+2026-10-14T17:29:37.6367396Z #1 6.552  * [new tag]         v5         -> v5
+2026-10-14T17:29:37.6368496Z #1 6.552  * [new tag]         v5.0.0     -> v5.0.0
+2026-10-14T17:29:37.6369593Z #1 6.552  * [new tag]         v5.1.0     -> v5.1.0
+2026-10-14T17:29:37.6370757Z #1 6.552  * [new tag]         v5.2.0     -> v5.2.0
+2026-10-14T17:29:37.6372073Z #1 6.552  * [new tag]         v5.3.0     -> v5.3.0
+2026-10-14T17:29:37.6373223Z #1 6.552  * [new tag]         v5.4.0     -> v5.4.0
+2026-10-14T17:29:37.6374334Z #1 6.552  * [new tag]         v6         -> v6
+2026-10-14T17:29:37.6375422Z #1 6.552  * [new tag]         v6.0.0     -> v6.0.0
+2026-10-14T17:29:37.6376527Z #1 6.552  * [new tag]         v6.0.1     -> v6.0.1
+2026-10-14T17:29:37.6377618Z #1 6.552  * [new tag]         v6.0.2     -> v6.0.2
+2026-10-14T17:29:37.6378852Z #1 6.552  * [new tag]         v6.1.0     -> v6.1.0
+2026-10-14T17:29:37.6379944Z #1 6.552  * [new tag]         v6.10.0    -> v6.10.0
+2026-10-14T17:29:37.6381034Z #1 6.552  * [new tag]         v6.11.0    -> v6.11.0
+2026-10-14T17:29:37.6382241Z #1 6.552  * [new tag]         v6.12.0    -> v6.12.0
+2026-10-14T17:29:37.6383327Z #1 6.552  * [new tag]         v6.13.0    -> v6.13.0
+2026-10-14T17:29:37.6384419Z #1 6.552  * [new tag]         v6.14.0    -> v6.14.0
+2026-10-14T17:29:37.6385515Z #1 6.552  * [new tag]         v6.15.0    -> v6.15.0
+2026-10-14T17:29:37.6386613Z #1 6.552  * [new tag]         v6.16.0    -> v6.16.0
+2026-10-14T17:29:37.6387716Z #1 6.552  * [new tag]         v6.17.0    -> v6.17.0
+2026-10-14T17:29:37.6388814Z #1 6.552  * [new tag]         v6.18.0    -> v6.18.0
+2026-10-14T17:29:37.6389948Z #1 6.552  * [new tag]         v6.19.0    -> v6.19.0
+2026-10-14T17:29:37.6391040Z #1 6.552  * [new tag]         v6.19.1    -> v6.19.1
+2026-10-14T17:29:37.6392225Z #1 6.552  * [new tag]         v6.19.2    -> v6.19.2
+2026-10-14T17:29:37.6393320Z #1 6.552  * [new tag]         v6.2.0     -> v6.2.0
+2026-10-14T17:29:37.6394392Z #1 6.552  * [new tag]         v6.3.0     -> v6.3.0
+2026-10-14T17:29:37.6395458Z #1 6.552  * [new tag]         v6.4.0     -> v6.4.0
+2026-10-14T17:29:37.6396509Z #1 6.552  * [new tag]         v6.4.1     -> v6.4.1
+2026-10-14T17:29:37.6397580Z #1 6.552  * [new tag]         v6.5.0     -> v6.5.0
+2026-10-14T17:29:37.6398699Z #1 6.552  * [new tag]         v6.6.0     -> v6.6.0
+2026-10-14T17:29:37.6399748Z #1 6.552  * [new tag]         v6.6.1     -> v6.6.1
+2026-10-14T17:29:37.6400809Z #1 6.552  * [new tag]         v6.7.0     -> v6.7.0
+2026-10-14T17:29:37.6401977Z #1 6.552  * [new tag]         v6.8.0     -> v6.8.0
+2026-10-14T17:29:37.6403031Z #1 6.552  * [new tag]         v6.9.0     -> v6.9.0
+2026-10-14T17:29:37.6404065Z #1 6.552  * [new tag]         v7         -> v7
+2026-10-14T17:29:37.6405093Z #1 6.552  * [new tag]         v7.0.0     -> v7.0.0
+2026-10-14T17:29:37.6406158Z #1 6.552  * [new tag]         v7.1.0     -> v7.1.0
+2026-10-14T17:29:37.6407228Z #1 6.552  * [new tag]         v7.2.0     -> v7.2.0
+2026-10-14T17:29:37.6408288Z #1 6.552  * [new tag]         v7.3.0     -> v7.3.0
+2026-10-14T17:29:37.6409470Z #1 6.552  * [new tag]         v7.4.0     -> v7.4.0
+2026-10-14T17:29:37.7275203Z #1 DONE 6.6s
+2026-10-14T17:29:37.7276378Z {
+2026-10-14T17:29:37.7277332Z   "group": {
+2026-10-14T17:29:37.7278270Z     "default": {
+2026-10-14T17:29:37.7279237Z       "targets": [
+2026-10-14T17:29:37.7280229Z         "build-validate"
+2026-10-14T17:29:37.7281025Z       ]
+2026-10-14T17:29:37.7282447Z     }
+2026-10-14T17:29:37.7283290Z   },
+2026-10-14T17:29:37.7284164Z   "target": {
+2026-10-14T17:29:37.7284894Z     "build-validate": {
+2026-10-14T17:29:37.7286642Z       "context": "https://github.com/docker/build-push-action.git#11d3cf9a7e20c67873171f947be6c13754b8d11d",
+2026-10-14T17:29:37.7288359Z       "dockerfile": "dev.Dockerfile",
+2026-10-14T17:29:37.7289240Z       "args": {
+2026-10-14T17:29:37.7289951Z         "BUILDKIT_CONTEXT_KEEP_GIT_DIR": "1"
+2026-10-14T17:29:37.7290915Z       },
+2026-10-14T17:29:37.7291573Z       "target": "build-validate",
+2026-10-14T17:29:37.7292694Z       "output": [
+2026-10-14T17:29:37.7293352Z         {
+2026-10-14T17:29:37.7294008Z           "type": "cacheonly"
+2026-10-14T17:29:37.7294790Z         }
+2026-10-14T17:29:37.7295383Z       ]
+2026-10-14T17:29:37.7295957Z     }
+2026-10-14T17:29:37.7296522Z   }
+2026-10-14T17:29:37.7297081Z }
+2026-10-14T17:29:37.7334801Z ##[endgroup]
+2026-10-14T17:29:37.8358049Z ##[group]Bake definition
+2026-10-14T17:29:37.8372053Z [command]/usr/bin/docker buildx bake https://github.com/docker/build-push-action.git#11d3cf9a7e20c67873171f947be6c13754b8d11d --allow fs=* --metadata-file /home/runner/work/_temp/docker-actions-toolkit-nbJNL6/bake-metadata-6b3cb9f3df.json build-validate --print
+2026-10-14T17:29:37.8958369Z #0 building with "default" instance using docker driver
+2026-10-14T17:29:37.8959465Z 
+2026-10-14T17:29:37.8962110Z #1 [internal] load git source https://github.com/docker/build-push-action.git#11d3cf9a7e20c67873171f947be6c13754b8d11d
+2026-10-14T17:29:37.8964363Z #1 CACHED
+2026-10-14T17:29:37.8965928Z {
+2026-10-14T17:29:37.8966608Z   "group": {
+2026-10-14T17:29:37.8967242Z     "default": {
+2026-10-14T17:29:37.8967895Z       "targets": [
+2026-10-14T17:29:37.8968613Z         "build-validate"
+2026-10-14T17:29:37.8969322Z       ]
+2026-10-14T17:29:37.8969893Z     }
+2026-10-14T17:29:37.8970454Z   },
+2026-10-14T17:29:37.8971026Z   "target": {
+2026-10-14T17:29:37.8982053Z     "build-validate": {
+2026-10-14T17:29:37.8984137Z       "context": "https://github.com/docker/build-push-action.git#11d3cf9a7e20c67873171f947be6c13754b8d11d",
+2026-10-14T17:29:37.8986460Z       "dockerfile": "dev.Dockerfile",
+2026-10-14T17:29:37.8987576Z       "args": {
+2026-10-14T17:29:37.8988601Z         "BUILDKIT_CONTEXT_KEEP_GIT_DIR": "1"
+2026-10-14T17:29:37.8989727Z       },
+2026-10-14T17:29:37.8990381Z       "target": "build-validate",
+2026-10-14T17:29:37.8991176Z       "output": [
+2026-10-14T17:29:37.8992190Z         {
+2026-10-14T17:29:37.8993126Z           "type": "cacheonly"
+2026-10-14T17:29:37.8994171Z         }
+2026-10-14T17:29:37.8994993Z       ]
+2026-10-14T17:29:37.8995786Z     }
+2026-10-14T17:29:37.8996522Z   }
+2026-10-14T17:29:37.8997292Z }
+2026-10-14T17:29:37.9007285Z ##[endgroup]
+2026-10-14T17:29:37.9020044Z [command]/usr/bin/docker buildx bake https://github.com/docker/build-push-action.git#11d3cf9a7e20c67873171f947be6c13754b8d11d --allow fs=* --metadata-file /home/runner/work/_temp/docker-actions-toolkit-nbJNL6/bake-metadata-6b3cb9f3df.json build-validate
+2026-10-14T17:29:38.1619131Z #0 building with "default" instance using docker driver
+2026-10-14T17:29:38.1619379Z 
+2026-10-14T17:29:38.1619912Z #1 [internal] load git source https://github.com/docker/build-push-action.git#11d3cf9a7e20c67873171f947be6c13754b8d11d
+2026-10-14T17:29:38.1620333Z #1 CACHED
+2026-10-14T17:29:38.1620426Z 
+2026-10-14T17:29:38.1620710Z #2 [internal] load git source https://github.com/docker/build-push-action.git#11d3cf9a7e20c67873171f947be6c13754b8d11d
+2026-10-14T17:29:38.1621282Z #2 0.019 Initialized empty Git repository in /var/lib/docker/overlay2/ejy0qf41scvxt9kg03h8m7825/diff/.git/
+2026-10-14T17:29:38.1622152Z #2 0.022 commit
+2026-10-14T17:29:38.2207939Z #2 0.232 From file:///var/lib/docker/overlay2/owi82nbf7vt5uox4mc5s33vn5/diff
+2026-10-14T17:29:38.2208682Z #2 0.232  * branch            refs/buildkit/qqvco7mbqw9ogppgkwf6n65yq -> FETCH_HEAD
+2026-10-14T17:29:38.4386725Z #2 0.279 Note: switching to 'FETCH_HEAD'.
+2026-10-14T17:29:38.4387021Z #2 0.279 
+2026-10-14T17:29:38.4387520Z #2 0.279 You are in 'detached HEAD' state. You can look around, make experimental
+2026-10-14T17:29:38.4388056Z #2 0.279 changes and commit them, and you can discard any commits you make in this
+2026-10-14T17:29:38.4388443Z #2 0.279 state without impacting any branches by switching back to a branch.
+2026-10-14T17:29:38.4388738Z #2 0.279 
+2026-10-14T17:29:38.4388985Z #2 0.279 If you want to create a new branch to retain commits you create, you may
+2026-10-14T17:29:38.4389447Z #2 0.279 do so (now or later) by using -c with the switch command. Example:
+2026-10-14T17:29:38.4389734Z #2 0.279 
+2026-10-14T17:29:38.4389923Z #2 0.279   git switch -c <new-branch-name>
+2026-10-14T17:29:38.4390130Z #2 0.279 
+2026-10-14T17:29:38.4390289Z #2 0.279 Or undo this operation with:
+2026-10-14T17:29:38.4390532Z #2 0.279 
+2026-10-14T17:29:38.4390692Z #2 0.279   git switch -
+2026-10-14T17:29:38.4390868Z #2 0.279 
+2026-10-14T17:29:38.4391136Z #2 0.279 Turn off this advice by setting config variable advice.detachedHead to false
+2026-10-14T17:29:38.4391447Z #2 0.279 
+2026-10-14T17:29:38.4392012Z #2 0.279 HEAD is now at 11d3cf9 Merge 829fbc0bbd3325df7ace57288b8da73c60aaab9b into c3c9e263c25d99ce0380d002d59b67737d91b0dc
+2026-10-14T17:29:38.4392592Z #2 DONE 0.3s
+2026-10-14T17:29:38.4392762Z 
+2026-10-14T17:29:38.4393038Z #3 resolve image config for docker-image://docker.io/docker/dockerfile:1
+2026-10-14T17:29:38.6251186Z #3 ...
+2026-10-14T17:29:38.6251381Z 
+2026-10-14T17:29:38.6252207Z #4 [auth] docker/dockerfile:pull token for registry-1.docker.io
+2026-10-14T17:29:38.6252616Z #4 DONE 0.0s
+2026-10-14T17:29:38.7747053Z 
+2026-10-14T17:29:38.7747691Z #3 resolve image config for docker-image://docker.io/docker/dockerfile:1
+2026-10-14T17:29:39.0981515Z #3 DONE 0.8s
+2026-10-14T17:29:39.2027385Z 
+2026-10-14T17:29:39.2028427Z #5 docker-image://docker.io/docker/dockerfile:1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e
+2026-10-14T17:29:39.2029126Z #5 resolve docker.io/docker/dockerfile:1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e done
+2026-10-14T17:29:39.2029683Z #5 sha256:9d2b4f57f9e20f33279375ce25c6ff14f30f64270ed5c7b613b2b30256754f62 12.58MB / 14.28MB 0.1s
+2026-10-14T17:29:39.2030284Z #5 sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e 9.08kB / 9.08kB done
+2026-10-14T17:29:39.2030916Z #5 sha256:7b32114e84ca21aeb2d6f871a0b62b3a0762193f75d9afd048ee4cbe889f3148 1.13kB / 1.13kB done
+2026-10-14T17:29:39.2031465Z #5 sha256:528c92d70d7e39dbb3dd1c6681f6750c565c7e45b70527cda47c1a61495c1b6a 1.41kB / 1.41kB done
+2026-10-14T17:29:39.3652672Z #5 sha256:9d2b4f57f9e20f33279375ce25c6ff14f30f64270ed5c7b613b2b30256754f62 14.28MB / 14.28MB 0.2s done
+2026-10-14T17:29:39.3653596Z #5 extracting sha256:9d2b4f57f9e20f33279375ce25c6ff14f30f64270ed5c7b613b2b30256754f62 0.1s done
+2026-10-14T17:29:39.5811542Z #5 DONE 0.3s
+2026-10-14T17:29:39.5811825Z 
+2026-10-14T17:29:39.5811989Z #6 [internal] load metadata for docker.io/library/node:24-alpine
+2026-10-14T17:29:39.7379898Z #6 ...
+2026-10-14T17:29:39.7380050Z 
+2026-10-14T17:29:39.7380217Z #7 [auth] library/node:pull token for registry-1.docker.io
+2026-10-14T17:29:39.7380482Z #7 DONE 0.0s
+2026-10-14T17:29:39.8882710Z 
+2026-10-14T17:29:39.8883167Z #6 [internal] load metadata for docker.io/library/node:24-alpine
+2026-10-14T17:29:40.1556930Z #6 DONE 0.7s
+2026-10-14T17:29:43.3068420Z 
+2026-10-14T17:29:43.3074988Z #8 [base 1/4] FROM docker.io/library/node:24-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1
+2026-10-14T17:29:43.3075967Z #8 resolve docker.io/library/node:24-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1 done
+2026-10-14T17:29:43.3077345Z #8 sha256:c10884952bb8c37122fcc3fe6f97af3ab0a80e5eb02ee5df707406b4e11a7e3e 6.44kB / 6.44kB done
+2026-10-14T17:29:43.3078254Z #8 sha256:3c504d5a797be28f9de43147d49cd8ecb2eea46dfaf7beb8715db695d5f0a7f0 10.49MB / 56.52MB 0.1s
+2026-10-14T17:29:43.3079616Z #8 sha256:02f40d53b06f6b91fec0cd6a6719656da99270bff8ee54ed8dcdf4c157763fc1 0B / 1.26MB 0.1s
+2026-10-14T17:29:43.3080145Z #8 sha256:7ce7dcbafb7f750cf0c6be3c30e34372b06dd1182fa67f6ae30782c8150c5444 0B / 444B 0.1s
+2026-10-14T17:29:43.3080775Z #8 sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1 3.87kB / 3.87kB done
+2026-10-14T17:29:43.3081405Z #8 sha256:83f1c388c31fb2e51f7cbd4dea949b96260798c98f206e8e4696bc93bd964e3a 1.72kB / 1.72kB done
+2026-10-14T17:29:43.4069099Z #8 sha256:3c504d5a797be28f9de43147d49cd8ecb2eea46dfaf7beb8715db695d5f0a7f0 41.94MB / 56.52MB 0.2s
+2026-10-14T17:29:43.4069699Z #8 sha256:02f40d53b06f6b91fec0cd6a6719656da99270bff8ee54ed8dcdf4c157763fc1 1.26MB / 1.26MB 0.1s done
+2026-10-14T17:29:43.4070256Z #8 sha256:7ce7dcbafb7f750cf0c6be3c30e34372b06dd1182fa67f6ae30782c8150c5444 444B / 444B 0.2s done
+2026-10-14T17:29:43.5069991Z #8 sha256:3c504d5a797be28f9de43147d49cd8ecb2eea46dfaf7beb8715db695d5f0a7f0 56.52MB / 56.52MB 0.3s
+2026-10-14T17:29:43.8659232Z #8 sha256:3c504d5a797be28f9de43147d49cd8ecb2eea46dfaf7beb8715db695d5f0a7f0 56.52MB / 56.52MB 0.5s done
+2026-10-14T17:29:43.8672373Z #8 extracting sha256:3c504d5a797be28f9de43147d49cd8ecb2eea46dfaf7beb8715db695d5f0a7f0 0.1s
+2026-10-14T17:29:44.9042487Z #8 extracting sha256:3c504d5a797be28f9de43147d49cd8ecb2eea46dfaf7beb8715db695d5f0a7f0 1.0s done
+2026-10-14T17:29:45.7096448Z #8 extracting sha256:02f40d53b06f6b91fec0cd6a6719656da99270bff8ee54ed8dcdf4c157763fc1
+2026-10-14T17:29:45.8184620Z #8 extracting sha256:02f40d53b06f6b91fec0cd6a6719656da99270bff8ee54ed8dcdf4c157763fc1 0.0s done
+2026-10-14T17:29:45.8185921Z #8 extracting sha256:7ce7dcbafb7f750cf0c6be3c30e34372b06dd1182fa67f6ae30782c8150c5444 done
+2026-10-14T17:29:45.8186742Z #8 DONE 2.6s
+2026-10-14T17:29:45.9692291Z 
+2026-10-14T17:29:45.9692826Z #9 [base 2/4] RUN apk add --no-cache cpio findutils git rsync
+2026-10-14T17:29:46.5360259Z #9 0.717 ( 1/19) Installing cpio (2.15-r0)
+2026-10-14T17:29:46.6491369Z #9 0.730 ( 2/19) Installing findutils (4.10.0-r1)
+2026-10-14T17:29:46.6491890Z #9 0.745 ( 3/19) Installing brotli-libs (1.2.0-r1)
+2026-10-14T17:29:46.6492146Z #9 0.780 ( 4/19) Installing c-ares (1.34.8-r0)
+2026-10-14T17:29:46.6492397Z #9 0.794 ( 5/19) Installing libunistring (1.4.2-r0)
+2026-10-14T17:29:46.6492660Z #9 0.830 ( 6/19) Installing libidn2 (2.3.8-r0)
+2026-10-14T17:29:46.7542996Z #9 0.843 ( 7/19) Installing nghttp2-libs (1.70.0-r0)
+2026-10-14T17:29:46.7543418Z #9 0.854 ( 8/19) Installing libpsl (0.21.5-r3)
+2026-10-14T17:29:46.7543800Z #9 0.865 ( 9/19) Installing zstd-libs (1.5.7-r2)
+2026-10-14T17:29:46.7544193Z #9 0.886 (10/19) Installing libcurl (8.22.0-r0)
+2026-10-14T17:29:46.7544563Z #9 0.906 (11/19) Installing libexpat (2.8.5-r0)
+2026-10-14T17:29:46.7544837Z #9 0.917 (12/19) Installing pcre2 (10.49-r0)
+2026-10-14T17:29:46.7545079Z #9 0.935 (13/19) Installing git (2.54.0-r0)
+2026-10-14T17:29:46.8555179Z #9 1.037 (14/19) Installing git-init-template (2.54.0-r0)
+2026-10-14T17:29:47.0619580Z #9 1.047 (15/19) Installing acl-libs (2.3.2-r1)
+2026-10-14T17:29:47.0621900Z #9 1.057 (16/19) Installing lz4-libs (1.10.0-r1)
+2026-10-14T17:29:47.0622719Z #9 1.068 (17/19) Installing popt (1.19-r4)
+2026-10-14T17:29:47.0625027Z #9 1.077 (18/19) Installing libxxhash (0.8.3-r1)
+2026-10-14T17:29:47.0625609Z #9 1.088 (19/19) Installing rsync (3.5.0-r0)
+2026-10-14T17:29:47.0626803Z #9 1.102 Executing busybox-1.37.0-r31.trigger
+2026-10-14T17:29:47.0628192Z #9 1.109 OK: 24.4 MiB in 37 packages
+2026-10-14T17:29:47.0628743Z #9 DONE 1.2s
+2026-10-14T17:29:47.2473165Z 
+2026-10-14T17:29:47.2473649Z #10 [base 3/4] WORKDIR /src
+2026-10-14T17:29:47.2473992Z #10 DONE 0.0s
+2026-10-14T17:29:47.2474154Z 
+2026-10-14T17:29:47.2474578Z #11 [base 4/4] RUN --mount=type=bind,target=.,rw   --mount=type=cache,target=/src/.yarn/cache <<EOT (set -e...)
+2026-10-14T17:29:47.3231141Z #11 0.226 ! Corepack is about to download https://repo.yarnpkg.com/4.15.0/packages/yarnpkg-cli/bin/yarn.js
+2026-10-14T17:29:47.7773811Z #11 0.680 4.15.0
+2026-10-14T17:29:47.9928368Z #11 0.886 ➤ YN0000: Successfully set enableTelemetry to false
+2026-10-14T17:29:48.1882413Z #11 DONE 0.9s
+2026-10-14T17:29:48.1883667Z 
+2026-10-14T17:29:48.1884688Z #12 [deps 1/1] RUN --mount=type=bind,target=.,rw   --mount=type=cache,target=/src/.yarn/cache   --mount=type=cache,target=/src/node_modules   yarn install --immutable && mkdir /vendor && cp yarn.lock /vendor
+2026-10-14T17:29:48.3771796Z #12 0.340 ➤ YN0000: · Yarn 4.15.0
+2026-10-14T17:29:48.5388284Z #12 0.351 ➤ YN0000: ┌ Resolution step
+2026-10-14T17:29:51.7552394Z #12 3.718 ➤ YN0000: └ Completed in 3s 367ms
+2026-10-14T17:29:51.9227205Z #12 3.735 ➤ YN0000: ┌ Fetch step
+2026-10-14T17:29:58.7503093Z #12 10.71 ➤ YN0000: └ Completed in 6s 975ms
+2026-10-14T17:29:58.9211382Z #12 10.73 ➤ YN0000: ┌ Link step
+2026-10-14T17:30:01.6510486Z #12 13.61 ➤ YN0000: └ Completed in 2s 880ms
+2026-10-14T17:30:01.8329774Z #12 13.64 ➤ YN0000: · Done in 13s 306ms
+2026-10-14T17:30:03.7243870Z #12 DONE 15.7s
+2026-10-14T17:30:03.8753037Z 
+2026-10-14T17:30:03.8753587Z #13 [build 1/1] RUN --mount=target=/context   --mount=type=cache,target=/src/.yarn/cache   --mount=type=cache,target=/src/node_modules <<EOT (set -e...)
+2026-10-14T17:30:04.5601800Z #13 0.835 
+2026-10-14T17:30:04.5602642Z #13 0.835   dist/index.cjs      2.5mb ⚠️
+2026-10-14T17:30:04.5603226Z #13 0.835   dist/index.cjs.map  8.9mb
+2026-10-14T17:30:04.5603630Z #13 0.835 
+2026-10-14T17:30:04.5603963Z #13 0.835 ⚡ Done in 260ms
+2026-10-14T17:30:05.6555641Z #13 1.930 Unable to determine license content for buffers@0.1.1 with error:
+2026-10-14T17:30:05.6556225Z #13 1.930 Could not find license content for buffers@0.1.1
+2026-10-14T17:30:05.6557004Z #13 1.930 
+2026-10-14T17:30:06.0920770Z #13 DONE 2.4s
+2026-10-14T17:30:06.2426724Z 
+2026-10-14T17:30:06.2427306Z #14 [build-validate 1/1] RUN --mount=target=/context   --mount=target=.,type=tmpfs <<EOT (set -e...)
+2026-10-14T17:30:06.2962492Z #14 0.204 ERROR: Build result differs. Please build first with "docker buildx bake build"
+2026-10-14T17:30:06.3412108Z #14 0.205  M dist/index.cjs
+2026-10-14T17:30:06.3412731Z #14 0.205  M dist/index.cjs.map
+2026-10-14T17:30:06.3413306Z #14 0.205  M dist/licenses.txt
+2026-10-14T17:30:06.3417147Z #14 ERROR: process "/bin/sh -c   set -e\n  rsync -a /context/. .\n  git add -A\n  rm -rf dist\n  cp -rf /out/* .\n  if [ -n \"$(git status --porcelain -- dist)\" ]; then\n    echo >&2 'ERROR: Build result differs. Please build first with \"docker buildx bake build\"'\n    git status --porcelain -- dist\n    exit 1\n  fi\n" did not complete successfully: exit code: 1
+2026-10-14T17:30:06.3418764Z ------
+2026-10-14T17:30:06.3419282Z  > [build-validate 1/1] RUN --mount=target=/context   --mount=target=.,type=tmpfs <<EOT (set -e...):
+2026-10-14T17:30:06.3420026Z 0.204 ERROR: Build result differs. Please build first with "docker buildx bake build"
+2026-10-14T17:30:06.3420547Z 0.205  M dist/index.cjs
+2026-10-14T17:30:06.3420824Z 0.205  M dist/index.cjs.map
+2026-10-14T17:30:06.3421104Z 0.205  M dist/licenses.txt
+2026-10-14T17:30:06.3421363Z ------
+2026-10-14T17:30:06.3447205Z dev.Dockerfile:53
+2026-10-14T17:30:06.3467446Z --------------------
+2026-10-14T17:30:06.3467969Z   52 |     FROM build AS build-validate
+2026-10-14T17:30:06.3468522Z   53 | >>> RUN --mount=target=/context \
+2026-10-14T17:30:06.3469053Z   54 | >>>   --mount=target=.,type=tmpfs <<EOT
+2026-10-14T17:30:06.3469595Z   55 | >>>   set -e
+2026-10-14T17:30:06.3470011Z   56 | >>>   rsync -a /context/. .
+2026-10-14T17:30:06.3470477Z   57 | >>>   git add -A
+2026-10-14T17:30:06.3470901Z   58 | >>>   rm -rf dist
+2026-10-14T17:30:06.3471331Z   59 | >>>   cp -rf /out/* .
+2026-10-14T17:30:06.3472028Z   60 | >>>   if [ -n "$(git status --porcelain -- dist)" ]; then
+2026-10-14T17:30:06.3472807Z   61 | >>>     echo >&2 'ERROR: Build result differs. Please build first with "docker buildx bake build"'
+2026-10-14T17:30:06.3473906Z   62 | >>>     git status --porcelain -- dist
+2026-10-14T17:30:06.3474378Z   63 | >>>     exit 1
+2026-10-14T17:30:06.3474794Z   64 | >>>   fi
+2026-10-14T17:30:06.3475199Z   65 | >>> EOT
+2026-10-14T17:30:06.3475590Z   66 |     
+2026-10-14T17:30:06.3475983Z --------------------
+2026-10-14T17:30:06.3477664Z ERROR: failed to solve: process "/bin/sh -c   set -e\n  rsync -a /context/. .\n  git add -A\n  rm -rf dist\n  cp -rf /out/* .\n  if [ -n \"$(git status --porcelain -- dist)\" ]; then\n    echo >&2 'ERROR: Build result differs. Please build first with \"docker buildx bake build\"'\n    git status --porcelain -- dist\n    exit 1\n  fi\n" did not complete successfully: exit code: 1
+2026-10-14T17:30:06.3531167Z ##[group]Build references
+2026-10-14T17:30:06.4109203Z default/default/hwf4rugqdfrocjgj4spt84iu4
+2026-10-14T17:30:06.4110611Z ##[endgroup]
+2026-10-14T17:30:06.4117724Z ##[group]Check build summary support
+2026-10-14T17:30:06.4118359Z Build summary supported!
+2026-10-14T17:30:06.4118900Z ##[endgroup]
+2026-10-14T17:30:06.4141011Z ##[error]buildx bake failed with: ERROR: failed to solve: process "/bin/sh -c   set -e\n  rsync -a /context/. .\n  git add -A\n  rm -rf dist\n  cp -rf /out/* .\n  if [ -n \"$(git status --porcelain -- dist)\" ]; then\n    echo >&2 'ERROR: Build result differs. Please build first with \"docker buildx bake build\"'\n    git status --porcelain -- dist\n    exit 1\n  fi\n" did not complete successfully: exit code: 1
+2026-10-14T17:30:06.4394776Z Post job cleanup.
+2026-10-14T17:30:06.6381834Z ##[group]Generating build summary
+2026-10-14T17:30:06.6848473Z exporting build record to /home/runner/work/_temp/docker-actions-toolkit-bPpTPn/export
+2026-10-14T17:30:06.7418519Z [command]/usr/bin/docker buildx history export --builder default --output /home/runner/work/_temp/docker-actions-toolkit-bPpTPn/export/docker~build-push-action~HWF4RU.dockerbuild hwf4rugqdfrocjgj4spt84iu4 --finalize
+2026-10-14T17:30:06.8438605Z Build records written to /home/runner/work/_temp/docker-actions-toolkit-bPpTPn/export/docker~build-push-action~HWF4RU.dockerbuild (18.92 KB)
+2026-10-14T17:30:06.8440266Z Uploading docker~build-push-action~HWF4RU.dockerbuild as an artifact
+2026-10-14T17:30:06.8444658Z Artifact name is valid!
+2026-10-14T17:30:06.8444976Z Root directory input is valid!
+2026-10-14T17:30:07.1650346Z Uploading artifact: docker~build-push-action~HWF4RU.dockerbuild
+2026-10-14T17:30:07.1683938Z Beginning upload of artifact content to blob storage
+2026-10-14T17:30:07.4568060Z Uploaded bytes 19369
+2026-10-14T17:30:07.5186114Z Finished uploading artifact content to blob storage!
+2026-10-14T17:30:07.5186772Z SHA256 digest of uploaded artifact is d872fded6124c4edcdae924169a4a185851424b266074e7a72b869bbed3a9619
+2026-10-14T17:30:07.5187452Z Finalizing artifact upload
+2026-10-14T17:30:07.8830000Z Artifact docker~build-push-action~HWF4RU.dockerbuild successfully finalized. Artifact ID 11916850859
+2026-10-14T17:30:07.8831085Z Artifact download URL: https://github.com/docker/build-push-action/actions/runs/38607052120/artifacts/11916850859
+2026-10-14T17:30:07.8855865Z Writing summary
+2026-10-14T17:30:07.8866200Z ##[endgroup]
+2026-10-14T17:30:07.8866825Z ##[group]Removing temp folder /home/runner/work/_temp/docker-actions-toolkit-nbJNL6
+2026-10-14T17:30:07.8867994Z ##[endgroup]
+2026-10-14T17:30:07.8868435Z ##[group]Post cache
+2026-10-14T17:30:07.8869068Z State not set
+2026-10-14T17:30:07.8869518Z ##[endgroup]
+2026-10-14T17:30:07.9015958Z Cleaning up orphan processes
