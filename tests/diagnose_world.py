@@ -35,6 +35,7 @@ from cicd_doctor.core.ports import (
     FailureStore,
     InstallationStore,
     JobQueue,
+    Tracer,
     UsageLedger,
 )
 from cicd_doctor.core.repo_config import CachedRepoConfig
@@ -212,6 +213,7 @@ async def diagnose_world(
     lease: timedelta = timedelta(minutes=5),
     commands: CommandLog | None = None,
     explain_max_runs: int = 3,
+    tracer: Tracer | None = None,
 ) -> AsyncIterator[DiagnoseWorld]:
     github = FakeGitHub(clock, app_key().public_key())
     github.install(INSTALLATION_ID, repo_ids={REPO_ID})
@@ -238,7 +240,12 @@ async def diagnose_world(
                 installations=installations,
                 counter=CharTokenCounter(),
                 diagnose=DiagnoseJob(
-                    llm=llm, ledger=ledger, cost=PRICES, max_output_tokens=800, sleep=no_sleep
+                    llm=llm,
+                    ledger=ledger,
+                    cost=PRICES,
+                    max_output_tokens=800,
+                    sleep=no_sleep,
+                    tracer=tracer,
                 ),
                 clock=clock,
                 embedder=embedder,

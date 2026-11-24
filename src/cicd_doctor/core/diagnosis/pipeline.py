@@ -7,6 +7,7 @@ it and the budget can be reserved; whatever goes wrong, the answer is the rules 
 """
 
 import asyncio
+import hashlib
 import logging
 from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass, field
@@ -26,16 +27,21 @@ from cicd_doctor.core.models import (
     DiagnosisUsage,
     FallbackReason,
     LLMResult,
+    LLMTrace,
+    LogExcerpt,
     PromptDiff,
     SimilarFailure,
 )
 from cicd_doctor.core.policy import PolicyInput, decide
-from cicd_doctor.core.ports import LLMClient, UsageLedger
+from cicd_doctor.core.ports import LLMClient, Tracer, UsageLedger
 
 logger = logging.getLogger(__name__)
 
 Sleep = Callable[[float], Awaitable[None]]
 DEFAULT_BACKOFFS = (1.0, 4.0)  # seconds before the 2nd and the 3rd try of a call (SPEC §7.1, §8)
+TRACE_EXCERPT_CHARS = (
+    3000  # the head of the excerpt a trace carries (D-118); the adapter caps again
+)
 
 
 @dataclass(frozen=True)
@@ -109,6 +115,7 @@ class DiagnoseJob:
         max_output_tokens: int,
         sleep: Sleep = asyncio.sleep,
         backoffs: Sequence[float] = DEFAULT_BACKOFFS,
+        tracer: Tracer | None = None,
     ) -> None:
         self._llm = llm
         self._ledger = ledger
@@ -116,6 +123,7 @@ class DiagnoseJob:
         self._max_output_tokens = max_output_tokens
         self._sleep = sleep
         self._backoffs = tuple(backoffs)
+        self._tracer = tracer
 
     @property
     def has_llm(self) -> bool:
@@ -160,7 +168,9 @@ class DiagnoseJob:
 
         usage = LLMUsage()
         try:
-            return await self._diagnose(analysis, use_hints, usage, context.similar, context.diff)
+            return await self._diagnose(
+                analysis, use_hints, usage, context, context.similar, context.diff
+            )
         finally:
             # Settle with what was really spent, also when the call is cancelled or a bug raises.
             await self._ledger.settle(reservation, usage.cost_usd)
@@ -170,6 +180,7 @@ class DiagnoseJob:
         analysis: JobAnalysis,
         use_hints: bool,
         usage: LLMUsage,
+        context: DiagnosisContext,
         similar: Sequence[SimilarFailure] = (),
         diff: PromptDiff | None = None,
     ) -> JobDiagnosis:
@@ -189,6 +200,7 @@ class DiagnoseJob:
                 result = await self._call(request, usage)
             except LLMError as exc:
                 logger.warning("LLM call failed (%s), publishing the rules diagnosis", type(exc))
+                self._trace(request, context, attempt, "error", error=type(exc).__name__)
                 return self._fallback(rules, "llm_error", usage, f"{type(exc).__name__}")
             try:
                 output = parse_output(result.raw_json)
@@ -202,7 +214,9 @@ class DiagnoseJob:
             except InvalidOutputError as exc:
                 error = str(exc)
                 logger.info("LLM answer %d is invalid: %s", attempt, error)
+                self._trace(request, context, attempt, "invalid", result, error=error)
                 continue
+            self._trace(request, context, attempt, "ok" if attempt == 1 else "repaired", result)
             return JobDiagnosis(diagnosis, rules, usage.freeze())
         return self._fallback(rules, "invalid_output", usage, error or "")
 
@@ -225,6 +239,49 @@ class DiagnoseJob:
             return result
         raise AssertionError("unreachable")  # pragma: no cover
 
+    def _trace(
+        self,
+        request: DiagnosisRequest,
+        context: DiagnosisContext,
+        attempt: int,
+        outcome: Literal["ok", "repaired", "invalid", "error"],
+        result: LLMResult | None = None,
+        error: str | None = None,
+    ) -> None:
+        """One trace for the call that just ended (D-118). The tracer is observability only: it
+        gets no say in the diagnosis, so whatever it does is swallowed here as well."""
+        if self._tracer is None:
+            return
+        try:
+            self._tracer.record(
+                LLMTrace(
+                    model=result.model if result else None,
+                    prompt_version=PROMPT_VERSION,
+                    attempt=attempt,
+                    outcome=outcome,
+                    input_text=_trace_input(request),
+                    output_text=result.raw_json if result else None,
+                    input_tokens=result.input_tokens if result else 0,
+                    output_tokens=result.output_tokens if result else 0,
+                    cost_usd=self._cost.cost(result.input_tokens, result.output_tokens)
+                    if result
+                    else Decimal(0),
+                    latency_ms=result.latency_ms if result else None,
+                    installation_id=context.installation_id,
+                    error=error,
+                    metadata={
+                        "excerpt_tokens": str(request.excerpt.token_count),
+                        "rule_hints": str(len(request.rule_hints)),
+                        "similar": str(len(request.similar)),
+                        "diff_tokens": str(request.diff.token_count if request.diff else 0),
+                        "fork": str(context.is_fork).lower(),
+                        "explain": str(context.explain).lower(),
+                    },
+                )
+            )
+        except Exception:
+            logger.warning("the tracer failed (%s)", "record")
+
     @staticmethod
     def _fallback(
         rules: Diagnosis,
@@ -235,3 +292,20 @@ class DiagnoseJob:
         published = rules.model_copy(update={"fallback_reason": reason})
         frozen = usage.freeze() if usage is not None else None
         return JobDiagnosis(published, rules, frozen, notes=[note] if note else [])
+
+
+def _trace_input(request: DiagnosisRequest) -> str:
+    """What the trace shows of the prompt: a hash and the length of the whole excerpt, its head,
+    and the repair error. Similar failures and the diff are third-party text: counts only, in the
+    metadata (D-118)."""
+    excerpt = request.excerpt
+    text = _excerpt_text(excerpt)
+    digest = hashlib.sha256(text.encode()).hexdigest()[:16]
+    parts = [f"excerpt sha256:{digest} chars:{len(text)}", text[:TRACE_EXCERPT_CHARS]]
+    if request.repair_error:
+        parts.append(f"repair_error: {request.repair_error}")
+    return "\n".join(parts)
+
+
+def _excerpt_text(excerpt: LogExcerpt) -> str:
+    return "\n".join(f"L{line.number}: {line.text}" for line in excerpt.lines)
