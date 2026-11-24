@@ -1,0 +1,6 @@
+# Copy to terraform.tfvars (git-ignored) only to change a default. No secrets here, ever.
+# region             = "us-east-1"
+# name_prefix        = "cicd-doctor"
+# log_retention_days = 3
+# db_engine_version  = "17"            # pin an exact 17.x after spike B1
+# db_instance_class  = "db.t4g.micro"
