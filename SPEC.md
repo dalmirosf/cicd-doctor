@@ -165,7 +165,7 @@ cicd-doctor/
 ├── evals/                       # python -m evals: runner/ (cases, variants, metrics, report, capture, injection, markdown_threats, live, cli), cases/{lab,injection}, answers/, reports/; baseline.json (accepted by a person, P4)
 ├── lab/                         # source of the lab repo: workflows that fail on purpose + cases.yaml (D-61), pr-py-modnf.yml (started by a pull request) and the live runbook in README.md (P1c)
 ├── docker/                      # compose.yaml, initdb/01-extensions.sql; Dockerfile (P5)
-├── infra/terraform/             # AWS + GitHub provider (P5)
+├── infra/terraform/             # AWS (P5 d, D-125): bootstrap/ (state bucket), persistent/ (ECR, secrets, roles), ephemeral/ (network, RDS, cluster); services and OIDC in P5 e; GitHub provider in P5 g
 ├── .github/workflows/           # ci.yml, evals.yml (P4, D-105), cd.yml (P5)
 ├── SPEC.md · DECISIONS.md · README.md
 └── pyproject.toml · uv.lock · .pre-commit-config.yaml · .env.example · docker-compose.yml (D-41)
@@ -1202,6 +1202,7 @@ Scope: FR-22 complete.
 Scope: Docker, Terraform on AWS, CD, prod app, Langfuse.
 - [ ] One multi-stage Dockerfile (non-root user, fastembed model baked into the image) runs both `api` and `worker`. `docker compose up` runs the full stack locally.
 - [ ] `terraform apply` on a fresh AWS account creates ECR, an ECS cluster on Fargate with the API service (behind an Application Load Balancer) and the worker service (desired count 1), RDS for PostgreSQL 17 with `vector` enabled, Secrets Manager secrets, least-privilege IAM task and execution roles, and the GitHub OIDC provider with a deploy role for GitHub Actions. A second `terraform plan` shows no changes.
+  - *Code so far (P5 d, offline only; never applied):* `infra/terraform/{bootstrap,persistent,ephemeral}` validate with `terraform validate` and are scanned by `tests/unit/test_infra_guard.py`; they cover the state bucket, ECR, secret containers, IAM roles, VPC without NAT, security groups, log groups, the ECS cluster and RDS (D-121, D-122, D-124, D-125). The services, ALB, CloudFront, migration task and OIDC role (P5 e) and the live `apply` with the second `plan` (P5 h) are missing, so the box stays open. The region is us-east-2: an organization SCP denies workloads elsewhere (D-121).
 - [ ] The Terraform GitHub provider creates and configures the `cicd-doctor-lab` repo from `lab/`.
 - [ ] A merge to `main` → CD builds, pushes to ECR and deploys new task definitions with no long-lived AWS access keys (GitHub OIDC), and runs migrations as a one-off ECS task before the services are updated.
 - [ ] The prod GitHub App webhook targets the API's public HTTPS endpoint on AWS. The P1c acceptance flow passes against prod.
@@ -1220,5 +1221,6 @@ Scope: Docker, Terraform on AWS, CD, prod app, Langfuse.
 - Whether lint and type-check failures deserve their own category → after the P4 evals (D-13).
 - ~~`issue_comment` delivery~~ — **resolved (2026-11-20):** it needs the Issues permission (D-89) and the first real delivery was observed after the app change (§13 P3 box 5).
 - A command on a pull request **from a fork**, live: open until a fork of the lab owned by another account is used (§13 P3 box 1, D-94).
-- HTTPS entry for the API: Application Load Balancer + ACM certificate (needs a domain) vs App Runner (HTTPS URL without a domain); and Secrets Manager vs SSM Parameter Store for secrets → at P5 deploy time (D-46).
+- HTTPS entry for the API: Application Load Balancer + ACM certificate (needs a domain) vs App Runner (HTTPS URL without a domain) → at P5 deploy time (D-46; with no domain, the plan is CloudFront in front of the ALB, D-120 in P5 e).
+- ~~Secrets Manager vs SSM Parameter Store~~ — **resolved by D-122:** Secrets Manager, containers in Terraform and values loaded by hand..
 - ~~fastembed on Python 3.13~~ — **resolved by D-78.** Confirmed on Windows 11 (CPython 3.13.7) and on Linux (`python:3.13-slim`, CPython 3.13.18) with fastembed 0.9.1 and onnxruntime 1.32.0: it loads in 0.1 s with the model on disk (a cold download took 12 to 166 s), returns 384-d L2-normalised vectors that are deterministic and identical between the two systems, and takes 4 to 14 ms per attempt; pinning 3.12 is not needed. Still open: fastembed serves `BAAI/bge-small-en-v1.5` from the Qdrant ONNX build `Qdrant/bge-small-en-v1.5-onnx-Q` (`model_optimized.onnx`, 67 MB), not from the original weights, so check in P2 that the `SIMILAR_MIN_SCORE` of 0.85 is calibrated against that build (D-08).

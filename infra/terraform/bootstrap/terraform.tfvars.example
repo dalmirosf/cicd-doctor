@@ -1,0 +1,4 @@
+# Copy to terraform.tfvars (git-ignored) only if you want to change a default. No secrets here.
+# aws_region            = "us-east-2"
+# name_prefix       = "cicd-doctor"
+# state_bucket_name = "my-own-unique-bucket-name"
