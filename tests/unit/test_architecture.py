@@ -37,6 +37,8 @@ FORBIDDEN_EXTERNAL = frozenset(
         "openai",
         "fastembed",
         "tiktoken",  # downloads its encoding on first use (D-57)
+        "langfuse",  # traces go through the Tracer port, which redacts (D-118)
+        "opentelemetry",  # what the Langfuse SDK is built on (D-118)
     }
 )
 
@@ -111,6 +113,8 @@ def test_core_does_not_import_adapters_or_io_libraries() -> None:
         ("from sqlalchemy.ext.asyncio import AsyncSession", "imports sqlalchemy.ext.asyncio"),
         ("from alembic import op", "imports alembic"),
         ("from pydantic_settings import BaseSettings", "imports pydantic_settings"),
+        ("from langfuse import observe", "imports langfuse"),
+        ("import opentelemetry.trace", "imports opentelemetry.trace"),
     ],
 )
 def test_checker_detects_forbidden_imports(tmp_path: Path, source: str, expected: str) -> None:
