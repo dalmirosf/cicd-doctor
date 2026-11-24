@@ -1,7 +1,7 @@
 data "aws_caller_identity" "current" {}
 
 locals {
-  bucket_name = coalesce(var.state_bucket_name, "${var.name_prefix}-tfstate-${data.aws_caller_identity.current.account_id}-${var.region}")
+  bucket_name = coalesce(var.state_bucket_name, "${var.name_prefix}-tfstate-${data.aws_caller_identity.current.account_id}-${var.aws_region}")
 }
 
 resource "aws_s3_bucket" "state" {

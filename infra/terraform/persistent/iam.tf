@@ -2,7 +2,7 @@ data "aws_caller_identity" "current" {}
 
 locals {
   log_group_prefix = "/${var.name_prefix}"
-  log_group_arn    = "arn:aws:logs:${var.region}:${data.aws_caller_identity.current.account_id}:log-group:${local.log_group_prefix}"
+  log_group_arn    = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:${local.log_group_prefix}"
 }
 
 data "aws_iam_policy_document" "ecs_tasks_trust" {

@@ -5,5 +5,5 @@ output "state_bucket_name" {
 
 output "region" {
   description = "Put this in backend.hcl too."
-  value       = var.region
+  value       = var.aws_region
 }

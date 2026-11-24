@@ -1,7 +1,7 @@
-variable "region" {
-  description = "AWS region of the whole project (D-121)."
+variable "aws_region" {
+  description = "AWS region of the whole project: us-east-2, the only region where the organization policy allows workloads (D-121)."
   type        = string
-  default     = "us-east-1"
+  default     = "us-east-2"
 }
 
 variable "name_prefix" {

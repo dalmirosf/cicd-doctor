@@ -12,6 +12,19 @@ and cost), D-122 (secrets), D-124 (teardown), D-125 (layers and state).
 
 PR e adds the services, ALB, CloudFront, the migration task, the GitHub OIDC provider and the deploy role.
 
+## Region and organization policies (read this first)
+
+The region is **us-east-2 (Ohio)**, not us-east-1. The account belongs to an AWS Organization whose root has the service
+control policy `AdvancedModeRegionRestrictionSecurityControlPolicy`: in us-east-1 it denies everything except a list of
+global services (IAM, STS, SSO, billing, budgets, CloudFront, logs, ACM, KMS, Route 53, WAF, Organizations ...), so RDS,
+ECS, ECR, Secrets Manager, ELB, EC2/VPC and `s3:CreateBucket` do not work there; us-west-2 is stricter; every other region
+denies everything (D-121). The IAM and CloudFront APIs are global and stay valid with a provider in us-east-2.
+
+The organization also offers an SCP, `BudgetsSpendLimitDenyNewWorkloads`, as a spend-limit brake: it denies creating RDS,
+ECS services, ALBs, CloudFront, Secrets Manager secrets and ECR repositories. It is not known whether it is attached to
+this account. **If a `Create*` call fails with "explicit deny in a service control policy", stop and ask the owner. Never
+try to detach, edit or work around an SCP.**
+
 ## Rules
 
 - Without the owner, only `terraform fmt`, `terraform init -backend=false` and `terraform validate` run, each inside a
@@ -38,7 +51,7 @@ account has. Then, in a PowerShell session (the profile name is yours):
 
 ```powershell
 $env:AWS_PROFILE = '<your-sso-profile>'
-$env:AWS_REGION = 'us-east-1'
+$env:AWS_REGION = 'us-east-2'
 aws sts get-caller-identity   # confirm it is the account you mean to use
 ```
 
@@ -106,7 +119,7 @@ everything (end of the project): destroy ephemeral, then persistent (`secret_rec
 names reserved for a week; set it to `0` and apply before destroying to free them), then remove the `prevent_destroy`
 block of the bucket in `bootstrap/`, apply, and destroy it.
 
-### After `down`, each of these must show zero (the console in `us-east-1`, or the CLI one-liners)
+### After `down`, each of these must show zero (the console in `us-east-2`, or the CLI one-liners)
 
 | Check | Command |
 |---|---|
@@ -124,8 +137,8 @@ Also look at Billing > Cost Explorer the next day.
 ## Cost
 
 **All numbers below are estimates, not measurements.** The prices are from the public AWS price pages as I remember them
-(us-east-1, on-demand, Linux x86, 730-hour month); none comes from the provider documentation, and none was checked in
-the console. Confirm them in the AWS console and by spike B1 (instance classes) and C (a real session) before relying
+(on-demand, Linux x86, 730-hour month). Ohio is assumed to be priced like N. Virginia, which is normally the case: confirm it; none comes from the provider documentation, and none was checked in
+the console. Confirm them in the AWS console and by spike C (a real session); spike B1 already showed that `db.t4g.micro` and PostgreSQL 17.7 to 17.11 are offered in us-east-2 before relying
 on them. The sizes are the plan's assumptions: API 0.25 vCPU / 0.5 GB, worker 0.5 vCPU / 1 GB, one task each.
 
 | Item (up) | Assumption | USD per hour |

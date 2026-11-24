@@ -1,7 +1,7 @@
-variable "region" {
-  description = "AWS region of the whole project (D-121)."
+variable "aws_region" {
+  description = "AWS region of the whole project: us-east-2, the only region where the organization policy allows workloads (D-121)."
   type        = string
-  default     = "us-east-1"
+  default     = "us-east-2"
 }
 
 variable "name_prefix" {
@@ -46,13 +46,13 @@ variable "log_streams" {
 }
 
 variable "db_engine_version" {
-  description = "PostgreSQL version. \"17\" lets RDS pick its default 17.x minor; pin an exact one after spike B1 (D-121)."
+  description = "PostgreSQL version. 17.11 is offered in us-east-2 and AWS documents pgvector 0.8.2 for it; 17.9 and later carry the pgvector CVE-2026-3172 fix (D-121). The real proof is CREATE EXTENSION vector in the live migration."
   type        = string
-  default     = "17"
+  default     = "17.11"
 }
 
 variable "db_instance_class" {
-  description = "Smallest class that is believed to run pgvector (D-121); confirm in spike B1."
+  description = "Smallest class: orderable for PostgreSQL 17 with gp3 in us-east-2 (measured read-only, D-121)."
   type        = string
   default     = "db.t4g.micro"
 }
