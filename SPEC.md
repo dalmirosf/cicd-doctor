@@ -164,7 +164,8 @@ cicd-doctor/
 ├── tests/                       # unit/, contract/, integration/, adapters/, live/ (only with -m live), fixtures/{webhooks,logs,rules,github}/ (conftest.py, pg.py, factories.py, scenarios.py, webhooks.py, logcases.py, llmcases.py, github_fake.py, redaction_corpus.py); e2e/ (offline end to end, D-74), diagnose_world.py
 ├── evals/                       # python -m evals: runner/ (cases, variants, metrics, report, capture, injection, markdown_threats, live, cli), cases/{lab,injection}, answers/, reports/; baseline.json (accepted by a person, P4)
 ├── lab/                         # source of the lab repo: workflows that fail on purpose + cases.yaml (D-61), pr-py-modnf.yml (started by a pull request) and the live runbook in README.md (P1c)
-├── docker/                      # compose.yaml, initdb/01-extensions.sql; Dockerfile (P5)
+├── Dockerfile · .dockerignore   # one image for api, worker and migrations; models baked in (P5, D-119)
+├── docker/                      # compose.yaml (db, migrate, api, worker), initdb/01-extensions.sql
 ├── infra/terraform/             # AWS (P5 d, D-125): bootstrap/ (state bucket), persistent/ (ECR, secrets, roles), ephemeral/ (network, RDS, cluster); services and OIDC in P5 e; GitHub provider in P5 g
 ├── .github/workflows/           # ci.yml, evals.yml (P4, D-105), cd.yml (P5)
 ├── SPEC.md · DECISIONS.md · README.md
@@ -323,6 +324,8 @@ uv run pre-commit install       # once per clone: enables the commit gate (§12)
 ```
 
 As of P1a-2 the database, the migrations, the API (`/health`, `/ready`, `/webhooks/github`), the worker, the smee relay and the tests work. A failing run becomes a `diagnose_run` job, which the worker diagnoses and publishes (D-74; verified against a fake GitHub and, on 2026-11-16, live; the live way to run it is the terminal triple above and the runbook "Live verification (P1c)" in `lab/README.md`).
+
+The whole stack also runs in containers (P5 (c), D-119): `docker compose up --build` builds the `Dockerfile` (one image; the command decides: `cicd-doctor api --host 0.0.0.0`, `cicd-doctor worker`, `alembic upgrade head`) and starts `db`, `migrate` (once), `api` (127.0.0.1:8000, healthcheck on `/ready`) and `worker`. The GitHub App key is a mounted file (`GITHUB_PRIVATE_KEY_FILE`), never in the image or in an environment value.
 
 The **dev GitHub App** points its webhook URL at the smee channel; the **prod GitHub App** points at the public HTTPS endpoint of the API in AWS (D-30, D-46).
 
@@ -1117,7 +1120,7 @@ The fake LLM adapter (`FakeLLM`) can script: valid responses, raw and malformed 
 - `pre-commit` (local hooks run through `uv run`): ruff (lint + format) and `pytest -m "unit or contract" -x -q` (memory adapters only, target < 30 s). A commit with a failing test is rejected. mypy is not part of pre-commit (D-42).
 - Claude Code hook (`.claude/settings.json` → `.claude/hooks/post_edit.py`): after each edit to a Python file or `pyproject.toml`, it runs `ruff check`, `ruff format --check` and the same fast tests, and reports failures back to Claude. It only checks and never rewrites files.
 - The `core/` import rule is a unit test (`tests/unit/test_architecture.py`), so it runs in all of the above (D-43).
-- CI (`.github/workflows/ci.yml`, on every push and pull request): three parallel jobs: lint (`ruff check`, `ruff format --check`), types (`mypy`, strict) and tests. The tests job runs a `pgvector/pgvector:0.8.7-pg17` service container, `uv run alembic upgrade head`, and then `pytest`, the whole suite (unit, contract, adapter, integration and e2e tests), with the `core/` coverage gate (`--cov=cicd_doctor.core --cov-fail-under=90`, since P1b). The offline evals gate is its own workflow, `.github/workflows/evals.yml` (P4, D-105): one job without Postgres and without secrets (it never calls OpenAI), `python -m evals check`, the summary and the report as an artifact, `timeout-minutes: 8`. It runs on `pull_request` and on `push` to `main` with `paths` (`core/`, `evals/`, `lab/cases.yaml`, `pyproject.toml`, `uv.lock`, the workflow), and by hand; it needs the baseline the owner accepts (P4 h). Added in a later phase: a Docker build (P5).
+- CI (`.github/workflows/ci.yml`, on every push and pull request): three parallel jobs: lint (`ruff check`, `ruff format --check`), types (`mypy`, strict) and tests. The tests job runs a `pgvector/pgvector:0.8.7-pg17` service container, `uv run alembic upgrade head`, and then `pytest`, the whole suite (unit, contract, adapter, integration and e2e tests), with the `core/` coverage gate (`--cov=cicd_doctor.core --cov-fail-under=90`, since P1b). The offline evals gate is its own workflow, `.github/workflows/evals.yml` (P4, D-105): one job without Postgres and without secrets (it never calls OpenAI), `python -m evals check`, the summary and the report as an artifact, `timeout-minutes: 8`. It runs on `pull_request` and on `push` to `main` with `paths` (`core/`, `evals/`, `lab/cases.yaml`, `pyproject.toml`, `uv.lock`, the workflow), and by hand; it needs the baseline the owner accepts (P4 h). Added in a later phase: a Docker build in CI (P5; the Dockerfile itself exists, D-119).
 - The dev app is installed on this repository, so CICD Doctor diagnoses its own CI failures.
 
 ---

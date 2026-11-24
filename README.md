@@ -69,6 +69,32 @@ If your `.env` is older than this README, check that `DATABASE_URL` uses `127.0.
 
 Stop the database with `docker compose down` (add `-v` to also delete its data).
 
+## Run with Docker
+
+One image runs the API, the worker and the migration (the command decides). The embedding model and
+the tiktoken vocabulary are baked in at build time, so a container starts without network access.
+
+```powershell
+Copy-Item .env.example .env                           # then set GITHUB_APP_ID and GITHUB_WEBHOOK_SECRET
+New-Item -ItemType Directory -Force docker/secrets | Out-Null
+Copy-Item <path-to-your-app-key>.pem docker/secrets/github-app.pem   # git-ignored; or set GITHUB_PRIVATE_KEY_FILE
+docker compose up --build                             # db, migrate (once), api and worker
+```
+
+The API listens on `http://127.0.0.1:8000` (`API_PORT` changes it) and the database stays on
+`127.0.0.1:5433`. Check it from a second terminal:
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8000/ready         # -> status: ready
+docker compose ps                                     # api shows (healthy), migrate exited 0
+```
+
+Without `GITHUB_APP_ID` or the key the worker logs which variable is missing and restarts, and the
+API answers 503 to webhooks until `GITHUB_WEBHOOK_SECRET` is set; `/health` and `/ready` still
+answer. The key is mounted as a file, never baked into the image or passed as a value.
+`docker compose up -d db` still starts only the database, for running the app with `uv run`.
+Stop everything with `docker compose down` (add `-v` to also delete the database).
+
 ## Eval results
 
 Rules against the LLM variants, from the last accepted baseline (`evals/baseline.json`). The

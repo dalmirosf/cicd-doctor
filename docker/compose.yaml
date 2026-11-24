@@ -1,12 +1,43 @@
-# Local development stack (SPEC §4.4, §4.6).
+# Local stack (SPEC §4.4, §4.6, D-119).
 #
-# Postgres is the only service: it is also the job queue (D-05, SKIP LOCKED), so there is no
-# Redis or broker. The API and worker run on the host with `uv run` until the Dockerfile
-# arrives in P5.
+# Postgres is also the job queue (D-05, SKIP LOCKED), so there is no Redis or broker.
+# `docker compose up --build` (from the repository root, where `.env` is read) starts db, then
+# migrate (runs once), then api (127.0.0.1:8000) and worker, all built from the one Dockerfile.
+# `docker compose up -d db` still starts the database alone, for the host workflow with `uv run`.
 #
-# Run from the repository root so that `.env` is picked up:  docker compose up -d db
-# Passwords below are development defaults; the port is bound to loopback only.
+# The containers get their settings from here, never from the image: DATABASE_URL points at the
+# `db` service (not at the host port), GITHUB_APP_ID and GITHUB_WEBHOOK_SECRET come from `.env`,
+# and the GitHub App private key is a mounted file (GITHUB_PRIVATE_KEY_FILE, default
+# docker/secrets/github-app.pem, git-ignored), never an environment value.
+# Without the credentials the worker refuses to start by design (D-74: it logs the missing variable and
+# restarts until `.env` is fixed) and POST /webhooks/github answers 503 without the webhook secret;
+# /health and /ready still answer, so the stack comes up and the logs say what is missing.
+# Passwords below are development defaults; the ports are bound to loopback only.
 name: cicd-doctor
+
+x-app: &app
+  build:
+    context: ..
+    dockerfile: Dockerfile
+  image: cicd-doctor:local
+  environment:
+    APP_ENV: ${APP_ENV:-dev}
+    DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-cicd}:${POSTGRES_PASSWORD:-cicd}@db:5432/${POSTGRES_DB:-cicd_doctor}
+    GITHUB_APP_ID: ${GITHUB_APP_ID:-}
+    GITHUB_PRIVATE_KEY: /run/secrets/github_app_key
+    GITHUB_WEBHOOK_SECRET: ${GITHUB_WEBHOOK_SECRET:-}
+    GITHUB_WEBHOOK_SECRET_PREVIOUS: ${GITHUB_WEBHOOK_SECRET_PREVIOUS:-}
+    LLM_ENABLED: ${LLM_ENABLED:-true}
+    OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    OPENAI_MODEL: ${OPENAI_MODEL:-}
+    LLM_PRICE_INPUT_PER_MTOK: ${LLM_PRICE_INPUT_PER_MTOK:-}
+    LLM_PRICE_OUTPUT_PER_MTOK: ${LLM_PRICE_OUTPUT_PER_MTOK:-}
+  secrets:
+    - github_app_key
+
+secrets:
+  github_app_key:
+    file: ${GITHUB_PRIVATE_KEY_FILE:-./secrets/github-app.pem}
 
 services:
   db:
@@ -28,6 +59,43 @@ services:
       timeout: 3s
       retries: 10
       start_period: 5s
+
+  migrate:
+    <<: *app
+    command: ["alembic", "upgrade", "head"]
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    <<: *app
+    command: ["cicd-doctor", "api", "--host", "0.0.0.0"]
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${API_PORT:-8000}:8000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      # python, not curl: the image has no curl.
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/ready', timeout=3)"
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 15s
+
+  worker:
+    <<: *app
+    command: ["cicd-doctor", "worker"]
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
 
 volumes:
   pgdata:
