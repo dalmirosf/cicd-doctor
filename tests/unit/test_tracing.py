@@ -4,6 +4,7 @@ break or delay a diagnosis. The Langfuse adapter runs against a fake SDK client:
 
 import dataclasses
 import json
+import logging
 import threading
 import time
 from collections.abc import Iterator
@@ -27,6 +28,7 @@ from cicd_doctor.adapters.observability.langfuse_tracer import (
 from cicd_doctor.app.container import make_tracer
 from cicd_doctor.app.settings import Settings
 from cicd_doctor.core.analysis import JobAnalysis
+from cicd_doctor.core.diagnosis import pipeline
 from cicd_doctor.core.diagnosis.cost import CostModel
 from cicd_doctor.core.diagnosis.pipeline import DiagnoseJob, DiagnosisContext
 from cicd_doctor.core.models import (
@@ -152,6 +154,19 @@ async def test_a_tracer_that_raises_does_not_touch_the_diagnosis(analysis: JobAn
 
     assert broken.published == plain.published
     assert broken.usage == plain.usage
+
+
+async def test_a_failing_tracer_is_warned_about_once_per_process(
+    analysis: JobAnalysis, caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(pipeline, "_tracer_failure_logged", False)
+    caplog.set_level(logging.WARNING)
+
+    for _ in range(3):
+        await make_job([valid()], ExplodingTracer()).run(analysis, CONTEXT)
+
+    warnings = [r.getMessage() for r in caplog.records if "the tracer failed" in r.getMessage()]
+    assert warnings == ["the tracer failed (record)"]
 
 
 # --- the Langfuse adapter, over a fake SDK client ---------------------------------------------

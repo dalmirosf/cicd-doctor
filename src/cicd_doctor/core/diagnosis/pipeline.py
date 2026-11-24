@@ -36,6 +36,7 @@ from cicd_doctor.core.policy import PolicyInput, decide
 from cicd_doctor.core.ports import LLMClient, Tracer, UsageLedger
 
 logger = logging.getLogger(__name__)
+_tracer_failure_logged = False
 
 Sleep = Callable[[float], Awaitable[None]]
 DEFAULT_BACKOFFS = (1.0, 4.0)  # seconds before the 2nd and the 3rd try of a call (SPEC §7.1, §8)
@@ -280,7 +281,10 @@ class DiagnoseJob:
                 )
             )
         except Exception:
-            logger.warning("the tracer failed (%s)", "record")
+            global _tracer_failure_logged
+            if not _tracer_failure_logged:  # once per process, not on every diagnosis
+                _tracer_failure_logged = True
+                logger.warning("the tracer failed (%s)", "record")
 
     @staticmethod
     def _fallback(
