@@ -139,8 +139,7 @@ aws logs tail /cicd-doctor/migrate --since 15m   # on a failure: the reason
 ```
 
 Exit code 0 means `alembic upgrade head` ran, including `CREATE EXTENSION vector`. Anything else: do not enable the
-services; read the log. (This needs the `DATABASE_URL` change of D-123 (6): until `Settings` builds the URL from `DB_HOST`
-and `DB_PASSWORD`, the migration fails at start with a missing setting.) The CD in PR f does exactly this with the new
+services; read the log. (`Settings` builds the database URL from `DB_HOST` and the other four parts, D-126.) The CD in PR f does exactly this with the new
 image before it updates the services.
 
 **3e. Services on.** Set `services_enabled = true` in `terraform.tfvars` and apply again: one `api` task and one `worker`
@@ -228,5 +227,4 @@ A new account may have credits or a free plan that covers part of this: look in 
 `execution_role_arn`, task role ARNs, `ecr_repository_url`, `db_host`, `db_port`, `db_name`, `db_username` and
 `db_master_secret_arn`. `persistent` outputs `secret_arns` keyed by environment variable, `deploy_role_arn` (the role
 `cd.yml` assumes by OIDC; not a secret) and `github_trusted_sub`. The containers get `DB_HOST`, `DB_PORT`, `DB_NAME`,
-`DB_USER` and `DB_PASSWORD` (from the RDS secret); the app wants one `DATABASE_URL`, and D-123 (6) records that
-`Settings` must build it before the live run.
+`DB_USER` and `DB_PASSWORD` (from the RDS secret); `Settings` builds the one database URL from them (D-126).
