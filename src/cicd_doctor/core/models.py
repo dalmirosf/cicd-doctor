@@ -531,6 +531,33 @@ class LLMResult(DomainModel):
     latency_ms: int
 
 
+TraceOutcome = Literal["ok", "repaired", "invalid", "error"]
+
+
+class LLMTrace(DomainModel):
+    """What the pipeline tells a ``Tracer`` about ONE real model call (D-118). Never built for a
+    cache hit, a policy fallback or a budget refusal: those make no call.
+
+    The texts are already redacted by the pipeline and the adapter redacts them again before
+    anything leaves the process. ``input_text`` is a summary of the prompt, not the prompt: the
+    head of the excerpt and counts of the rest (similar failures and the pull request diff are
+    third-party text and go in as counts only)."""
+
+    model: str | None  # None when the call failed before an answer
+    prompt_version: str
+    attempt: int  # 1, or 2 for the single repair call
+    outcome: TraceOutcome
+    input_text: str
+    output_text: str | None = None  # the model's raw JSON answer
+    input_tokens: int = 0
+    output_tokens: int = 0
+    cost_usd: Decimal = Decimal(0)
+    latency_ms: int | None = None
+    installation_id: int
+    error: str | None = None  # an error type name or the validation message
+    metadata: dict[str, str] = Field(default_factory=dict)
+
+
 # --- Reporter port types (P0 placeholders) ------------------------------------------------
 
 

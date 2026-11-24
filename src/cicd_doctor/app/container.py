@@ -33,6 +33,7 @@ from cicd_doctor.adapters.github.reporter import GitHubReporter
 from cicd_doctor.adapters.github.runs import GitHubRunSource
 from cicd_doctor.adapters.llm.openai_client import OpenAILLMClient, make_openai_client
 from cicd_doctor.adapters.llm.tiktoken_counter import TiktokenCounter
+from cicd_doctor.adapters.observability import NoopTracer
 from cicd_doctor.adapters.postgres.command_log import PostgresCommandLog
 from cicd_doctor.adapters.postgres.installations import PostgresInstallationStore
 from cicd_doctor.adapters.postgres.ledger import PostgresUsageLedger
@@ -45,7 +46,7 @@ from cicd_doctor.app.settings import Settings
 from cicd_doctor.core.diagnosis.cost import CostModel
 from cicd_doctor.core.diagnosis.pipeline import DiagnoseJob
 from cicd_doctor.core.models import Job, JobKind
-from cicd_doctor.core.ports import Clock, Embedder, InstallationStore, JobQueue, LLMClient
+from cicd_doctor.core.ports import Clock, Embedder, InstallationStore, JobQueue, LLMClient, Tracer
 from cicd_doctor.core.repo_config import CachedRepoConfig
 from cicd_doctor.core.usecases.diagnose_failed_run import DiagnoseConfig, DiagnoseFailedRun
 from cicd_doctor.core.usecases.explain_command import ExplainCommand
@@ -64,6 +65,9 @@ from cicd_doctor.worker.scheduler import Scheduler
 logger = logging.getLogger(__name__)
 
 __all__ = ["HTTP_LOGGERS", "configure_logging"]  # the tests of D-87 import them from here
+
+
+TRACER_CLOSE_TIMEOUT_S = 5.0  # the most a worker shutdown waits to send the pending traces
 
 
 def setup_logging() -> None:
@@ -161,6 +165,24 @@ def make_llm_client(settings: Settings) -> LLMClient | None:
         max_output_tokens=settings.llm_max_output_tokens,
         timeout_s=settings.llm_timeout_s,
     )
+
+
+def make_tracer(settings: Settings) -> Tracer:
+    """Langfuse only with a host and both keys (D-118); otherwise nothing is traced and nothing
+    else changes. Without the SDK client no thread is started."""
+    host, public, secret = (
+        settings.langfuse_host,
+        settings.langfuse_public_key,
+        settings.langfuse_secret_key,
+    )
+    if not (host and public and secret):
+        return NoopTracer()
+    from cicd_doctor.adapters.observability.langfuse_tracer import (
+        LangfuseTracer,
+        make_langfuse_client,
+    )
+
+    return LangfuseTracer(make_langfuse_client(host, public, secret))
 
 
 def cost_model(settings: Settings) -> CostModel:
@@ -298,6 +320,10 @@ async def worker_use_cases(
                 pool_size=consumers + 2,
             )
         )
+        tracer = make_tracer(settings)
+        stack.push_async_callback(
+            tracer.aclose, TRACER_CLOSE_TIMEOUT_S
+        )  # runs before the pools close
         reporter = GitHubReporter(http, auth, clock)
         config = diagnose_config(settings)
         repo_config = CachedRepoConfig(
@@ -328,6 +354,7 @@ async def worker_use_cases(
                 ledger=ledger,
                 cost=cost_model(settings),
                 max_output_tokens=settings.llm_max_output_tokens,
+                tracer=tracer,
             ),
             clock=clock,
             embedder=embedder,
