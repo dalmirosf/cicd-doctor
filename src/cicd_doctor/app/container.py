@@ -40,6 +40,7 @@ from cicd_doctor.adapters.postgres.queue import PostgresJobQueue
 from cicd_doctor.adapters.postgres.store import PostgresFailureStore
 from cicd_doctor.api.deps import ApiDependencies
 from cicd_doctor.api.main import create_app
+from cicd_doctor.app.logging_config import HTTP_LOGGERS, configure_logging
 from cicd_doctor.app.settings import Settings
 from cicd_doctor.core.diagnosis.cost import CostModel
 from cicd_doctor.core.diagnosis.pipeline import DiagnoseJob
@@ -62,21 +63,14 @@ from cicd_doctor.worker.scheduler import Scheduler
 
 logger = logging.getLogger(__name__)
 
-LOG_FORMAT = "%(asctime)s %(levelname)s %(name)s %(message)s"
+__all__ = ["HTTP_LOGGERS", "configure_logging"]  # the tests of D-87 import them from here
 
 
-# At INFO these print the URL of every request, and the URL of a log blob carries its signature
-# in the query (D-67). Their children (``httpcore2.http11`` and so on) inherit the level.
-# ``httpx``, ``httpcore`` and ``huggingface_hub`` are the ones of the embedding model download
-# (fastembed): public URLs today, but the worker should not print any request URL (D-87).
-HTTP_LOGGERS = ("httpx2", "httpcore2", "httpx", "httpcore", "huggingface_hub")
-
-
-def configure_logging() -> None:
-    """Plain-text logs on stderr until structlog arrives (D-32, D-49). Idempotent."""
-    logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
-    for name in HTTP_LOGGERS:
-        logging.getLogger(name).setLevel(logging.WARNING)
+def setup_logging() -> None:
+    """Logs on stderr, text or JSON by ``LOG_FORMAT`` (D-117). The settings are read here, before
+    anything else logs; a bad value fails at start-up with the name of the variable."""
+    settings = Settings()
+    configure_logging(settings.log_format, settings.log_level)
 
 
 # --- API ----------------------------------------------------------------------------------
@@ -109,7 +103,7 @@ async def api_dependencies() -> AsyncIterator[ApiDependencies]:
 
 def create_api() -> FastAPI:
     """uvicorn factory for ``cicd-doctor api`` (D-55)."""
-    configure_logging()
+    setup_logging()
     return create_app(api_dependencies)
 
 
@@ -403,7 +397,7 @@ async def run_worker(settings: Settings, stop: asyncio.Event) -> None:
 
 def serve_worker() -> None:
     """Entry point of ``cicd-doctor worker``. Stops cleanly on SIGTERM and Ctrl+C."""
-    configure_logging()
+    setup_logging()
     settings = Settings()
     try:
         _, key = require_github_app(settings)

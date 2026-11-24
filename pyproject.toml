@@ -16,6 +16,7 @@ dependencies = [
     "pyjwt[crypto]>=2.10",
     "pyyaml>=6.0.3",
     "sqlalchemy[asyncio]>=2.1.8",
+    "structlog>=26.1.0",
     "tiktoken>=0.14.0",
     "uvicorn>=0.32",
 ]

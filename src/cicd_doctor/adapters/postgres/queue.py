@@ -40,7 +40,7 @@ _MAX_SKIPPED_ROWS = 10  # unknown kinds failed in one lease call before giving u
 
 _JOB_COLUMNS = (
     "id, kind, payload, dedupe_key, status, attempts, max_attempts, run_after, locked_until, "
-    "locked_by, last_error"
+    "locked_by, last_error, delivery_id"
 )
 
 _INSERT_DELIVERY = text(
@@ -366,4 +366,5 @@ def _to_job(row: RowMapping) -> Job:
         locked_until=row["locked_until"],
         locked_by=row["locked_by"],
         last_error=row["last_error"],
+        delivery_id=row["delivery_id"],
     )
