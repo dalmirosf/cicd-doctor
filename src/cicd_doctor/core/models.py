@@ -667,6 +667,9 @@ class Job(DomainModel):
     locked_until: datetime | None
     locked_by: str | None
     last_error: str | None
+    # X-GitHub-Delivery of the webhook that created the job (None for jobs the app creates itself):
+    # it correlates the worker's log lines with the API's (P5, D-117).
+    delivery_id: UUID | None = None
 
 
 def outcome_dedupe_key(run_id: int, run_attempt: int) -> str:

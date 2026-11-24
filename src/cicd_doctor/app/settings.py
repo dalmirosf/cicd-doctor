@@ -23,6 +23,10 @@ class Settings(BaseSettings):
     )
 
     app_env: Literal["dev", "prod"] = "dev"
+    # Logs (D-117): ``json`` is one redacted object per line, for CloudWatch;
+    # ``text`` for a terminal.
+    log_format: Literal["json", "text"] = "text"
+    log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
     # SecretStr: the URL carries the database password, so it must not show up in a repr.
     database_url: SecretStr
 
