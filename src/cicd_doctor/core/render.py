@@ -93,6 +93,7 @@ _URL_TRAILING = ".,;:!?)]}'\""
 # They are matched anywhere, with no word-boundary conditions: over-matching only makes code.
 _REFERENCE = re.compile(r"(?:[\w.\-]+/[\w.\-]+)?#\d+|(?i:GH-\d+)")
 _ESCAPED = re.compile(r"([\\*_\[\]|~`])")
+_SCHEME_SEPARATOR = re.compile(r":(?=//)")
 _LEADING = re.compile(r"^(\s*)([#>+\-=]|\d+[.)])")  # heading, quote, list, setext underline
 _ASCII_NAME = re.compile(r"[^A-Za-z0-9._:/@+\- ]")
 _REPO = re.compile(r"[A-Za-z0-9._\-]+/[A-Za-z0-9._\-]+")
@@ -199,7 +200,11 @@ def _escape(text: str) -> str:
     ``&#64;user`` would otherwise render as ``@user`` and notify."""
     text = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
     text = text.replace("@", "@" + ZWJ)
-    return _ESCAPED.sub(r"\\\1", text)
+    text = _ESCAPED.sub(r"\\\1", text)
+    # "://" outside a URL the pass above already handled (a scheme must start with a letter, so
+    # `_://` is no URL): after the escape it reads `\_://`, and a reader that skips the escape
+    # sees `a://`, a bare URL. Escaping the colon breaks the sequence; it still shows as "://".
+    return _SCHEME_SEPARATOR.sub(r"\\:", text)
 
 
 def _escape_leading(text: str) -> str:

@@ -664,6 +664,16 @@ def test_no_workflow_name_makes_the_comment_unsafe(name: str) -> None:
     assert threats(render_comment(rep), document=True) == []
 
 
+@pytest.mark.parametrize("name", ["_://", "a://", "://x", "_:// ", "x_://y", "\\_://", "_://_://"])
+def test_a_scheme_separator_in_a_workflow_name_is_never_a_bare_url(name: str) -> None:
+    # Found by the fuzz test above: `_://` is no URL, but once escaped (`\_://`) a reader that
+    # skips the escape sees `a://`. Fixed in the renderer, not in the oracle.
+    rep = DiagnosisReport(run=make_run_ref(workflow_name=name), items=report().items)
+
+    assert threats(render_comment(rep), document=True) == []
+    assert threats(render_check(rep).summary, document=True) == []
+
+
 def test_a_cached_diagnosis_names_the_run_it_came_from_as_a_number() -> None:
     failure, cached = item(source="cache")
 

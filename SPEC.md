@@ -960,6 +960,7 @@ Evaluated in order; the first match decides:
 - Code spans and fences use a fence longer than the longest backtick run in the content.
 - `@mentions` are neutralized (`@` followed by a zero-width joiner), and `#123` references are wrapped in code.
 - URLs are rendered as inline code (not clickable) unless the host is on an allowlist (`github.com`, `docs.github.com`, `docs.python.org`, `pypi.org`, `docs.docker.com`, `registry.terraform.io`, `docs.aws.amazon.com`). Images are never rendered.
+- A `://` that is not part of a URL is escaped (`\://`), so no scheme-like text reaches the reader as a bare URL (D-127).
 - A second redaction pass runs, and each field is capped at its maximum length.
 - The text of the rules diagnosis is treated the same way: its templates fill in values captured from the log (D-64). Invisible and bidirectional characters are removed. The same renderer produces the check run and the comment, and a threat scanner written from CommonMark's rules is the test oracle (D-64).
 
