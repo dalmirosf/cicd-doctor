@@ -37,3 +37,35 @@ variable "ecr_tag_mutability" {
     error_message = "Use IMMUTABLE or MUTABLE."
   }
 }
+
+variable "github_owner" {
+  description = "GitHub user or organization that owns the repository whose workflow may deploy (D-123). No default: it is not a secret, but it is yours, so it goes in terraform.tfvars."
+  type        = string
+
+  validation {
+    condition     = can(regex("^[A-Za-z0-9-]+$", var.github_owner))
+    error_message = "A GitHub login: letters, digits and hyphens only (no wildcard)."
+  }
+}
+
+variable "github_repo" {
+  description = "Repository name whose workflow may deploy (D-123)."
+  type        = string
+  default     = "cicd-doctor"
+
+  validation {
+    condition     = can(regex("^[A-Za-z0-9._-]+$", var.github_repo))
+    error_message = "A repository name: letters, digits, dot, underscore and hyphen only (no wildcard)."
+  }
+}
+
+variable "github_deploy_branch" {
+  description = "The one branch whose workflow runs may assume the deploy role (D-123)."
+  type        = string
+  default     = "main"
+
+  validation {
+    condition     = can(regex("^[A-Za-z0-9._/-]+$", var.github_deploy_branch))
+    error_message = "A branch name: no wildcard."
+  }
+}

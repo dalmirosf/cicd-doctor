@@ -32,3 +32,17 @@ output "log_group_prefix" {
   description = "The ephemeral layer creates its log groups under this prefix; the execution role may write only there."
   value       = local.log_group_prefix
 }
+
+output "deploy_role_arn" {
+  description = "Role the CD workflow assumes with OIDC (PR f). An ARN is not a secret: set it as a repository variable."
+  value       = aws_iam_role.deploy.arn
+}
+
+output "oidc_provider_arn" {
+  value = aws_iam_openid_connect_provider.github.arn
+}
+
+output "github_trusted_sub" {
+  description = "The one OIDC subject the deploy role trusts."
+  value       = local.github_sub
+}
