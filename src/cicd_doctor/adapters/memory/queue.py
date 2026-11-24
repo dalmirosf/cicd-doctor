@@ -61,6 +61,7 @@ class InMemoryJobQueue:
             locked_until=None,
             locked_by=None,
             last_error=None,
+            delivery_id=delivery.delivery_id if delivery else None,
         )
         self._updated_at[job_id] = self._clock.now()
         self._wakeup.notify_all()

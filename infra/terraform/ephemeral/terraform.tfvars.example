@@ -1,0 +1,6 @@
+# Copy to terraform.tfvars (git-ignored) only to change a default. No secrets here, ever.
+# aws_region             = "us-east-2"
+# name_prefix        = "cicd-doctor"
+# log_retention_days = 3
+# db_engine_version  = "17.11"
+# db_instance_class  = "db.t4g.micro"

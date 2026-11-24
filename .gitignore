@@ -32,3 +32,22 @@ Thumbs.db
 
 # --- Test tools ---
 .hypothesis/
+
+# --- Terraform: never commit state, plans, variable values or provider binaries ---
+*.tfstate
+*.tfstate.*
+.terraform/
+crash.log
+crash.*.log
+*.tfvars
+*.tfvars.json
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+*.tfplan
+!.terraform.lock.hcl
+!*.tfvars.example
+
+# Backend settings hold a bucket name tied to the account: keep them local (the .example is tracked)
+backend.hcl

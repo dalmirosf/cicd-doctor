@@ -369,3 +369,16 @@ async def test_a_purged_dedupe_key_can_be_enqueued_again(harness: Harness) -> No
     await harness.queue.purge(now - 30 * DAY, now - 30 * DAY)
 
     assert await harness.queue.enqueue(job, None) is True
+
+
+async def test_a_leased_job_carries_the_delivery_that_created_it(harness: Harness) -> None:
+    """The delivery id travels from the webhook to the worker's log lines (D-117)."""
+    h = harness
+    created = delivery()
+    assert await h.queue.enqueue(new_job(), created)
+    assert await h.queue.enqueue(new_job(dedupe_key="own"), None)
+
+    first, second = await lease(h), await lease(h)
+
+    assert (first.delivery_id, second.delivery_id) == (created.delivery_id, None)
+    assert (await stored(h, first)).delivery_id == created.delivery_id

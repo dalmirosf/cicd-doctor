@@ -14,10 +14,10 @@ in this order, and nothing is written before the last one:
 
 import asyncio
 import json
-import logging
-from typing import Literal
+from typing import Any, Literal
 from uuid import UUID
 
+import structlog
 from fastapi import APIRouter, Request, Response
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -28,11 +28,12 @@ from cicd_doctor.adapters.github.webhooks import (
     route_event,
     verify_signature,
 )
+from cicd_doctor.adapters.structured_log import get_logger
 from cicd_doctor.api.deps import get_dependencies
 from cicd_doctor.core.errors import TransientError
 from cicd_doctor.core.models import Delivery
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 MAX_BODY_BYTES = 25 * 1024 * 1024  # SPEC §4.4
 
@@ -65,6 +66,29 @@ def _error(code: int, detail: str) -> JSONResponse:
     },
 )
 async def github_webhook(request: Request) -> Response:
+    try:
+        return await _handle(request)
+    finally:
+        # The correlation fields (D-117) belong to this request and to nothing after it.
+        structlog.contextvars.clear_contextvars()
+
+
+def _correlation(payload: dict[str, Any]) -> dict[str, Any]:
+    """The ids of a verified payload worth a log field: only ints and the repository name."""
+    fields: dict[str, Any] = {}
+    installation = payload.get("installation")
+    if isinstance(installation, dict) and type(installation.get("id")) is int:
+        fields["installation_id"] = installation["id"]
+    repository = payload.get("repository")
+    if isinstance(repository, dict) and isinstance(repository.get("full_name"), str):
+        fields["repository"] = repository["full_name"]
+    run = payload.get("workflow_run")
+    if isinstance(run, dict) and type(run.get("id")) is int:
+        fields["run_id"] = run["id"]
+    return fields
+
+
+async def _handle(request: Request) -> Response:
     deps = get_dependencies(request)
 
     declared = request.headers.get("content-length")
@@ -97,9 +121,13 @@ async def github_webhook(request: Request) -> Response:
         return _error(400, "body is not a JSON object")
     action = payload.get("action") if isinstance(payload.get("action"), str) else None
     label = f"{event}.{action}" if action else event
+    # Only a verified request reaches this point: nothing before it is bound or logged.
+    structlog.contextvars.bind_contextvars(
+        delivery_id=str(delivery_id), github_event=label, **_correlation(payload)
+    )
 
     if event == "ping":
-        logger.info("webhook %s %s: pong", delivery_id, label)
+        logger.info("webhook pong")
         return _status("pong", 200)
 
     try:
@@ -107,10 +135,10 @@ async def github_webhook(request: Request) -> Response:
             event, payload, received_at=deps.clock.now(), max_attempts=deps.max_attempts
         )
     except InvalidPayloadError as exc:
-        logger.warning("webhook %s %s rejected: %s", delivery_id, label, exc)
+        logger.warning("webhook rejected", reason=str(exc))
         return _error(400, str(exc))
     if job is None:
-        logger.info("webhook %s %s: not handled", delivery_id, label)
+        logger.info("webhook not handled")
         return Response(status_code=204)
 
     delivery = Delivery(
@@ -124,12 +152,12 @@ async def github_webhook(request: Request) -> Response:
             created = await deps.queue.enqueue(job, delivery)
     except (TransientError, TimeoutError) as exc:
         # If the commit went through after all, a redelivery is a harmless duplicate (D-06).
-        logger.error("webhook %s %s not stored: %s", delivery_id, label, type(exc).__name__)
+        logger.error("webhook not stored", error=type(exc).__name__)
         return _error(503, "database unavailable, redeliver later")
     if not created:
-        logger.info("webhook %s %s: duplicate", delivery_id, label)
+        logger.info("webhook duplicate")
         return _status("duplicate", 200)
-    logger.info("webhook %s %s: enqueued %s", delivery_id, label, job.kind)
+    logger.info("webhook enqueued", job_kind=str(job.kind))
     return _status("accepted", 202)
 
 
