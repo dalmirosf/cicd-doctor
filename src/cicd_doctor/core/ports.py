@@ -24,6 +24,7 @@ from cicd_doctor.core.models import (
     Job,
     JobRef,
     LLMResult,
+    LLMTrace,
     LoadedConfig,
     NewJob,
     Publication,
@@ -222,6 +223,17 @@ class FailureStore(Protocol):
 class LLMClient(Protocol):
     async def diagnose(self, request: DiagnosisRequest) -> LLMResult:
         """Raw JSON + usage + latency; validation happens in core."""
+        ...
+
+
+class Tracer(Protocol):
+    """Records one trace per model call for the owner to inspect (D-118). Observability only:
+    ``record`` must return at once and never raise, and nothing in a diagnosis depends on it."""
+
+    def record(self, trace: LLMTrace) -> None: ...
+
+    async def aclose(self, timeout_s: float) -> None:
+        """Send what is pending, waiting at most ``timeout_s`` seconds, then stop."""
         ...
 
 

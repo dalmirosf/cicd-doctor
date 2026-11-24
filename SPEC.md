@@ -80,7 +80,7 @@ Each requirement is delivered in the phase noted in brackets (see §13).
 | NFR-07 | Security: logs are untrusted input; prompt-injection attack success rate on the injection suite is 0. | Eval injection suite (§11). |
 | NFR-08 | Portability: full local workflow works on Windows 11 + PowerShell (uv, Docker Desktop, Node only for `npx smee-client`). No bash-only scripts are required. LF line endings enforced by `.gitattributes`. | P0 acceptance on Windows. |
 | NFR-09 | Maintainability: `core/` line coverage ≥ 90% (gate added in P1, when `core/` has logic); `mypy --strict` clean; ruff clean; architecture test (core never imports adapters, app, api, worker or framework/IO libraries, D-43). | CI. |
-| NFR-10 | Observability: JSON structured logs (`LOG_FORMAT=json`, structlog over the stdlib, redacted; D-117) correlated by `delivery_id`, `job_id`, `run_id`, `installation_id`, `repository` (the delivery id travels from the webhook into the job, so the worker's lines carry it too); LLM traces in Langfuse (P5) containing only redacted text. | P5 acceptance. |
+| NFR-10 | Observability: JSON structured logs (`LOG_FORMAT=json`, structlog over the stdlib, redacted; D-117) correlated by `delivery_id`, `job_id`, `run_id`, `installation_id`, `repository` (the delivery id travels from the webhook into the job, so the worker's lines carry it too); one Langfuse trace per real LLM call (`Tracer` port, `LangfuseTracer`; D-118) with model, prompt version, tokens, cost, latency and outcome, containing only redacted and capped text, and never able to break or delay a diagnosis. | P5 acceptance. |
 | NFR-11 | Capacity target: ≤ 100 installations, ≤ 1,000 diagnoses/day. Beyond that, revisit the queue (D-05). | Documented limit. |
 | NFR-12 | Resilience: an LLM outage never prevents a diagnosis from being published (rules fallback). A GitHub outage delays but does not lose work (retries). | Fault-injection tests. |
 
@@ -305,7 +305,7 @@ Settings come from the environment (`pydantic-settings` in `app/settings.py`; `.
 | `CONFIG_TTL_S` / `CONFIG_MISSING_TTL_S` | `300` / `60` | Seconds the `.github/cicd-doctor.yml` of a repository is remembered in the process; the second applies to a missing or unreadable file (P3, D-90) |
 | `SIMILAR_USE_HNSW` | `false` | P2. The similarity search is exact per repository; `true` uses the HNSW index with iterative scans (pgvector ≥ 0.8) for a repository of tens of thousands of rows (D-79) |
 | `WORKER_CONCURRENCY` / `JOB_LEASE_S` / `JOB_MAX_ATTEMPTS` | `4` / `300` / `5` | |
-| `LANGFUSE_*` | unset | P5; tracing disabled when unset |
+| `LANGFUSE_HOST` / `LANGFUSE_PUBLIC_KEY` / `LANGFUSE_SECRET_KEY` | unset | P5 (D-118). Langfuse tracing needs all three; with any missing the `NoopTracer` is used and nothing changes |
 
 ### 4.6 Local development (Windows, PowerShell)
 
