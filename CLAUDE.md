@@ -75,6 +75,7 @@ uv run python -m evals capture --repo <owner>/cicd-doctor-lab --all   # lab runs
 - `core/` never imports from `adapters`, `api` or `worker` (nor from `app`, nor IO/framework libraries such as fastapi, httpx, httpx2, jwt, cryptography, sqlalchemy, psycopg, alembic, openai or tiktoken). `tests/unit/test_architecture.py` enforces it.
 - Ports in `core/ports.py`: `LogSource`, `TokenCounter`, `Embedder`, `FailureStore`, `LLMClient`, `Reporter`, `PullRequestSource`, `RunSource`, `JobQueue`, `InstallationStore`, `RepoConfigSource`, `UsageLedger`, `CommandLog`, `Clock`.
 - A run attempt is analysed once: `FailureStore.save_run_analysis` stores the run, the attempt, the failures and their diagnoses in one transaction (the checkpoint, first writer wins) and `run_analysis` rebuilds it; failure ids are `failure_id_for(run_id, attempt, job_id)`; `publication_lock(key)` serialises whoever writes one check or comment (D-69, D-70). The contract suites for `FailureStore` (except `similar`) and `UsageLedger` run on memory and on Postgres.
+- `Settings.database_url` is the only database value the code reads: it is `DATABASE_URL` or, when that is unset, built from `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` (D-126; the AWS tasks use the parts).
 - Async psycopg needs a selector event loop on Windows, and `DATABASE_URL` must use `127.0.0.1`, not `localhost` (D-52).
 
 ## Branches and worktrees
