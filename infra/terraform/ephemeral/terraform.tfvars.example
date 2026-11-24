@@ -4,3 +4,13 @@
 # log_retention_days = 3
 # db_engine_version  = "17.11"
 # db_instance_class  = "db.t4g.micro"
+
+# Required (not secrets):
+# image_tag     = "<git sha of an image already pushed to ECR>"
+# github_app_id = "<App ID of the production GitHub App>"
+# Optional:
+# openai_model              = "<model id>"
+# llm_price_input_per_mtok  = "<usd>"
+# llm_price_output_per_mtok = "<usd>"
+# Second apply, after the migration succeeded:
+# services_enabled = true

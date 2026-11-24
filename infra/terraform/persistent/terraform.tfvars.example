@@ -3,3 +3,8 @@
 # name_prefix                 = "cicd-doctor"
 # secret_recovery_window_days = 7
 # ecr_images_to_keep          = 3
+
+# Required (not secret): the GitHub login that owns the repository the CD deploys from (D-123).
+# github_owner         = "<your-github-login>"
+# github_repo          = "cicd-doctor"
+# github_deploy_branch = "main"
