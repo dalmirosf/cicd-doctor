@@ -11,7 +11,6 @@ Error handling follows SPEC §8 and D-23, with the details of D-49:
 """
 
 import asyncio
-import logging
 import os
 import random
 import socket
@@ -20,13 +19,16 @@ from contextlib import suppress
 from datetime import timedelta
 from typing import Any
 
+import structlog
+
+from cicd_doctor.adapters.structured_log import get_logger
 from cicd_doctor.core.errors import PermanentError, TransientError
 from cicd_doctor.core.models import Job, JobKind
 from cicd_doctor.core.ports import Clock, JobQueue
 from cicd_doctor.core.redaction import redact
 from cicd_doctor.core.retry import backoff_delay
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 Handler = Callable[[Job], Coroutine[Any, Any, None]]
 
@@ -76,7 +78,7 @@ class Worker:
             )
             for index in range(self._concurrency)
         ]
-        logger.info("worker %s started with %d consumers", self.name, self._concurrency)
+        logger.info("worker started", worker=self.name, consumers=self._concurrency)
         try:
             await stop.wait()
         finally:
@@ -85,7 +87,7 @@ class Worker:
             for task in pending:
                 task.cancel()
             await asyncio.gather(*consumers, return_exceptions=True)
-            logger.info("worker %s stopped", self.name)
+            logger.info("worker stopped", worker=self.name)
 
     async def run_one(self, consumer_id: str) -> bool:
         """Lease one job and run it to an outcome. Return False when nothing was ready."""
@@ -104,7 +106,7 @@ class Worker:
             except Exception:
                 # The queue itself failed (for example the database is down): keep the consumer
                 # alive and try again after a poll interval.
-                logger.exception("consumer %s could not use the queue", consumer_id)
+                logger.exception("consumer could not use the queue", consumer=consumer_id)
                 processed = False
             if not processed:
                 await self._idle(stop)
@@ -121,29 +123,35 @@ class Worker:
             await asyncio.gather(wake, stopped, return_exceptions=True)
 
     async def _execute(self, job: Job) -> None:
+        # Everything logged while the job runs, by the handler, the use case and the adapters,
+        # carries its correlation fields (D-117); the handler's task copies this context.
+        with structlog.contextvars.bound_contextvars(**job_context(job)):
+            await self._execute_bound(job)
+
+    async def _execute_bound(self, job: Job) -> None:
         handler = self._handlers.get(job.kind)
         if handler is None:
             await self._queue.fail(job, f"no handler registered for kind {job.kind}", dead=False)
-            logger.error("job %s (%s) failed: no handler registered", job.id, job.kind)
+            logger.error("job failed: no handler registered")
             return
-        logger.info("job %s (%s) started, attempt %d", job.id, job.kind, job.attempts)
+        logger.info("job started", attempt=job.attempts)
         try:
             await self._run_with_heartbeat(job, handler)
         except LeaseLostError:
-            logger.warning("job %s (%s): lease lost, another worker owns it", job.id, job.kind)
+            logger.warning("job lease lost, another worker owns it")
         except PermanentError as exc:
             await self._record(self._queue.fail(job, _describe(exc), dead=False), job)
-            logger.error("job %s (%s) failed: %s", job.id, job.kind, _describe(exc))
+            logger.error("job failed", error=_describe(exc))
         except TransientError as exc:
             await self._retry_or_bury(job, exc, exc.retry_after)
         except Exception as exc:
             # Unknown errors are retried like transient ones, so no work is lost; a real bug ends
             # up dead after max_attempts, logged at ERROR (D-49).
-            logger.exception("job %s (%s) raised an unexpected error", job.id, job.kind)
+            logger.exception("job raised an unexpected error")
             await self._retry_or_bury(job, exc, None)
         else:
             await self._record(self._queue.complete(job), job)
-            logger.info("job %s (%s) done", job.id, job.kind)
+            logger.info("job done")
 
     async def _run_with_heartbeat(self, job: Job, handler: Handler) -> None:
         task = asyncio.create_task(handler(job), name=f"job-{job.id}")
@@ -157,9 +165,7 @@ class Worker:
                 try:
                     still_ours = await self._queue.heartbeat(job, self._lease)
                 except Exception:
-                    logger.warning(
-                        "job %s: heartbeat failed, will try again", job.id, exc_info=True
-                    )
+                    logger.warning("job heartbeat failed, will try again", exc_info=True)
                     continue
                 if not still_ours:
                     task.cancel()
@@ -176,9 +182,7 @@ class Worker:
         error = _describe(exc)
         if job.attempts >= job.max_attempts:
             await self._record(self._queue.fail(job, error, dead=True), job)
-            logger.error(
-                "job %s (%s) is dead after %d attempts: %s", job.id, job.kind, job.attempts, error
-            )
+            logger.error("job is dead", attempts=job.attempts, error=error)
             return
         delay = (
             retry_after if retry_after is not None else backoff_delay(job.attempts, self._jitter())
@@ -186,18 +190,34 @@ class Worker:
         run_after = self._clock.now() + delay
         await self._record(self._queue.retry(job, run_after, error), job)
         logger.warning(
-            "job %s (%s) attempt %d failed, retrying at %s: %s",
-            job.id,
-            job.kind,
-            job.attempts,
-            run_after.isoformat(),
-            error,
+            "job attempt failed, retrying",
+            attempt=job.attempts,
+            retry_at=run_after.isoformat(),
+            error=error,
         )
 
     @staticmethod
     async def _record(outcome: Awaitable[bool], job: Job) -> None:
         if not await outcome:
-            logger.warning("job %s: outcome not recorded, the lease was no longer ours", job.id)
+            logger.warning("job outcome not recorded, the lease was no longer ours")
+
+
+def job_context(job: Job) -> dict[str, Any]:
+    """The correlation fields of a job (D-117): its ids, the delivery that created it, and the
+    ids of the run it is about, read from the normalised payload. Only ints and the repository
+    name are taken: nothing else of the payload is ever logged."""
+    fields: dict[str, Any] = {"job_id": job.id, "job_kind": str(job.kind)}
+    if job.delivery_id is not None:
+        fields["delivery_id"] = str(job.delivery_id)
+    payload = job.payload
+    run = payload.get("run")
+    source = run if isinstance(run, dict) else payload
+    for key, name in (("installation_id", "installation_id"), ("run_id", "run_id")):
+        if type(source.get(key)) is int:
+            fields[name] = source[key]
+    if isinstance(source.get("repo_full_name"), str):
+        fields["repository"] = source["repo_full_name"]
+    return fields
 
 
 def _describe(exc: BaseException) -> str:
