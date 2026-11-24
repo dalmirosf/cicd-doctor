@@ -280,7 +280,7 @@ Settings come from the environment (`pydantic-settings` in `app/settings.py`; `.
 | `LOG_FORMAT`, `LOG_LEVEL` | `text`, `INFO` | `json` writes one redacted JSON object per line on stderr, with the correlation fields (D-117); the container sets `json` |
 | `GITHUB_APP_ID`, `GITHUB_PRIVATE_KEY` | — | PEM content (real newlines or a one-line value with `\n`) or a file path. The app id is the JWT `iss` (D-68) |
 | `GITHUB_WEBHOOK_SECRET`, `GITHUB_WEBHOOK_SECRET_PREVIOUS` | — | Previous secret only during rotation |
-| `DATABASE_URL` | — | Required. `postgresql+psycopg://…` (`.env.example` points at the Compose database on `127.0.0.1:5433`, D-52) |
+| `DATABASE_URL` | — | `postgresql+psycopg://…` (`.env.example` points at the Compose database on `127.0.0.1:5433`, D-52). Required unless `DB_HOST`, `DB_PORT` (5432), `DB_NAME`, `DB_USER`, `DB_PASSWORD` are set, from which the URL is built; `DATABASE_URL` wins (D-126) |
 | `TEST_DATABASE_URL` | `DATABASE_URL` + `_test` | Tests only, not a setting (D-51) |
 | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_PORT` | `cicd`, `cicd`, `cicd_doctor`, `5433` | Read only by Docker Compose (D-38, D-41); development defaults, bound to loopback |
 | `LLM_ENABLED` | `true` | Global kill switch; `false` = rules only |

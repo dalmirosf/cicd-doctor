@@ -1,13 +1,16 @@
 from decimal import Decimal
 from pathlib import Path
+from urllib.parse import quote
 
 import pytest
 from pydantic import ValidationError
+from sqlalchemy.engine import make_url
 
 from cicd_doctor.app.settings import Settings
 
 ENV_EXAMPLE = Path(__file__).resolve().parents[2] / ".env.example"
 COMPOSE_ONLY = {"POSTGRES_USER", "POSTGRES_PASSWORD", "POSTGRES_DB", "POSTGRES_PORT"}
+DB_PARTS = {"DB_HOST", "DB_PORT", "DB_NAME", "DB_USER", "DB_PASSWORD"}  # commented in .env.example
 URL = "postgresql+psycopg://user:pw-not-real@localhost:5433/db"
 
 
@@ -94,7 +97,7 @@ def test_worker_limits_are_validated(
 def test_env_example_lists_exactly_the_settings_and_compose_variables() -> None:
     fields = {name.upper() for name in Settings.model_fields}
 
-    assert _example_keys() == fields | COMPOSE_ONLY
+    assert _example_keys() == fields - DB_PARTS | COMPOSE_ONLY
 
 
 def test_env_example_is_a_valid_configuration() -> None:
@@ -138,3 +141,81 @@ def test_suggestions_default_to_three_per_attempt_and_zero_turns_them_off(
     monkeypatch.setenv("EXPLAIN_MAX_SUGGESTIONS", "-1")
     with pytest.raises(ValidationError):
         Settings(_env_file=None)
+
+
+NASTY = "p@ss:w/o%rd#1?x y&=+é"
+
+
+def _parts(monkeypatch: pytest.MonkeyPatch, **extra: str) -> None:
+    values = {
+        "DB_HOST": "db.internal",
+        "DB_NAME": "cicd_doctor",
+        "DB_USER": "cicd",
+        "DB_PASSWORD": NASTY,
+    }
+    for key, value in {**values, **extra}.items():
+        monkeypatch.setenv(key, value)
+
+
+def test_database_url_wins_over_the_parts(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("DATABASE_URL", URL)
+    _parts(monkeypatch)
+
+    assert Settings(_env_file=None).database_url.get_secret_value() == URL
+
+
+def test_parts_build_the_url_and_the_password_round_trips(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _parts(monkeypatch)
+
+    url = make_url(Settings(_env_file=None).database_url.get_secret_value())
+
+    assert url.drivername == "postgresql+psycopg"
+    assert (url.host, url.port, url.database, url.username) == (
+        "db.internal",
+        5432,
+        "cicd_doctor",
+        "cicd",
+    )
+    assert url.password == NASTY
+
+
+def test_parts_accept_a_port(monkeypatch: pytest.MonkeyPatch) -> None:
+    _parts(monkeypatch, DB_PORT="6543")
+
+    url = make_url(Settings(_env_file=None).database_url.get_secret_value())
+
+    assert url.port == 6543
+
+
+@pytest.mark.parametrize("missing", ["DB_NAME", "DB_USER", "DB_PASSWORD"])
+def test_incomplete_parts_fail_without_the_password(
+    monkeypatch: pytest.MonkeyPatch, missing: str
+) -> None:
+    _parts(monkeypatch)
+    monkeypatch.delenv(missing)
+
+    with pytest.raises(ValidationError, match=missing) as error:
+        Settings(_env_file=None)
+
+    assert NASTY not in str(error.value)
+
+
+def test_no_database_error_names_both_options(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("DB_PASSWORD", NASTY)  # a stray part alone is not enough
+
+    with pytest.raises(ValidationError, match=r"DATABASE_URL.*DB_HOST") as error:
+        Settings(_env_file=None)
+
+    assert NASTY not in str(error.value)
+
+
+def test_repr_hides_the_assembled_password(monkeypatch: pytest.MonkeyPatch) -> None:
+    _parts(monkeypatch)
+    settings = Settings(_env_file=None)
+
+    shown = repr(settings) + str(settings)
+
+    assert NASTY not in shown
+    assert quote(NASTY, safe="") not in shown

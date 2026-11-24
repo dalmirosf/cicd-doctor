@@ -7,10 +7,11 @@ the example file can list optional variables without giving them a value.
 
 from decimal import Decimal
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
-from pydantic import Field, SecretStr
+from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from sqlalchemy.engine import URL
 
 
 class Settings(BaseSettings):
@@ -20,6 +21,7 @@ class Settings(BaseSettings):
         env_ignore_empty=True,
         extra="ignore",  # POSTGRES_* and anything else in the environment
         frozen=True,
+        hide_input_in_errors=True,  # a validation error must never echo DB_PASSWORD
     )
 
     app_env: Literal["dev", "prod"] = "dev"
@@ -28,7 +30,45 @@ class Settings(BaseSettings):
     log_format: Literal["json", "text"] = "text"
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
     # SecretStr: the URL carries the database password, so it must not show up in a repr.
+    # Either DATABASE_URL (it always wins) or the DB_* parts (D-126), from which the URL is
+    # built; ``database_url`` is the only value the rest of the code reads.
     database_url: SecretStr
+    db_host: str | None = None
+    db_port: int = Field(default=5432, ge=1, le=65535)
+    db_name: str | None = None
+    db_user: str | None = None
+    db_password: SecretStr | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def _assemble_database_url(cls, data: Any) -> Any:
+        if not isinstance(data, dict) or data.get("database_url"):
+            return data
+        host = data.get("db_host")
+        if not host:
+            raise ValueError(
+                "no database configured: set DATABASE_URL, or DB_HOST (with DB_NAME, DB_USER, "
+                "DB_PASSWORD and optionally DB_PORT) for database_url"
+            )
+        missing = [k.upper() for k in ("db_name", "db_user", "db_password") if not data.get(k)]
+        if missing:
+            raise ValueError(f"DB_HOST is set but {', '.join(missing)} is missing (database_url)")
+        password = data["db_password"]
+        if isinstance(password, SecretStr):
+            password = password.get_secret_value()
+        try:
+            port = int(data.get("db_port") or 5432)
+        except (TypeError, ValueError):
+            raise ValueError("DB_PORT must be a number (database_url)") from None
+        url = URL.create(
+            "postgresql+psycopg",
+            username=data["db_user"],
+            password=password,
+            host=host,
+            port=port,
+            database=data["db_name"],
+        )
+        return {**data, "database_url": url.render_as_string(hide_password=False)}
 
     # GitHub App (D-30). Required from P1c, when the GitHub adapter starts using them.
     github_app_id: int | None = None
