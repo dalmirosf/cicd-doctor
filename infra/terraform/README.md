@@ -102,7 +102,7 @@ aws secretsmanager put-secret-value --secret-id cicd-doctor/github-app-private-k
 
 A task whose secret has no value does not start, so load all five before the services are enabled (3e). The API task reads only the webhook secret; the worker reads all five.
 
-Owner, once: protect `main` in GitHub (pull request and review required, no direct pushes, no force pushes). The deploy role is trusted for every run on `main`, so this is what stands between a push and the application secrets (D-123). `cd.yml` must trigger on `push` to `main` only, and no workflow may combine `pull_request_target` with `id-token: write`.
+Owner, once: protect `main` in GitHub (pull request and review required, no direct pushes, no force pushes). The deploy role is trusted for every run on `main`, so this is what stands between a push and the application secrets (D-123). `cd.yml` (D-128) triggers on `push` to `main` only, and no workflow may combine `pull_request_target` with `id-token: write`.
 
 **3b. An image in ECR.** The first `apply` of the ephemeral layer needs `image_tag`, and the migration needs the image to
 exist. Push it with the CD (PR f) or by hand from a clone at the commit you want to run:
@@ -228,3 +228,16 @@ A new account may have credits or a free plan that covers part of this: look in 
 `db_master_secret_arn`. `persistent` outputs `secret_arns` keyed by environment variable, `deploy_role_arn` (the role
 `cd.yml` assumes by OIDC; not a secret) and `github_trusted_sub`. The containers get `DB_HOST`, `DB_PORT`, `DB_NAME`,
 `DB_USER` and `DB_PASSWORD` (from the RDS secret); `Settings` builds the one database URL from them (D-126).
+
+## CD (`.github/workflows/cd.yml`, D-128)
+
+On every push to `main` the workflow builds the image, pushes it as `cicd-doctor:<commit sha>` (the repository is
+immutable: no `latest`) and, **if the ephemeral layer is up**, registers new task definition revisions with that image,
+runs the migration task (it must exit 0), then updates `api` and `worker` and waits for them to be stable. If the cluster
+is down it ends green with a notice after the push. It uses no AWS key: the job asks GitHub for an OIDC token and assumes
+the deploy role.
+
+Owner, once, after `persistent` is applied: in the repository settings, **Settings > Secrets and variables > Actions >
+Variables**, create `AWS_DEPLOY_ROLE_ARN` (the output `deploy_role_arn`) and, only if the region is not `us-east-2`,
+`AWS_REGION`. They are variables, not secrets: neither is sensitive. A first run with the variable missing fails at once
+with a message. The deploy role's permissions are in `persistent/oidc.tf` and the workflow uses nothing else.

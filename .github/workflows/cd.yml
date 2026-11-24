@@ -1,0 +1,180 @@
+name: CD
+
+# Build, push, migrate and roll out (SPEC §13 P5, D-128). Runs ONLY on a push to main (and by hand
+# from main): the deploy role trusts `repo:<owner>/<repo>:ref:refs/heads/main` and nothing else
+# (D-123). Never add `pull_request` or `pull_request_target` here: the second one would run with
+# main's identity and could ask for the token. No AWS key exists: the job trades its OIDC token for a
+# one-hour role session.
+#
+# Repository VARIABLES (not secrets; the owner sets them from the `persistent` layer):
+#   AWS_DEPLOY_ROLE_ARN   output `deploy_role_arn`
+#   AWS_REGION            default us-east-2 (D-121)
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Two deploys never overlap, and a running one is never cancelled halfway (a migration in flight).
+concurrency:
+  group: cd
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION || 'us-east-2' }}
+  # `name_prefix` of the Terraform layers: the ECR repository and the cluster have this name (D-125).
+  ECR_REPOSITORY: cicd-doctor
+  CLUSTER: cicd-doctor
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    permissions:
+      contents: read
+      id-token: write # the only job that may ask for an OIDC token
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Check the configuration
+        env:
+          ROLE_ARN: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+        run: |
+          if [ -z "$ROLE_ARN" ]; then
+            echo "::error::The repository variable AWS_DEPLOY_ROLE_ARN is not set (output deploy_role_arn of infra/terraform/persistent)."
+            exit 1
+          fi
+
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: cicd-doctor-cd-${{ github.run_id }}
+
+      - name: Log in to ECR
+        id: ecr
+        run: |
+          set -euo pipefail
+          account="$(aws sts get-caller-identity --query Account --output text)"
+          registry="${account}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+          aws ecr get-login-password | docker login --username AWS --password-stdin "$registry"
+          echo "image=${registry}/${ECR_REPOSITORY}:${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+
+      - name: Build the image
+        env:
+          IMAGE: ${{ steps.ecr.outputs.image }}
+        run: docker build --tag "$IMAGE" .
+
+      # The repository is IMMUTABLE (persistent/variables.tf): one tag per commit, no `latest`.
+      # Re-running a deploy of the same commit finds its tag already there: that is fine, the
+      # content is the one built from this commit.
+      - name: Push the image
+        env:
+          IMAGE: ${{ steps.ecr.outputs.image }}
+        run: |
+          set -uo pipefail
+          if docker push "$IMAGE" 2>&1 | tee push.log; then
+            exit 0
+          fi
+          if grep -qiE "already exists|immutable" push.log; then
+            echo "::notice::The tag ${GITHUB_SHA} already exists in ECR (immutable): reusing that image."
+            exit 0
+          fi
+          exit 1
+
+      # The stack is normally destroyed (D-124): without a cluster and both services there is
+      # nothing to roll out, and the job ends green after having pushed the image.
+      - name: Find the services
+        id: stack
+        run: |
+          set -uo pipefail
+          out="$(aws ecs describe-services --cluster "$CLUSTER" \
+            --services "${CLUSTER}-api" "${CLUSTER}-worker" --output json 2>err.log)"
+          status=$?
+          if [ $status -ne 0 ]; then
+            if grep -q "ClusterNotFoundException" err.log; then
+              echo "up=false" >> "$GITHUB_OUTPUT"
+              echo "::notice::The cluster ${CLUSTER} does not exist (the ephemeral layer is down). The image was pushed; nothing was deployed."
+              exit 0
+            fi
+            cat err.log >&2
+            exit $status
+          fi
+          active="$(echo "$out" | jq '[.services[] | select(.status == "ACTIVE")] | length')"
+          if [ "$active" -ne 2 ]; then
+            echo "up=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::The api and worker services are not both active (the ephemeral layer is down or half built). The image was pushed; nothing was deployed."
+            exit 0
+          fi
+          echo "up=true" >> "$GITHUB_OUTPUT"
+          echo "$out" | jq -r '.services[] | select(.serviceName == "'"${CLUSTER}"'-api") | .taskDefinition' > api.td
+          echo "$out" | jq -r '.services[] | select(.serviceName == "'"${CLUSTER}"'-worker") | .taskDefinition' > worker.td
+          # The migration task runs where the worker runs: same subnets, same security group (it
+          # reaches the database through it, D-121).
+          echo "$out" | jq -c '.services[] | select(.serviceName == "'"${CLUSTER}"'-worker")
+            | {awsvpcConfiguration: {subnets: .networkConfiguration.awsvpcConfiguration.subnets,
+                                     securityGroups: .networkConfiguration.awsvpcConfiguration.securityGroups,
+                                     assignPublicIp: "ENABLED"}}' > network.json
+
+      # The CD owns the task definitions after the first apply (D-123): a new revision of each
+      # family with the new image tag, everything else copied from the revision in use.
+      - name: Register task definitions with the new image
+        if: steps.stack.outputs.up == 'true'
+        env:
+          IMAGE: ${{ steps.ecr.outputs.image }}
+        run: |
+          set -euo pipefail
+          register() {
+            local source="$1" name="$2"
+            aws ecs describe-task-definition --task-definition "$source" --query taskDefinition --output json \
+              | jq --arg image "$IMAGE" '
+                  .containerDefinitions |= map(.image = $image)
+                  | del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities,
+                        .registeredAt, .registeredBy, .deregisteredAt)' > "${name}.json"
+            aws ecs register-task-definition --cli-input-json "file://${name}.json" \
+              --query taskDefinition.taskDefinitionArn --output text > "${name}.new"
+            echo "${name}: $(cat "${name}.new")"
+          }
+          register "$(cat api.td)" api
+          register "$(cat worker.td)" worker
+          register "${CLUSTER}-migrate" migrate
+
+      - name: Run the migration
+        if: steps.stack.outputs.up == 'true'
+        run: |
+          set -euo pipefail
+          task="$(aws ecs run-task --cluster "$CLUSTER" --launch-type FARGATE \
+            --task-definition "$(cat migrate.new)" \
+            --network-configuration "file://network.json" \
+            --count 1 --query 'tasks[0].taskArn' --output text)"
+          if [ -z "$task" ] || [ "$task" = "None" ]; then
+            echo "::error::The migration task did not start."
+            exit 1
+          fi
+          echo "Migration task: ${task##*/}"
+          aws ecs wait tasks-stopped --cluster "$CLUSTER" --tasks "$task"
+          code="$(aws ecs describe-tasks --cluster "$CLUSTER" --tasks "$task" \
+            --query 'tasks[0].containers[0].exitCode' --output text)"
+          if [ "$code" != "0" ]; then
+            echo "::error::The migration failed (exit code ${code}); the services were not updated."
+            aws ecs describe-tasks --cluster "$CLUSTER" --tasks "$task" \
+              --query 'tasks[0].{stopCode:stopCode,stoppedReason:stoppedReason}' --output text || true
+            aws logs get-log-events --log-group-name "/${CLUSTER}/migrate" \
+              --log-stream-name "ecs/migrate/${task##*/}" --limit 50 \
+              --query 'events[].message' --output text || true
+            exit 1
+          fi
+          echo "Migration finished with exit code 0."
+
+      - name: Roll out the services
+        if: steps.stack.outputs.up == 'true'
+        run: |
+          set -euo pipefail
+          aws ecs update-service --cluster "$CLUSTER" --service "${CLUSTER}-api" \
+            --task-definition "$(cat api.new)" --force-new-deployment --query 'service.serviceName' --output text
+          aws ecs update-service --cluster "$CLUSTER" --service "${CLUSTER}-worker" \
+            --task-definition "$(cat worker.new)" --force-new-deployment --query 'service.serviceName' --output text
+          aws ecs wait services-stable --cluster "$CLUSTER" --services "${CLUSTER}-api" "${CLUSTER}-worker"
+          echo "Deployed ${GITHUB_SHA} to ${CLUSTER}."
