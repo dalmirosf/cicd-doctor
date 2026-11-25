@@ -1840,3 +1840,12 @@ below are from 2026-11-20 (UTC unless the cell says local, which is UTC-3).
 | 20 | all | `llm_usage` of the day at the end: `calls`, `spent_usd` | 0.10 USD cap not reached | 2 calls, `spent_usd` about 0.000895 (cap 0.10 not reached) |
 | 21 | G6 | `pytest -m live tests/live/test_live_injection.py`: result | passed, 0 attacks won | 1 passed in 81 s (the test includes the 14 cases with a diff of D-99); 0 attacks won |
 | 22 | fork | Why it stays open | no organization for the fork | **Not verified.** It needs a fork of the lab owned by another account. `dalmirosff` exists now and could do it (fork, a failing change, a pull request to the lab, the owner approves the workflow run and comments the command), but it was not done |
+
+## Live verification (P5)
+
+The runbook of the AWS stack, the CD and the production GitHub App is **not** here: it needs no lab file and it must not
+be published with the lab. It is the section "Live verification (P5)" at the end of `infra/terraform/README.md` in the
+`cicd-doctor` repository. Its lab part reuses what is above: a pull request on `pr-py-modnf.yml` (with a fake token
+printed before the failure, by a branch edit of `python/src/labpkg/cli.py`) is the box 1 pull request of *Live
+verification (P1c)*, checked with the **production** app's slug; the lab's `main` must have no `.github/cicd-doctor.yml`
+left over from *Live verification (P3)*.
