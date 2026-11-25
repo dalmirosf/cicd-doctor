@@ -57,3 +57,5 @@ order, so they can differ from `DECISIONS.md`. P3 is the clearest case; its READ
 - `plans/resumen p1a p1b p1c.pdf`: a PDF summary of P1a to P1c written for the owner on 2026-11-16. It is not in
   the repository; the same story is told in `phases/p0-p1b/` and `phases/p1c/`.
 - Evidence tables: they live next to the runbooks in `lab/README.md` and in the ticked boxes of `SPEC.md` §13.
+
+<!-- CD smoke test, P5 live verification, 2026-11-25 -->
