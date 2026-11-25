@@ -11,7 +11,10 @@ resource "aws_iam_openid_connect_provider" "github" {
 }
 
 locals {
-  github_sub = "repo:${var.github_owner}/${var.github_repo}:ref:refs/heads/${var.github_deploy_branch}"
+  # The immutable subject (GitHub's `use_immutable_subject`, found at the first live run): the names
+  # are followed by their numeric ids, so a renamed or re-registered account or repository never
+  # matches.
+  github_sub = "repo:${var.github_owner}@${var.github_owner_id}/${var.github_repo}@${var.github_repo_id}:ref:refs/heads/${var.github_deploy_branch}"
 
   # Names fixed by the ephemeral layer (D-125: the layers find each other by name).
   cluster_name    = var.name_prefix
@@ -26,7 +29,7 @@ locals {
 # Trust: who may become the deploy role. Two exact-match conditions, both StringEquals (no
 # StringLike, no wildcard):
 #   aud = sts.amazonaws.com       the token was minted for AWS, not for another service;
-#   sub = repo:<owner>/<repo>:ref:refs/heads/main
+#   sub = repo:<owner>@<owner id>/<repo>@<repo id>:ref:refs/heads/main
 #         only a workflow run of THIS repository on THIS branch. A `pull_request` run (sub
 #         `...:pull_request`, even from a fork), a tag, another branch or an `environment:` job carries
 #         a different `sub` and is refused. A `pull_request_target` run is NOT refused: it runs on the

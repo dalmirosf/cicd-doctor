@@ -128,6 +128,13 @@ def test_a_down_stack_is_a_notice_and_skips_the_rollout() -> None:
     script = _run_script(_load())
     assert "ClusterNotFoundException" in script
     assert "::notice::" in script
+    # GitHub runs `run:` steps with `bash -e`: a bare `out="$(aws ...)"` that fails ends the step
+    # before the branch above can run, so the failure must be caught on the assignment (D-130).
+    find = next(s for s in steps if s.get("name") == "Find the services")
+    assert re.search(
+        r'out="\$\(aws ecs describe-services[^)]*\)"\s*\|\|\s*status=\$\?', find["run"]
+    )
+    assert not re.search(r"^\s*status=\$\?\s*$", find["run"], re.MULTILINE)
     gated = {
         "Register task definitions with the new image",
         "Run the migration",

@@ -90,9 +90,12 @@ jobs:
         id: stack
         run: |
           set -uo pipefail
+          # GitHub runs this with `bash -e`: a failing assignment would end the step right here, before
+          # the cluster-is-down branch below can run (found at the first live run, D-130). `|| status=$?`
+          # keeps the failure in a variable instead.
+          status=0
           out="$(aws ecs describe-services --cluster "$CLUSTER" \
-            --services "${CLUSTER}-api" "${CLUSTER}-worker" --output json 2>err.log)"
-          status=$?
+            --services "${CLUSTER}-api" "${CLUSTER}-worker" --output json 2>err.log)" || status=$?
           if [ $status -ne 0 ]; then
             if grep -q "ClusterNotFoundException" err.log; then
               echo "up=false" >> "$GITHUB_OUTPUT"

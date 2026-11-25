@@ -82,7 +82,9 @@ Copy-Item infra/terraform/ephemeral/backend.hcl.example infra/terraform/ephemera
 
 The order matters: the migration needs the database and the image, and the services need the migration.
 
-**3a. Persistent layer (once, then it stays).** `terraform.tfvars` needs `github_owner` (your GitHub login).
+**3a. Persistent layer (once, then it stays).** `terraform.tfvars` needs `github_owner` (your GitHub login) and the two
+numeric ids `github_owner_id` and `github_repo_id` (`gh api users/<owner> --jq .id`, `gh api repos/<owner>/<repo> --jq .id`;
+not secrets; D-130).
 
 ```powershell
 terraform -chdir=infra/terraform/persistent init -backend-config=backend.hcl
@@ -190,6 +192,53 @@ block of the bucket in `bootstrap/`, apply, and destroy it.
 | Secret of the RDS password | `aws secretsmanager list-secrets --query "SecretList[].Name"` shows only the five `cicd-doctor/...` ones |
 
 Also look at Billing > Cost Explorer the next day.
+
+## Quick up and down (from the second time on)
+
+After the first live verification (P5 h) the expensive layer is rebuilt in about 15 to 25 minutes. What stays between two
+sessions, at about USD 2.05 a month: the state bucket, the ECR repository with its last three images, the five secrets
+**with their values**, the roles and the OIDC provider. Your local `backend.hcl` and `terraform.tfvars` files stay too.
+
+**Up.** Every `terraform` and `aws` command below is yours (the owner), and `aws login --profile cicd-demo` comes first:
+its credentials rotate about every 15 minutes, so start a long `apply` right after a fresh login. In Windows PowerShell 5.1
+write `"-out=name.tfplan"` and `"-backend-config=backend.hcl"` **in quotes**: unquoted, the dot splits the argument and
+`plan` fails with "Too many command line arguments".
+
+1. `image_tag` in `ephemeral/terraform.tfvars` must be a tag that still exists in ECR (`aws ecr describe-images`); the
+   repository keeps the last three. Set `services_enabled = false`.
+2. `terraform -chdir=infra/terraform/ephemeral plan "-out=ephemeral.tfplan"`, read it, then `apply ephemeral.tfplan`.
+   Measured on 2026-11-25: 44 resources in about 6 minutes. The services exist with zero tasks.
+3. The migration (3d above). The database is new and empty every time, so the cache and the memory of failures start
+   from nothing: the first diagnosis of each kind of failure calls the model. Measured: about 1 minute, exit code 0.
+4. `services_enabled = true`, `plan`, `apply` (under a minute), then wait for the target `healthy`
+   (`aws elbv2 wait target-in-service --target-group-arn <arn>`; about 30 seconds).
+5. **The CloudFront domain is new every time.** Set the webhook URL of the production GitHub App to
+   `terraform -chdir=infra/terraform/ephemeral output -raw webhook_url`, turn "Active" on, and "Redeliver" a recent
+   delivery: a 2xx is the proof that the body and the signature arrive intact.
+6. Check `GET /health` and `GET /ready` through the same domain. A second `plan -detailed-exitcode` of both layers must
+   exit 0.
+
+Running cost with the services on is about USD 0.11 an hour (not measured; Cost Explorer shows it the next day). Keep a
+session to the hours you use.
+
+**Down.** Copy out what you want to keep, turn "Active" off in the app, then `terraform -chdir=infra/terraform/ephemeral
+destroy` and the table *After `down`*. The persistent layer is never destroyed here.
+
+**A repository of your own or another one.** The production app is private and installed only on the lab. For another
+repository of yours: GitHub, Settings, Applications, Installed GitHub Apps, Configure, and add the repository. For
+someone else's public repository the app cannot be installed (it is private): fork it into your account and install the app
+on the fork, or make the app public (not recommended for a demo). A repository with `.github/cicd-doctor.yml` that sets
+`llm: off`, `on_demand` or an invalid file does not call the model, and so leaves no trace in Langfuse.
+
+**Two facts to remember about the live checks.**
+
+- GitHub masks a token of its own format (`ghp_` plus 36 letters) in the Actions log as `***`, so a planted GitHub-shaped
+  token proves nothing about our redactor: the app never sees it. Plant a key our redactor knows and GitHub does not mask,
+  an AWS access key id (`AKIA` plus 16 characters, assembled at run time so no secret-shaped literal is committed, D-59).
+- Langfuse keeps only the first 4000 characters of a trace's input and output (`MAX_TEXT_CHARS` in
+  `adapters/observability/langfuse_tracer.py`). The input of a run is usually longer and the failure is at its end, so
+  look for the redaction marker in the **output**, where the model quotes the failing line: put the key inside the error
+  line itself (`[REDACTED:aws_access_key_id]` shows there and in the sticky comment).
 
 ## Cost
 
@@ -396,7 +445,7 @@ Copy-Item "$TF/ephemeral/backend.hcl.example" "$TF/ephemeral/backend.hcl"
 ```
 
 Edit both by hand (`bucket = "..."`), and write `$TF/persistent/terraform.tfvars` with
-`github_owner = "OWNER"` (your GitHub login).
+`github_owner = "OWNER"` (your GitHub login), `github_owner_id` and `github_repo_id` (the numeric ids, D-130).
 
 ### 4. Persistent layer: ECR, secret containers, roles, OIDC
 
@@ -506,8 +555,9 @@ aws ecr describe-images --repository-name cicd-doctor --query "imageDetails[].{t
 Criterion: the run is green and its log has the notice "The cluster cicd-doctor does not exist"; ECR lists one image
 tagged with the **full** commit sha of `main`. `$sha` is the `image_tag` of the next step (check that it is the tag
 shown, not a newer `main`). If it fails with `Could not assume role` or `Not authorized to perform
-sts:AssumeRoleWithWebIdentity`: the `sub` of the real token is not `repo:OWNER/cicd-doctor:ref:refs/heads/main`; stop
-and read the claim in the log (D-123 left this unverified).
+sts:AssumeRoleWithWebIdentity`: the `sub` of the real token is not `repo:OWNER@OWNER-ID/cicd-doctor@REPO-ID:ref:refs/heads/main`
+(the immutable subject: `gh api repos/OWNER/cicd-doctor/actions/oidc/customization/sub` shows the prefix, D-130); stop
+and read the claim in the log.
 
 ### 8. Ephemeral layer, services off (SPENDS)
 
