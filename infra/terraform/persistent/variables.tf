@@ -48,6 +48,26 @@ variable "github_owner" {
   }
 }
 
+variable "github_owner_id" {
+  description = "Numeric id of the GitHub user or organization in github_owner (`gh api users/<owner> --jq .id`). Not a secret. It goes into the OIDC subject (immutable subject)."
+  type        = string
+
+  validation {
+    condition     = can(regex("^[0-9]+$", var.github_owner_id))
+    error_message = "A numeric id: digits only (no wildcard)."
+  }
+}
+
+variable "github_repo_id" {
+  description = "Numeric id of the repository (`gh api repos/<owner>/<repo> --jq .id`). Not a secret. It goes into the OIDC subject (immutable subject)."
+  type        = string
+
+  validation {
+    condition     = can(regex("^[0-9]+$", var.github_repo_id))
+    error_message = "A numeric id: digits only (no wildcard)."
+  }
+}
+
 variable "github_repo" {
   description = "Repository name whose workflow may deploy (D-123)."
   type        = string

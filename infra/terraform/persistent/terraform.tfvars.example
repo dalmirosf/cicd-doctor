@@ -6,5 +6,9 @@
 
 # Required (not secret): the GitHub login that owns the repository the CD deploys from (D-123).
 # github_owner         = "<your-github-login>"
+# Their numeric ids (not secrets): `gh api users/<owner> --jq .id` and `gh api repos/<owner>/<repo> --jq .id`.
+# The OIDC subject carries them (GitHub's immutable subject), so the deploy role trusts only this account and repository.
+# github_owner_id      = "<numeric id of the owner>"
+# github_repo_id       = "<numeric id of the repository>"
 # github_repo          = "cicd-doctor"
 # github_deploy_branch = "main"

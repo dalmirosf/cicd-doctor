@@ -262,10 +262,17 @@ def test_the_oidc_trust_is_pinned_to_one_repository_and_branch() -> None:
     pinned = re.search(r'github_sub\s*=\s*"([^"]+)"', code)
     assert pinned is not None
     assert pinned.group(1) == (
-        "repo:${var.github_owner}/${var.github_repo}:ref:refs/heads/${var.github_deploy_branch}"
+        "repo:${var.github_owner}@${var.github_owner_id}/${var.github_repo}@${var.github_repo_id}"
+        ":ref:refs/heads/${var.github_deploy_branch}"
     )
     # The variables that feed the subject reject a wildcard (an anchored allow-list regex).
-    for name in ("github_owner", "github_repo", "github_deploy_branch"):
+    for name in (
+        "github_owner",
+        "github_owner_id",
+        "github_repo",
+        "github_repo_id",
+        "github_deploy_branch",
+    ):
         variable = resources_block(code, rf'variable\s+"{name}"\s*\{{')
         assert re.search(r'regex\("\^\[[^*\]]+\]\+\$"', variable), name
 
