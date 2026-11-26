@@ -157,7 +157,8 @@ verde con un prompt malo: solo el gate de evals lo detecta.
 
 **Sigue abierto.** En el runner de GitHub faltaron respuestas de la variante "con parecidas" para 3 casos de prettier
 que en tu máquina no faltaban (D-114: puede ser que la búsqueda de parecidas dé un orden distinto según la máquina,
-no se midió). Y hacer que el gate sea un check obligatorio de `main` es un ajuste del repositorio que decidís vos.
+no se midió). Y hacer que el gate sea un check obligatorio de `main` es un ajuste del repositorio que decidís vos: el
+2026-11-26 se decidió dejarlo optativo mientras `evals.yml` filtre por rutas (D-133).
 
 ### Lo que viene
 

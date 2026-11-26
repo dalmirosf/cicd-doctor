@@ -106,7 +106,7 @@ aws secretsmanager put-secret-value --secret-id cicd-doctor/github-app-private-k
 
 A task whose secret has no value does not start, so load all five before the services are enabled (3e). The API task reads only the webhook secret; the worker reads all five.
 
-Owner, once: protect `main` in GitHub (pull request and review required, no direct pushes, no force pushes). The deploy role is trusted for every run on `main`, so this is what stands between a push and the application secrets (D-123). `cd.yml` (D-128) triggers on `push` to `main` only, and no workflow may combine `pull_request_target` with `id-token: write`.
+Owner, once: protect `main` in GitHub (pull request and the three CI checks required, no direct pushes, no force pushes; done on 2026-11-26, D-133; require a review too once there is a second maintainer). The deploy role is trusted for every run on `main`, so this is what stands between a push and the application secrets (D-123). `cd.yml` (D-128) triggers on `push` to `main` only, and no workflow may combine `pull_request_target` with `id-token: write`.
 
 **3b. An image in ECR.** The first `apply` of the ephemeral layer needs `image_tag`, and the migration needs the image to
 exist. Push it with the CD (PR f) or by hand from a clone at the commit you want to run:
