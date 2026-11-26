@@ -51,16 +51,26 @@ change that can be applied with one click:
 ## How it works
 
 ```mermaid
-flowchart TD
-    GH[GitHub: a workflow run fails] -->|signed webhook| API[API<br/>FastAPI]
-    API -->|stores a job| DB[(Postgres + pgvector<br/>queue and memory)]
-    DB --> W[Worker<br/>downloads the failed job logs]
-    W --> P[Clean, redact,<br/>sign and apply rules]
-    P --> C{Answer<br/>cached?}
-    C -->|no| LLM[OpenAI<br/>strict JSON schema]
-    C -->|yes| R[Verify and render]
-    LLM --> R
-    R --> OUT[Check run and comment<br/>on the pull request]
+flowchart TB
+    subgraph IN[1. Receive]
+        direction LR
+        GH[GitHub<br/>failed run] -->|signed webhook| API[API<br/>FastAPI]
+        API -->|job| DB[(Postgres<br/>+ pgvector)]
+    end
+    subgraph PREP[2. Prepare]
+        direction LR
+        W[Worker reads<br/>the job logs] --> P[Clean and<br/>redact]
+        P --> S[Signature<br/>and rules]
+    end
+    subgraph PUBLISH[3. Diagnose and publish]
+        direction LR
+        C{Cached?} -->|no| LLM[OpenAI<br/>strict schema]
+        C -->|yes| R[Verify and<br/>render]
+        LLM --> R
+        R --> PR[Check run and<br/>PR comment]
+    end
+    IN --> PREP
+    PREP --> PUBLISH
 ```
 
 The API only verifies the signature and stores a job; all the work happens in the worker. The code is hexagonal:
@@ -69,20 +79,26 @@ The API only verifies the signature and stores a job; all the work happens in th
 ### On AWS
 
 ```mermaid
-flowchart TD
-    GH[GitHub webhook] -->|HTTPS| CF[CloudFront]
-    CF -->|HTTP| ALB
-    SM[Secrets Manager<br/>and ECR] -.->|secrets and image| TASKS
-    subgraph VPC
-        ALB[Load balancer] --> API
-        subgraph TASKS[ECS on Fargate]
-            API[api task]
-            W[worker task]
-        end
-        TASKS --> RDS[(RDS PostgreSQL 17<br/>private subnets)]
+flowchart TB
+    subgraph ENTRY[Entry]
+        direction LR
+        GH[GitHub<br/>webhook] -->|HTTPS| CF[CloudFront]
     end
-    TASKS -.->|logs| CW[CloudWatch]
-    W -.->|traces| LF[Langfuse]
+    subgraph VPC
+        direction LR
+        ALB[Load<br/>balancer] --> API[Fargate<br/>api]
+        API --> RDS[(RDS PostgreSQL 17<br/>private subnets)]
+        W[Fargate<br/>worker] --> RDS
+    end
+    subgraph AROUND[Supporting services]
+        direction LR
+        SM[Secrets<br/>Manager]
+        ECR[ECR<br/>image]
+        CW[CloudWatch<br/>logs]
+        LF[Langfuse<br/>traces]
+    end
+    ENTRY -->|HTTP| VPC
+    VPC -.- AROUND
 ```
 
 - **Terraform** in three layers: the state bucket, what survives a teardown (registry, secrets, roles) and what bills
