@@ -36,6 +36,7 @@ plan says something different from the sources above, the phase `README.md` list
    3. [`phases/p2/`](phases/p2/README.md): memory (embeddings, cache, similar failures, flaky and fix detection, purge).
    4. [`phases/p3/`](phases/p3/README.md): the `explain` command, suggested changes, per-repository configuration.
    5. [`phases/p4/`](phases/p4/README.md): evals at scale (public cases, the cause judge, the CI gate) and its live check on GitHub.
+   6. [`phases/p5/`](phases/p5/README.md): deploy and observability (Docker, Terraform on AWS, continuous deployment, logs and traces).
 4. `DECISIONS.md` from D-47 on, in the order of the phases (the phase READMEs list which `D-NN` each one produced).
 
 ## What each phase folder contains
@@ -57,5 +58,3 @@ order, so they can differ from `DECISIONS.md`. P3 is the clearest case; its READ
 - `plans/resumen p1a p1b p1c.pdf`: a PDF summary of P1a to P1c written for the owner on 2026-11-16. It is not in
   the repository; the same story is told in `phases/p0-p1b/` and `phases/p1c/`.
 - Evidence tables: they live next to the runbooks in `lab/README.md` and in the ticked boxes of `SPEC.md` §13.
-
-<!-- CD smoke test, P5 live verification, 2026-11-25 -->
