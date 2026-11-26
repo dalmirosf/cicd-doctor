@@ -78,7 +78,8 @@ OpenAI parts ran: the answers of 92 cases in three variants, the judge calibrati
   the same commit gave exit 4 on the owner's machine: the retrieval of similar failures may differ between
   machines. Fixed afterwards (D-116, finding H1): the score of a similar failure had three decimals and three of
   the committed scores sat within 1e-5 of a rounding edge; it has two now.
-- The CI check is not a required check of `main`: it is a repository setting and stays with the owner.
+- The CI check is not a required check of `main`: it is a repository setting and stays with the owner. Decided on
+  2026-11-26: it stays optional while `evals.yml` filters by path (D-133).
 - The cause judge was calibrated with labels written by Claude and reviewed by the owner (D-113): one reading of the
   scale.
 - The lab has 23 distinct failures; the memory (similar failures) shows little on this set (P2).

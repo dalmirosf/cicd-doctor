@@ -81,7 +81,8 @@ running stack billed (all but Secrets Manager) is about USD 0.15, in line with t
 
 ## What stayed open
 
-- `main` has no branch protection. The deploy role trusts every run on `main`, so D-123 (5b) asks for it.
+- No second person reviews what reaches `main`. It was protected on 2026-11-26 (a pull request and the CI checks, not a
+  review, D-133), and the deploy role still trusts every run on `main` (D-123, 5b).
 - The path for a cluster that does not exist at all was exercised only in a local simulation.
 - Against production only boxes 1 and 2 of P1c were repeated.
 - A text search over a whole Langfuse trace for the planted key was not recorded.
