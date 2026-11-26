@@ -117,6 +117,7 @@ to try; the screenshots and the lab pull requests show the app working.
 Verified live on 2026-11-25: a pull request diagnosed by the stack on AWS, with the check run published 11 seconds
 after the workflow ended (one measured case), a deploy from a merge, and one delivery followed through the logs. The
 evidence is in [SPEC.md §13](SPEC.md) and the runbook in [infra/terraform/README.md](infra/terraform/README.md).
+AWS usage on the day of that session came to USD 0.20 according to Cost Explorer, all covered by account credits.
 
 Every model call is traced in Langfuse with its tokens, cost, latency and prompt version, and only redacted,
 shortened text is sent there:
