@@ -51,17 +51,26 @@ change that can be applied with one click:
 ## How it works
 
 ```mermaid
-flowchart LR
-    GH[GitHub<br/>workflow_run webhook] -->|signed| API[api<br/>FastAPI]
-    API -->|job| DB[(Postgres + pgvector<br/>queue and memory)]
-    DB --> W[worker]
-    W -->|failed job logs| GH
-    W --> P[clean, redact,<br/>signature, rules]
-    P --> C{cached?}
-    C -->|no| LLM[OpenAI<br/>strict schema]
-    C -->|yes| R[verify and render]
-    LLM --> R
-    R -->|check run + comment| GH
+flowchart TB
+    subgraph IN[1. Receive]
+        direction LR
+        GH[GitHub<br/>failed run] -->|signed webhook| API[API<br/>FastAPI]
+        API -->|job| DB[(Postgres<br/>+ pgvector)]
+    end
+    subgraph PREP[2. Prepare]
+        direction LR
+        W[Worker reads<br/>the job logs] --> P[Clean and<br/>redact]
+        P --> S[Signature<br/>and rules]
+    end
+    subgraph PUBLISH[3. Diagnose and publish]
+        direction LR
+        C{Cached?} -->|no| LLM[OpenAI<br/>strict schema]
+        C -->|yes| R[Verify and<br/>render]
+        LLM --> R
+        R --> PR[Check run and<br/>PR comment]
+    end
+    IN --> PREP
+    PREP --> PUBLISH
 ```
 
 The API only verifies the signature and stores a job; all the work happens in the worker. The code is hexagonal:
@@ -70,21 +79,26 @@ The API only verifies the signature and stores a job; all the work happens in th
 ### On AWS
 
 ```mermaid
-flowchart LR
-    GH[GitHub] -->|HTTPS| CF[CloudFront]
-    CF -->|HTTP| ALB[Load balancer]
-    subgraph VPC
-      ALB --> API[Fargate: api]
-      API --> RDS[(RDS PostgreSQL 17<br/>private subnets)]
-      W[Fargate: worker] --> RDS
+flowchart TB
+    subgraph ENTRY[Entry]
+        direction LR
+        GH[GitHub<br/>webhook] -->|HTTPS| CF[CloudFront]
     end
-    SM[Secrets Manager] -.-> API
-    SM -.-> W
-    ECR[ECR] -.-> API
-    ECR -.-> W
-    API -.-> CW[CloudWatch Logs]
-    W -.-> CW
-    W -.-> LF[Langfuse traces]
+    subgraph VPC
+        direction LR
+        ALB[Load<br/>balancer] --> API[Fargate<br/>api]
+        API --> RDS[(RDS PostgreSQL 17<br/>private subnets)]
+        W[Fargate<br/>worker] --> RDS
+    end
+    subgraph AROUND[Supporting services]
+        direction LR
+        SM[Secrets<br/>Manager]
+        ECR[ECR<br/>image]
+        CW[CloudWatch<br/>logs]
+        LF[Langfuse<br/>traces]
+    end
+    ENTRY -->|HTTP| VPC
+    VPC -.- AROUND
 ```
 
 - **Terraform** in three layers: the state bucket, what survives a teardown (registry, secrets, roles) and what bills
@@ -103,6 +117,7 @@ to try; the screenshots and the lab pull requests show the app working.
 Verified live on 2026-11-25: a pull request diagnosed by the stack on AWS, with the check run published 11 seconds
 after the workflow ended (one measured case), a deploy from a merge, and one delivery followed through the logs. The
 evidence is in [SPEC.md §13](SPEC.md) and the runbook in [infra/terraform/README.md](infra/terraform/README.md).
+AWS usage on the day of that session came to USD 0.20 according to Cost Explorer, all covered by account credits.
 
 Every model call is traced in Langfuse with its tokens, cost, latency and prompt version, and only redacted,
 shortened text is sent there:
@@ -246,3 +261,8 @@ The six planned phases of the [specification](SPEC.md) (P0 to P5) are built; P6,
 
 Every decision has an entry with its alternatives in [DECISIONS.md](DECISIONS.md), and each phase has its plan,
 measurements, pull requests and live evidence under [docs/](docs/README.md).
+
+## License
+
+[MIT](LICENSE). The exception is `evals/cases/public/`: excerpts of other projects' public logs, which stay
+under their own licenses ([NOTICE](evals/cases/public/NOTICE)).

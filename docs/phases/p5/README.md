@@ -65,6 +65,10 @@ check are in SPEC §13 P5 and in the evidence table of "Live verification (P5)" 
 The ephemeral layer was up for about 1 h 31 min and was destroyed; the checklist that follows a destroy found nothing
 billing by the hour.
 
+**Cost** (Cost Explorer, read on 2026-11-26, usage before credits): USD 0.23, covered by credits. By service: Secrets
+Manager 0.08, load balancer 0.05, ECS 0.04, public addresses (VPC) 0.03, RDS 0.03, the rest under a cent each. What the
+running stack billed (all but Secrets Manager) is about USD 0.15, in line with the estimate of about 0.11 an hour.
+
 ## What the live run found
 
 - The GitHub account issues **immutable** OIDC subjects (with numeric ids), so the first deploy was refused (D-130).
@@ -77,7 +81,6 @@ billing by the hour.
 
 ## What stayed open
 
-- The real cost was not read from Cost Explorer (estimate: about USD 0.11 an hour up).
 - `main` has no branch protection. The deploy role trusts every run on `main`, so D-123 (5b) asks for it.
 - The path for a cluster that does not exist at all was exercised only in a local simulation.
 - Against production only boxes 1 and 2 of P1c were repeated.

@@ -218,8 +218,8 @@ write `"-out=name.tfplan"` and `"-backend-config=backend.hcl"` **in quotes**: un
 6. Check `GET /health` and `GET /ready` through the same domain. A second `plan -detailed-exitcode` of both layers must
    exit 0.
 
-Running cost with the services on is about USD 0.11 an hour (not measured; Cost Explorer shows it the next day). Keep a
-session to the hours you use.
+Running cost with the services on is about USD 0.11 an hour (an estimate; the one measured session agrees with it, see
+the cost table of *Live verification (P5)*). Keep a session to the hours you use.
 
 **Down.** Copy out what you want to keep, turn "Active" off in the app, then `terraform -chdir=infra/terraform/ephemeral
 destroy` and the table *After `down`*. The persistent layer is never destroyed here.
@@ -242,7 +242,8 @@ on the fork, or make the app public (not recommended for a demo). A repository w
 
 ## Cost
 
-**All numbers below are estimates, not measurements.** The prices are from the public AWS price pages as I remember them
+**All numbers below are estimates, not measurements** (what one session really cost is in the cost table of *Live
+verification (P5)*). The prices are from the public AWS price pages as I remember them
 (on-demand, Linux x86, 730-hour month). Ohio is assumed to be priced like N. Virginia, which is normally the case: confirm it; none comes from the provider documentation, and none was checked in
 the console. Confirm them in the AWS console and by spike C (a real session); spike B1 already showed that `db.t4g.micro` and PostgreSQL 17.7 to 17.11 are offered in us-east-2 before relying
 on them. The sizes are the plan's assumptions: API 0.25 vCPU / 0.5 GB, worker 0.5 vCPU / 1 GB, one task each (ARM Fargate would be about 20 % cheaper, but the CD builds x86).
@@ -297,7 +298,7 @@ with a message. The deploy role's permissions are in `persistent/oidc.tf` and th
 
 This is the runbook that checks the AWS stack and the production GitHub App against SPEC §13 P5 (boxes 1, 2, 4, 5 and
 6; box 3, the Terraform GitHub provider, was dropped by D-129). **It was run on 2026-11-25**; what was observed is in
-the evidence table at the end, and the costs are still estimates until Cost Explorer is read. The split is
+the evidence table at the end, and the cost read from Cost Explorer on 2026-11-26 is in the cost table. The split is
 the one of `lab/README.md` ("Live verification (P1c)" and "(P3)"): **you** run the blocks tagged WRITES and SPENDS; the
 READ-ONLY blocks only read, and a session that helps you reads with `aws ... describe/list/get` and `gh` `GET` calls.
 Claude never runs a `terraform plan/apply/destroy/import`, never an `aws` command and never reads or prints a secret, a
@@ -869,22 +870,25 @@ session, and write the real numbers in the cost table.
 ### Cost: estimate against what Cost Explorer shows
 
 The estimates are the ones of the *Cost* section above (not measured). Fill the last two columns after the 24 h delay.
+The values below are the run of 2026-11-25, read on 2026-11-26: Cost Explorer, daily, from 2026-11-23, charge type
+*Usage* (before credits), the account where the stack ran. AWS shows whole cents and still calls them estimates. The
+estimate totals count the whole window of 1.5 h, although the services were on only from 06:43:53.
 
 | Item | Estimate USD per hour | Hours up | Estimate total | Real (Cost Explorer, by service) | Real minus estimate |
 |---|---|---|---|---|---|
-| ALB | 0.0305 | | | | |
-| RDS `db.t4g.micro` + 20 GB gp3 | 0.019 | | | | |
-| Fargate api (0.25 vCPU / 0.5 GB) | 0.012 | | | | |
-| Fargate worker (0.5 vCPU / 1 GB) | 0.025 | | | | |
-| Public IPv4 (ALB 2, tasks 2) | 0.020 | | | | |
-| CloudFront, CloudWatch Logs, data transfer | about 0 | | | | |
-| Migration task(s), a minute each | a fraction of a cent | | | | |
-| Secrets Manager (5 secrets + the RDS one while it exists) | 2.00 to 2.40 a month | | | | |
-| ECR, S3 state bucket | about 0.05 a month | | | | |
-| OpenAI (real calls of steps 13 and 14) | not estimated | | | | |
-| **Total** | **about 0.11** | | | | |
+| ALB | 0.0305 | 1.5 | 0.046 | 0.05 | within a cent |
+| RDS `db.t4g.micro` + 20 GB gp3 | 0.019 | 1.5 | 0.029 | 0.03 | within a cent |
+| Fargate api (0.25 vCPU / 0.5 GB) | 0.012 | 1.5 | 0.018 | 0.04 (Elastic Container Service: api, worker and migration) | -0.02 for the three rows |
+| Fargate worker (0.5 vCPU / 1 GB) | 0.025 | 1.5 | 0.038 | in the row above | in the row above |
+| Public IPv4 (ALB 2, tasks 2) | 0.020 | 1.5 | 0.030 | 0.03 (VPC) | within a cent |
+| CloudFront, CloudWatch Logs, data transfer | about 0 | 1.5 | about 0 | 0.00 | none |
+| Migration task(s), a minute each | a fraction of a cent | n/a | a fraction of a cent | in the ECS row | in the ECS row |
+| Secrets Manager (5 secrets + the RDS one while it exists) | 2.00 to 2.40 a month | since the apply | about 0.07 a day | 0.08 (0.05 on the 25th, 0.03 on the 26th so far) | still accruing |
+| ECR, S3 state bucket | about 0.05 a month | since the apply | about 0 | 0.00 | none |
+| OpenAI (real calls of steps 13 and 14) | not estimated | n/a | n/a | not an AWS charge, not read | n/a |
+| **Total** | **about 0.11** | 1.5 | about 0.16 without the secrets | **0.23** (0.15 without the secrets); credits covered it, 0.00 billed | -0.01 without the secrets |
 
-Time up: `$UP_AT` (UTC) ____ to `$DOWN_AT` (UTC) ____, hours ____. Also write the **AWS Budgets** figure that day.
+Time up: 06:31:20 to 08:02:50 UTC, about 1 h 31 min. The **AWS Budgets** figure of that day was not recorded.
 
 ### Stop conditions
 
@@ -964,5 +968,5 @@ captured. Leave the result column empty until you have it.
 | 19 | 6 | The planted fake token is in the Actions log, and **not** in CloudWatch (0 lines) | step 14 | run 45568512559: the fake AWS key in clear text in the Actions log, 0 lines in the api and worker log groups |
 | 20 | 6 | Langfuse: one trace per call with model, `diag-v3`, tokens, cost, latency; no `ghp_FAKE` in input or output | step 14 | traces with `gpt-6-luna`, `diag-v3`, tokens, cost, latency; the output of trace `1eb70bf4ae89ed693bbe75a147d0b7d2` is redacted; input cut at 4,000 characters; a whole-trace text search was not recorded |
 | 21 | all | After `down`: every line of *After `down`* shows zero; the persistent layer remains | step 16 | destroy 07:55:09 to 08:02:50, 44 destroyed; every check empty; five secrets and the ECR images remain |
-| 22 | all | Cost: hours up and the Cost Explorer total against about USD 0.11 an hour | cost table | up about 1 h 31 min (about USD 0.17 by the estimate); Cost Explorer not recorded |
+| 22 | all | Cost: hours up and the Cost Explorer total against about USD 0.11 an hour | cost table | up about 1 h 31 min (about USD 0.17 by the estimate); Cost Explorer on 2026-11-26: USD 0.23 of usage, 0.15 without Secrets Manager, all covered by credits |
 | 23 | all | Any SCP deny, expired credential, unverified point of D-120, D-121 or D-123 that showed itself (ALB Host rule, `ClusterNotFoundException`, `RunTask` under the policy, the pgvector version) | the step where it showed | no SCP deny, no expired credential; the ALB Host rule matched; the plan drift of D-123 did not appear; two CD defects fixed by D-130; `ClusterNotFoundException` not observed live |
