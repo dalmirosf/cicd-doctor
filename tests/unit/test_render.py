@@ -7,7 +7,7 @@ from typing import Any
 from uuid import uuid4
 
 import pytest
-from hypothesis import given, settings
+from hypothesis import example, given, settings
 from hypothesis import strategies as st
 
 from cicd_doctor.core.models import (
@@ -174,6 +174,24 @@ def test_every_allowlisted_host_is_allowed_over_https(host: str) -> None:
 )
 def test_odd_urls_are_not_allowed(url: str) -> None:
     assert not allowed_url(url)
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://github.com:#",  # found by the fuzz test below: an empty port is still a port
+        "https://github.com:/a",
+        "https://github.com:?q=1",
+        "https://github.com:443/a",
+        "https://@github.com/a",
+        "https://GitHub.com/a",
+        "HTTPS://github.com/a",
+        "https:github.com/a",
+    ],
+)
+def test_a_url_that_is_not_written_canonically_stays_inert(url: str) -> None:
+    assert not allowed_url(url)
+    assert threats(inline(url, 500)) == []
 
 
 def test_backtick_pairs_become_code_spans_and_odd_backticks_are_text() -> None:
@@ -632,6 +650,7 @@ FUZZ_TEXT = st.lists(st.sampled_from(FUZZ_ALPHABET), max_size=40).map("".join)
 
 @settings(max_examples=400, deadline=None)
 @given(text=st.one_of(FUZZ_TEXT, st.text(max_size=80)))
+@example(text="https://github.com:#")
 def test_no_text_makes_a_link_a_mention_or_markup(text: str) -> None:
     assert threats(inline(text, 500)) == []
     assert threats(code(text, 500)) == []
