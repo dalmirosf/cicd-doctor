@@ -152,22 +152,15 @@ def fenced(lines: Sequence[str], language: str = "text") -> str:
 
 
 def allowed_url(url: str) -> bool:
-    """True for an ``https`` URL whose host is exactly on the allowlist: no credentials, no port,
-    no odd characters (SPEC §9.5)."""
+    """True for a URL written as ``https://``, then exactly a host of the allowlist: no
+    credentials, no port (not even an empty one), no odd characters (SPEC §9.5, D-131)."""
     if len(url) > 500 or re.search(r"[^\w\-./~:?#@!$&'()*+,;=%]", url):
         return False
     try:
-        parts = urlsplit(url)
-        host, port = parts.hostname, parts.port
+        authority = urlsplit(url).netloc  # as written: ``hostname`` and ``port`` normalise it
     except ValueError:
         return False
-    return (
-        parts.scheme == "https"
-        and host in ALLOWED_HOSTS
-        and port is None
-        and "@" not in parts.netloc
-        and "\\" not in url
-    )
+    return url.startswith("https://") and authority in ALLOWED_HOSTS
 
 
 def _prose(text: str) -> str:
