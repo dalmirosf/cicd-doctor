@@ -296,8 +296,8 @@ with a message. The deploy role's permissions are in `persistent/oidc.tf` and th
 ## Live verification (P5)
 
 This is the runbook that checks the AWS stack and the production GitHub App against SPEC §13 P5 (boxes 1, 2, 4, 5 and
-6; box 3, the Terraform GitHub provider, was dropped by D-129). It was written, not run:
-nothing below has been executed, and every number in it is an estimate until the owner fills the columns. The split is
+6; box 3, the Terraform GitHub provider, was dropped by D-129). **It was run on 2026-11-25**; what was observed is in
+the evidence table at the end, and the costs are still estimates until Cost Explorer is read. The split is
 the one of `lab/README.md` ("Live verification (P1c)" and "(P3)"): **you** run the blocks tagged WRITES and SPENDS; the
 READ-ONLY blocks only read, and a session that helps you reads with `aws ... describe/list/get` and `gh` `GET` calls.
 Claude never runs a `terraform plan/apply/destroy/import`, never an `aws` command and never reads or prints a secret, a
@@ -406,13 +406,13 @@ uv run pytest tests/unit/test_infra_guard.py tests/unit/test_cd_workflow.py test
 
 ```powershell
 $t0 = Get-Date
-docker compose up --build -d
+docker compose -f docker/compose.yaml --env-file .env up --build -d
 do { Start-Sleep -Seconds 2; $ready = try { (Invoke-RestMethod http://127.0.0.1:8000/ready).status } catch { 'down' } } until ($ready -eq 'ready' -or ((Get-Date) - $t0).TotalSeconds -gt 180)
 "ready after {0:N0} s: {1}" -f ((Get-Date) - $t0).TotalSeconds, $ready
 docker image ls --format "{{.Repository}}:{{.Tag}} {{.Size}}" | Select-String cicd-doctor
-docker compose exec -T api id -u
-docker compose ps
-docker compose down
+docker compose -f docker/compose.yaml --env-file .env exec -T api id -u
+docker compose -f docker/compose.yaml --env-file .env ps
+docker compose -f docker/compose.yaml --env-file .env down
 ```
 
 Criterion: `ready`, the user id is **10001** (not root), the worker is `running`, and the image size is written in the
@@ -674,6 +674,8 @@ Invoke-Probe -Url $hook -Body '{"zen":"probe"}' -Headers @{ 'X-GitHub-Event' = '
 Invoke-Probe -Url $hook -Body '{"zen":"probe"}'
 ```
 
+On Windows PowerShell 5.1 `Invoke-Probe` can print the status with an empty body; `curl.exe -i` shows it.
+
 Criterion: `/health` is `{"status":"ok"}`; `/ready` is `ready`; both probes answer **401** with
 `{"detail":"invalid signature"}` (the body is the app's; a `403 forbidden` would be the ALB's Host rule saying the Host
 CloudFront sends is not the distribution's own, D-120). The probes carry no secret and no real delivery id.
@@ -737,6 +739,19 @@ Check that the log of the run holds the fake token (READ-ONLY), otherwise step 1
 ```powershell
 gh run view $RUN --repo $LAB --log | Select-String 'ghp_FAKE'
 ```
+
+What the live run taught about this step:
+
+- GitHub masks a token of its own format (`ghp_...`) before the app sees the log, so that planted token
+  proves nothing about the redactor. Use a fake AWS-shaped key, assembled at run time (D-59), in a
+  second pull request.
+- Put it **inside the error line** (`raise RuntimeError("upload failed with key " + "AKIA" + "FAKE" * 4)`):
+  the Langfuse input is cut at 4,000 characters, but the model quotes the error line, so the bot's comment
+  and the trace output show `[REDACTED:aws_access_key_id]`.
+- The failure must be new: a signature already diagnosed is answered by the cache, with no model call and
+  no trace.
+- A pull request gets one bot comment per failing workflow, so two here (`pr-py-modnf` and `pr-flaky`).
+- In PowerShell 5.1 a quoted CloudWatch filter pattern needs its quotes escaped, or it matches nothing.
 
 ### 14. Box 6: CloudWatch by `delivery_id`, and Langfuse with the planted fake token (READ-ONLY)
 
@@ -928,26 +943,26 @@ captured. Leave the result column empty until you have it.
 
 | # | Box | What to observe | Command or place | Result |
 |---|---|---|---|---|
-| 1 | 1 | `docker compose up` ready, time, user id 10001, image size | step 2 | |
-| 2 | 2 | `apply` summary of bootstrap, persistent and ephemeral (resources added) | steps 3, 4, 8, 10 | |
-| 3 | 2 | The second `plan -detailed-exitcode` of ephemeral and persistent: exit code 0 and "No changes" | step 11 | |
-| 4 | 2 | ECS: both services at 1 running task; target `healthy` | step 10 | |
-| 5 | 2 | RDS PostgreSQL 17 reachable: the migration exit code 0 and the last revision in its log (`CREATE EXTENSION vector` ran in 0001) | step 9 | |
-| 6 | 2 | The five secrets with a current version (stage `AWSCURRENT`), no value read | step 5 | |
-| 7 | 2 | Execution and task roles, the OIDC provider and the deploy role exist; no access key in the account for the CD | `aws iam get-role --role-name cicd-doctor-deploy --query Role.Arn`; step 6 | |
+| 1 | 1 | `docker compose up` ready, time, user id 10001, image size | step 2 | 2026-11-25: ready in 39 s (build included), uid 10001, 790 MB, api healthy, worker running (0 restarts), migrate ok |
+| 2 | 2 | `apply` summary of bootstrap, persistent and ephemeral (resources added) | steps 3, 4, 8, 10 | bootstrap 7 added; persistent 14 added, later 1 changed (D-130); ephemeral 44 added, 06:31:20 to 06:37:23 UTC; services on 06:43:53 |
+| 3 | 2 | The second `plan -detailed-exitcode` of ephemeral and persistent: exit code 0 and "No changes" | step 11 | exit code 0, "No changes", both layers, before and after the CD deploy |
+| 4 | 2 | ECS: both services at 1 running task; target `healthy` | step 10 | api and worker 1 of 1, target healthy 06:45:17 |
+| 5 | 2 | RDS PostgreSQL 17 reachable: the migration exit code 0 and the last revision in its log (`CREATE EXTENSION vector` ran in 0001) | step 9 | task `8e4c9a9a1cbe4f5ba60a8680ac15dd32` exit 0, revisions 0001 to 0006 |
+| 6 | 2 | The five secrets with a current version (stage `AWSCURRENT`), no value read | step 5 | five secrets `AWSCURRENT`; no value read |
+| 7 | 2 | Execution and task roles, the OIDC provider and the deploy role exist; no access key in the account for the CD | `aws iam get-role --role-name cicd-doctor-deploy --query Role.Arn`; step 6 | execution and task roles, OIDC provider and `cicd-doctor-deploy` created; the repository has no Actions secret |
 | 8 | 3 | **Dropped by D-129:** nothing to observe | n/a | dropped |
-| 9 | 4 | A push-to-`main` run of `cd.yml`: id, green, the OIDC token accepted | step 15 | |
-| 10 | 4 | The migration task's exit code 0 before the services were updated; new task definition revisions; services `COMPLETED` | step 15 | |
-| 11 | 4 | No long-lived AWS key: `gh secret list` shows no `AWS_*` | step 6 | |
-| 12 | 4 | The stack-down path: the first run (dispatch) ended green with the notice | step 7 | |
-| 13 | 5 | The prod app webhook URL is the CloudFront one; deliveries 2xx: ids, times, statuses | step 12 | |
-| 14 | 5 | `/health` and `/ready` through CloudFront; bad or missing signature answers 401 with the app's JSON | step 11 | |
-| 15 | 5 | The POST body and signature header arrive intact: a real delivery accepted | step 12 | |
-| 16 | 5 | P1c box 1 against prod: check run id, status `completed` / `neutral`, comment id, seconds to the check | step 13 | |
-| 17 | 5 | P1c box 2 against prod: the same check id and comment id after "Re-run failed jobs" | step 13 | |
-| 18 | 6 | CloudWatch: one `delivery_id` followed from the webhook to the publication, JSON, with `job_id`, `run_id`, `installation_id`, `repository` | step 14 | |
-| 19 | 6 | The planted fake token is in the Actions log, and **not** in CloudWatch (0 lines) | step 14 | |
-| 20 | 6 | Langfuse: one trace per call with model, `diag-v3`, tokens, cost, latency; no `ghp_FAKE` in input or output | step 14 | |
-| 21 | all | After `down`: every line of *After `down`* shows zero; the persistent layer remains | step 16 | |
-| 22 | all | Cost: hours up and the Cost Explorer total against about USD 0.11 an hour | cost table | |
-| 23 | all | Any SCP deny, expired credential, unverified point of D-120, D-121 or D-123 that showed itself (ALB Host rule, `ClusterNotFoundException`, `RunTask` under the policy, the pgvector version) | the step where it showed | |
+| 9 | 4 | A push-to-`main` run of `cd.yml`: id, green, the OIDC token accepted | step 15 | run 45569906244 (push `d6973c25`), green, OIDC accepted |
+| 10 | 4 | The migration task's exit code 0 before the services were updated; new task definition revisions; services `COMPLETED` | step 15 | revision 2 of the three task definitions; migration `6748b4afaa2245479f59ffad4037705c` exit 0 before the rollout; `COMPLETED`; the later plan showed no changes |
+| 11 | 4 | No long-lived AWS key: `gh secret list` shows no `AWS_*` | step 6 | `gh secret list` empty; only the variable `AWS_DEPLOY_ROLE_ARN` |
+| 12 | 4 | The stack-down path: the first run (dispatch) ended green with the notice | step 7 | first tries failed (45559287242 OIDC subject, 45560513695 `bash -e`, D-130); after the fix run 45573427741 was green with the "not both active" notice; the missing-cluster branch only in a local simulation |
+| 13 | 5 | The prod app webhook URL is the CloudFront one; deliveries 2xx: ids, times, statuses | step 12 | redelivery `659700a2-e86b-11f1-8080-71a309a77212`, 202, 06:56:39 |
+| 14 | 5 | `/health` and `/ready` through CloudFront; bad or missing signature answers 401 with the app's JSON | step 11 | `/health` ok, `/ready` ready; bad and missing signature 401 with the app's JSON; the ALB directly times out |
+| 15 | 5 | The POST body and signature header arrive intact: a real delivery accepted | step 12 | the real delivery of row 13 was accepted (202) |
+| 16 | 5 | P1c box 1 against prod: check run id, status `completed` / `neutral`, comment id, seconds to the check | step 13 | lab PR #10, run 45564977311: one check `completed` / `neutral` in 11 s and comment 7155419086 (check id in SPEC §13 P5) |
+| 17 | 5 | P1c box 2 against prod: the same check id and comment id after "Re-run failed jobs" | step 13 | same check and same comment, edited to "Attempt 2" |
+| 18 | 6 | CloudWatch: one `delivery_id` followed from the webhook to the publication, JSON, with `job_id`, `run_id`, `installation_id`, `repository` | step 14 | delivery `8d7d042a-e89f-11f1-9119-baab97877528`: `webhook enqueued` (api) to `job done` (worker), with the four ids |
+| 19 | 6 | The planted fake token is in the Actions log, and **not** in CloudWatch (0 lines) | step 14 | run 45568512559: the fake AWS key in clear text in the Actions log, 0 lines in the api and worker log groups |
+| 20 | 6 | Langfuse: one trace per call with model, `diag-v3`, tokens, cost, latency; no `ghp_FAKE` in input or output | step 14 | traces with `gpt-6-luna`, `diag-v3`, tokens, cost, latency; the output of trace `1eb70bf4ae89ed693bbe75a147d0b7d2` is redacted; input cut at 4,000 characters; a whole-trace text search was not recorded |
+| 21 | all | After `down`: every line of *After `down`* shows zero; the persistent layer remains | step 16 | destroy 07:55:09 to 08:02:50, 44 destroyed; every check empty; five secrets and the ECR images remain |
+| 22 | all | Cost: hours up and the Cost Explorer total against about USD 0.11 an hour | cost table | up about 1 h 31 min (about USD 0.17 by the estimate); Cost Explorer not recorded |
+| 23 | all | Any SCP deny, expired credential, unverified point of D-120, D-121 or D-123 that showed itself (ALB Host rule, `ClusterNotFoundException`, `RunTask` under the policy, the pgvector version) | the step where it showed | no SCP deny, no expired credential; the ALB Host rule matched; the plan drift of D-123 did not appear; two CD defects fixed by D-130; `ClusterNotFoundException` not observed live |
