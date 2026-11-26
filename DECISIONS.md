@@ -1513,3 +1513,11 @@ The result is never longer than 80 characters. **No markdown escaping is applied
 **Why:** The renderer writes the URL as it came, so the check must be on that text. A parser normalises, and each normalisation is a difference between what was checked and what is published.
 **Alternatives:** add one more condition for the trailing colon (leaves the upper case gap and the next normalisation); rewrite the URL to its canonical form before linking it (changes the text of a log, more code on untrusted input); teach the oracle to accept these forms (weakens a check to pass a test).
 **Consequences:** A URL with an upper case scheme or host is no longer clickable. The found example is pinned in the fuzz test with `@example`, and a deterministic test covers the other forms.
+
+## D-132 — The repository is MIT licensed; the public eval cases keep their own licenses (extends D-101)
+
+**Origin:** The repository is public and had no license, so nobody could legally reuse it.
+**Decision:** The code and documentation are under the MIT license (`LICENSE`). `evals/cases/public/` is the exception: excerpts of other projects' public logs, each under the license its repository declares, listed in the generated `NOTICE` and `SOURCES.md`.
+**Why:** MIT is short, well known and compatible with the licenses the public cases are limited to (D-101); the owner chose it.
+**Alternatives:** Apache-2.0 (a patent grant this project does not need, and a longer text); no license (all rights reserved, which a reader of a public repository does not expect); relicensing the excerpts (not ours to relicense).
+**Consequences:** A new public case keeps the license rule of D-101.

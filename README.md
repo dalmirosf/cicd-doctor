@@ -51,17 +51,16 @@ change that can be applied with one click:
 ## How it works
 
 ```mermaid
-flowchart LR
-    GH[GitHub<br/>workflow_run webhook] -->|signed| API[api<br/>FastAPI]
-    API -->|job| DB[(Postgres + pgvector<br/>queue and memory)]
-    DB --> W[worker]
-    W -->|failed job logs| GH
-    W --> P[clean, redact,<br/>signature, rules]
-    P --> C{cached?}
-    C -->|no| LLM[OpenAI<br/>strict schema]
-    C -->|yes| R[verify and render]
+flowchart TD
+    GH[GitHub: a workflow run fails] -->|signed webhook| API[API<br/>FastAPI]
+    API -->|stores a job| DB[(Postgres + pgvector<br/>queue and memory)]
+    DB --> W[Worker<br/>downloads the failed job logs]
+    W --> P[Clean, redact,<br/>sign and apply rules]
+    P --> C{Answer<br/>cached?}
+    C -->|no| LLM[OpenAI<br/>strict JSON schema]
+    C -->|yes| R[Verify and render]
     LLM --> R
-    R -->|check run + comment| GH
+    R --> OUT[Check run and comment<br/>on the pull request]
 ```
 
 The API only verifies the signature and stores a job; all the work happens in the worker. The code is hexagonal:
@@ -70,21 +69,20 @@ The API only verifies the signature and stores a job; all the work happens in th
 ### On AWS
 
 ```mermaid
-flowchart LR
-    GH[GitHub] -->|HTTPS| CF[CloudFront]
-    CF -->|HTTP| ALB[Load balancer]
+flowchart TD
+    GH[GitHub webhook] -->|HTTPS| CF[CloudFront]
+    CF -->|HTTP| ALB
+    SM[Secrets Manager<br/>and ECR] -.->|secrets and image| TASKS
     subgraph VPC
-      ALB --> API[Fargate: api]
-      API --> RDS[(RDS PostgreSQL 17<br/>private subnets)]
-      W[Fargate: worker] --> RDS
+        ALB[Load balancer] --> API
+        subgraph TASKS[ECS on Fargate]
+            API[api task]
+            W[worker task]
+        end
+        TASKS --> RDS[(RDS PostgreSQL 17<br/>private subnets)]
     end
-    SM[Secrets Manager] -.-> API
-    SM -.-> W
-    ECR[ECR] -.-> API
-    ECR -.-> W
-    API -.-> CW[CloudWatch Logs]
-    W -.-> CW
-    W -.-> LF[Langfuse traces]
+    TASKS -.->|logs| CW[CloudWatch]
+    W -.->|traces| LF[Langfuse]
 ```
 
 - **Terraform** in three layers: the state bucket, what survives a teardown (registry, secrets, roles) and what bills
@@ -246,3 +244,8 @@ The six planned phases of the [specification](SPEC.md) (P0 to P5) are built; P6,
 
 Every decision has an entry with its alternatives in [DECISIONS.md](DECISIONS.md), and each phase has its plan,
 measurements, pull requests and live evidence under [docs/](docs/README.md).
+
+## License
+
+[MIT](LICENSE). The exception is `evals/cases/public/`: excerpts of other projects' public logs, which stay
+under their own licenses ([NOTICE](evals/cases/public/NOTICE)).
